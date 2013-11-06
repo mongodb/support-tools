@@ -13,8 +13,8 @@ Any use of these scripts and tools is **at your own risk**.  There is no guarant
 thorough testing in a comparable environment and we are not responsible for any damage or data loss incurred with 
 their use.
 
-In plain English: feel free to use these, but you're on your own if anything goes wrong.  Please be careful and review 
-and test any scripts you run *thoroughly* before use in any non-testing environment.
+You are responsible for reviewing and testing and scripts you run *thoroughly* before use in any non-testing 
+environment.
 
 Thanks,
 The MongoDB Support Team
