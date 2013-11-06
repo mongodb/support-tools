@@ -16,5 +16,5 @@ their use.
 You are responsible for reviewing and testing and scripts you run *thoroughly* before use in any non-testing 
 environment.
 
-Thanks,
+Thanks,  
 The MongoDB Support Team
