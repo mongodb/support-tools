@@ -1,7 +1,7 @@
 MongoDB Support Tools
 =====================
 
-![Use at your own risk](add use-at-own-risk-sign-s-9967.png)
+![Use at your own risk](/use-at-own-risk-sign-s-9967.png)
 
 DISCLAIMER
 ----------
