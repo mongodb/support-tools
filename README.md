@@ -2,7 +2,8 @@ MongoDB Support Tools
 =====================
 
 ![Use at your own risk](/use-at-your-own-risk.jpg)
-[image from flickr user alykat](http://www.flickr.com/photos/80081757@N00/4271250480/)
+
+[(image from flickr user alykat)](http://www.flickr.com/photos/80081757@N00/4271250480/)
 
 DISCLAIMER
 ----------
