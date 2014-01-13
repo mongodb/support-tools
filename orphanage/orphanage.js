@@ -8,7 +8,7 @@
  *  - Turn off the balancer
  *  - For each chunk of data
  *    - Query each shard that is not in config
- *    - If the shard contains that chuck it is an orphan
+ *    - If the shard contains that chunk it is an orphan
  *  - Return a list of the orphan document counts for each {shard, chunk}
  *
  * Quick Sharding Setup:
@@ -118,7 +118,9 @@ var Orphans = {
     // Make sure this script is being run on mongos
     assert(Shard.configDB().runCommand({ isdbgrid: 1}).ok, "Not a sharded cluster")
 
-    assert(!sh.isBalancerRunning(), "Balancer must be stopped first")
+    assert(!sh.getBalancerState(), "Balancer must be stopped first")
+    assert(!sh.isBalancerRunning(), "Balancer is still running, wait for it to finish")
+
     print("Searching for orphans in namespace [" + namespace + "]")
     var shardConns = Shard.connections()
     var connections = {};
@@ -150,18 +152,33 @@ var Orphans = {
         var toRemove = naCollection.find({}, {_id: 1}).min(bchunk.min).max(bchunk.max)
         var idsToRemove = []
 
+        var removedCount = 0;
+        var errorFlag = false;
+
         while (toRemove.hasNext()) {
-          idsToRemove.push(toRemove.next()._id)
+            idsToRemove.push(toRemove.next()._id);
+
+            if (idsToRemove.length >= 100 || (!toRemove.hasNext() && idsToRemove.length > 0)) {
+                naCollection.remove({ _id: { $in: idsToRemove } });
+
+                if (error = naCollection.getDB().getLastError()) {
+                    errorFlag = true;
+                    break;
+                } else {
+                    removedCount += idsToRemove.length;
+                }
+
+                idsToRemove = [];
+            }
         }
 
-        naCollection.remove({ _id: { $in: idsToRemove } })
-
-        if (error = naCollection.getDB().getLastError()) {
-          print("-> There was an error: " + error)
+        if (errorFlag) {
+          print("-> There was an error: " + error);
         } else {
-          print("-> Sucessfully removed " + idsToRemove.length + " orphaned documents from " + namespace)
+          print("-> Sucessfully removed " + removedCount + " orphaned documents from " + namespace);
         }
-        return idsToRemove.length
+
+        return removedCount;
       },
       removeAll: function(secs) {
           var num = 0;
