@@ -1,7 +1,7 @@
 /*
  *
  * orphanage.js -- Utility to find and remove orphaned documents
- * 10gen 2012-2013 -- Tyler Brock, Scott Hernandez, Jacob Ribnik
+ * 10gen 2012-2014 -- Tyler Brock, Scott Hernandez, Jacob Ribnik
  *
  * Script Orphan Finder Procedure:
  *  - Set up a connection to each shard
