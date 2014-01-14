@@ -21,7 +21,8 @@
 #  ruby mongo-ldap.rb <mongodb URI> <ldap URI>
 #
 # Permissions needed:
-#  The MongoDB URI needs to have permissions that will allow it to modify user permissions on any database (normally userAdminAnyDatabase)
+#  The MongoDB URI needs to have permissions that will allow it to modify user permissions on any
+#  database (normally userAdminAnyDatabase)
 #  The LDAP URI needs to have permissions such that all of the MongoDB users can be read successfully
 #
 # LDAP Setup:
