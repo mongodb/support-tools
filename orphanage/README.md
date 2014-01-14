@@ -6,9 +6,16 @@ orphanage.js
 
 ### Description
 
-Coming soon!
+orphanage.js is a utility to find and remove orphaned documents.
 
 ### Usage
+
+ - sh.stopBalancer()               -- Stop the balancer
+ - Orphans.find('db.collection')   -- Find orphans in a given namespace
+ - Orphans.findAll()               -- Find orphans in all namespaces
+ - Orphans.remove()                -- Removes the next chunk
+
+Run orphanage.js without arguments to see the full help text.
 
 ### License
 
