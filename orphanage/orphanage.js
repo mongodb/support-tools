@@ -125,6 +125,13 @@ var Orphans = {
     var shardConns = Shard.connections()
     var connections = {};
 
+    var precise = 1;
+    if (typeof bsonWoCompare === 'undefined') {
+        print("bsonWoCompare is undefined. Orphaned document counts might be higher than the actual numbers");
+        print("Try running with mongo shell >2.5.3");
+        precise = 0;
+    }
+
     // skip shards that have no data yet
     for(shard in shardConns) {
         if (shardConns[shard].getCollection(namespace).count() > 0)
@@ -133,6 +140,8 @@ var Orphans = {
 
     var result = {
       badChunks: [],
+      maxRange: {},
+      lastMin: {},
       count: 0,
       shardCounts:{},
       hasNext: function(){
@@ -193,7 +202,18 @@ var Orphans = {
 
 
     // iterate over chunks -- only one shard should own each chunk
-    Shard.configDB().chunks.find({ ns: namespace }).batchSize(5).forEach( function(chunk) {
+    Shard.configDB().chunks.find({ ns: namespace }).sort({min : 1}).batchSize(5).forEach( function(chunk) {
+      // check if we already seen this chunk
+      if (precise) {
+        if (bsonWoCompare(result.maxRange, chunk.max) < 0) { // stored max is smaller, so we have not seen this chunk
+          result.maxRange = chunk.max;
+          result.lastMin = chunk.min;
+        } else {
+          print("Skipping chunk (split?) with max " + chunk.max);
+          assert(bsonWoCompare(result.lastMin, chunk.min) <= 0, "Chunk order is screwed!");
+        }
+      }
+
       // query all non-authoritative shards
       for (var shard in connections) {
         if (shard != chunk.shard) {
