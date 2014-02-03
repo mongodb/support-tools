@@ -23,6 +23,7 @@
  *  - Orphans.find('db.collection')   -- Find orphans in a given namespace
  *  - Orphans.findAll()               -- Find orphans in all namespaces
  *  - Orphans.remove()                -- Removes the next chunk
+ *  - Orphans.setBalancerParanoia(bool) -- Check balancer state before trying remove; default is true
  *
  *  DISCLAIMER
  *
@@ -132,7 +133,7 @@ var Orphans = {
     }
 
     var result = {
-      self: this,
+      parent: this,
       badChunks: [],
       count: 0,
       shardCounts:{},
@@ -160,7 +161,7 @@ var Orphans = {
             idsToRemove.push(toRemove.next()._id);
 
             if (idsToRemove.length >= 100 || (!toRemove.hasNext() && idsToRemove.length > 0)) {
-                if (this.self._balancerParanoia) {
+                if (this.parent._balancerParanoia) {
                     // if balancer is found to be running we need to start from scratch
                     assert((!sh.getBalancerState() && !sh.isBalancerRunning()),
                             "Balancer unexpectedly enabled. Discard previous results and start again.");
