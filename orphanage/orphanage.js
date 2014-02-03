@@ -139,6 +139,7 @@ var Orphans = {
     }
 
     var result = {
+      self: this,
       badChunks: [],
       maxRange: {},
       lastMin: {},
@@ -168,6 +169,11 @@ var Orphans = {
             idsToRemove.push(toRemove.next()._id);
 
             if (idsToRemove.length >= 100 || (!toRemove.hasNext() && idsToRemove.length > 0)) {
+                if (this.self._balancerParanoia) {
+                    // if balancer is found to be running we need to start from scratch
+                    assert((!sh.getBalancerState() && !sh.isBalancerRunning()),
+                            "Balancer unexpectedly enabled. Discard previous results and start again.");
+                }
                 naCollection.remove({ _id: { $in: idsToRemove } });
 
                 if (error = naCollection.getDB().getLastError()) {
@@ -268,6 +274,11 @@ var Orphans = {
               num += nsMap[ns].removeAll();
 
       return num;
+  },
+  // Balancer paranoia is on by default
+  _balancerParanoia: true,
+  setBalancerParanoia: function(b) {
+      this._balancerParanoia = b;
   }
 }
 
