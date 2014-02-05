@@ -128,8 +128,8 @@ var Orphans = {
 
     var precise = 1;
     if (typeof bsonWoCompare === 'undefined') {
-        print("bsonWoCompare is undefined. Orphaned document counts might be higher than the actual numbers");
-        print("Try running with mongo shell >2.5.3");
+        print("Warning: orphaned document counts might be higher than the actual numbers in this");
+        print("version of the mongo shell. For exact counts please upgrade to 2.5.3 or later.");
         precise = 0;
     }
 
