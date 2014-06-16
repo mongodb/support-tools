@@ -20,8 +20,8 @@
  *
  * Usage:
  *  - sh.stopBalancer()               -- Stop the balancer
- *  - Orphans.options.verbose = false  -- Enabled summary mode , to hide  BadDoc details and just give counts ( data would be available via output_ns)
- *  - Orphans.options.output_ns = "test.orphan_output" -- Saves all badDocs to output location for  later review 
+ *  - Orphans.setOutputNS('test.orphan_output')  -- Enabled summary view and saves badDocs to given location
+ *  - Orphans.preFlight() --  Does all the connecitons output ahead of time, as to not  clutter  find/findAll type commands.
  *  - Orphans.find('db.collection')   -- Find orphans in a given namespace
  *  - Orphans.findAll()               -- Find orphans in all namespaces
  *  - Orphans.remove()                -- Removes the next chunk
@@ -99,7 +99,7 @@ var Shard = {
   // Returns an array of sharded namespaces
   namespaces: function(){
     var nsl = [] // namespace list
-    this.configDB().collections.find().forEach(function(ns){nsl.push(ns._id)})
+    this.configDB().collections.find({dropped:false}).forEach(function(ns){nsl.push(ns._id)})
     return nsl
   },
 
@@ -118,7 +118,12 @@ var Shard = {
 
 // Orphans object -- finds and removes orphaned documents
 var Orphans = {
+  preFlight: function(){
+    var shardConns = Shard.connections()
+    var connections = {};
+  },
   options : { verbose: true, output_ns: null},
+  setOutputNS: function(namespace) { Orphans.options.output_ns = namespace; Orphans.options.verbose=false;},
   find: function(namespace) {
     // Make sure this script is being run on mongos
     assert(Shard.configDB().runCommand({ isdbgrid: 1}).ok, "Not a sharded cluster")
@@ -309,8 +314,8 @@ print("usage:")
 print("Orphanage.global.auth('username','password') -- Set global authentication parameters")
 print("Orphanage.shard.auth('shard','username','password') -- Set shard authentication parameters")
 print("Shard.active = \[\"shard1\",\"shard2\"\]-- Specify active shards (they will be used for finding orphans)")
-print("Orphans.options.verbose = false  -- Enabled summary mode , to hide  BadDoc details and just give counts ( data would be available via output_ns)")
- print("Orphans.options.output_ns = 'test.orphan_output' -- Saves all badDocs to output location for  later review ")
+ print("Orphans.setOutputNS('test.orphan_output')  -- Enabled summary view and saves badDocs to given location")
+print("Orphans.preFlight() --  Does all the connecitons output ahead of time, as to not  clutter  find/findAll type commands.")
 print("Orphans.find('db.collection')     -- Find orphans in a given namespace")
 print("Orphans.findAll()                 -- Find orphans in all namespaces")
 print("Orphans.removeAll(findAllResults) -- Removes orphans in all namespaces")
