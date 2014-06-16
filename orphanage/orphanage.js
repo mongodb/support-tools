@@ -20,6 +20,8 @@
  *
  * Usage:
  *  - sh.stopBalancer()               -- Stop the balancer
+ *  - Orphans.setOutputNS('test.orphan_output')  -- Enabled summary view and saves badDocs to given location
+ *  - Orphans.preFlight() --  Does all the connecitons output ahead of time, as to not  clutter  find/findAll type commands.
  *  - Orphans.find('db.collection')   -- Find orphans in a given namespace
  *  - Orphans.findAll()               -- Find orphans in all namespaces
  *  - Orphans.remove()                -- Removes the next chunk
@@ -91,12 +93,13 @@ var Orphanage = {
 
 // Shard object -- contains shard related functions
 var Shard = {
+  rawConnection: function() { return db;},
   configDB: function() {return db.getSiblingDB("config");},
   active: [],
   // Returns an array of sharded namespaces
   namespaces: function(){
     var nsl = [] // namespace list
-    this.configDB().collections.find().forEach(function(ns){nsl.push(ns._id)})
+    this.configDB().collections.find({dropped:false}).forEach(function(ns){nsl.push(ns._id)})
     return nsl
   },
 
@@ -115,6 +118,12 @@ var Shard = {
 
 // Orphans object -- finds and removes orphaned documents
 var Orphans = {
+  preFlight: function(){
+    var shardConns = Shard.connections()
+    var connections = {};
+  },
+  options : { verbose: true, output_ns: null},
+  setOutputNS: function(namespace) { Orphans.options.output_ns = namespace; Orphans.options.verbose=false;},
   find: function(namespace) {
     // Make sure this script is being run on mongos
     assert(Shard.configDB().runCommand({ isdbgrid: 1}).ok, "Not a sharded cluster")
@@ -128,9 +137,11 @@ var Orphans = {
 
     var precise = 1;
     if (typeof bsonWoCompare === 'undefined') {
-        print("bsonWoCompare is undefined. Orphaned document counts might be higher than the actual numbers");
-        print("Try running with mongo shell >2.5.3");
-        precise = 0;
+      if ( Orphans.options.verbose === true){
+          print("bsonWoCompare is undefined. Orphaned document counts might be higher than the actual numbers");
+          print("Try running with mongo shell >2.5.3");
+      }
+      precise = 0;
     }
 
     // skip shards that have no data yet
@@ -241,6 +252,14 @@ var Orphans = {
 
             chunk.orphanedOn = shard
             chunk.orphanCount = orphanCount
+            printjson(Orphans.options)
+            // We need to change the _id to prevent collisions if we save  it
+            if ( Orphans.options.output_ns){
+              chunk._id_orig = chunk._id;
+              chunk._id = chunk._id + "_" + chunk.orphanedOn;
+              tNS = Orphans.options.output_ns.split(".");
+              Shard.rawConnection().getSiblingDB(tNS[0]).getCollection(tNS[1]).insert(chunk);
+            }
             result.badChunks.push(chunk)
           }
         }
@@ -255,7 +274,9 @@ var Orphans = {
     } else {
       print("-> No orphans found in [" + namespace  + "]\n")
     }
-    return result
+    if ( Orphans.options.verbose === true){
+      return result
+    }
   },
   findAll: function(){
     var result = {}
@@ -265,7 +286,9 @@ var Orphans = {
       namespace = namespaces[i];
       result[namespace] = this.find(namespace);
     }
-    return result;
+    if ( Orphans.options.verbose === true){
+      return result
+    }
   },
   // Remove all orphaned chunks
   removeAll: function(nsMap) {
@@ -291,6 +314,8 @@ print("usage:")
 print("Orphanage.global.auth('username','password') -- Set global authentication parameters")
 print("Orphanage.shard.auth('shard','username','password') -- Set shard authentication parameters")
 print("Shard.active = \[\"shard1\",\"shard2\"\]-- Specify active shards (they will be used for finding orphans)")
+ print("Orphans.setOutputNS('test.orphan_output')  -- Enabled summary view and saves badDocs to given location")
+print("Orphans.preFlight() --  Does all the connecitons output ahead of time, as to not  clutter  find/findAll type commands.")
 print("Orphans.find('db.collection')     -- Find orphans in a given namespace")
 print("Orphans.findAll()                 -- Find orphans in all namespaces")
 print("Orphans.removeAll(findAllResults) -- Removes orphans in all namespaces")
