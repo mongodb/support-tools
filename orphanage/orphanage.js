@@ -252,7 +252,6 @@ var Orphans = {
 
             chunk.orphanedOn = shard
             chunk.orphanCount = orphanCount
-            printjson(Orphans.options)
             // We need to change the _id to prevent collisions if we save  it
             if ( Orphans.options.output_ns){
               chunk._id_orig = chunk._id;
