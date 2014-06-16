@@ -20,6 +20,8 @@
  *
  * Usage:
  *  - sh.stopBalancer()               -- Stop the balancer
+ *  - Orphans.options.verbose = false  -- Enabled summary mode , to hide  BadDoc details and just give counts ( data would be available via output_ns)
+ *  - Orphans.options.output_ns = "test.orphan_output" -- Saves all badDocs to output location for  later review 
  *  - Orphans.find('db.collection')   -- Find orphans in a given namespace
  *  - Orphans.findAll()               -- Find orphans in all namespaces
  *  - Orphans.remove()                -- Removes the next chunk
@@ -91,6 +93,7 @@ var Orphanage = {
 
 // Shard object -- contains shard related functions
 var Shard = {
+  rawConnection: function() { return db;},
   configDB: function() {return db.getSiblingDB("config");},
   active: [],
   // Returns an array of sharded namespaces
@@ -115,6 +118,7 @@ var Shard = {
 
 // Orphans object -- finds and removes orphaned documents
 var Orphans = {
+  options : { verbose: true, output_ns: null},
   find: function(namespace) {
     // Make sure this script is being run on mongos
     assert(Shard.configDB().runCommand({ isdbgrid: 1}).ok, "Not a sharded cluster")
@@ -128,9 +132,11 @@ var Orphans = {
 
     var precise = 1;
     if (typeof bsonWoCompare === 'undefined') {
-        print("bsonWoCompare is undefined. Orphaned document counts might be higher than the actual numbers");
-        print("Try running with mongo shell >2.5.3");
-        precise = 0;
+      if ( Orphans.options.verbose === true){
+          print("bsonWoCompare is undefined. Orphaned document counts might be higher than the actual numbers");
+          print("Try running with mongo shell >2.5.3");
+      }
+      precise = 0;
     }
 
     // skip shards that have no data yet
@@ -241,6 +247,14 @@ var Orphans = {
 
             chunk.orphanedOn = shard
             chunk.orphanCount = orphanCount
+            printjson(Orphans.options)
+            // We need to change the _id to prevent collisions if we save  it
+            if ( Orphans.options.output_ns){
+              chunk._id_orig = chunk._id;
+              chunk._id = chunk._id + "_" + chunk.orphanedOn;
+              tNS = Orphans.options.output_ns.split(".");
+              Shard.rawConnection().getSiblingDB(tNS[0]).getCollection(tNS[1]).insert(chunk);
+            }
             result.badChunks.push(chunk)
           }
         }
@@ -255,7 +269,9 @@ var Orphans = {
     } else {
       print("-> No orphans found in [" + namespace  + "]\n")
     }
-    return result
+    if ( Orphans.options.verbose === true){
+      return result
+    }
   },
   findAll: function(){
     var result = {}
@@ -265,7 +281,9 @@ var Orphans = {
       namespace = namespaces[i];
       result[namespace] = this.find(namespace);
     }
-    return result;
+    if ( Orphans.options.verbose === true){
+      return result
+    }
   },
   // Remove all orphaned chunks
   removeAll: function(nsMap) {
@@ -291,6 +309,8 @@ print("usage:")
 print("Orphanage.global.auth('username','password') -- Set global authentication parameters")
 print("Orphanage.shard.auth('shard','username','password') -- Set shard authentication parameters")
 print("Shard.active = \[\"shard1\",\"shard2\"\]-- Specify active shards (they will be used for finding orphans)")
+print("Orphans.options.verbose = false  -- Enabled summary mode , to hide  BadDoc details and just give counts ( data would be available via output_ns)")
+ print("Orphans.options.output_ns = 'test.orphan_output' -- Saves all badDocs to output location for  later review ")
 print("Orphans.find('db.collection')     -- Find orphans in a given namespace")
 print("Orphans.findAll()                 -- Find orphans in all namespaces")
 print("Orphans.removeAll(findAllResults) -- Removes orphans in all namespaces")
