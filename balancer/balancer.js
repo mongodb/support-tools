@@ -416,6 +416,16 @@ var Balancer = {
         this.verbose = b;
     },
 
+    _secondaryThrottle: null,
+    setSecondaryThrottle: function(b){
+        this._secondaryThrottle = b;
+    },
+
+    _waitForDelete: null,
+    setWaitForDelete: function(b){
+        this._waitForDelete = b;
+    },
+
     test: true,
     ready: function(){
         this.test = false;
@@ -468,7 +478,15 @@ var Balancer = {
     moveChunk: function(ns, proj, dest){
         var nattempts = 0;
         while (nattempts < 3) {
-            var res = sh.moveChunk(ns, proj, dest);
+            var cmdOpts = {moveChunk: ns, find: proj, to: dest};
+            if (this._secondaryThrottle !== null){
+                cmdOpts['_secondaryThrottle'] = this._secondaryThrottle;
+            }
+            if (this._waitForDelete !== null){
+                cmdOpts['_waitForDelete'] = this._waitForDelete;
+            }
+            var res = db.getSiblingDB("admin").runCommand(cmdOpts);
+
             if (res['ok'] == 1) {
                 print_ts("Chunk move successful");
                 break;
@@ -580,6 +598,25 @@ var Balancer = {
         }
         sortString += padString;
 
+        var stString = null;
+        if (this._secondaryThrottle !== null){
+            var stString = "*  _secondaryThrottle: " + this._secondaryThrottle;
+            var padString = "*";
+            for (var tmpi = stars.length; tmpi > stString.length+1; tmpi--){
+                padString = " "+padString;
+            }
+            stString += padString;
+        }
+        var wfdString = null;
+        if (this._waitForDelete !== null){
+            var wfdString = "*  _waitForDelete: " + this._waitForDelete;
+            var padString = "*";
+            for (var tmpi = stars.length; tmpi > wfdString.length+1; tmpi--){
+                padString = " "+padString;
+            }
+            wfdString += padString;
+        }
+
         print(stars);
         print(estars);
         print(title)
@@ -591,6 +628,12 @@ var Balancer = {
         print(shardString);
         print(destShardString);
         print(sortString);
+        if (stString){
+            print(stString);
+        }
+        if (wfdString){
+            print(wfdString);
+        }
         print(estars);
         print(stars);
 
@@ -867,7 +910,10 @@ var Balancer = {
         print("Balancer.setSplit(boolean)         # split chunks larger than maxChunkSize; default is true");
         print("Balancer.setMove(boolean)          # move chunks to thinnest shard after splitting; default is false");
         print("Balancer.setSleepMS(integer)       # ms to sleep between processing of large chunks; default is 5000");
-        print("Balancer.setVerbose(boolean)       # be loquacious");
+        print("Balancer.setVerbose(bool)          # be loquacious");
+        print("");
+        print("Balancer.setSecondaryThrottle(bool)# secondaryThrottle for chunk moves; system default by default");
+        print("Balancer.setWaitForDelete(bool)    # secondaryThrottle for chunk moves; system default by default");
         print("");
         print("Balancer.global.auth('user','pwd') # global auth parameters; note that user must have clusterAdmin role");
         print("Balancer.shard.auth('shard','user','pwd')");
