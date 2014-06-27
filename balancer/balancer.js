@@ -170,7 +170,7 @@ var Balancer = {
             verbose = false;
         }
         if (typeof updateShardsOnly === "undefined"){
-            updateShardsOnlhy = false;
+            updateShardsOnly = false;
         }
 
         // reset
@@ -191,6 +191,22 @@ var Balancer = {
         // already have been validated in run when setShardRestrict was found
         if (this._shardRestrict && this._shard){
             findObj['shard'] = this._shard;
+        }
+        // only consider the specified chunk range; this is a chunkRestrict
+        // on chunk min ;)
+        if (this._chunkRange){
+            // $minKey -> value
+            if (this._chunkRange.first === null && this._chunkRange.last) {
+                findObj['min'] = {"$lte": this._chunkRange.last};
+            } else
+            // value -> $maxKey
+            if (this._chunkRange.first && this._chunkRange.last === null) {
+                findObj['min'] = {"$gte": this._chunkRange.first};
+            } else
+            // value -> value
+            if (this._chunkRange.first && this._chunkRange.last) {
+                findObj['min'] = {"$gte": this._chunkRange.first, "$lte": this._chunkRange.last};
+            }
         }
         var chunks = db.getSiblingDB("config").chunks.find(findObj).sort({min:1});
 
@@ -243,10 +259,19 @@ var Balancer = {
             }
         })
 
-        // if shard is specified or destination shard does not
-        // contain chunks, we haven't seen it yet
+        // if destination shard is specified and does not contain
+        // chunks, we haven't seen it yet so initialize it
         if (self._destShard && (! (self._destShard in self.shards))){
             self.shards[self._destShard] = {'size':0,'nchunk':0,'nlargeChunk':0};
+        } else {
+            if (self._destShards){
+                for(var dsi = 0; dsi < self._destShards.length; dsi++){
+                    var ds = self._destShards[dsi];
+                    if (! (ds in self.shards)){
+                        self.shards[ds] = {'size':0,'nchunk':0,'nlargeChunk':0};
+                    }
+                }
+            }
         }
 
         if (! updateShardsOnly){
@@ -336,9 +361,23 @@ var Balancer = {
         this._shardRestrict = b;
     },
 
+    _chunkRange: null,
+    setChunkRange: function(first, last){
+        // null first := $minKey
+        // null last := $maxKey
+        this._chunkRange = {first:first, last:last};
+    },
+
     _destShard: null,
     setDestShard: function(shard){
         this._destShard = shard;
+    },
+    _destShards: null,
+    setDestShards: function(shardArray){
+        // validate array
+        if (shardArray instanceof Array){
+            this._destShards = shardArray;
+        }
     },
 
     // in MB
@@ -462,10 +501,14 @@ var Balancer = {
             print_ts("specify shard with setShard or disable shardRestrict");
             return 1;
         }
-        if (this._shardRestrict && (! this._destShard)){
-            print_ts("shardRestrict enabled but destination shard not specified");
-            print_ts("specify shard with setDestShard or disable shardRestrict");
+        if (this._shardRestrict && (! (this._destShard || this._destShards))){
+            print_ts("shardRestrict enabled but destination shard(s) not specified");
+            print_ts("specify shard(s) with setDestShard(s) or disable shardRestrict");
             return 2;
+        }
+        if (this._destShard && this._destShards){
+            print_ts("cannot use both setDestShard and setDestShards, pick one");
+            return 3;
         }
 
         var stars     = "********************************************************************";
@@ -490,6 +533,16 @@ var Balancer = {
         }
         nsString += padString;
 
+        var crString = null;
+        if (this._chunkRange){
+            var crString = "*  considering only specified chunk range ";
+            var padString = "*";
+            for (var tmpi = stars.length; tmpi > crString.length+1; tmpi--){
+                padString = " "+padString;
+            }
+            crString += padString;
+        }
+
         var shardString = "*  from shard: ";
         if (this._shard){
             shardString += this._shard;
@@ -505,6 +558,8 @@ var Balancer = {
         destShardString = "*  to shard: ";
         if (this._destShard){
             destShardString += this._destShard;
+        } else if (this._destShards){
+            destShardString += this._destShards.toString();
         } else {
             destShardString += "whichever is thinnest at the time";
         }
@@ -530,6 +585,9 @@ var Balancer = {
         print(title)
         print(estars);
         print(nsString);
+        if (crString){
+            print(crString);
+        }
         print(shardString);
         print(destShardString);
         print(sortString);
@@ -643,6 +701,10 @@ var Balancer = {
                         if (this._destShard){
                             var destinationShard = this._destShard;
                             var destinationString = "destination";
+                        } else if (this._destShards){
+                            // alternate between shards in _destShards
+                            var destinationShard = this._destShards[(chunki % this._destShards.length)];
+                            var destinationString = "destination";
                         } else {
                             var destinationShard = this.thinnestShard();
                             var destinationString = "thinnest";
@@ -747,6 +809,10 @@ var Balancer = {
                     if (this._destShard){
                         var destinationShard = this._destShard;
                         var destinationString = "destination";
+                    } else if (this._destShards){
+                        // alternate between shards in _destShards
+                        var destinationShard = this._destShards[(chunki % this._destShards.length)];
+                        var destinationString = "destination";
                     } else {
                         var destinationShard = this.thinnestShard();
                         var destinationString = "thinnest";
@@ -788,9 +854,12 @@ var Balancer = {
         print("Balancer.setNamespace(string)      # only consider chunks in this namespace; default is all namespaces");
         print("Balancer.setShard(string)          # only consider chunks on this shard for splitting/moving; default is all shards");
         print("Balancer.setShardRestrict(bool)    # only consider chunks on shard specified with setShard for information gathering;");
-        print("                                     if set, must also set source shard with setShard and destination shard with setDestShard");
+        print("                                     if set, must also set source shard with setShard and destination shard with setDestShard(s)");
         print("                                     as we will not be able to determine which is the thinnest shard; default is all shards");
+        print("Balancer.setChunkRange(first, last)# only consider chunks with min in the specified range; range is inclusive");
+        print("                                     null first value is $minKey, null last value is $maxKey");
         print("Balancer.setDestShard(string)      # only move chunks to this shard; default is whichever shard is thinnest at the time");
+        print("Balancer.setDestShards([string])   # alternate moving chunks to these shards only");
         print("Balancer.setMaxChunks(integer)     # maximum number of large chunks to process; default is all large chunks");
         print("Balancer.setMaxChunkSize(float)    # in MB, chunks larger than this will be split into chunks approximately");
         print("                                     half this size; default is 64");
