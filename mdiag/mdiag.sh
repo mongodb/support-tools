@@ -28,6 +28,7 @@
 # You are responsible for reviewing and testing any scripts you run
 # thoroughly before use in any non-testing environment.
 
+version="1.6.0"
 
 diagfile="/tmp/mdiag-`hostname`.txt"
 
@@ -113,6 +114,7 @@ PATH="$PATH${PATH+:}/usr/sbin:/sbin:/usr/bin:/bin"
 
 echo "========================="
 echo "MongoDB Diagnostic Report"
+echo "mdiag.sh version $version"
 echo "========================="
 if [ "$1" ]; then
 	echo
@@ -130,6 +132,7 @@ echo
 (
 echo "========================="
 echo "MongoDB Diagnostic Report"
+echo "mdiag.sh version $version"
 echo "========================="
 ) > "$diagfile" 2>&1
 
