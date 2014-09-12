@@ -22,7 +22,7 @@
  *  - sh.stopBalancer()               -- Stop the balancer
  *  - Orphans.setOutputNS('test.orphan_output') -- Save badChunks to a collection and suppress output
  *  - Orphans.preFlight() -- Make connections ahead of time to prevent screen clutter during find/findAll type commands
- *  - Orphans.find('db.collection')   -- Find orphans in a given namespace
+ *  - Orphans.find('database.collection')   -- Find orphans in a given namespace
  *  - Orphans.findAll()               -- Find orphans in all namespaces
  *  - Orphans.remove()                -- Removes the next chunk
  *  - Orphans.setBalancerParanoia(bool) -- Check balancer state before trying remove; default is true
@@ -330,12 +330,12 @@ print("Orphanage.shard.auth('shard','username','password') -- Set shard authenti
 print("Shard.active = \[\"shard1\",\"shard2\"\]-- Specify active shards (they will be used for finding orphans)")
 print("Orphans.setOutputNS('test.orphan_output') -- Save badChunks to a collection and suppress output")
 print("Orphans.preFlight()               -- Make connections ahead of time to prevent screen clutter during find/findAll type commands")
-print("Orphans.find('db.collection')     -- Find orphans in a given namespace")
+print("Orphans.find('database.collection')     -- Find orphans in a given namespace")
 print("Orphans.findAll()                 -- Find orphans in all namespaces")
 print("Orphans.removeAll(findAllResults) -- Removes orphans in all namespaces")
 print("")
 print("To remove orphaned documents:")
-print("var result = Orphans.find('db.collection')")
+print("var result = Orphans.find('database.collection')")
 print("result.hasNext()                  -- Returns true if ns has more bad chunks")
 print("result.next()                     -- Shows information about the next chunk")
 print("result.remove()                   -- Removes the next chunk")
