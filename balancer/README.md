@@ -1,23 +1,16 @@
 MongoDB Support Tools
 =====================
 
-orphanage.js
+balancer.js
 ------------
 
 ### Description
 
-orphanage.js is a utility to find and remove orphaned documents.
+balancer.js is a utility to split and move chunks between shards.
 
 ### Usage
 
- - sh.stopBalancer()               -- Stop the balancer
- - Orphans.setOutputNS('test.orphan_output') -- Save badChunks to a collection and suppress output
- - Orphans.preFlight()             -- Make connections ahead of time to prevent screen clutter during find/findAll type commands
- - Orphans.find('db.collection')   -- Find orphans in a given namespace
- - Orphans.findAll()               -- Find orphans in all namespaces
- - Orphans.remove()                -- Removes the next chunk
-
-Run orphanage.js without arguments to see the full help text.
+Run balancer.js without arguments to see the full help text.
 
 ### License
 

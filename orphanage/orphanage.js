@@ -1,7 +1,7 @@
 /*
  *
  * orphanage.js -- Utility to find and remove orphaned documents
- * 10gen 2012-2014 -- Tyler Brock, Scott Hernandez, Jacob Ribnik
+ * Copyright MongoDB, Inc, 2014 -- Tyler Brock, Scott Hernandez, Jacob Ribnik
  *
  * Script Orphan Finder Procedure:
  *  - Set up a connection to each shard
@@ -20,6 +20,8 @@
  *
  * Usage:
  *  - sh.stopBalancer()               -- Stop the balancer
+ *  - Orphans.setOutputNS('test.orphan_output') -- Save badChunks to a collection and suppress output
+ *  - Orphans.preFlight() -- Make connections ahead of time to prevent screen clutter during find/findAll type commands
  *  - Orphans.find('db.collection')   -- Find orphans in a given namespace
  *  - Orphans.findAll()               -- Find orphans in all namespaces
  *  - Orphans.remove()                -- Removes the next chunk
@@ -43,6 +45,21 @@
  *
  *  You are responsible for reviewing and testing any scripts you run
  *  thoroughly before use in any non-testing environment.
+ *
+ *
+ * LICENSE
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 // Orphanage object -- stores configuration and makes connections
@@ -91,12 +108,13 @@ var Orphanage = {
 
 // Shard object -- contains shard related functions
 var Shard = {
+  rawConnection: function() { return db;},
   configDB: function() {return db.getSiblingDB("config");},
   active: [],
   // Returns an array of sharded namespaces
   namespaces: function(){
     var nsl = [] // namespace list
-    this.configDB().collections.find().forEach(function(ns){nsl.push(ns._id)})
+    this.configDB().collections.find({dropped:false}).forEach(function(ns){nsl.push(ns._id)})
     return nsl
   },
 
@@ -115,6 +133,12 @@ var Shard = {
 
 // Orphans object -- finds and removes orphaned documents
 var Orphans = {
+  preFlight: function(){
+    var shardConns = Shard.connections();
+    var connections = {};
+  },
+  options : { verbose: true, output_ns: null},
+  setOutputNS: function(namespace) { Orphans.options.output_ns = namespace; Orphans.options.verbose=false;},
   find: function(namespace) {
     // Make sure this script is being run on mongos
     assert(Shard.configDB().runCommand({ isdbgrid: 1}).ok, "Not a sharded cluster")
@@ -128,9 +152,11 @@ var Orphans = {
 
     var precise = 1;
     if (typeof bsonWoCompare === 'undefined') {
-        print("bsonWoCompare is undefined. Orphaned document counts might be higher than the actual numbers");
-        print("Try running with mongo shell >2.5.3");
-        precise = 0;
+      if ( Orphans.options.verbose === true){
+          print("Warning: orphaned document counts might be higher than the actual numbers in this");
+          print("version of the mongo shell. For exact counts please upgrade to 2.6.0 or later.");
+      }
+      precise = 0;
     }
 
     // skip shards that have no data yet
@@ -241,6 +267,13 @@ var Orphans = {
 
             chunk.orphanedOn = shard
             chunk.orphanCount = orphanCount
+            // We need to change the _id to prevent collisions if we save  it
+            if (Orphans.options.output_ns) {
+              chunk._id_orig = chunk._id;
+              chunk._id = chunk._id + "_" + chunk.orphanedOn;
+              tNS = Orphans.options.output_ns.split(".");
+              Shard.rawConnection().getSiblingDB(tNS[0]).getCollection(tNS[1]).insert(chunk);
+            }
             result.badChunks.push(chunk)
           }
         }
@@ -255,7 +288,9 @@ var Orphans = {
     } else {
       print("-> No orphans found in [" + namespace  + "]\n")
     }
-    return result
+    if ( Orphans.options.verbose === true){
+      return result
+    }
   },
   findAll: function(){
     var result = {}
@@ -265,7 +300,9 @@ var Orphans = {
       namespace = namespaces[i];
       result[namespace] = this.find(namespace);
     }
-    return result;
+    if ( Orphans.options.verbose === true){
+      return result
+    }
   },
   // Remove all orphaned chunks
   removeAll: function(nsMap) {
@@ -291,6 +328,8 @@ print("usage:")
 print("Orphanage.global.auth('username','password') -- Set global authentication parameters")
 print("Orphanage.shard.auth('shard','username','password') -- Set shard authentication parameters")
 print("Shard.active = \[\"shard1\",\"shard2\"\]-- Specify active shards (they will be used for finding orphans)")
+print("Orphans.setOutputNS('test.orphan_output') -- Save badChunks to a collection and suppress output")
+print("Orphans.preFlight()               -- Make connections ahead of time to prevent screen clutter during find/findAll type commands")
 print("Orphans.find('db.collection')     -- Find orphans in a given namespace")
 print("Orphans.findAll()                 -- Find orphans in all namespaces")
 print("Orphans.removeAll(findAllResults) -- Removes orphans in all namespaces")
