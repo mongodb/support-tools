@@ -19,6 +19,8 @@ Run orphanage.js without arguments to see the full help text.
 
 ### License
 
+[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
 
 DISCLAIMER
 ----------
