@@ -11,8 +11,8 @@ orphanage.js is a utility to find and remove orphaned documents.
 ### Usage
 
  - sh.stopBalancer()               -- Stop the balancer
- - Orphans.setOutputNS('test.orphan_output')  -- Enabled summary view and saves badDocs to given location
- - Orphans.preFlight() --  Does all the connecitons output ahead of time, as to not  clutter  find/findAll type commands.
+ - Orphans.setOutputNS('test.orphan_output') -- Save badChunks to a collection and suppress output
+ - Orphans.preFlight()             -- Make connections ahead of time to prevent screen clutter during find/findAll type commands
  - Orphans.find('db.collection')   -- Find orphans in a given namespace
  - Orphans.findAll()               -- Find orphans in all namespaces
  - Orphans.remove()                -- Removes the next chunk
