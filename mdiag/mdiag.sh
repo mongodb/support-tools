@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # ===================================
 # mdiag.sh: MongoDB Diagnostic Report
