@@ -181,6 +181,17 @@ msection localtime lsfiles /etc/localtime
 msection localtime_matches find /usr/share/zoneinfo -type f -exec cmp -s \{\} /etc/localtime \; -print
 
 # Block device/filesystem info
+msection scsi getfiles /proc/scsi/scsi
+DISK_DEVS=$(cat /proc/partitions | awk 'match($4, /^[sh]d[a-z]$/) { print $4 }')
+OUT_S=
+for disk in $DISK_DEVS; do
+  OUT_T="$(udevadm info --query=all --name=$disk | grep 'E: ID_MODEL=')"
+  if [ -n "$OUT_S" ]; then
+     OUT_S="${OUT_S}, "
+  fi
+  OUT_S="${OUT_S}${disk}-->${OUT_T##*=}"
+done
+msection scsi-map echo "$OUT_S"
 msection blockdev blockdev --report
 msection lsblk lsblk
 
@@ -231,7 +242,7 @@ msection sensors sensors
 msection mcelog getfiles /var/log/mcelog
 
 # Process/kernel info
-msection procinfo getfiles /proc/mounts /proc/self/mountinfo /proc/cpuinfo /proc/meminfo /proc/zoneinfo /proc/swaps /proc/modules /proc/vmstat /proc/loadavg
+msection procinfo getfiles /proc/mounts /proc/self/mountinfo /proc/cpuinfo /proc/meminfo /proc/zoneinfo /proc/swaps /proc/modules /proc/vmstat /proc/loadavg /proc/cgroups
 msection transparent_hugepage getfilesfromcommand find /sys/kernel/mm/{redhat_,}transparent_hugepage -type f
 msection ps ps -eLFww
 
@@ -259,6 +270,7 @@ for pid in $mongo_pids; do
 	getfiles /proc/$pid/limits /proc/$pid/mounts /proc/$pid/mountinfo /proc/$pid/smaps /proc/$pid/numa_maps
 	lsfiles /proc/$pid/fd 
 	getfiles /proc/$pid/fdinfo/*
+	getfiles /proc/$pid/cgroup
 	EOF
 done
 msection global_mongodb_conf getfiles /etc/mongodb.conf /etc/mongod.conf
