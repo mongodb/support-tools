@@ -226,6 +226,7 @@ msection ip_link ip link
 msection ip_addr ip addr
 msection ip_route ip route
 msection ip_rule ip rule
+msection ip_neigh ip neigh
 msection hosts getfiles /etc/hosts
 msection host.conf getfiles /etc/host.conf
 msection resolv getfiles /etc/resolv.conf
