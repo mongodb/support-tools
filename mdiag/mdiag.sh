@@ -1,4 +1,7 @@
 #!/bin/bash
+# The following 2 lines make "bash mdiag.sh ..." work even if the file is in DOS format (with CR/LFs).
+eval "`echo -ne '\r'`() { sed 's/\x0D$//' '$0' | '$BASH' -s -- "'"${a[@]}" ; exit $?; }'; a=("$@");
+unset a
 
 # ===================================
 # mdiag.sh: MongoDB Diagnostic Report
