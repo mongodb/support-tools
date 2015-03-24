@@ -7,6 +7,7 @@ getMongoData.js
 ### Description
 
 getMongoData.js is a utility to gather MongoDB configuration and schema information.
+See [sample/getMongoData.log](sample/getMongoData.log) for sample output.
 
 
 ### Usage
@@ -40,5 +41,5 @@ their use.
 You are responsible for reviewing and testing any scripts you run *thoroughly* before use in any non-testing
 environment.
 
-Thanks,
+Thanks,  
 The MongoDB Support Team

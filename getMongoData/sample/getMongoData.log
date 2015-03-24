@@ -1,0 +1,643 @@
+MongoDB shell version: 3.0.1
+connecting to: test
+================================
+MongoDB Config and Schema Report
+getMongoData.js version 2.5.0
+================================
+
+** Server status info:
+{
+	"host" : "Jamess-MacBook-Air.local",
+	"version" : "3.0.1",
+	"process" : "mongod",
+	"pid" : NumberLong(54653),
+	"uptime" : 142,
+	"uptimeMillis" : NumberLong(142030),
+	"uptimeEstimate" : 131,
+	"localTime" : ISODate("2015-03-24T17:01:31.128Z"),
+	"asserts" : {
+		"regular" : 0,
+		"warning" : 0,
+		"msg" : 0,
+		"user" : 0,
+		"rollovers" : 0
+	},
+	"backgroundFlushing" : {
+		"flushes" : 2,
+		"total_ms" : 29,
+		"average_ms" : 14.5,
+		"last_ms" : 24,
+		"last_finished" : ISODate("2015-03-24T17:01:09.183Z")
+	},
+	"connections" : {
+		"current" : 1,
+		"available" : 2047,
+		"totalCreated" : NumberLong(5)
+	},
+	"cursors" : {
+		"note" : "deprecated, use server status metrics",
+		"clientCursors_size" : 0,
+		"totalOpen" : 0,
+		"pinned" : 0,
+		"totalNoTimeout" : 0,
+		"timedOut" : 0
+	},
+	"dur" : {
+		"commits" : 28,
+		"journaledMB" : 0,
+		"writeToDataFilesMB" : 0,
+		"compression" : 0,
+		"commitsInWriteLock" : 0,
+		"earlyCommits" : 0,
+		"timeMs" : {
+			"dt" : 3088,
+			"prepLogBuffer" : 0,
+			"writeToJournal" : 0,
+			"writeToDataFiles" : 0,
+			"remapPrivateView" : 0,
+			"commits" : 1,
+			"commitsInWriteLock" : 0
+		}
+	},
+	"extra_info" : {
+		"note" : "fields vary by platform",
+		"page_faults" : 1992
+	},
+	"globalLock" : {
+		"totalTime" : NumberLong(142028000),
+		"currentQueue" : {
+			"total" : 0,
+			"readers" : 0,
+			"writers" : 0
+		},
+		"activeClients" : {
+			"total" : 9,
+			"readers" : 0,
+			"writers" : 0
+		}
+	},
+	"locks" : {
+		"Global" : {
+			"acquireCount" : {
+				"r" : NumberLong(205),
+				"w" : NumberLong(10),
+				"W" : NumberLong(5)
+			}
+		},
+		"MMAPV1Journal" : {
+			"acquireCount" : {
+				"r" : NumberLong(203),
+				"w" : NumberLong(29492),
+				"R" : NumberLong(1285),
+				"W" : NumberLong(1)
+			},
+			"acquireWaitCount" : {
+				"w" : NumberLong(4),
+				"R" : NumberLong(5)
+			},
+			"timeAcquiringMicros" : {
+				"w" : NumberLong(10143),
+				"R" : NumberLong(91221)
+			}
+		},
+		"Database" : {
+			"acquireCount" : {
+				"r" : NumberLong(193),
+				"w" : NumberLong(3),
+				"R" : NumberLong(12),
+				"W" : NumberLong(7)
+			}
+		},
+		"Collection" : {
+			"acquireCount" : {
+				"R" : NumberLong(195),
+				"W" : NumberLong(3)
+			}
+		},
+		"Metadata" : {
+			"acquireCount" : {
+				"R" : NumberLong(4),
+				"W" : NumberLong(15)
+			}
+		}
+	},
+	"network" : {
+		"bytesIn" : 2908643,
+		"bytesOut" : 60894,
+		"numRequests" : 91
+	},
+	"opcounters" : {
+		"insert" : 29470,
+		"query" : 17,
+		"update" : 0,
+		"delete" : 0,
+		"getmore" : 0,
+		"command" : 75
+	},
+	"opcountersRepl" : {
+		"insert" : 0,
+		"query" : 0,
+		"update" : 0,
+		"delete" : 0,
+		"getmore" : 0,
+		"command" : 0
+	},
+	"storageEngine" : {
+		"name" : "mmapv1"
+	},
+	"writeBacksQueued" : false,
+	"mem" : {
+		"bits" : 64,
+		"resident" : 77,
+		"virtual" : 2819,
+		"supported" : true,
+		"mapped" : 160,
+		"mappedWithJournal" : 320
+	},
+	"metrics" : {
+		"commands" : {
+			"buildInfo" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(3)
+			},
+			"collStats" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(10)
+			},
+			"count" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(4)
+			},
+			"dbStats" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(4)
+			},
+			"getCmdLineOpts" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(2)
+			},
+			"getLastError" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(3)
+			},
+			"getLog" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(1)
+			},
+			"getnonce" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(1)
+			},
+			"hostInfo" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(2)
+			},
+			"isMaster" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(6)
+			},
+			"listCollections" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(8)
+			},
+			"listDatabases" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(2)
+			},
+			"listIndexes" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(8)
+			},
+			"ping" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(2)
+			},
+			"profile" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(4)
+			},
+			"replSetGetStatus" : {
+				"failed" : NumberLong(4),
+				"total" : NumberLong(4)
+			},
+			"serverStatus" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(5)
+			},
+			"usersInfo" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(2)
+			},
+			"whatsmyuri" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(4)
+			}
+		},
+		"cursor" : {
+			"timedOut" : NumberLong(0),
+			"open" : {
+				"noTimeout" : NumberLong(0),
+				"pinned" : NumberLong(0),
+				"total" : NumberLong(0)
+			}
+		},
+		"document" : {
+			"deleted" : NumberLong(0),
+			"inserted" : NumberLong(29470),
+			"returned" : NumberLong(8),
+			"updated" : NumberLong(0)
+		},
+		"getLastError" : {
+			"wtime" : {
+				"num" : 0,
+				"totalMillis" : 0
+			},
+			"wtimeouts" : NumberLong(0)
+		},
+		"operation" : {
+			"fastmod" : NumberLong(0),
+			"idhack" : NumberLong(0),
+			"scanAndOrder" : NumberLong(0),
+			"writeConflicts" : NumberLong(0)
+		},
+		"queryExecutor" : {
+			"scanned" : NumberLong(0),
+			"scannedObjects" : NumberLong(8)
+		},
+		"record" : {
+			"moves" : NumberLong(0)
+		},
+		"repl" : {
+			"apply" : {
+				"batches" : {
+					"num" : 0,
+					"totalMillis" : 0
+				},
+				"ops" : NumberLong(0)
+			},
+			"buffer" : {
+				"count" : NumberLong(0),
+				"maxSizeBytes" : 268435456,
+				"sizeBytes" : NumberLong(0)
+			},
+			"network" : {
+				"bytes" : NumberLong(0),
+				"getmores" : {
+					"num" : 0,
+					"totalMillis" : 0
+				},
+				"ops" : NumberLong(0),
+				"readersCreated" : NumberLong(0)
+			},
+			"preload" : {
+				"docs" : {
+					"num" : 0,
+					"totalMillis" : 0
+				},
+				"indexes" : {
+					"num" : 0,
+					"totalMillis" : 0
+				}
+			}
+		},
+		"storage" : {
+			"freelist" : {
+				"search" : {
+					"bucketExhausted" : NumberLong(0),
+					"requests" : NumberLong(29610),
+					"scanned" : NumberLong(0)
+				}
+			}
+		},
+		"ttl" : {
+			"deletedDocuments" : NumberLong(0),
+			"passes" : NumberLong(2)
+		}
+	},
+	"ok" : 1
+}
+
+** Host info:
+{
+	"system" : {
+		"currentTime" : ISODate("2015-03-24T17:01:31.137Z"),
+		"hostname" : "Jamess-MacBook-Air.local",
+		"cpuAddrSize" : 64,
+		"memSizeMB" : 8192,
+		"numCores" : 4,
+		"cpuArch" : "x86_64\u0000",
+		"numaEnabled" : false
+	},
+	"os" : {
+		"type" : "Darwin",
+		"name" : "Mac OS X",
+		"version" : "14.1.0\u0000"
+	},
+	"extra" : {
+		"versionString" : "Darwin Kernel Version 14.1.0: Thu Feb 26 19:26:47 PST 2015; root:xnu-2782.10.73~1/RELEASE_X86_64\u0000",
+		"alwaysFullSync" : 0,
+		"nfsAsync" : 0,
+		"model" : "MacBookAir6,2\u0000",
+		"physicalCores" : 2,
+		"cpuFrequencyMHz" : 1700,
+		"cpuString" : "Intel(R) Core(TM) i7-4650U CPU @ 1.70GHz\u0000",
+		"cpuFeatures" : "FPU VME DE PSE TSC MSR PAE MCE CX8 APIC SEP MTRR PGE MCA CMOV PAT PSE36 CLFSH DS ACPI MMX FXSR SSE SSE2 SS HTT TM PBE SSE3 PCLMULQDQ DTES64 MON DSCPL VMX SMX EST TM2 SSSE3 FMA CX16 TPR PDCM SSE4.1 SSE4.2 x2APIC MOVBE POPCNT AES PCID XSAVE OSXSAVE SEGLIM64 TSCTMR AVX1.0 RDRAND F16C\u0000 SYSCALL XD 1GBPAGE EM64T LAHF LZCNT RDTSCP TSCI\u0000",
+		"pageSize" : 4096,
+		"scheduler" : "multiq\u0000"
+	},
+	"ok" : 1
+}
+
+** Command line info:
+{
+	"argv" : [
+		"mongod",
+		"--fork",
+		"--syslog"
+	],
+	"parsed" : {
+		"processManagement" : {
+			"fork" : true
+		},
+		"systemLog" : {
+			"destination" : "syslog"
+		}
+	},
+	"ok" : 1
+}
+
+** Connected to primary
+
+** Replica set config:
+null
+
+** Replica status:
+{ "ok" : 0, "errmsg" : "not running with --replSet", "code" : 76 }
+
+** Replica info:
+{ "errmsg" : "neither master/slave nor replica set replication detected" }
+
+** Replica slave info:
+local.sources is empty; is this db a --slave?
+
+** Users:
+[ ]
+
+** Custom roles:
+[ ]
+
+** List of databases:
+{
+	"databases" : [
+		{
+			"name" : "local",
+			"sizeOnDisk" : 83886080,
+			"empty" : false
+		},
+		{
+			"name" : "test",
+			"sizeOnDisk" : 83886080,
+			"empty" : false
+		}
+	],
+	"totalSize" : 167772160,
+	"ok" : 1
+}
+
+** List of collections for database 'local':
+[ "startup_log", "system.indexes" ]
+
+** Database stats:
+{
+	"db" : "local",
+	"collections" : 3,
+	"objects" : 5,
+	"avgObjSize" : 297.6,
+	"dataSize" : 0.0014190673828125,
+	"storageSize" : 10.01171875,
+	"numExtents" : 3,
+	"indexes" : 1,
+	"indexSize" : 0.0077972412109375,
+	"fileSize" : 64,
+	"nsSizeMB" : 16,
+	"extentFreeList" : {
+		"num" : 0,
+		"totalSize" : 0
+	},
+	"dataFileVersion" : {
+		"major" : 4,
+		"minor" : 22
+	},
+	"ok" : 1
+}
+
+** Database profiler:
+{ "was" : 0, "slowms" : 100 }
+
+** Collection stats:
+{
+	"ns" : "local.startup_log",
+	"count" : 1,
+	"size" : 0,
+	"avgObjSize" : 1168,
+	"numExtents" : 1,
+	"storageSize" : 10,
+	"lastExtentSize" : 10,
+	"paddingFactor" : 1,
+	"paddingFactorNote" : "paddingFactor is unused and unmaintained in 3.0. It remains hard coded to 1.0 for compatibility only.",
+	"userFlags" : 1,
+	"capped" : true,
+	"max" : NumberLong("9223372036854775807"),
+	"maxSize" : 10,
+	"nindexes" : 1,
+	"totalIndexSize" : 0,
+	"indexSizes" : {
+		"_id_" : 0
+	},
+	"ok" : 1
+}
+
+** Indexes:
+[
+	{
+		"v" : 1,
+		"key" : {
+			"_id" : 1
+		},
+		"name" : "_id_",
+		"ns" : "local.startup_log"
+	}
+]
+
+** Sample document:
+{
+	"_id" : "Jamess-MacBook-Air.local-1427216349184",
+	"hostname" : "Jamess-MacBook-Air.local",
+	"startTime" : ISODate("2015-03-24T16:59:09Z"),
+	"startTimeLocal" : "Tue Mar 24 16:59:09.184",
+	"cmdLine" : {
+		"processManagement" : {
+			"fork" : true
+		},
+		"systemLog" : {
+			"destination" : "syslog"
+		}
+	},
+	"pid" : NumberLong(54653),
+	"buildinfo" : {
+		"version" : "3.0.1",
+		"gitVersion" : "534b5a3f9d10f00cd27737fbcd951032248b5952",
+		"OpenSSLVersion" : "",
+		"sysInfo" : "Darwin bs-osx108-7 12.5.0 Darwin Kernel Version 12.5.0: Sun Sep 29 13:33:47 PDT 2013; root:xnu-2050.48.12~1/RELEASE_X86_64 x86_64 BOOST_LIB_VERSION=1_49",
+		"loaderFlags" : "-fPIC -pthread -Wl,-bind_at_load -mmacosx-version-min=10.7 -stdlib=libc++",
+		"compilerFlags" : "-Wnon-virtual-dtor -Woverloaded-virtual -stdlib=libc++ -std=c++11 -fPIC -fno-strict-aliasing -ggdb -pthread -Wall -Wsign-compare -Wno-unknown-pragmas -Winvalid-pch -pipe -Werror -O3 -Wno-unused-function -Wno-unused-private-field -Wno-deprecated-declarations -Wno-tautological-constant-out-of-range-compare -Wno-unused-const-variable -Wno-missing-braces -mmacosx-version-min=10.7 -std=c99",
+		"allocator" : "system",
+		"versionArray" : [
+			3,
+			0,
+			1,
+			0
+		],
+		"javascriptEngine" : "V8",
+		"bits" : 64,
+		"debug" : false,
+		"maxBsonObjectSize" : 16777216
+	}
+}
+
+** Collection stats:
+{
+	"ns" : "local.system.indexes",
+	"count" : 1,
+	"size" : 0,
+	"avgObjSize" : 112,
+	"numExtents" : 1,
+	"storageSize" : 0,
+	"lastExtentSize" : 0.0078125,
+	"paddingFactor" : 1,
+	"paddingFactorNote" : "paddingFactor is unused and unmaintained in 3.0. It remains hard coded to 1.0 for compatibility only.",
+	"userFlags" : 0,
+	"capped" : false,
+	"nindexes" : 0,
+	"totalIndexSize" : 0,
+	"indexSizes" : {
+		
+	},
+	"ok" : 1
+}
+
+** Indexes:
+[ ]
+
+** Sample document:
+{
+	"v" : 1,
+	"key" : {
+		"_id" : 1
+	},
+	"name" : "_id_",
+	"ns" : "local.startup_log"
+}
+
+** List of collections for database 'test':
+[ "system.indexes", "zips" ]
+
+** Database stats:
+{
+	"db" : "test",
+	"collections" : 3,
+	"objects" : 29474,
+	"avgObjSize" : 225.00210354889055,
+	"dataSize" : 6.324493408203125,
+	"storageSize" : 10.67578125,
+	"numExtents" : 8,
+	"indexes" : 1,
+	"indexSize" : 0.920074462890625,
+	"fileSize" : 64,
+	"nsSizeMB" : 16,
+	"extentFreeList" : {
+		"num" : 0,
+		"totalSize" : 0
+	},
+	"dataFileVersion" : {
+		"major" : 4,
+		"minor" : 22
+	},
+	"ok" : 1
+}
+
+** Database profiler:
+{ "was" : 0, "slowms" : 100 }
+
+** Collection stats:
+{
+	"ns" : "test.system.indexes",
+	"count" : 1,
+	"size" : 0,
+	"avgObjSize" : 112,
+	"numExtents" : 1,
+	"storageSize" : 0,
+	"lastExtentSize" : 0.0078125,
+	"paddingFactor" : 1,
+	"paddingFactorNote" : "paddingFactor is unused and unmaintained in 3.0. It remains hard coded to 1.0 for compatibility only.",
+	"userFlags" : 0,
+	"capped" : false,
+	"nindexes" : 0,
+	"totalIndexSize" : 0,
+	"indexSizes" : {
+		
+	},
+	"ok" : 1
+}
+
+** Indexes:
+[ ]
+
+** Sample document:
+{ "v" : 1, "key" : { "_id" : 1 }, "name" : "_id_", "ns" : "test.zips" }
+
+** Collection stats:
+{
+	"ns" : "test.zips",
+	"count" : 29470,
+	"size" : 6,
+	"avgObjSize" : 225,
+	"numExtents" : 6,
+	"storageSize" : 10,
+	"lastExtentSize" : 8,
+	"paddingFactor" : 1,
+	"paddingFactorNote" : "paddingFactor is unused and unmaintained in 3.0. It remains hard coded to 1.0 for compatibility only.",
+	"userFlags" : 1,
+	"capped" : false,
+	"nindexes" : 1,
+	"totalIndexSize" : 0,
+	"indexSizes" : {
+		"_id_" : 0
+	},
+	"ok" : 1
+}
+
+** Indexes:
+[
+	{
+		"v" : 1,
+		"key" : {
+			"_id" : 1
+		},
+		"name" : "_id_",
+		"ns" : "test.zips"
+	}
+]
+
+** Sample document:
+{
+	"_id" : ObjectId("551198381806a0a49a0ddce1"),
+	"city" : "ACMAR",
+	"zip" : "35004",
+	"loc" : {
+		"y" : 33.584132,
+		"x" : 86.51557
+	},
+	"pop" : 6055,
+	"state" : "AL"
+}
