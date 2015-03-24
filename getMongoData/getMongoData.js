@@ -15,7 +15,7 @@
  *
  * To execute on a remote mongod or mongos with authentication, run:
  *
- *     mongo <HOST>:<PORT>/admin -u <ADMIN_USER> getMongoData.js > getMongoData.log
+ *     mongo <HOST>:<PORT>/admin -u <ADMIN_USER> -p <ADMIN_PASSWORD> getMongoData.js > getMongoData.log
  *
  * For details, see
  * https://github.com/mongodb/support-tools/tree/master/getMongoData.
