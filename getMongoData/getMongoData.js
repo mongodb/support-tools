@@ -180,23 +180,28 @@ function printDataInfo(isMongoS) {
 }
 
 function printShardOrReplicaSetInfo() {
-    var isMaster = db.isMaster();
-    if (isMaster.secondary) {
-        print("\n** Connected to secondary");
-        rs.slaveOk();
-        printReplicaSetInfo();
+    printInfo('isMaster', 'db.isMaster()');
+    var state;
+    var stateInfo = rs.status();
+    if (stateInfo.ok) {
+        stateInfo.members.forEach( function( member ) { if ( member.self ) { state = member.stateStr; } } );
+        if ( !state ) state = stateInfo.myState;
+    } else {
+        var info = stateInfo.info;
+        if ( info && info.length < 20 ) {
+            state = info; // "mongos", "configsvr"
+        }
+        if ( ! state ) state = "standalone";
     }
-    else {
-        var shardVer = db.getSiblingDB("config").getCollection("version").findOne();
-        if (shardVer) {
-            print("\n** Connected to mongos");
-            printShardInfo();
-            return true;
+    print("\n** Connected to " + state);
+    if (state == "mongos") {
+        printShardInfo();
+        return true;
+    } else if (state != "standalone" && state != "configsvr") {
+        if (state == "SECONDARY" || state == 2) {
+            rs.slaveOk();
         }
-        else {
-            print("\n** Connected to primary");
-            printReplicaSetInfo();
-        }
+        printReplicaSetInfo();
     }
     return false;
 }
