@@ -162,14 +162,14 @@ function printDataInfo(isMongoS) {
         var collections = printInfo("List of collections for database '"+ mydb.name +"'",
                                     inDB + ".getCollectionNames()");
 
-        printInfo('Database stats',    inDB + '.stats(1024*1024)');
+        printInfo('Database stats (MB)',    inDB + '.stats(1024*1024)');
         if (!isMongoS) {
             printInfo('Database profiler', inDB + '.getProfilingStatus()');
         }
 
         collections.forEach(function(col) {
             var inCol = inDB + ".getCollection('"+ col + "')";
-            printInfo('Collection stats',   inCol + '.stats(1024*1024)');
+            printInfo('Collection stats (MB)',   inCol + '.stats(1024*1024)');
             if (isMongoS) {
                 printInfo('Shard distribution', inCol + '.getShardDistribution()', false);
             }
