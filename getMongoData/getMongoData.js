@@ -147,7 +147,7 @@ function printServerInfo() {
 }
 
 function printReplicaSetInfo() {
-    printInfo('Replica set config', 'db.getSiblingDB("local").system.replset.findOne()');
+    printInfo('Replica set config', 'rs.conf()');
     printInfo('Replica status',     'rs.status()');
     printInfo('Replica info',       'db.getReplicationInfo()');
     printInfo('Replica slave info', 'db.printSlaveReplicationInfo()', false);
