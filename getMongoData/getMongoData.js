@@ -147,6 +147,7 @@ function printServerInfo() {
     printInfo('Server status info', 'db.serverStatus()');
     printInfo('Host info',          'db.hostInfo()');
     printInfo('Command line info',  'db.serverCmdLineOpts()');
+    printInfo('Server build info',  'db.serverBuildInfo()');
 }
 
 function printReplicaSetInfo() {
