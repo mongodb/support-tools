@@ -56,7 +56,7 @@
  * limitations under the License.
  */
 
-var version = "2.5.0";
+var _version = "2.5.0";
 
 (function () {
    "use strict";
@@ -141,6 +141,9 @@ function printInfo(message, command, printResult) {
 }
 
 function printServerInfo() {
+    printInfo('Shell version',      'version()');
+    printInfo('Shell hostname',     'hostname()');
+    printInfo('db',                 'db');
     printInfo('Server status info', 'db.serverStatus()');
     printInfo('Host info',          'db.hostInfo()');
     printInfo('Command line info',  'db.serverCmdLineOpts()');
@@ -217,7 +220,7 @@ function printAuthInfo() {
 
 print("================================");
 print("MongoDB Config and Schema Report");
-print("getMongoData.js version " + version);
+print("getMongoData.js version " + _version);
 print("================================");
 printServerInfo();
 var isMongoS = printShardOrReplicaSetInfo();
