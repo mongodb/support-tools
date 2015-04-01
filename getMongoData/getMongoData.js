@@ -204,7 +204,7 @@ function printShardOrReplicaSetInfo() {
 function printAuthInfo() {
     db = db.getSiblingDB('admin');
     printInfo('Users', 'db.getUsers()');
-    printInfo('Custom roles', 'db.system.roles.find().toArray()');
+    printInfo('Custom roles', 'db.getRoles()');
 }
 
 
