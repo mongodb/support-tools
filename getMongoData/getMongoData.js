@@ -155,7 +155,7 @@ function printReplicaSetInfo() {
 }
 
 function printDataInfo(isMongoS) {
-    var dbs = printInfo('List of databases', 'db.adminCommand("listDatabases")');
+    var dbs = printInfo('List of databases', 'db.getMongo().getDBs()');
 
     dbs.databases.forEach(function(mydb) {
         var inDB = "db.getSiblingDB('"+ mydb.name + "')";
