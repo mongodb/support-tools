@@ -66,7 +66,7 @@ var version = "2.5.0";
 function printShardInfo(){
     var configDB = db.getSiblingDB("config");
 
-    printInfo("Shard version",
+    printInfo("Sharding version",
               'db.getSiblingDB("config").getCollection("version").findOne()');
 
     print("\n** Shards:");
@@ -74,7 +74,7 @@ function printShardInfo(){
         function(z) { print(tojsononeline(z)); }
     );
 
-    print("\n** Shard databases:");
+    print("\n** Sharded databases:");
     configDB.databases.find().sort( { name : 1 } ).forEach(
         function(db) {
             print(tojsononeline(db, "", true));
