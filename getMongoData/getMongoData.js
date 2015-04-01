@@ -174,7 +174,9 @@ function printDataInfo(isMongoS) {
                 printInfo('Shard distribution', inCol + '.getShardDistribution()', false);
             }
             printInfo('Indexes',            inCol + '.getIndexes()');
-            printInfo('Sample document',    inCol + '.findOne()');
+            if (col != "system.users") {
+                printInfo('Sample document',    inCol + '.findOne()');
+            }
         });
     });
 }
