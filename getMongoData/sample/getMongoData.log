@@ -1,20 +1,27 @@
-MongoDB shell version: 3.0.1
-connecting to: test
 ================================
 MongoDB Config and Schema Report
-getMongoData.js version 2.5.0
+getMongoData.js version 2.5.1
 ================================
+
+** Shell version:
+"3.0.1"
+
+** Shell hostname:
+"Jamess-MacBook-Air.local"
+
+** db:
+test
 
 ** Server status info:
 {
 	"host" : "Jamess-MacBook-Air.local",
 	"version" : "3.0.1",
 	"process" : "mongod",
-	"pid" : NumberLong(54653),
-	"uptime" : 142,
-	"uptimeMillis" : NumberLong(142030),
-	"uptimeEstimate" : 131,
-	"localTime" : ISODate("2015-03-24T17:01:31.128Z"),
+	"pid" : NumberLong(23132),
+	"uptime" : 93,
+	"uptimeMillis" : NumberLong(92160),
+	"uptimeEstimate" : 84,
+	"localTime" : ISODate("2015-04-09T10:46:47.110Z"),
 	"asserts" : {
 		"regular" : 0,
 		"warning" : 0,
@@ -23,16 +30,16 @@ getMongoData.js version 2.5.0
 		"rollovers" : 0
 	},
 	"backgroundFlushing" : {
-		"flushes" : 2,
-		"total_ms" : 29,
-		"average_ms" : 14.5,
+		"flushes" : 1,
+		"total_ms" : 24,
+		"average_ms" : 24,
 		"last_ms" : 24,
-		"last_finished" : ISODate("2015-03-24T17:01:09.183Z")
+		"last_finished" : ISODate("2015-04-09T10:46:15.015Z")
 	},
 	"connections" : {
 		"current" : 1,
-		"available" : 2047,
-		"totalCreated" : NumberLong(5)
+		"available" : 3890,
+		"totalCreated" : NumberLong(3)
 	},
 	"cursors" : {
 		"note" : "deprecated, use server status metrics",
@@ -43,14 +50,14 @@ getMongoData.js version 2.5.0
 		"timedOut" : 0
 	},
 	"dur" : {
-		"commits" : 28,
+		"commits" : 27,
 		"journaledMB" : 0,
 		"writeToDataFilesMB" : 0,
 		"compression" : 0,
 		"commitsInWriteLock" : 0,
 		"earlyCommits" : 0,
 		"timeMs" : {
-			"dt" : 3088,
+			"dt" : 3027,
 			"prepLogBuffer" : 0,
 			"writeToJournal" : 0,
 			"writeToDataFiles" : 0,
@@ -61,10 +68,10 @@ getMongoData.js version 2.5.0
 	},
 	"extra_info" : {
 		"note" : "fields vary by platform",
-		"page_faults" : 1992
+		"page_faults" : 1982
 	},
 	"globalLock" : {
-		"totalTime" : NumberLong(142028000),
+		"totalTime" : NumberLong(92159000),
 		"currentQueue" : {
 			"total" : 0,
 			"readers" : 0,
@@ -79,60 +86,59 @@ getMongoData.js version 2.5.0
 	"locks" : {
 		"Global" : {
 			"acquireCount" : {
-				"r" : NumberLong(205),
-				"w" : NumberLong(10),
+				"r" : NumberLong(152),
+				"w" : NumberLong(11),
 				"W" : NumberLong(5)
 			}
 		},
 		"MMAPV1Journal" : {
 			"acquireCount" : {
-				"r" : NumberLong(203),
-				"w" : NumberLong(29492),
-				"R" : NumberLong(1285),
-				"W" : NumberLong(1)
+				"r" : NumberLong(150),
+				"w" : NumberLong(29493),
+				"R" : NumberLong(825)
 			},
 			"acquireWaitCount" : {
-				"w" : NumberLong(4),
-				"R" : NumberLong(5)
+				"w" : NumberLong(3),
+				"R" : NumberLong(4)
 			},
 			"timeAcquiringMicros" : {
-				"w" : NumberLong(10143),
-				"R" : NumberLong(91221)
+				"w" : NumberLong(9352),
+				"R" : NumberLong(22256)
 			}
 		},
 		"Database" : {
 			"acquireCount" : {
-				"r" : NumberLong(193),
+				"r" : NumberLong(147),
 				"w" : NumberLong(3),
-				"R" : NumberLong(12),
-				"W" : NumberLong(7)
+				"R" : NumberLong(5),
+				"W" : NumberLong(8)
 			}
 		},
 		"Collection" : {
 			"acquireCount" : {
-				"R" : NumberLong(195),
+				"R" : NumberLong(149),
 				"W" : NumberLong(3)
 			}
 		},
 		"Metadata" : {
 			"acquireCount" : {
-				"R" : NumberLong(4),
-				"W" : NumberLong(15)
+				"R" : NumberLong(2),
+				"W" : NumberLong(11)
 			}
 		}
 	},
 	"network" : {
-		"bytesIn" : 2908643,
-		"bytesOut" : 60894,
-		"numRequests" : 91
+		"bytesIn" : 2905199,
+		"bytesOut" : 18477,
+		"numRequests" : 40
 	},
 	"opcounters" : {
 		"insert" : 29470,
-		"query" : 17,
+		"query" : 6,
 		"update" : 0,
 		"delete" : 0,
 		"getmore" : 0,
-		"command" : 75
+		"command" : 34
 	},
 	"opcountersRepl" : {
 		"insert" : 0,
@@ -148,7 +154,7 @@ getMongoData.js version 2.5.0
 	"writeBacksQueued" : false,
 	"mem" : {
 		"bits" : 64,
-		"resident" : 77,
+		"resident" : 85,
 		"virtual" : 2819,
 		"supported" : true,
 		"mapped" : 160,
@@ -158,31 +164,23 @@ getMongoData.js version 2.5.0
 		"commands" : {
 			"buildInfo" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(3)
+				"total" : NumberLong(1)
 			},
 			"collStats" : {
-				"failed" : NumberLong(0),
-				"total" : NumberLong(10)
-			},
-			"count" : {
 				"failed" : NumberLong(0),
 				"total" : NumberLong(4)
 			},
 			"dbStats" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(4)
+				"total" : NumberLong(2)
 			},
 			"getCmdLineOpts" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(2)
+				"total" : NumberLong(1)
 			},
 			"getLastError" : {
 				"failed" : NumberLong(0),
 				"total" : NumberLong(3)
-			},
-			"getLog" : {
-				"failed" : NumberLong(0),
-				"total" : NumberLong(1)
 			},
 			"getnonce" : {
 				"failed" : NumberLong(0),
@@ -190,23 +188,23 @@ getMongoData.js version 2.5.0
 			},
 			"hostInfo" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(2)
+				"total" : NumberLong(1)
 			},
 			"isMaster" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(6)
+				"total" : NumberLong(3)
 			},
 			"listCollections" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(8)
+				"total" : NumberLong(2)
 			},
 			"listDatabases" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(2)
+				"total" : NumberLong(1)
 			},
 			"listIndexes" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(8)
+				"total" : NumberLong(4)
 			},
 			"ping" : {
 				"failed" : NumberLong(0),
@@ -214,23 +212,27 @@ getMongoData.js version 2.5.0
 			},
 			"profile" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(4)
+				"total" : NumberLong(2)
 			},
 			"replSetGetStatus" : {
-				"failed" : NumberLong(4),
-				"total" : NumberLong(4)
+				"failed" : NumberLong(1),
+				"total" : NumberLong(1)
+			},
+			"rolesInfo" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(1)
 			},
 			"serverStatus" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(5)
+				"total" : NumberLong(2)
 			},
 			"usersInfo" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(2)
+				"total" : NumberLong(1)
 			},
 			"whatsmyuri" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(4)
+				"total" : NumberLong(2)
 			}
 		},
 		"cursor" : {
@@ -244,7 +246,7 @@ getMongoData.js version 2.5.0
 		"document" : {
 			"deleted" : NumberLong(0),
 			"inserted" : NumberLong(29470),
-			"returned" : NumberLong(8),
+			"returned" : NumberLong(3),
 			"updated" : NumberLong(0)
 		},
 		"getLastError" : {
@@ -262,7 +264,7 @@ getMongoData.js version 2.5.0
 		},
 		"queryExecutor" : {
 			"scanned" : NumberLong(0),
-			"scannedObjects" : NumberLong(8)
+			"scannedObjects" : NumberLong(3)
 		},
 		"record" : {
 			"moves" : NumberLong(0)
@@ -304,14 +306,14 @@ getMongoData.js version 2.5.0
 			"freelist" : {
 				"search" : {
 					"bucketExhausted" : NumberLong(0),
-					"requests" : NumberLong(29610),
+					"requests" : NumberLong(29602),
 					"scanned" : NumberLong(0)
 				}
 			}
 		},
 		"ttl" : {
 			"deletedDocuments" : NumberLong(0),
-			"passes" : NumberLong(2)
+			"passes" : NumberLong(1)
 		}
 	},
 	"ok" : 1
@@ -320,7 +322,7 @@ getMongoData.js version 2.5.0
 ** Host info:
 {
 	"system" : {
-		"currentTime" : ISODate("2015-03-24T17:01:31.137Z"),
+		"currentTime" : ISODate("2015-04-09T10:46:47.120Z"),
 		"hostname" : "Jamess-MacBook-Air.local",
 		"cpuAddrSize" : 64,
 		"memSizeMB" : 8192,
@@ -366,19 +368,41 @@ getMongoData.js version 2.5.0
 	"ok" : 1
 }
 
-** Connected to primary
+** Server build info:
+{
+	"version" : "3.0.1",
+	"gitVersion" : "534b5a3f9d10f00cd27737fbcd951032248b5952",
+	"OpenSSLVersion" : "",
+	"sysInfo" : "Darwin bs-osx108-7 12.5.0 Darwin Kernel Version 12.5.0: Sun Sep 29 13:33:47 PDT 2013; root:xnu-2050.48.12~1/RELEASE_X86_64 x86_64 BOOST_LIB_VERSION=1_49",
+	"loaderFlags" : "-fPIC -pthread -Wl,-bind_at_load -mmacosx-version-min=10.7 -stdlib=libc++",
+	"compilerFlags" : "-Wnon-virtual-dtor -Woverloaded-virtual -stdlib=libc++ -std=c++11 -fPIC -fno-strict-aliasing -ggdb -pthread -Wall -Wsign-compare -Wno-unknown-pragmas -Winvalid-pch -pipe -Werror -O3 -Wno-unused-function -Wno-unused-private-field -Wno-deprecated-declarations -Wno-tautological-constant-out-of-range-compare -Wno-unused-const-variable -Wno-missing-braces -mmacosx-version-min=10.7 -std=c99",
+	"allocator" : "system",
+	"versionArray" : [
+		3,
+		0,
+		1,
+		0
+	],
+	"javascriptEngine" : "V8",
+	"bits" : 64,
+	"debug" : false,
+	"maxBsonObjectSize" : 16777216,
+	"ok" : 1
+}
 
-** Replica set config:
-null
+** isMaster:
+{
+	"ismaster" : true,
+	"maxBsonObjectSize" : 16777216,
+	"maxMessageSizeBytes" : 48000000,
+	"maxWriteBatchSize" : 1000,
+	"localTime" : ISODate("2015-04-09T10:46:47.122Z"),
+	"maxWireVersion" : 3,
+	"minWireVersion" : 0,
+	"ok" : 1
+}
 
-** Replica status:
-{ "ok" : 0, "errmsg" : "not running with --replSet", "code" : 76 }
-
-** Replica info:
-{ "errmsg" : "neither master/slave nor replica set replication detected" }
-
-** Replica slave info:
-local.sources is empty; is this db a --slave?
+** Connected to standalone
 
 ** Users:
 [ ]
@@ -407,17 +431,17 @@ local.sources is empty; is this db a --slave?
 ** List of collections for database 'local':
 [ "startup_log", "system.indexes" ]
 
-** Database stats:
+** Database stats (MB):
 {
 	"db" : "local",
 	"collections" : 3,
-	"objects" : 5,
-	"avgObjSize" : 297.6,
-	"dataSize" : 0.0014190673828125,
-	"storageSize" : 10.01171875,
-	"numExtents" : 3,
-	"indexes" : 1,
-	"indexSize" : 0.0077972412109375,
+	"objects" : 8,
+	"avgObjSize" : 777.5,
+	"dataSize" : 0.005931854248046875,
+	"storageSize" : 10.0078125,
+	"numExtents" : 2,
+	"indexes" : 0,
+	"indexSize" : 0,
 	"fileSize" : 64,
 	"nsSizeMB" : 16,
 	"extentFreeList" : {
@@ -426,7 +450,7 @@ local.sources is empty; is this db a --slave?
 	},
 	"dataFileVersion" : {
 		"major" : 4,
-		"minor" : 22
+		"minor" : 21
 	},
 	"ok" : 1
 }
@@ -434,68 +458,54 @@ local.sources is empty; is this db a --slave?
 ** Database profiler:
 { "was" : 0, "slowms" : 100 }
 
-** Collection stats:
+** Collection stats (MB):
 {
 	"ns" : "local.startup_log",
-	"count" : 1,
+	"count" : 6,
 	"size" : 0,
-	"avgObjSize" : 1168,
+	"avgObjSize" : 1012,
 	"numExtents" : 1,
 	"storageSize" : 10,
 	"lastExtentSize" : 10,
 	"paddingFactor" : 1,
 	"paddingFactorNote" : "paddingFactor is unused and unmaintained in 3.0. It remains hard coded to 1.0 for compatibility only.",
-	"userFlags" : 1,
+	"userFlags" : 0,
 	"capped" : true,
 	"max" : NumberLong("9223372036854775807"),
 	"maxSize" : 10,
-	"nindexes" : 1,
+	"nindexes" : 0,
 	"totalIndexSize" : 0,
 	"indexSizes" : {
-		"_id_" : 0
+		
 	},
 	"ok" : 1
 }
 
 ** Indexes:
-[
-	{
-		"v" : 1,
-		"key" : {
-			"_id" : 1
-		},
-		"name" : "_id_",
-		"ns" : "local.startup_log"
-	}
-]
+[ ]
 
 ** Sample document:
 {
-	"_id" : "Jamess-MacBook-Air.local-1427216349184",
+	"_id" : "Jamess-MacBook-Air.local-1427900568384",
 	"hostname" : "Jamess-MacBook-Air.local",
-	"startTime" : ISODate("2015-03-24T16:59:09Z"),
-	"startTimeLocal" : "Tue Mar 24 16:59:09.184",
+	"startTime" : ISODate("2015-04-01T15:02:48Z"),
+	"startTimeLocal" : "Wed Apr  1 16:02:48.384",
 	"cmdLine" : {
-		"processManagement" : {
-			"fork" : true
-		},
-		"systemLog" : {
-			"destination" : "syslog"
-		}
+		"fork" : true,
+		"syslog" : true
 	},
-	"pid" : NumberLong(54653),
+	"pid" : 45491,
 	"buildinfo" : {
-		"version" : "3.0.1",
-		"gitVersion" : "534b5a3f9d10f00cd27737fbcd951032248b5952",
-		"OpenSSLVersion" : "",
-		"sysInfo" : "Darwin bs-osx108-7 12.5.0 Darwin Kernel Version 12.5.0: Sun Sep 29 13:33:47 PDT 2013; root:xnu-2050.48.12~1/RELEASE_X86_64 x86_64 BOOST_LIB_VERSION=1_49",
-		"loaderFlags" : "-fPIC -pthread -Wl,-bind_at_load -mmacosx-version-min=10.7 -stdlib=libc++",
-		"compilerFlags" : "-Wnon-virtual-dtor -Woverloaded-virtual -stdlib=libc++ -std=c++11 -fPIC -fno-strict-aliasing -ggdb -pthread -Wall -Wsign-compare -Wno-unknown-pragmas -Winvalid-pch -pipe -Werror -O3 -Wno-unused-function -Wno-unused-private-field -Wno-deprecated-declarations -Wno-tautological-constant-out-of-range-compare -Wno-unused-const-variable -Wno-missing-braces -mmacosx-version-min=10.7 -std=c99",
+		"version" : "2.4.11",
+		"gitVersion" : "fa13d1ee8da0f112f588570b4070f73d7af2f7fd",
+		"sysInfo" : "Darwin bs-osx-106-x86-64-2.10gen.cc 10.8.0 Darwin Kernel Version 10.8.0: Tue Jun  7 16:32:41 PDT 2011; root:xnu-1504.15.3~1/RELEASE_X86_64 x86_64 BOOST_LIB_VERSION=1_49",
+		"loaderFlags" : "-fPIC -pthread -rdynamic -m64",
+		"compilerFlags" : "-Wnon-virtual-dtor -Woverloaded-virtual -fPIC -fno-strict-aliasing -ggdb -pthread -Wall -Wsign-compare -Wno-unknown-pragmas -Winvalid-pch -O3 -m64",
 		"allocator" : "system",
 		"versionArray" : [
-			3,
-			0,
-			1,
+			2,
+			4,
+			11,
 			0
 		],
 		"javascriptEngine" : "V8",
@@ -505,15 +515,14 @@ local.sources is empty; is this db a --slave?
 	}
 }
 
-** Collection stats:
+** Collection stats (MB):
 {
 	"ns" : "local.system.indexes",
-	"count" : 1,
+	"count" : 0,
 	"size" : 0,
-	"avgObjSize" : 112,
-	"numExtents" : 1,
+	"numExtents" : 0,
 	"storageSize" : 0,
-	"lastExtentSize" : 0.0078125,
+	"lastExtentSize" : 0,
 	"paddingFactor" : 1,
 	"paddingFactorNote" : "paddingFactor is unused and unmaintained in 3.0. It remains hard coded to 1.0 for compatibility only.",
 	"userFlags" : 0,
@@ -530,19 +539,12 @@ local.sources is empty; is this db a --slave?
 [ ]
 
 ** Sample document:
-{
-	"v" : 1,
-	"key" : {
-		"_id" : 1
-	},
-	"name" : "_id_",
-	"ns" : "local.startup_log"
-}
+null
 
 ** List of collections for database 'test':
 [ "system.indexes", "zips" ]
 
-** Database stats:
+** Database stats (MB):
 {
 	"db" : "test",
 	"collections" : 3,
@@ -569,7 +571,7 @@ local.sources is empty; is this db a --slave?
 ** Database profiler:
 { "was" : 0, "slowms" : 100 }
 
-** Collection stats:
+** Collection stats (MB):
 {
 	"ns" : "test.system.indexes",
 	"count" : 1,
@@ -596,7 +598,7 @@ local.sources is empty; is this db a --slave?
 ** Sample document:
 { "v" : 1, "key" : { "_id" : 1 }, "name" : "_id_", "ns" : "test.zips" }
 
-** Collection stats:
+** Collection stats (MB):
 {
 	"ns" : "test.zips",
 	"count" : 29470,
@@ -631,7 +633,7 @@ local.sources is empty; is this db a --slave?
 
 ** Sample document:
 {
-	"_id" : ObjectId("551198381806a0a49a0ddce1"),
+	"_id" : ObjectId("55265852557cec9ebe14b008"),
 	"city" : "ACMAR",
 	"zip" : "35004",
 	"loc" : {
