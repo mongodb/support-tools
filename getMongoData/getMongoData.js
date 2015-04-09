@@ -62,6 +62,32 @@ var _version = "2.5.0";
    "use strict";
 }());
 
+// For MongoDB 2.4 and before
+if (DB.prototype.getUsers == null) {
+    DB.prototype.getUsers = function (args) {
+        var cmdObj = {usersInfo: 1};
+        Object.extend(cmdObj, args);
+        var res = this.runCommand(cmdObj);
+        if (!res.ok) {
+            var authSchemaIncompatibleCode = 69;
+            if (res.code == authSchemaIncompatibleCode ||
+                    (res.code == null && res.errmsg == "no such cmd: usersInfo")) {
+                // Working with 2.4 schema user data
+                return this.system.users.find({}).toArray();
+            }
+            throw Error(res.errmsg);
+        }
+        return res.users;
+    }
+}
+
+// For MongoDB 2.4 and before
+if (DB.prototype.getRoles == null) {
+    DB.prototype.getRoles = function (args) {
+        return "No custom roles";
+    }
+}
+
 // Copied from Mongo Shell
 function printShardInfo(){
     var configDB = db.getSiblingDB("config");
