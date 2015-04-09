@@ -56,7 +56,7 @@
  * limitations under the License.
  */
 
-var version = "2.5.0";
+var _version = "2.5.0";
 
 (function () {
    "use strict";
@@ -66,7 +66,7 @@ var version = "2.5.0";
 function printShardInfo(){
     var configDB = db.getSiblingDB("config");
 
-    printInfo("Shard version",
+    printInfo("Sharding version",
               'db.getSiblingDB("config").getCollection("version").findOne()');
 
     print("\n** Shards:");
@@ -74,7 +74,7 @@ function printShardInfo(){
         function(z) { print(tojsononeline(z)); }
     );
 
-    print("\n** Shard databases:");
+    print("\n** Sharded databases:");
     configDB.databases.find().sort( { name : 1 } ).forEach(
         function(db) {
             print(tojsononeline(db, "", true));
@@ -141,13 +141,17 @@ function printInfo(message, command, printResult) {
 }
 
 function printServerInfo() {
+    printInfo('Shell version',      'version()');
+    printInfo('Shell hostname',     'hostname()');
+    printInfo('db',                 'db');
     printInfo('Server status info', 'db.serverStatus()');
     printInfo('Host info',          'db.hostInfo()');
     printInfo('Command line info',  'db.serverCmdLineOpts()');
+    printInfo('Server build info',  'db.serverBuildInfo()');
 }
 
 function printReplicaSetInfo() {
-    printInfo('Replica set config', 'db.getSiblingDB("local").system.replset.findOne()');
+    printInfo('Replica set config', 'rs.conf()');
     printInfo('Replica status',     'rs.status()');
     printInfo('Replica info',       'db.getReplicationInfo()');
     printInfo('Replica slave info', 'db.printSlaveReplicationInfo()', false);
@@ -155,48 +159,55 @@ function printReplicaSetInfo() {
 }
 
 function printDataInfo(isMongoS) {
-    var dbs = printInfo('List of databases', 'db.adminCommand("listDatabases")');
+    var dbs = printInfo('List of databases', 'db.getMongo().getDBs()');
 
     dbs.databases.forEach(function(mydb) {
         var inDB = "db.getSiblingDB('"+ mydb.name + "')";
         var collections = printInfo("List of collections for database '"+ mydb.name +"'",
                                     inDB + ".getCollectionNames()");
 
-        printInfo('Database stats',    inDB + '.stats(1024*1024)');
+        printInfo('Database stats (MB)',    inDB + '.stats(1024*1024)');
         if (!isMongoS) {
             printInfo('Database profiler', inDB + '.getProfilingStatus()');
         }
 
         collections.forEach(function(col) {
             var inCol = inDB + ".getCollection('"+ col + "')";
-            printInfo('Collection stats',   inCol + '.stats(1024*1024)');
+            printInfo('Collection stats (MB)',   inCol + '.stats(1024*1024)');
             if (isMongoS) {
                 printInfo('Shard distribution', inCol + '.getShardDistribution()', false);
             }
             printInfo('Indexes',            inCol + '.getIndexes()');
-            printInfo('Sample document',    inCol + '.findOne()');
+            if (col != "system.users") {
+                printInfo('Sample document',    inCol + '.findOne()');
+            }
         });
     });
 }
 
 function printShardOrReplicaSetInfo() {
-    var isMaster = db.isMaster();
-    if (isMaster.secondary) {
-        print("\n** Connected to secondary");
-        rs.slaveOk();
-        printReplicaSetInfo();
+    printInfo('isMaster', 'db.isMaster()');
+    var state;
+    var stateInfo = rs.status();
+    if (stateInfo.ok) {
+        stateInfo.members.forEach( function( member ) { if ( member.self ) { state = member.stateStr; } } );
+        if ( !state ) state = stateInfo.myState;
+    } else {
+        var info = stateInfo.info;
+        if ( info && info.length < 20 ) {
+            state = info; // "mongos", "configsvr"
+        }
+        if ( ! state ) state = "standalone";
     }
-    else {
-        var shardVer = db.getSiblingDB("config").getCollection("version").findOne();
-        if (shardVer) {
-            print("\n** Connected to mongos");
-            printShardInfo();
-            return true;
+    print("\n** Connected to " + state);
+    if (state == "mongos") {
+        printShardInfo();
+        return true;
+    } else if (state != "standalone" && state != "configsvr") {
+        if (state == "SECONDARY" || state == 2) {
+            rs.slaveOk();
         }
-        else {
-            print("\n** Connected to primary");
-            printReplicaSetInfo();
-        }
+        printReplicaSetInfo();
     }
     return false;
 }
@@ -204,13 +215,13 @@ function printShardOrReplicaSetInfo() {
 function printAuthInfo() {
     db = db.getSiblingDB('admin');
     printInfo('Users', 'db.getUsers()');
-    printInfo('Custom roles', 'db.system.roles.find().toArray()');
+    printInfo('Custom roles', 'db.getRoles()');
 }
 
 
 print("================================");
 print("MongoDB Config and Schema Report");
-print("getMongoData.js version " + version);
+print("getMongoData.js version " + _version);
 print("================================");
 printServerInfo();
 var isMongoS = printShardOrReplicaSetInfo();

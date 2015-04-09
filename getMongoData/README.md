@@ -14,11 +14,13 @@ See [getMongoData.log](sample/getMongoData.log) for sample output.
 
 To execute on a locally running `mongod` on default port (27017) without authentication, run:
 
-    mongo getMongoData.js > getMongoData.log
+    mongo --quiet --norc getMongoData.js > getMongoData.log
 
 To execute on a remote `mongod` or `mongos` with authentication, run:
 
-    mongo HOST:PORT/admin -u ADMIN_USER -p ADMIN_PASSWORD getMongoData.js > getMongoData.log
+    mongo --quiet --norc getMongoData.js HOST:PORT/admin -u ADMIN_USER -p ADMIN_PASSWORD > getMongoData.log
+
+If `ADMIN_PASSWORD` is omitted, the shell will prompt for the password.
 
 
 ### License
