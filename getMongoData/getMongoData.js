@@ -187,28 +187,32 @@ function printReplicaSetInfo() {
 function printDataInfo(isMongoS) {
     var dbs = printInfo('List of databases', 'db.getMongo().getDBs()');
 
-    dbs.databases.forEach(function(mydb) {
-        var inDB = "db.getSiblingDB('"+ mydb.name + "')";
-        var collections = printInfo("List of collections for database '"+ mydb.name +"'",
-                                    inDB + ".getCollectionNames()");
+    if (dbs.databases) {
+        dbs.databases.forEach(function(mydb) {
+            var inDB = "db.getSiblingDB('"+ mydb.name + "')";
+            var collections = printInfo("List of collections for database '"+ mydb.name +"'",
+                                        inDB + ".getCollectionNames()");
 
-        printInfo('Database stats (MB)',    inDB + '.stats(1024*1024)');
-        if (!isMongoS) {
-            printInfo('Database profiler', inDB + '.getProfilingStatus()');
-        }
-
-        collections.forEach(function(col) {
-            var inCol = inDB + ".getCollection('"+ col + "')";
-            printInfo('Collection stats (MB)',   inCol + '.stats(1024*1024)');
-            if (isMongoS) {
-                printInfo('Shard distribution', inCol + '.getShardDistribution()', false);
+            printInfo('Database stats (MB)',    inDB + '.stats(1024*1024)');
+            if (!isMongoS) {
+                printInfo('Database profiler', inDB + '.getProfilingStatus()');
             }
-            printInfo('Indexes',            inCol + '.getIndexes()');
-            if (col != "system.users") {
-                printInfo('Sample document',    inCol + '.findOne()');
+
+            if (collections) {
+                collections.forEach(function(col) {
+                    var inCol = inDB + ".getCollection('"+ col + "')";
+                    printInfo('Collection stats (MB)',   inCol + '.stats(1024*1024)');
+                    if (isMongoS) {
+                        printInfo('Shard distribution', inCol + '.getShardDistribution()', false);
+                    }
+                    printInfo('Indexes',            inCol + '.getIndexes()');
+                    if (col != "system.users") {
+                        printInfo('Sample document',    inCol + '.findOne()');
+                    }
+                });
             }
         });
-    });
+    }
 }
 
 function printShardOrReplicaSetInfo() {
