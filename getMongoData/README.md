@@ -18,7 +18,7 @@ To execute on a locally running `mongod` on default port (27017) without authent
 
 To execute on a remote `mongod` or `mongos` with authentication, run:
 
-    mongo --quiet --norc getMongoData.js HOST:PORT/admin -u ADMIN_USER -p ADMIN_PASSWORD > getMongoData.log
+    mongo HOST:PORT/admin -u ADMIN_USER -p ADMIN_PASSWORD --quiet --norc getMongoData.js > getMongoData.log
 
 If `ADMIN_PASSWORD` is omitted, the shell will prompt for the password.
 
