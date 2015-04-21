@@ -276,6 +276,13 @@ done
 msection global_mongodb_conf getfiles /etc/mongodb.conf /etc/mongod.conf
 msection global_mms_conf getfiles /etc/mongodb-mms/*
 
+#check numa capabilities and alignment
+msection numactl <<EOF
+which numactl && echo "numactl is INSTALLED" || echo "numactl is NOT installed";
+msubsection Hardware numactl --hardware 2> /dev/null;
+msubsection Show numactl --show 2> /dev/null;
+EOF
+
 # Hardware info with a risk of hanging
 msection smartctl <<EOF
 smartctl --scan | sed -e "s/#.*$//" | while read i; do smartctl --all \$i; done
