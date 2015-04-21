@@ -289,6 +289,30 @@ smartctl --scan | sed -e "s/#.*$//" | while read i; do smartctl --all \$i; done
 EOF
 msection scsidevices getfiles /sys/bus/scsi/devices/*/model
 
+
+#check cgroups capabilities and alignment
+cgrouphierarchy="`find /cgroup -type d 2> /dev/null`"
+for cgroup in $cgrouphierarchy; do
+  cgroupfilelist="$cgroupfilelist `find $cgroup -type f 2> /dev/null`"
+done
+
+for cgroupfile in $cgroupfilelist; do
+  if [ -r "$cgroupfile" ]
+  then
+    cgroupconfigcontent="$cgroupconfigcontent"$'\n'"--> FILE: $cgroupfile"$'\n'"`cat $cgroupfile 2> /dev/null`" 
+  fi
+done
+
+msection cgroups <<EOF
+ls /cgroup &> /dev/null && echo "/cgroups found" || echo "NO /cgroups --> I think nothing to check here"
+msubsection cgred service cgred status
+msubsection cgconfig service cgconfig status
+msubsection configfiles getfiles /etc/cg* /etc/cgconfig.d/*;
+msubsection grouphierarchy find /cgroup -type d 2> /dev/null
+msubsection groupconfiguration echo "$cgroupconfigcontent"
+EOF
+
+
 cat <<EOF
 
 ==============================================================
