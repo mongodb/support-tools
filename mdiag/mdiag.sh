@@ -289,6 +289,16 @@ smartctl --scan | sed -e "s/#.*$//" | while read i; do smartctl --all \$i; done
 EOF
 msection scsidevices getfiles /sys/bus/scsi/devices/*/model
 
+#storage detail collection
+#FusionIO
+msection fusionio fio-status -fj 2> /dev/null
+
+#HP smart array
+msection HPsmartArray <<EOF 
+msubsection hpacucli hpacucli ctrl all show config detail 2> /dev/null
+msubsection hpssacli hpssacli ctrl all show config detail 2> /dev/null
+EOF
+
 cat <<EOF
 
 ==============================================================
