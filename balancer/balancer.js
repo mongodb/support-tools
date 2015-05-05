@@ -953,7 +953,7 @@ var Balancer = {
         print("                                   # shard auth parameters; for the rare DBA who has different clusterAdmin");
         print("                                     users on different shards; Balancer.seeShrink() is deprecated");
         print("");
-        print("Balancer.ready()                   # remove the safety; Balancer.run() will perform a real next time");
+        print("Balancer.ready()                   # remove the safety; Balancer.run() will perform a real run next time");
         print("Balancer.run()                     # do the work; if Balancer.ready() is called immediately before this");
         print("                                     the run will be REAL. Otherwise, it will be a test run.");
         print("");
