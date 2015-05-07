@@ -291,11 +291,23 @@ msection scsidevices getfiles /sys/bus/scsi/devices/*/model
 
 
 #check cgroups capabilities and alignment
-cgrouphierarchy="`find /cgroup -type d 2> /dev/null`"
-for cgroup in $cgrouphierarchy; do
-  cgroupfilelist="$cgroupfilelist `find $cgroup -type f 2> /dev/null`"
+#list the mounted controllers:
+cgroupcontrollers="`grep -e \"^cgroup\" /proc/mounts | xargs -l | cut -f2 -d' '`"
+
+#collect the groups defined in the moutned controllers:
+for cgcontoroller in $cgroupcontrollers; do
+  cgrouphierarchy="$cgrouphierarchy "$'\n'"`find $cgcontoroller -type d 2> /dev/null`"
 done
 
+#list the configuration files for the groups
+for cgroup in $cgrouphierarchy; do
+  if [ ! -z "$cgroup" ]
+  then
+    cgroupfilelist="$cgroupfilelist `find $cgroup -type f 2> /dev/null`"
+  fi
+done
+
+#wrap the content
 for cgroupfile in $cgroupfilelist; do
   if [ -r "$cgroupfile" ]
   then
@@ -308,7 +320,7 @@ ls /cgroup &> /dev/null && echo "/cgroups found" || echo "NO /cgroups --> I thin
 msubsection cgred service cgred status
 msubsection cgconfig service cgconfig status
 msubsection configfiles getfiles /etc/cg* /etc/cgconfig.d/*;
-msubsection grouphierarchy find /cgroup -type d 2> /dev/null
+msubsection grouphierarchy echo "$cgrouphierarchy"
 msubsection groupconfiguration echo "$cgroupconfigcontent"
 EOF
 
