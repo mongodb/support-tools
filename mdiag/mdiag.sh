@@ -209,9 +209,13 @@ EOF
 msection dmsetup dmsetup ls
 msection device_mapper lsfiles -R /dev/mapper /dev/dm-*
 
+# Logical Volume Manage info
 msection lvm_pvs pvs -v
 msection lvm_vgs vgs -v
 msection lvm_lvs lvs -v
+msection lvm_pvdisplay pvdisplay -m
+msection lvm_vgdisplay vgdisplay -v
+msection lvm_lvdisplay lvdisplay -am
 
 msection nr_requests getfilesfromcommand find /sys -name nr_requests
 msection read_ahead_kb getfilesfromcommand find /sys -name read_ahead_kb
