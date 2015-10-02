@@ -175,7 +175,7 @@ function printShardInfo(){
 function printInfo(message, command, section, printResult) {
     var result = false;
     printResult = (printResult === undefined ? true : false);
-    if (_printOutput) print("\n** " + message + ":");
+    if (! _printJSON) print("\n** " + message + ":");
     startTime = new Date();
     try {
         if (typeof(command) == "string") {
@@ -187,7 +187,7 @@ function printInfo(message, command, section, printResult) {
         }
         err = null
     } catch(err) {
-        if (_printOutput) {
+        if (! _printJSON) {
             print("Error running '" + command + "':");
             print(err);
         }
@@ -211,7 +211,7 @@ function printInfo(message, command, section, printResult) {
     doc['ts'] = {'start': startTime, 'end': endTime};
     doc['version'] = _version;
     _output.push(doc);
-    if (_printOutput && printResult) printjson(result);
+    if (! _printJSON && printResult) printjson(result);
     return result;
 }
 
@@ -283,7 +283,7 @@ function printShardOrReplicaSetInfo() {
         }
         if ( ! state ) state = "standalone";
     }
-    if (_printOutput) print("\n** Connected to " + state);
+    if (! _printJSON) print("\n** Connected to " + state);
     if (state == "mongos") {
         printShardInfo();
         return true;
@@ -304,10 +304,10 @@ function printAuthInfo() {
 }
 
 
-var _printOutput = true;
+if (typeof _printJSON === "undefined") var _printJSON = false;
 var _output = [];
 var _runId = ObjectId();
-if (_printOutput) {
+if (! _printJSON) {
     print("================================");
     print("MongoDB Config and Schema Report");
     print("getMongoData.js version " + _version);
@@ -318,4 +318,4 @@ printServerInfo();
 var isMongoS = printShardOrReplicaSetInfo();
 printAuthInfo();
 printDataInfo(isMongoS);
-if (! _printOutput) printjson(_output);
+if (_printJSON) printjson(_output);
