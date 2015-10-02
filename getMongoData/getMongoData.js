@@ -199,8 +199,8 @@ function printInfo(message, command, section, printResult) {
     doc['error'] = err;
     doc['host'] == _host;
     doc['ref'] == ""; // TODO cli speficied?
-    doc['rid'] = _runId;
-    doc['run'] = _runId.getTimestamp();
+    doc['tag'] = _tag;
+    doc['run'] = _tag.getTimestamp();
     doc['output'] = result;
     if (typeof(section) !== "undefined") {
         doc['section'] = section;
@@ -306,7 +306,7 @@ function printAuthInfo() {
 
 if (typeof _printJSON === "undefined") var _printJSON = false;
 var _output = [];
-var _runId = ObjectId();
+var _tag = ObjectId();
 if (! _printJSON) {
     print("================================");
     print("MongoDB Config and Schema Report");
