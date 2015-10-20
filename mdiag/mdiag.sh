@@ -4,7 +4,7 @@
 # mdiag.sh: MongoDB Diagnostic Report
 # ===================================
 #
-# Copyright MongoDB, Inc, 2014
+# Copyright MongoDB, Inc, 2014, 2015
 #
 # Gather a wide variety of system and hardware diagnostic information.
 #
@@ -44,7 +44,7 @@
 # limitations under the License.
 
 
-version="1.6.1"
+version="1.6.2"
 
 diagfile="/tmp/mdiag-`hostname`.txt"
 
