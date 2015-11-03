@@ -238,6 +238,7 @@ msection netstat netstat -anpoe
 msection ntpd_configuration chkconfig --list ntpd
 msection ntpd_status ntpstat
 msection ntpd_timeinfo ntpq -p
+msection ntpd_ntptime ntptime
 
 # Hardware info
 msection dmesg dmesg
