@@ -8,7 +8,7 @@ indexStats.js
 
 indexStats.js is a utility that will collect index usage statistics for a MongoDB collection cross-cluster and provide aggregated results. It can be used to help determine whether there are unused/little used indexes that can be dropped.
 
-Warning: The statistics provided by this utility SHOULD NOT be the sole means used for making a decision to drop an index. Please make sure to validate any changes in a non-production environment and make sure that the sample taken covers all use cases on the given collection.
+The statistics provided by this utility SHOULD NOT be the sole means used for making a decision to drop an index. Please make sure to validate any changes in a non-production environment before executing on them. Make sure that the index statistics sample taken covers all use cases for the given collection.
 
 ### Usage
 
