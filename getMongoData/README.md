@@ -25,7 +25,7 @@ If `ADMIN_PASSWORD` is omitted, the shell will prompt for the password.
 To have the output be in a JSON format, modify the above commands to include the following eval argument,
 as demonstrated for the local execution:
 
-    mongo --quiet --norc --eval "var _printJSON=true" getMongoData.js > getMongoData.json
+    mongo --quiet --norc --eval "var _printJSON=true; var _ref = 'CS-XXXXX'" getMongoData.js > getMongoData-output.json
 
 ### License
 
