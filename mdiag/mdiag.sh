@@ -4,7 +4,7 @@
 # mdiag.sh: MongoDB Diagnostic Report
 # ===================================
 #
-# Copyright MongoDB, Inc, 2014
+# Copyright MongoDB, Inc, 2014, 2015
 #
 # Gather a wide variety of system and hardware diagnostic information.
 #
@@ -44,7 +44,7 @@
 # limitations under the License.
 
 
-version="1.6.1"
+version="1.6.2"
 
 diagfile="/tmp/mdiag-`hostname`.txt"
 
@@ -267,15 +267,15 @@ msection iostat iostat -xtm 1 120
 mongo_pids="`pgrep mongo`"
 msection mongo_summary ps -Fww -p $mongo_pids
 for pid in $mongo_pids; do
-	msection proc/$pid <<-EOF
-	lsfiles /proc/$pid/cmdline
-	msubsection cmdline xargs -n1 -0 < /proc/$pid/cmdline
-	xargs -n1 -0 < /proc/$pid/cmdline | awk '\$0 == "-f" || \$0 == "--config" { getline; print; }' | getstdinfiles
-	getfiles /proc/$pid/limits /proc/$pid/mounts /proc/$pid/mountinfo /proc/$pid/smaps /proc/$pid/numa_maps
-	lsfiles /proc/$pid/fd 
-	getfiles /proc/$pid/fdinfo/*
-	getfiles /proc/$pid/cgroup
-	EOF
+msection proc/$pid <<EOF
+lsfiles /proc/$pid/cmdline
+msubsection cmdline xargs -n1 -0 < /proc/$pid/cmdline
+xargs -n1 -0 < /proc/$pid/cmdline | awk '\$0 == "-f" || \$0 == "--config" { getline; print; }' | getstdinfiles
+getfiles /proc/$pid/limits /proc/$pid/mounts /proc/$pid/mountinfo /proc/$pid/smaps /proc/$pid/numa_maps
+lsfiles /proc/$pid/fd 
+getfiles /proc/$pid/fdinfo/*
+getfiles /proc/$pid/cgroup
+EOF
 done
 msection global_mongodb_conf getfiles /etc/mongodb.conf /etc/mongod.conf
 msection global_mms_conf getfiles /etc/mongodb-mms/*
