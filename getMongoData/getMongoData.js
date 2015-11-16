@@ -56,7 +56,7 @@
  * limitations under the License.
  */
 
-var _version = "2.5.1";
+var _version = "2.6.0";
 
 (function () {
    "use strict";
@@ -88,126 +88,223 @@ if (DB.prototype.getRoles == null) {
     }
 }
 
+// Taken from the >= 3.1.9 shell to capture print output
+if (typeof print.captureAllOutput === "undefined") { 
+    print.captureAllOutput = function (fn, args) {
+        var res = {};
+        res.output = [];
+        var __orig_print = print;
+        print = function () {
+            Array.prototype.push.apply(res.output, Array.prototype.slice.call(arguments).join(" ").split("\n"));
+        };
+        try {
+            res.result = fn.apply(undefined, args);
+        }
+        finally {
+            // Stop capturing print() output
+            print = __orig_print;
+        }
+        return res;
+    };
+}
+
+// Convert NumberLongs to strings to save precision
+function longmangle(n) {
+    if (! n instanceof NumberLong)
+        return null;
+    var s = n.toString();
+    s = s.replace("NumberLong(","").replace(")","");
+    if (s[0] == '"')
+        s = s.slice(1, s.length-1)
+    return s;
+}
+
+// For use in JSON.stringify to properly serialize known types
+function jsonStringifyReplacer(k, v){
+    if (v instanceof ObjectId)
+        return { "$oid" : v.valueOf() };
+    if (v instanceof NumberLong)
+        return { "$numberLong" : longmangle(v) };
+    if (v instanceof NumberInt)
+        return v.toNumber();
+    // For ISODates; the $ check prevents recursion
+    if (typeof v === "string" && k.startsWith('$') == false){
+        try {
+            iso = ISODate(v);
+            return { "$date" : iso.valueOf() };
+        }
+        // Nothing to do here, we'll get the return at the end
+        catch(e) {}
+    }
+    return v;
+}
+
 // Copied from Mongo Shell
 function printShardInfo(){
+    section = "shard_info";
     var configDB = db.getSiblingDB("config");
 
     printInfo("Sharding version",
-              'db.getSiblingDB("config").getCollection("version").findOne()');
+              function(){return db.getSiblingDB("config").getCollection("version").findOne()},
+              section);
 
-    print("\n** Shards:");
-    configDB.shards.find().sort({ _id : 1 }).forEach(
-        function(z) { print(tojsononeline(z)); }
-    );
+    printInfo("Shards", function(){
+        return configDB.shards.find().sort({ _id : 1 }).toArray();
+    }, section);
 
-    print("\n** Sharded databases:");
-    configDB.databases.find().sort( { name : 1 } ).forEach(
-        function(db) {
-            print(tojsononeline(db, "", true));
-            if (db.partitioned) {
-                configDB.collections.find( { _id : new RegExp( "^" +
-                    RegExp.escape(db._id) + "\\." ) } ).
-                    sort( { _id : 1 } ).forEach( function( coll ) {
-                        if ( coll.dropped === false ){
-                            print("    " + coll._id);
-                            print("      shard key: " + tojson(coll.key, 0, true));
-                            print("      chunks:");
+    printInfo("Sharded databases", function(){
+        var ret = [];
+        configDB.databases.find().sort( { name : 1 } ).forEach(
+            function(db) {
+                doc = {};
+                for (k in db) {
+                    if (db.hasOwnProperty(k)) doc[k] = db[k];
+                }
+                if (db.partitioned) {
+                    doc['collections'] = [];
+                    configDB.collections.find( { _id : new RegExp( "^" +
+                        RegExp.escape(db._id) + "\\." ) } ).
+                        sort( { _id : 1 } ).forEach( function( coll ) {
+                            if ( coll.dropped === false ){
+                                collDoc = {};
+                                collDoc['_id'] = coll._id;
+                                collDoc['key'] = coll.key;
 
-                            var res = configDB.chunks.aggregate(
-                                { "$match": { ns: coll._id } },
-                                { "$group": { _id: "$shard", nChunks: { "$sum": 1 } } }
-                            );
-                            // MongoDB 2.6 and above returns a cursor instead of a document
-                            res = (res.result ? res.result : res.toArray());
+                                var res = configDB.chunks.aggregate(
+                                    { "$match": { ns: coll._id } },
+                                    { "$group": { _id: "$shard", nChunks: { "$sum": 1 } } }
+                                );
+                                // MongoDB 2.6 and above returns a cursor instead of a document
+                                res = (res.result ? res.result : res.toArray());
 
-                            var totalChunks = 0;
-                            res.forEach( function(z) {
-                                totalChunks += z.nChunks;
-                                print("        " + z._id + ": " + z.nChunks);
-                            } );
+                                collDoc['distribution'] = [];
+                                res.forEach( function(z) {
+                                    chunkDistDoc = {'shard': z._id, 'nChunks': z.nChunks};
+                                    collDoc['distribution'].push(chunkDistDoc);
+                                } );
 
-                            configDB.chunks.find( { "ns" : coll._id } ).sort( { min : 1 } ).forEach(
-                                function(chunk) {
-                                    print("        " +
-                                        tojson( chunk.min, 0, true) + " -> " +
-                                        tojson( chunk.max, 0, true ) +
-                                        " on: " + chunk.shard + " " +
-                                        ( chunk.jumbo ? "jumbo " : "" )
-                                    );
-                                }
-                            );
+                                collDoc['chunks'] = [];
+                                configDB.chunks.find( { "ns" : coll._id } ).sort( { min : 1 } ).forEach(
+                                    function(chunk) {
+                                        chunkDoc = {}
+                                        chunkDoc['min'] = chunk.min;
+                                        chunkDoc['max'] = chunk.max;
+                                        chunkDoc['shard'] = chunk.shard;
+                                        chunkDoc['jumbo'] = chunk.jumbo ? true : false;
+                                        collDoc['chunks'].push(chunkDoc);
+                                    }
+                                );
 
-                            configDB.tags.find( { ns : coll._id } ).sort( { min : 1 } ).forEach(
-                                function(tag) {
-                                    print("        tag: " + tag.tag + "  " + tojson( tag.min ) + " -> " + tojson( tag.max ));
-                                }
-                            );
+                                collDoc['tags'] = [];
+                                configDB.tags.find( { ns : coll._id } ).sort( { min : 1 } ).forEach(
+                                    function(tag) {
+                                        tagDoc = {}
+                                        tagDoc['tag'] = tag.tag;
+                                        tagDoc['min'] = tag.min;
+                                        tagDoc['max'] = tag.max;
+                                        collDoc['tags'].push(tagDoc);
+                                    }
+                                );
+                            }
+                            doc['collections'].push(collDoc);
                         }
-                    }
-                );
+                    );
+                }
+                ret.push(doc);
             }
-        }
-    );
+        );
+        return ret;
+    }, section);
 }
 
-function printInfo(message, command, printResult) {
+function printInfo(message, command, section, printCapture) {
     var result = false;
-    printResult = (printResult === undefined ? true : false);
-    print("\n** " + message + ":");
+    printCapture = (printCapture === undefined ? false: true);
+    if (! _printJSON) print("\n** " + message + ":");
+    startTime = new Date();
     try {
-        /* jshint evil:true */
-        result = eval(command);
-        /* jshint evil:false */
+        if (printCapture) {
+            result = print.captureAllOutput(command);
+        } else {
+            result = command();
+        }
+        err = null
     } catch(err) {
-        print("Error running '" + command + "':");
-        print(err);
+        if (! _printJSON) {
+            print("Error running '" + command + "':");
+            print(err);
+        }
+        result = null
     }
-    if (printResult) printjson(result);
+    endTime = new Date();
+    doc = {};
+    doc['command'] = command.toString();
+    doc['error'] = err;
+    doc['host'] = _host;
+    doc['ref'] = _ref;
+    doc['tag'] = _tag;
+    doc['output'] = result;
+    if (typeof(section) !== "undefined") {
+        doc['section'] = section;
+        doc['subsection'] = message.toLowerCase().replace(/ /g, "_");
+    } else {
+        doc['section'] = message.toLowerCase().replace(/ /g, "_");
+    }
+    doc['ts'] = {'start': startTime, 'end': endTime};
+    doc['version'] = _version;
+    _output.push(doc);
+    if (! _printJSON) printjson(result);
     return result;
 }
 
 function printServerInfo() {
-    printInfo('Shell version',      'version()');
-    printInfo('Shell hostname',     'hostname()');
-    printInfo('db',                 'db');
-    printInfo('Server status info', 'db.serverStatus()');
-    printInfo('Host info',          'db.hostInfo()');
-    printInfo('Command line info',  'db.serverCmdLineOpts()');
-    printInfo('Server build info',  'db.serverBuildInfo()');
+    section = "server_info";
+    printInfo('Shell version',      version, section);
+    printInfo('Shell hostname',     hostname, section);
+    printInfo('db',                 function(){return db.getName()}, section);
+    printInfo('Server status info', function(){return db.serverStatus()}, section);
+    printInfo('Host info',          function(){return db.hostInfo()}, section);
+    printInfo('Command line info',  function(){return db.serverCmdLineOpts()}, section);
+    printInfo('Server build info',  function(){return db.serverBuildInfo()}, section);
 }
 
 function printReplicaSetInfo() {
-    printInfo('Replica set config', 'rs.conf()');
-    printInfo('Replica status',     'rs.status()');
-    printInfo('Replica info',       'db.getReplicationInfo()');
-    printInfo('Replica slave info', 'db.printSlaveReplicationInfo()', false);
-
+    section = "replicaset_info";
+    printInfo('Replica set config', function(){return rs.conf()}, section);
+    printInfo('Replica status',     function(){return rs.status()}, section);
+    printInfo('Replica info',       function(){return db.getReplicationInfo()}, section);
+    printInfo('Replica slave info', function(){return db.printSlaveReplicationInfo()}, section, true);
 }
 
 function printDataInfo(isMongoS) {
-    var dbs = printInfo('List of databases', 'db.getMongo().getDBs()');
+    section = "data_info";
+    var dbs = printInfo('List of databases', function(){return db.getMongo().getDBs()}, section);
 
     if (dbs.databases) {
         dbs.databases.forEach(function(mydb) {
-            var inDB = "db.getSiblingDB('"+ mydb.name + "')";
             var collections = printInfo("List of collections for database '"+ mydb.name +"'",
-                                        inDB + ".getCollectionNames()");
+                                        function(){return db.getSiblingDB(mydb.name).getCollectionNames()}, section);
 
-            printInfo('Database stats (MB)',    inDB + '.stats(1024*1024)');
+            printInfo('Database stats (MB)',
+                      function(){return db.getSiblingDB(mydb.name).stats(1024*1024)}, section);
             if (!isMongoS) {
-                printInfo('Database profiler', inDB + '.getProfilingStatus()');
+                printInfo('Database profiler',
+                          function(){return db.getSiblingDB(mydb.name).getProfilingStatus()}, section);
             }
 
             if (collections) {
                 collections.forEach(function(col) {
-                    var inCol = inDB + ".getCollection('"+ col + "')";
-                    printInfo('Collection stats (MB)',   inCol + '.stats(1024*1024)');
+                    printInfo('Collection stats (MB)',
+                              function(){return db.getSiblingDB(mydb.name).getCollection(col).stats(1024*1024)}, section);
                     if (isMongoS) {
-                        printInfo('Shard distribution', inCol + '.getShardDistribution()', false);
+                        printInfo('Shard distribution',
+                                  function(){return db.getSiblingDB(mydb.name).getCollection(col).getShardDistribution()}, section, true);
                     }
-                    printInfo('Indexes',            inCol + '.getIndexes()');
+                    printInfo('Indexes',
+                              function(){return db.getSiblingDB(mydb.name).getCollection(col).getIndexes()}, section);
                     if (col != "system.users") {
-                        printInfo('Sample document',    inCol + '.findOne()');
+                        printInfo('Sample document',
+                                  function(){return db.getSiblingDB(mydb.name).getCollection(col).findOne()}, section);
                     }
                 });
             }
@@ -216,7 +313,8 @@ function printDataInfo(isMongoS) {
 }
 
 function printShardOrReplicaSetInfo() {
-    printInfo('isMaster', 'db.isMaster()');
+    section = "shard_or_replicaset_info";
+    printInfo('isMaster', function(){return db.isMaster()}, section);
     var state;
     var stateInfo = rs.status();
     if (stateInfo.ok) {
@@ -229,7 +327,7 @@ function printShardOrReplicaSetInfo() {
         }
         if ( ! state ) state = "standalone";
     }
-    print("\n** Connected to " + state);
+    if (! _printJSON) print("\n** Connected to " + state);
     if (state == "mongos") {
         printShardInfo();
         return true;
@@ -243,17 +341,26 @@ function printShardOrReplicaSetInfo() {
 }
 
 function printAuthInfo() {
+    section = "auth_info";
     db = db.getSiblingDB('admin');
-    printInfo('Users', 'db.getUsers()');
-    printInfo('Custom roles', 'db.getRoles()');
+    printInfo('Users', function(){return db.getUsers()}, section);
+    printInfo('Custom roles', function(){return db.getRoles()}, section);
 }
 
 
-print("================================");
-print("MongoDB Config and Schema Report");
-print("getMongoData.js version " + _version);
-print("================================");
+if (typeof _printJSON === "undefined") var _printJSON = false;
+if (typeof _ref === "undefined") var _ref = null;
+var _output = [];
+var _tag = ObjectId();
+if (! _printJSON) {
+    print("================================");
+    print("MongoDB Config and Schema Report");
+    print("getMongoData.js version " + _version);
+    print("================================");
+}
+var _host = hostname();
 printServerInfo();
 var isMongoS = printShardOrReplicaSetInfo();
 printAuthInfo();
 printDataInfo(isMongoS);
+if (_printJSON) print(JSON.stringify(_output, jsonStringifyReplacer, 4));
