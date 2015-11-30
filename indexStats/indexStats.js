@@ -86,8 +86,8 @@ ConnectionManager.prototype.getConnection = function(server) {
 IndexStatsAccumulator = function(connectionManager, ns) {
     this._connectionManager = connectionManager;
     this._mongo = connectionManager.getLocalDB().getMongo();
-    this._db = ns.split(".")[0];
-    this._collection = ns.split(".")[1];
+    this._db = ns.substring(0, ns.indexOf("."));
+    this._collection = ns.substring(ns.indexOf(".")+1);
     this._namespace = ns;
 
     this.reset();
@@ -146,7 +146,7 @@ IndexStatsAccumulator.prototype.takeSnapshot = function() {
             
             var stats = 
                 db.getCollection(this._collection).aggregate([{$indexStats: {}}]).toArray();
-            assert(stats.length > 0);
+            assert(stats.length > 0, "No results found. It is likely that the namepace provided is not valid.");
 
             statsArray = statsArray.concat(stats);
             this._recordServerRetrievalStatus(serverList[jj], true);
@@ -440,33 +440,50 @@ var IndexAccessStats = {
     setAuth: function(user,pwd) {
         this.connectionManager.setAuth(user, pwd);
     },
-    collectIndexStats: function(namespace, durationInMinutes) {
+    collect: function(namespace, durationInMinutes) {
 
         if (undefined === durationInMinutes) {
-            throw new Error("durationInMinutes must be defined for collectIndexStats.");
+            throw new Error("durationInMinutes must be defined for collect.");
         }
 
         if (durationInMinutes < 1 || durationInMinutes !== parseInt(durationInMinutes, 10)) {
-            throw new Error("durationInMinutes must be a positive integer value for collectIndexStats.");
+            throw new Error("durationInMinutes must be a positive integer value for collect.");
         }
+
+        var minutesText = " minute";
+        if (durationInMinutes > 1) {
+            minutesText += "s";
+        }
+
+        print("");
+        print("Capturing index usage statistics. This script will run for "
+            + durationInMinutes + minutesText + ".");
+        print("");
 
         var oneMinuteInMs = 60000;
         var acc = new IndexStatsAccumulator(this.connectionManager, namespace);
         var start = new Date();
         var end = new Date(start.getTime() + (durationInMinutes * oneMinuteInMs));
 
+        var count = 1;
         do {
+            print("Taking snapshot " + count++ + " (and sleeping for one minute)");
             acc.takeSnapshot();
             sleep(oneMinuteInMs);
         }
         while (Date.now() < end);
 
         // Take a final snapshot to make sure we have covered at least duration given.
+        print("Taking final snapshot");
+        print("");
         acc.takeSnapshot();
 
         return acc.getTotalCollected();
     },
     help: function() {
+        print("");
+        print("// Index usage statistics will be collected at a 1 minute granularity for");
+        print("// the specified duration")
         print("********************************************************************************");
         print("**** Usage:                                                                 ****");
         print("********************************************************************************");
@@ -477,7 +494,8 @@ var IndexAccessStats = {
         print("// setup required by CloudManager and OpsManager.")
         print("IndexAccessStats.setAuth(userName, password);");
         print("");
-        print("// Collect index usage for specified collection and duration");
+        print("// Collect index usage for specified collection and duration. A document");
+        print("// with aggregated results will be returned by this method.")
         print("IndexAccessStats.collect(\"database.collection\", collectionTimeInMinutes);");
         print("");
         print("********************************************************************************");
