@@ -238,6 +238,14 @@ msection networks getfiles /etc/networks
 msection rpcinfo rpcinfo -p
 msection netstat netstat -anpoe
 
+# Network time info
+msection ntpd_configuration chkconfig --list ntpd
+msection ntpd_status ntpstat
+msection ntpd_timeinfo ntpq -p
+msection chronyc_tracking chronyc tracking
+msection chronyc_sources chronyc sources
+msection chronyc_sourcestats chronyc sourcestats
+
 # Hardware info
 msection dmesg dmesg
 msection lspci lspci -vvv
