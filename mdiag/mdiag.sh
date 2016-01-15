@@ -220,6 +220,7 @@ msection lvm_lvdisplay lvdisplay -am
 msection nr_requests getfilesfromcommand find /sys -name nr_requests
 msection read_ahead_kb getfilesfromcommand find /sys -name read_ahead_kb
 msection scheduler getfilesfromcommand find /sys -name scheduler
+msection rotational getfilesfromcommand find /sys -name rotational
 
 # Network info
 msection ifconfig ifconfig -a
