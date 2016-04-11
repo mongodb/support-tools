@@ -305,12 +305,12 @@ function printDataInfo(isMongoS) {
                     if (col != "system.users") {
                         printInfo('Sample document',
                                   function(){
-					var lastValCursor = db.getSiblingDB(mydb.name).getCollection(col).find().sort({'$natural': -1}).limit(1);
+					var lastValCursor = db.getSiblingDB(mydb.name).getCollection(col).find().sort({'$natural': -1}).limit(-1);
 					if (lastValCursor.hasNext()) {
 						return lastValCursor.next()
 					}
 					else {
-						return {'warning': 'no sample document found'};
+						return null;
 					}
 				  }, section);
                     }
