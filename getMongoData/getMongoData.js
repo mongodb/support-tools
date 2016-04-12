@@ -304,7 +304,15 @@ function printDataInfo(isMongoS) {
                               function(){return db.getSiblingDB(mydb.name).getCollection(col).getIndexes()}, section);
                     if (col != "system.users") {
                         printInfo('Sample document',
-                                  function(){return db.getSiblingDB(mydb.name).getCollection(col).findOne()}, section);
+                                  function(){
+					var lastValCursor = db.getSiblingDB(mydb.name).getCollection(col).find().sort({'$natural': -1}).limit(-1);
+					if (lastValCursor.hasNext()) {
+						return lastValCursor.next()
+					}
+					else {
+						return null;
+					}
+				  }, section);
                     }
                 });
             }
