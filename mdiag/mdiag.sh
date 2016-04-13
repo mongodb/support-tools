@@ -44,8 +44,8 @@
 # limitations under the License.
 
 
-version="2.0.0"
-revdate="2016-03-30"
+version="2.0.1"
+revdate="2016-04-13"
 
 PATH="$PATH${PATH+:}/usr/sbin:/sbin:/usr/bin:/bin"
 
