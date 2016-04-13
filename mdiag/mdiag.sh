@@ -44,8 +44,8 @@
 # limitations under the License.
 
 
-version="2.0.0"
-revdate="2016-03-30"
+version="2.0.1"
+revdate="2016-04-13"
 
 PATH="$PATH${PATH+:}/usr/sbin:/sbin:/usr/bin:/bin"
 
@@ -1006,7 +1006,7 @@ for pid in $mongo_pids; do
 		printeach0file /proc/$pid/cmdline | awk '$0 == "-f" || $0 == "--config" { getline; print; }' | getstdinfiles
 		getfiles /proc/$pid/limits /proc/$pid/mounts /proc/$pid/mountinfo /proc/$pid/smaps /proc/$pid/numa_maps
 		subsection /proc/$pid/fd runcommand lsfiles /proc/$pid/fd
-		getfiles /proc/$pid/fdinfo/*
+		subsection /proc/$pid/fdinfo runcommand lsfiles /proc/$pid/fdinfo
 		getfiles /proc/$pid/cgroup
 	endsection
 done
