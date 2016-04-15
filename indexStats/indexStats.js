@@ -437,8 +437,12 @@ IndexStatsAccumulator.prototype._buildResultDoc = function(resultMap, startTime,
 
 var IndexAccessStats = {
     connectionManager: new ConnectionManager(db),
+    showStatus: true,
     setAuth: function(user,pwd) {
         this.connectionManager.setAuth(user, pwd);
+    },
+    setQuietMode: function() {
+        this.showStatus = false;
     },
     collect: function(namespace, durationInMinutes) {
 
@@ -455,10 +459,12 @@ var IndexAccessStats = {
             minutesText += "s";
         }
 
-        print("");
-        print("Capturing index usage statistics. This script will run for "
-            + durationInMinutes + minutesText + ".");
-        print("");
+        if (this.showStatus) {
+            print("");
+            print("Capturing index usage statistics. This script will run for "
+                + durationInMinutes + minutesText + ".");
+            print("");
+        }
 
         var oneMinuteInMs = 60000;
         var acc = new IndexStatsAccumulator(this.connectionManager, namespace);
@@ -467,15 +473,20 @@ var IndexAccessStats = {
 
         var count = 1;
         do {
-            print("Taking snapshot " + count++ + " (and sleeping for one minute)");
+            if (this.showStatus) {
+                print("Taking snapshot " + count + " (and sleeping for one minute)");
+            }
             acc.takeSnapshot();
+            count++;
             sleep(oneMinuteInMs);
         }
         while (Date.now() < end);
 
         // Take a final snapshot to make sure we have covered at least duration given.
-        print("Taking final snapshot");
-        print("");
+        if (this.showStatus) {
+            print("Taking final snapshot");
+            print("");
+        }
         acc.takeSnapshot();
 
         return acc.getTotalCollected();
@@ -497,6 +508,9 @@ var IndexAccessStats = {
         print("// Collect index usage for specified collection and duration. A document");
         print("// with aggregated results will be returned by this method.")
         print("IndexAccessStats.collect(\"database.collection\", collectionTimeInMinutes);");
+        print("");
+        print("// Set quiet mode for scripted execution. Will suppress status messages.");
+        print("IndexAccessStats.setQuietMode();");
         print("");
         print("********************************************************************************");
         print("**** Example:                                                               ****");
