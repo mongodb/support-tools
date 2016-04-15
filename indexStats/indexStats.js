@@ -474,9 +474,10 @@ var IndexAccessStats = {
         var count = 1;
         do {
             if (this.showStatus) {
-                print("Taking snapshot " + count++ + " (and sleeping for one minute)");
+                print("Taking snapshot " + count + " (and sleeping for one minute)");
             }
             acc.takeSnapshot();
+            count++;
             sleep(oneMinuteInMs);
         }
         while (Date.now() < end);
