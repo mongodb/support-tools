@@ -12,6 +12,8 @@ The statistics provided by this utility SHOULD NOT be the sole means used for ma
 
 Please make sure to validate any changes in a non-production environment before executing on them.
 
+NOTE: Index usage statistics are only available in MongoDB versions 3.2 and later.
+
 ### Usage
 
 Run indexStats.js via mongo shell and follow directions given.
