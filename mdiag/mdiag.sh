@@ -838,7 +838,9 @@ function _json_strings_arrayify {
 	a=("${a[@]//$_lf/\\r}")
 	a=("${a[@]/#/\"}")
 	a=("${a[@]/%/\",}")
-	a[$(( ${#a[@]} - 1 ))]="${a[$(( ${#a[@]} - 1 ))]%,}"
+	if [ ${#a[@]} -gt 0 ]; then
+		a[$(( ${#a[@]} - 1 ))]="${a[$(( ${#a[@]} - 1 ))]%,}"
+	fi
 	echo -n "[ ${a[@]} ]"
 }
 
@@ -848,17 +850,41 @@ function _json_stringify {
 	s="${s//\"/\\\"}"
 	s="${s//	/\\t}"
 	s="${s//$_lf/\\r}"
-	echo "\"$s\""
+	echo -n "\"$s\""
 }
 
 function _json_dateify {
-	echo "{ \"\$date\" : $(_json_stringify "$1") }"
+	echo -n "{ \"\$date\" : $(_json_stringify "$1") }"
+}
+
+function _do_json_lines_arrayify {
+	echo "["
+	sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/\\t/g' -e 's/\r/\\r/g' -e 's/^/    "/' -e 's/$/"/' -e '$s/$/ ]/'
 }
 
 function _json_lines_arrayify {
-	# Outputs an unbalanced closing square bracket - make sure there has been an opening square bracket.
-	# On empty input, outputs nothing at all (including no closing square bracket).
-	sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/\\t/g' -e 's/\r/\\r/g' -e 's/^/    "/' -e 's/$/"/' -e '$s/$/ ]/'
+	if [ $# -eq 0 ]; then
+		# Can't use `local input="$(cat)"` because that strips trailing newline.
+		local input
+		IFS= read -rd '' input
+		if [ "$input" ]; then
+			# Can't use `_do_json_lines_arrayify <<<"$input"` because that adds a trailing newline
+			# (since it's modelled on `<<EOF`, which by design always has a trailing newline).
+			echo -n "$input" | _do_json_lines_arrayify
+		else
+			echo -n "null"
+		fi
+	else
+		if [ -s "$1" ]; then
+			_do_json_lines_arrayify < "$1"
+		else
+			echo -n "null"
+		fi
+		if [ -f "$1" ]; then
+			# feels risky to have this here...
+			rm -f "$1"
+		fi
+	fi
 }
 
 function _jsonify {
@@ -897,19 +923,13 @@ function _jsonify {
 			val="$(_json_strings_arrayify "$@")"
 			;;
 		file_lines_array)
-			if [ -s "$1" ]; then
-				val="$(echo "[" ; _json_lines_arrayify < "$1")"
-			else
-				val="null"
-			fi
-			# feels risky to have this here...
-			rm -f "$1"
+			val="$(_json_lines_arrayify "$1")"
 			;;
 		*)
 			val="$*"
 			;;
 	esac
-	echo "$val"
+	echo -n "$val"
 }
 
 function _reset_vars {
