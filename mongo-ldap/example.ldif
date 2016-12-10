@@ -1,0 +1,112 @@
+# example.ldif -- This file provides a small example dc called nodomain which
+#                 works with the mongo-ldap.rb file provided in this repository
+#
+#  DISCLAIMER
+#
+#  Please note: all tools/ scripts in this repo are released for use "AS
+#  IS" without any warranties of any kind, including, but not limited to
+#  their installation, use, or performance. We disclaim any and all
+#  warranties, either express or implied, including but not limited to
+#  any warranty of noninfringement, merchantability, and/ or fitness for
+#  a particular purpose. We do not warrant that the technology will
+#  meet your requirements, that the operation thereof will be
+#  uninterrupted or error-free, or that any errors will be corrected.
+#
+#  Any use of these scripts and tools is at your own risk. There is no
+#  guarantee that they have been through thorough testing in a
+#  comparable environment and we are not responsible for any damage
+#  or data loss incurred with their use.
+#
+#  You are responsible for reviewing and testing any scripts you run
+#  thoroughly before use in any non-testing environment.
+#
+
+version: 1
+
+dn: dc=nodomain
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+dc: nodomain
+o: nodomain
+
+dn: cn=admin,dc=nodomain
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: admin
+userPassword:: e1NTSEF9ZERhMld5RFZQZTJFa0JiYXI0ekdnYU5zMWtyUkwremg=
+description: LDAP administrator
+
+dn: ou=People,dc=nodomain
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Groups,dc=nodomain
+objectClass: organizationalUnit
+ou: Groups
+
+dn: cn=users,ou=Groups,dc=nodomain
+objectClass: posixGroup
+cn: users
+gidNumber: 5000
+
+dn: uid=dhows,ou=People,dc=nodomain
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: David Hows
+gidNumber: 5000
+homeDirectory: /home/dhows
+sn: Hows
+uid: dhows
+uidNumber: 10000
+displayName: David Hows
+gecos: David Hows
+givenName: David
+loginShell: /bin/bash
+userPassword:: e2NyeXB0fUYwV2dDcG14SjNjdU0=
+
+dn: uid=test1,ou=People,dc=nodomain
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: Test1
+gidNumber: 5000
+homeDirectory: /home/test1
+sn: Test
+uid: test1
+uidNumber: 10002
+loginShell: /bin/bash
+userPassword:: e2NyeXB0fXQ3cGdTZUVlYnFmYnM=
+
+dn: uid=test2,ou=People,dc=nodomain
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: Test2
+gidNumber: 5000
+homeDirectory: /home/test2
+sn: Test
+uid: test2
+uidNumber: 10003
+loginShell: /bin/bash
+userPassword:: e2NyeXB0fWI0bEFFVGVydnZpZnM=
+
+dn: ou=MongoDB,dc=nodomain
+objectClass: organizationalUnit
+ou: MongoDB
+
+dn: ou=admin,ou=MongoDB,dc=nodomain
+objectClass: organizationalUnit
+ou: admin
+
+dn: ou=test,ou=MongoDB,dc=nodomain
+objectClass: organizationalUnit
+ou: test
+
+dn: cn=clusterAdmin,ou=admin,ou=MongoDB,dc=nodomain
+objectClass: organizationalRole
+objectClass: top
+cn: clusterAdmin
+roleOccupant: uid=dhows,ou=People,dc=nodomain
+
