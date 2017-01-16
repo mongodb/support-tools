@@ -1011,7 +1011,6 @@ for pid in $mongo_pids; do
 	endsection
 done
 section global_mongodb_conf getfiles /etc/mongodb.conf /etc/mongod.conf
-section global_mms_conf getfiles /etc/mongodb-mms/*
 
 # Hardware info with a risk of hanging
 section smartctl
