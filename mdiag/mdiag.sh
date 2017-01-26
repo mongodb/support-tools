@@ -44,8 +44,8 @@
 # limitations under the License.
 
 
-version="2.0.1"
-revdate="2016-04-13"
+version="2.0.2"
+revdate="2017-01-16"
 
 PATH="$PATH${PATH+:}/usr/sbin:/sbin:/usr/bin:/bin"
 
@@ -1011,7 +1011,6 @@ for pid in $mongo_pids; do
 	endsection
 done
 section global_mongodb_conf getfiles /etc/mongodb.conf /etc/mongod.conf
-section global_mms_conf getfiles /etc/mongodb-mms/*
 
 # Hardware info with a risk of hanging
 section smartctl
