@@ -1027,6 +1027,16 @@ section scsidevices getfiles /sys/bus/scsi/devices/*/model
 _output_postamble
 _finish
 
+#storage detail collection
+#FusionIO
+msection fusionio fio-status -fj 2> /dev/null
+
+#HP smart array
+msection HPsmartArray <<EOF 
+msubsection hpacucli hpacucli ctrl all show config detail 2> /dev/null
+msubsection hpssacli hpssacli ctrl all show config detail 2> /dev/null
+EOF
+
 cat <<EOF
 
 ==============================================================
