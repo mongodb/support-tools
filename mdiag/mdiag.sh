@@ -966,6 +966,14 @@ section chronyc subsection tracking runcommand chronyc tracking
 section chronyc subsection sources runcommand chronyc sources
 section chronyc subsection sourcestats runcommand chronyc sourcestats
 
+# Network time info
+msection ntpd_configuration chkconfig --list ntpd
+msection ntpd_status ntpstat
+msection ntpd_timeinfo ntpq -p
+msection chronyc_tracking chronyc tracking
+msection chronyc_sources chronyc sources
+msection chronyc_sourcestats chronyc sourcestats
+
 # Hardware info
 section dmesg runcommand dmesg
 section lspci runcommand lspci -vvv
