@@ -219,7 +219,7 @@ function _main {
 			runcommand lsfiles /proc/$pid/cmdline
 			subsection cmdline runcommand printeach0file /proc/$pid/cmdline
 			printeach0file /proc/$pid/cmdline | awk '$0 == "-f" || $0 == "--config" { getline; print; }' | getstdinfiles
-			getfiles /proc/$pid/limits /proc/$pid/mounts /proc/$pid/mountinfo /proc/$pid/smaps /proc/$pid/numa_maps
+			getfiles /proc/$pid/limits /proc/$pid/mounts /proc/$pid/mountinfo
 			subsection /proc/$pid/fd runcommand lsfiles /proc/$pid/fd
 			subsection /proc/$pid/fdinfo runcommand lsfiles /proc/$pid/fdinfo
 			getfiles /proc/$pid/cgroup
