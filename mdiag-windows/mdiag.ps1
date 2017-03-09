@@ -26,8 +26,8 @@ function Main
       os = (Get-WmiObject Win32_OperatingSystem).Caption;
       shell = "PowerShell $($PSVersionTable.PSVersion)";
       script = "mdiag";
-      version = "1.7.10";
-      revdate = "2017-02-14";
+      version = "1.7.11";
+      revdate = "2017-03-09";
    }
    
    Setup-Environment
@@ -335,7 +335,7 @@ function Hash-SHA256($StringToHash)
 }
 
 #======================================================================================================================
-# Redact sensitive information from mongod configuration file
+# Return redacted string representation of mongod configuration file
 #======================================================================================================================
 function Redact-ConfigFile($FilePath)
 #======================================================================================================================
@@ -344,7 +344,12 @@ function Redact-ConfigFile($FilePath)
                         '\bservers:[\s]*([^\s]*)'
                       )
 
-   $result = Get-Content $FilePath -ErrorAction Stop | % {
+   Get-Content $FilePath -ErrorAction Stop | % {
+      if ([String]::IsNullOrEmpty($_))
+      {
+         return ""
+      }
+      
       $currentLine = $_
       $matchFound = $false
          
@@ -361,8 +366,6 @@ function Redact-ConfigFile($FilePath)
          $currentLine
       }
    } 
-   
-   $result | Out-File $FilePath -ErrorAction Stop
 }
 
 #======================================================================================================================
@@ -1304,7 +1307,7 @@ function Get-Probes
    
    @{ name = "mongod-configuration";
       cmd = @'      
-         Get-WmiObject Win32_Process -Filter "Name LIKE 'mongo%'" | % {
+         Get-WmiObject Win32_Process -Filter "Name LIKE 'mongod%'" | % {
             if (-not $_.CommandLine)
             {
                throw "Unable to determine command line for $($_.Name) ($($_.ProcessId))"
@@ -1323,7 +1326,7 @@ function Get-Probes
                   $path = $array[$i].Split('=')[1]
                }
                
-               if (-not ([IO.Path]::IsPathRooted($path)))
+               if ($path -and -not ([IO.Path]::IsPathRooted($path)))
                {
                   $path = [IO.Path]::Combine(([IO.Path]::GetDirectoryName($_.ExecutablePath)), ([IO.Path]::GetFileName($path)))
                }
@@ -1336,25 +1339,10 @@ function Get-Probes
 
             Write-Verbose "Discovered configuration file $path"
             
-            $filename = "pid_$($_.ProcessId)_$([IO.Path]::GetFileName($path))"
-            $tempPath = [IO.Path]::Combine([IO.Path]::GetTempPath(), $filename)
-            
-            try
-            {
-               Copy-Item $path $tempPath -ErrorAction Stop
-               Redact-ConfigFile $tempPath
-            }
-            catch
-            {
-               Remove-Item -Force $tempPath -ErrorAction SilentlyContinue
-               throw $_.Exception.Message
-            }
-            
-            $script:FilesToCompress += $tempPath
-            
             @{ ConfigurationFilePath = $path;
-               CapturedFile = $filename;
-               ExecutablePath = $_.ExecutablePath
+               ProcessId = $_.ProcessId
+               ExecutablePath = $_.ExecutablePath;
+               ConfigFile = (Redact-ConfigFile $path)
             }
          }
 '@
