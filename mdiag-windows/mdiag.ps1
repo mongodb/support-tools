@@ -141,7 +141,9 @@ function Escape-JSON($String)
    # order is important, ie \\ should go before \'
    $String = $String.Replace('\','\\')
    $String = $String.Replace('"','\"')
-   $String = $String.Replace("'","\'")
+   
+   # Does not need to be escaped
+   # $String = $String.Replace("'","\'")
 
    # Does not need to be escaped for MongoDB
    # $result = $result.Replace("&",'\u0026')
