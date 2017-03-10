@@ -1405,6 +1405,7 @@ function Get-Probes
          }
 '@
    }
+   
    @{ name = "network-adapter";
       cmd = "Get-NetAdapter | Select ifIndex,ifAlias,ifDesc,ifName,DriverVersion,MacAddress,Status,LinkSpeed,MediaType,MediaConnectionState,DriverInformation,DriverFileName,NdisVersion,DeviceName,DriverName,DriverVersionString,MtuSize";
       alt = "netsh wlan show interfaces";
