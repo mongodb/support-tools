@@ -1350,6 +1350,61 @@ function Get-Probes
 '@
    }
    
+   @{ name = "mongod-dir-listing";
+      cmd = @'      
+         Get-WmiObject Win32_Process -Filter "Name LIKE 'mongod%'" | % {
+         
+            $dbPath = $null
+            
+            if (-not $_.CommandLine)
+            {
+               throw "Unable to determine command line for $($_.Name) ($($_.ProcessId))"
+            }
+            
+            $array = [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine)
+            for ($i = 0; $i -lt $array.Length; $i++)
+            {
+               if ('--dbpath' -contains $array[$i] -and $i+1 -le $array.Length-1)
+               {
+                  $dbPath = $array[$i+1]
+               }
+               
+               if (-not $dbPath)
+               {
+                  if ('-f','--config' -contains $array[$i] -and $i+1 -le $array.Length-1)
+                  {
+                     $path = $array[$i+1]
+                  }
+                  
+                  if ($array[$i] -like '--config=*')
+                  {
+                     $path = $array[$i].Split('=')[1]
+                  }
+                  
+                  $dbPath = [IO.File]::ReadAllText($path) | ? { $_ -match 'storage:[\W]+dbPath:[\W]+([^\n\r]+)' }  | % { $Matches[1] }
+               }
+               
+               if ($dbPath -and -not ([IO.Path]::IsPathRooted($dbPath)))
+               {
+                  $dbPath = [IO.Path]::Combine(([IO.Path]::GetDirectoryName($_.ExecutablePath)), ([IO.Path]::GetFileName($dbPath)))
+               }
+            }
+            
+            if (-not $dbPath)
+            {
+               return
+            }
+
+            Write-Verbose "Discovered dbPath $dbPath"
+            
+            @{ DbFilePath = $dbPath;
+               ProcessId = $_.ProcessId
+               ExecutablePath = $_.ExecutablePath;
+               DirectoryListing = (Get-ChildItem -Recurse $dbPath | Out-String).Split("`n").TrimEnd()
+            }
+         }
+'@
+   }
    @{ name = "network-adapter";
       cmd = "Get-NetAdapter | Select ifIndex,ifAlias,ifDesc,ifName,DriverVersion,MacAddress,Status,LinkSpeed,MediaType,MediaConnectionState,DriverInformation,DriverFileName,NdisVersion,DeviceName,DriverName,DriverVersionString,MtuSize";
       alt = "netsh wlan show interfaces";
