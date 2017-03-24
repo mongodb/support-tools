@@ -1315,17 +1315,22 @@ function Get-Probes
                throw "Unable to determine command line for $($_.Name) ($($_.ProcessId))"
             }
             
-            $array = [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine)
+            $array = @()
+            
+            [MongoDB_CommandLine_Utils]::CommandLineToArgs($cmdline) | % { 
+               if (-not $_.Contains('='))
+               {
+                  $array += $_
+                  return
+               }
+               $_.Split('=',2) | % { $array += $_ }
+            }
+            
             for ($i = 0; $i -lt $array.Length; $i++)
             {
                if ('-f','--config' -contains $array[$i] -and $i+1 -le $array.Length-1)
                {
                   $path = $array[$i+1]
-               }
-               
-               if ($array[$i] -like '--config=*')
-               {
-                  $path = $array[$i].Split('=')[1]
                }
                
                if ($path -and -not ([IO.Path]::IsPathRooted($path)))
@@ -1361,7 +1366,17 @@ function Get-Probes
                throw "Unable to determine command line for $($_.Name) ($($_.ProcessId))"
             }
             
-            $array = [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine)
+            $array = @()
+            
+            [MongoDB_CommandLine_Utils]::CommandLineToArgs($cmdline) | % { 
+               if (-not $_.Contains('='))
+               {
+                  $array += $_
+                  return
+               }
+               $_.Split('=',2) | % { $array += $_ }
+            }
+            
             for ($i = 0; $i -lt $array.Length; $i++)
             {
                if ('--dbpath' -contains $array[$i] -and $i+1 -le $array.Length-1)
@@ -1376,12 +1391,10 @@ function Get-Probes
                      $path = $array[$i+1]
                   }
                   
-                  if ($array[$i] -like '--config=*')
+                  if ($path)
                   {
-                     $path = $array[$i].Split('=')[1]
+                     $dbPath = [IO.File]::ReadAllText($path) | ? { $_ -match 'storage:[\W]+dbPath:[\W]+([^\n\r]+)' }  | % { $Matches[1] }
                   }
-                  
-                  $dbPath = [IO.File]::ReadAllText($path) | ? { $_ -match 'storage:[\W]+dbPath:[\W]+([^\n\r]+)' }  | % { $Matches[1] }
                }
                
                if ($dbPath -and -not ([IO.Path]::IsPathRooted($dbPath)))
