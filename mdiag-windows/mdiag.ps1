@@ -26,8 +26,8 @@ function Main
       os = (Get-WmiObject Win32_OperatingSystem).Caption;
       shell = "PowerShell $($PSVersionTable.PSVersion)";
       script = "mdiag";
-      version = "1.7.11";
-      revdate = "2017-03-09";
+      version = "1.7.12";
+      revdate = "2017-04-24";
    }
    
    Setup-Environment
@@ -1317,7 +1317,7 @@ function Get-Probes
             
             $array = @()
             
-            [MongoDB_CommandLine_Utils]::CommandLineToArgs($cmdline) | % { 
+            [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine) | % { 
                if (-not $_.Contains('='))
                {
                   $array += $_
@@ -1325,6 +1325,8 @@ function Get-Probes
                }
                $_.Split('=',2) | % { $array += $_ }
             }
+            
+            $path = $null
             
             for ($i = 0; $i -lt $array.Length; $i++)
             {
@@ -1359,8 +1361,6 @@ function Get-Probes
       cmd = @'      
          Get-WmiObject Win32_Process -Filter "Name LIKE 'mongod%'" | % {
          
-            $dbPath = $null
-            
             if (-not $_.CommandLine)
             {
                throw "Unable to determine command line for $($_.Name) ($($_.ProcessId))"
@@ -1368,7 +1368,7 @@ function Get-Probes
             
             $array = @()
             
-            [MongoDB_CommandLine_Utils]::CommandLineToArgs($cmdline) | % { 
+            [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine) | % { 
                if (-not $_.Contains('='))
                {
                   $array += $_
@@ -1376,6 +1376,9 @@ function Get-Probes
                }
                $_.Split('=',2) | % { $array += $_ }
             }
+            
+            $dbPath = $null
+            $path = $null
             
             for ($i = 0; $i -lt $array.Length; $i++)
             {
@@ -1410,10 +1413,14 @@ function Get-Probes
 
             Write-Verbose "Discovered dbPath $dbPath"
             
+            $dirListing = Get-ChildItem -Recurse $dbPath | Select FullName, Length, Mode, `
+                                                                  @{ Name = 'CreationTime'; Expression = { _iso8601_string $_.CreationTime } }, `
+                                                                  @{ Name = 'LastWriteTime'; Expression = { _iso8601_string $_.LastWriteTime } } | Format-Table | Out-String
+
             @{ DbFilePath = $dbPath;
                ProcessId = $_.ProcessId
                ExecutablePath = $_.ExecutablePath;
-               DirectoryListing = (Get-ChildItem -Recurse $dbPath | Out-String).Split("`n").TrimEnd()
+               DirectoryListing = $dirListing.Split("`n").TrimEnd()
             }
          }
 '@
