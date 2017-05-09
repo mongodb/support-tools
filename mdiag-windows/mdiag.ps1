@@ -26,8 +26,8 @@ function Main
       os = (Get-WmiObject Win32_OperatingSystem).Caption;
       shell = "PowerShell $($PSVersionTable.PSVersion)";
       script = "mdiag";
-      version = "1.7.12";
-      revdate = "2017-04-24";
+      version = "1.7.13";
+      revdate = "2017-05-09";
    }
    
    Setup-Environment
@@ -1300,11 +1300,32 @@ function Get-Probes
    }
    
    @{ name = "tasklist";
-      cmd = "Get-Process | Select Name,Handles,VirtualMemorySize64,WorkingSet64,PagedMemorySize64,NonpagedSystemMemorySize64,PagedSystemMemorySize64,PrivateMemorySize64,Path,Company,CPU,FileVersion,ProductVersion,Description,Product,Id,PriorityClass,TotalProcessorTime,BasePriority,PeakWorkingSet64,PeakVirtualMemorySize64,StartTime,@{Name='Threads';Expression={`$_.Threads.Count}}"
-   }
-
-   @{ name = "mongo-processes";
-      cmd = "Get-WmiClassProperties Win32_Process 'Name LIKE `"mongo%`"'"
+      cmd = @'
+         $processes = Get-WmiObject Win32_Process
+         Get-Process | % `
+         {
+            $processId = $_.Id
+            $proc = $processes | ? { $_.ProcessId -eq $processId }
+            
+            Select -InputObject $_ -Property @{ Name = 'Name'; Expr = { if ($_.MainModule.ModuleName) { $_.MainModule.ModuleName } else { $proc.ProcessName } } }, Id, 
+               @{ Name = 'ParentProcessId'; Expr = { $proc.ParentProcessId } },
+               Path, Description, Company, Product, FileVersion, ProductVersion, 
+               BasePriority, PriorityClass, PriorityBoostEnabled, HandleCount, MinWorkingSet, MaxWorkingSet, 
+               @{ Name = 'Modules'; Expr = { $_.Modules.FileName } }, 
+               NonpagedSystemMemorySize64, PagedMemorySize64, PeakPagedMemorySize64, PagedSystemMemorySize64, VirtualMemorySize64, PeakVirtualMemorySize64, WorkingSet64, PeakWorkingSet64, PrivateMemorySize64, 
+               @{ Name = 'StartTime'; Expr = { [DateTime] $_.StartTime } },
+               UserProcessorTime, PrivilegedProcessorTime, TotalProcessorTime,
+               @{ Name = 'ThreadCount'; Expr = { $_.Threads.Count } },
+               @{ Name = 'Threads'; Expr = { $_.Threads.Id } },
+               @{ Name = 'CommandLine'; Expr = { $proc.CommandLine } },
+               @{ Name = 'ReadOperationCount'; Expr = { $proc.ReadOperationCount } },
+               @{ Name = 'ReadTransferCount'; Expr = { $proc.ReadTransferCount } },
+               @{ Name = 'WriteOperationCount'; Expr = { $proc.WriteOperationCount } },
+               @{ Name = 'WriteTransferCount'; Expr = { $proc.WriteTransferCount } },
+               @{ Name = 'OtherOperationCount'; Expr = { $proc.OtherOperationCount } },
+               @{ Name = 'OtherTransferCount'; Expr = { $proc.OtherTransferCount } }
+         }
+'@
    }
    
    @{ name = "mongod-configuration";
@@ -1497,7 +1518,7 @@ function Get-Probes
    }
    
    @{ name = "storage-volume";
-      cmd = 'Get-Volume | Select OperationalStatus, HealthStatus, DriveType, FileSystemType, DedupMode, Path, AllocationUnitSize, @{ Name = "DriveLetter"; Expression = { if ($_.DriveLetter -eq $null) { $null } else { $_.DriveLetter } } }, FileSystem, FileSystemLabel, Size, SizeRemaining';
+      cmd = 'Get-Volume | Select OperationalStatus, HealthStatus, DriveType, FileSystemType, DedupMode, Path, AllocationUnitSize, @{ Name = "DriveLetter"; Expression = {@($null,$_.DriveLetter)[$_.DriveLetter[0] -ge "A"]}}, FileSystem, FileSystemLabel, Size, SizeRemaining';
       alt = "Get-WmiObject Win32_LogicalDisk | Select Compressed,Description,DeviceID,DriveType,FileSystem,FreeSpace,MediaType,Name,Size,SystemName,VolumeSerialNumber";
    }
 
