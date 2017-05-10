@@ -1336,16 +1336,7 @@ function Get-Probes
                throw "Unable to determine command line for $($_.Name) ($($_.ProcessId))"
             }
             
-            $array = @()
-            
-            [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine) | % { 
-               if (-not $_.Contains('='))
-               {
-                  $array += $_
-                  return
-               }
-               $_.Split('=',2) | % { $array += $_ }
-            }
+            $array = [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine) | % { $_.Split('=',2) | % { return $_ } }
             
             $path = $null
             
@@ -1354,11 +1345,10 @@ function Get-Probes
                if ('-f','--config' -contains $array[$i] -and $i+1 -le $array.Length-1)
                {
                   $path = $array[$i+1]
-               }
-               
-               if ($path -and -not ([IO.Path]::IsPathRooted($path)))
-               {
-                  $path = [IO.Path]::Combine(([IO.Path]::GetDirectoryName($_.ExecutablePath)), ([IO.Path]::GetFileName($path)))
+                  if (-not ([IO.Path]::IsPathRooted($path)))
+                  {
+                     $path = [IO.Path]::Combine(([IO.Path]::GetDirectoryName($_.ExecutablePath)), ([IO.Path]::GetFileName($path)))
+                  }
                }
             }
             
@@ -1387,25 +1377,16 @@ function Get-Probes
                throw "Unable to determine command line for $($_.Name) ($($_.ProcessId))"
             }
             
-            $array = @()
-            
-            [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine) | % { 
-               if (-not $_.Contains('='))
-               {
-                  $array += $_
-                  return
-               }
-               $_.Split('=',2) | % { $array += $_ }
-            }
+            $array = [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine) | % { $_.Split('=',2) | % { return $_ } }
             
             $dbPath = $null
-            $path = $null
             
             for ($i = 0; $i -lt $array.Length; $i++)
             {
                if ('--dbpath' -contains $array[$i] -and $i+1 -le $array.Length-1)
                {
                   $dbPath = $array[$i+1]
+                  continue
                }
                
                if (-not $dbPath)
@@ -1413,17 +1394,29 @@ function Get-Probes
                   if ('-f','--config' -contains $array[$i] -and $i+1 -le $array.Length-1)
                   {
                      $path = $array[$i+1]
+                     if (-not ([IO.Path]::IsPathRooted($path)))
+                     {
+                        $path = [IO.Path]::Combine(([IO.Path]::GetDirectoryName($_.ExecutablePath)), ([IO.Path]::GetFileName($path)))
+                     }
+
+                     Write-Verbose "Reading mongod configuration file $path"
+                     
+                     Get-Content $path -ErrorAction Stop | % `
+                     {
+                        if ($_.StartsWith('storage:'))
+                        {
+                           $inStorage = $true
+                        }
+                        elseif ($inStorage -and $_.TrimStart().StartsWith('dbPath'))
+                        {
+                           $dbPath = $_.Replace('dbPath:','').Trim()
+                        }
+                        elseif ($inStorage -and -not $_.StartsWith(' '))
+                        {
+                           $inStorage = $false
+                        }
+                     }
                   }
-                  
-                  if ($path)
-                  {
-                     $dbPath = [IO.File]::ReadAllText($path) | ? { $_ -match 'storage:[\W]+dbPath:[\W]+([^\n\r]+)' }  | % { $Matches[1] }
-                  }
-               }
-               
-               if ($dbPath -and -not ([IO.Path]::IsPathRooted($dbPath)))
-               {
-                  $dbPath = [IO.Path]::Combine(([IO.Path]::GetDirectoryName($_.ExecutablePath)), ([IO.Path]::GetFileName($dbPath)))
                }
             }
             
@@ -1513,12 +1506,12 @@ function Get-Probes
    
    @{ name = "storage-partition";
       # DriverLetter is borked, need to detect the nul byte included in the length for non-mapped partitions (..yeah)
-      cmd = "Get-Partition | Select OperationalStatus,Type,AccessPaths,DiskId,DiskNumber,@{Name='DriveLetter';Expression={@(`$null,`$_.DriveLetter)[`$_.DriveLetter[0] -ge 'A']}},GptType,Guid,IsActive,IsBoot,IsHidden,IsOffline,IsReadOnly,IsShadowCopy,IsSystem,MbrType,NoDefaultDriveLetter,Offset,PartitionNumber,Size,TransitionState";
+      cmd = "Get-Partition | Select OperationalStatus,Type,AccessPaths,DiskId,DiskNumber,@{Name='DriveLetter';Expression={@(`$null,`$_.DriveLetter)[`$_.DriveLetter -ge 'A']}},GptType,Guid,IsActive,IsBoot,IsHidden,IsOffline,IsReadOnly,IsShadowCopy,IsSystem,MbrType,NoDefaultDriveLetter,Offset,PartitionNumber,Size,TransitionState";
       alt = "Get-WmiClassProperties Win32_DiskPartition"
    }
    
    @{ name = "storage-volume";
-      cmd = 'Get-Volume | Select OperationalStatus, HealthStatus, DriveType, FileSystemType, DedupMode, Path, AllocationUnitSize, @{ Name = "DriveLetter"; Expression = {@($null,$_.DriveLetter)[$_.DriveLetter[0] -ge "A"]}}, FileSystem, FileSystemLabel, Size, SizeRemaining';
+      cmd = 'Get-Volume | Select OperationalStatus, HealthStatus, DriveType, FileSystemType, DedupMode, Path, AllocationUnitSize, @{ Name = "DriveLetter"; Expression = { @($null,$_.DriveLetter)[$_.DriveLetter -ge "A"]}}, FileSystem, FileSystemLabel, Size, SizeRemaining';
       alt = "Get-WmiObject Win32_LogicalDisk | Select Compressed,Description,DeviceID,DriveType,FileSystem,FreeSpace,MediaType,Name,Size,SystemName,VolumeSerialNumber";
    }
 
