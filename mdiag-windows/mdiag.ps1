@@ -4,11 +4,12 @@
 [CmdletBinding()]
 
 param(
-   [string] $SFSCTicketNumber,
-   [switch] $DoNotElevate,
-   [switch] $Counters,
-   [int]    $Interval = 15,      ## Time in seconds between samples
-   [int]    $Samples  = 40       ## Number of times Get-Counter will collect a sample of a counter
+   [string]    $SFSCTicketNumber,
+   [switch]    $DoNotElevate,
+   [switch]    $Counters,
+   [String[]]  $RunOnlyTheseProbes,
+   [int]       $Interval = 15,      ## Time in seconds between samples
+   [int]       $Samples  = 40       ## Number of times Get-Counter will collect a sample of a counter
 )
 
 #======================================================================================================================
@@ -26,8 +27,8 @@ function Main
       os = (Get-WmiObject Win32_OperatingSystem).Caption;
       shell = "PowerShell $($PSVersionTable.PSVersion)";
       script = "mdiag";
-      version = "1.7.13";
-      revdate = "2017-05-09";
+      version = "1.7.14";
+      revdate = "2017-06-06";
    }
    
    Setup-Environment
@@ -342,6 +343,11 @@ function Hash-SHA256($StringToHash)
 function Redact-ConfigFile($FilePath)
 #======================================================================================================================
 {
+   if (-not $FilePath -or -not (Test-Path -ErrorAction SilentlyContinue $FilePath))
+   {
+      return
+   }
+   
    $optionsToRedact = @('\bquery(?:User|Password):[\s]*([^\s]*)', `
                         '\bservers:[\s]*([^\s]*)'
                       )
@@ -441,7 +447,16 @@ function Run-Probes
    $sb.Append('[') | Out-Null
    $sb.Append((Emit-Document "fingerprint" @{ command = $false; ok = $true; output = $FingerprintOutputDocument; })) | Out-Null
 
-   ($probes = Get-Probes) | % {
+   if ($RunOnlyTheseProbes)
+   {
+      $probes = Get-Probes | ? { $RunOnlyTheseProbes -contains $_.name }
+   }
+   else
+   {
+      $probes = Get-Probes
+   }
+   
+   $probes | % {
       $probeCount++
       Write-Progress "Gathering diagnostic information ($probeCount/$($probes.Length))" -Id 1 -Status $_.name -PercentComplete (100 / $probes.Length * $probeCount)      
       $sb.Append(",`r`n$(probe $_)") | Out-Null
@@ -819,6 +834,48 @@ function Add-CompiledTypes
           }
       }
 "@
+   Add-Type @"
+      using System;
+      using System.Runtime.InteropServices;
+      
+      public class MongoDB_Utils_MemoryStatus
+      {
+         static public MEMORYSTATUSEX GetGlobalMemoryStatusEx()
+         {
+            MEMORYSTATUSEX msex = new MEMORYSTATUSEX();
+            if (GlobalMemoryStatusEx(msex)) 
+            {
+               return msex;
+            }
+            throw new Exception(string.Format("Unable to initalize the GlobalMemoryStatusEx API - error {0}", Marshal.GetLastWin32Error()));
+         }
+
+         [return: MarshalAs(UnmanagedType.Bool)]
+         [DllImport("kernel32.dll", CharSet=CharSet.Auto, SetLastError=true)]
+         static extern bool GlobalMemoryStatusEx(
+            [In, Out] MEMORYSTATUSEX lpBuffer
+         );
+
+         [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Auto)]
+         public class MEMORYSTATUSEX
+         {
+            public uint dwLength;
+            public uint MemoryLoad;
+            public ulong TotalPhysical;
+            public ulong AvailablePhysical;
+            public ulong TotalPageFile;
+            public ulong AvailablePageFile;
+            public ulong TotalVirtual;
+            public ulong AvailableVirtual;
+            public ulong AvailableExtendedVirtual;
+
+            public MEMORYSTATUSEX()
+            {
+               this.dwLength = (uint) Marshal.SizeOf(typeof(MEMORYSTATUSEX));
+            }
+         }
+      }
+"@
 
    Add-Type @"
       using System;
@@ -1178,6 +1235,10 @@ function Get-Probes
 "@
    }
    
+   @{ name = "memory-status";
+      cmd = "[MongoDB_Utils_MemoryStatus]::GetGlobalMemoryStatusEx() | Select MemoryLoad,TotalPhysical,AvailablePhysical,TotalPageFile,AvailablePageFile,TotalVirtual,AvailableVirtual"
+   }
+   
    @{ name = "memory-physical";
       cmd = "Get-WmiObject Win32_PhysicalMemory | Select BankLabel,DeviceLocator,FormFactor,Capacity,Speed"
    }
@@ -1306,9 +1367,18 @@ function Get-Probes
          {
             $processId = $_.Id
             $proc = $processes | ? { $_.ProcessId -eq $processId }
+            try
+            {
+               $owner = $proc.GetOwner()
+            }
+            catch
+            {
+               Write-Verbose "Unable to get owner for process $processId"
+            }
             
             Select -InputObject $_ -Property @{ Name = 'Name'; Expr = { if ($_.MainModule.ModuleName) { $_.MainModule.ModuleName } else { $proc.ProcessName } } }, Id, 
                @{ Name = 'ParentProcessId'; Expr = { $proc.ParentProcessId } },
+               @{ Name = 'Username'; Expr = { if ($owner.Domain) { "$($owner.Domain)\$($owner.User)" } else { $owner.User } } },
                Path, Description, Company, Product, FileVersion, ProductVersion, 
                BasePriority, PriorityClass, PriorityBoostEnabled, HandleCount, MinWorkingSet, MaxWorkingSet, 
                @{ Name = 'Modules'; Expr = { $_.Modules.FileName } }, 
@@ -1328,9 +1398,9 @@ function Get-Probes
 '@
    }
    
-   @{ name = "mongod-configuration";
+   @{ name = "mongo-configuration";
       cmd = @'      
-         Get-WmiObject Win32_Process -Filter "Name LIKE 'mongod%'" | % {
+         Get-WmiObject Win32_Process -Filter "Name LIKE 'mongod%' OR Name LIKE 'mongos%'" | % {
             if (-not $_.CommandLine)
             {
                throw "Unable to determine command line for $($_.Name) ($($_.ProcessId))"
@@ -1351,17 +1421,25 @@ function Get-Probes
                   }
                }
             }
-            
-            if (-not $path)
-            {
-               return
-            }
 
             Write-Verbose "Discovered configuration file $path"
+
+            $tempFile = [IO.Path]::GetTempFileName()
+            
+            try
+            {
+               Start-Process $_.ExecutablePath '--version' -Wait -NoNewWindow -RedirectStandardOutput $tempFile
+               $version = Get-Content $tempFile -ErrorAction SilentlyContinue
+            }
+            finally
+            {
+               Remove-Item -Force -ErrorAction SilentlyContinue $tempFile
+            }
             
             @{ ConfigurationFilePath = $path;
                ProcessId = $_.ProcessId
                ExecutablePath = $_.ExecutablePath;
+               Version = $version;
                ConfigFile = (Redact-ConfigFile $path)
             }
          }
@@ -1403,6 +1481,11 @@ function Get-Probes
                      
                      Get-Content $path -ErrorAction Stop | % `
                      {
+                        if ($_.StartsWith('dbpath=', [StringComparison]::InvariantCultureIgnoreCase))
+                        {
+                           $dbPath = $_.SubString(7).Trim()
+                        }
+                        
                         if ($_.StartsWith('storage:'))
                         {
                            $inStorage = $true
@@ -1427,14 +1510,23 @@ function Get-Probes
 
             Write-Verbose "Discovered dbPath $dbPath"
             
-            $dirListing = Get-ChildItem -Recurse $dbPath | Select FullName, Length, Mode, `
-                                                                  @{ Name = 'CreationTime'; Expression = { _iso8601_string $_.CreationTime } }, `
-                                                                  @{ Name = 'LastWriteTime'; Expression = { _iso8601_string $_.LastWriteTime } } | Format-Table | Out-String
+            $dirListing = Get-ChildItem -Force -Recurse $dbPath | % {
+               $ordered = New-Object Collections.Specialized.OrderedDictionary
+               $ordered.Add('FullName', $_.FullName);
+               if ($_.Attributes -notcontains 'Directory')
+               {
+                  $ordered.Add('Length', $_.Length);
+               }
+               $ordered.Add('Attributes', $_.Attributes);
+               $ordered.Add('CreationTime', [DateTime] $_.CreationTime);
+               $ordered.Add('LastWriteTime', [DateTime] $_.LastWriteTime);
+               $ordered
+            }
 
             @{ DbFilePath = $dbPath;
                ProcessId = $_.ProcessId
                ExecutablePath = $_.ExecutablePath;
-               DirectoryListing = $dirListing.Split("`n").TrimEnd()
+               DirectoryListing = $dirListing
             }
          }
 '@
@@ -1453,6 +1545,14 @@ function Get-Probes
    @{ name = "network-route";
       cmd = "Get-NetRoute | Select DestinationPrefix,InterfaceAlias,InterfaceIndex,RouteMetric,TypeOfRoute";
       alt = "route print";
+   }
+   
+   @{ name = "network-tcpv4-dynamicports";
+      cmd = "netsh int ipv4 show dynamicport tcp";
+   }
+
+   @{ name = "network-tcpv6-dynamicports";
+      cmd = "netsh int ipv6 show dynamicport tcp";
    }
    
    @{ name = "spn-registrations";
