@@ -1,5 +1,8 @@
 ###################
 # mdiag.ps1 - Windows Diagnostic Script for MongoDB
+#
+# https://github.com/mongodb/support-tools/tree/master/mdiag-windows
+#
 
 [CmdletBinding()]
 
@@ -27,8 +30,8 @@ function Main
       os = (Get-WmiObject Win32_OperatingSystem).Caption;
       shell = "PowerShell $($PSVersionTable.PSVersion)";
       script = "mdiag";
-      version = "1.7.14";
-      revdate = "2017-06-06";
+      version = "1.7.15";
+      revdate = "2017-06-20";
    }
    
    Setup-Environment
@@ -982,6 +985,324 @@ function Add-CompiledTypes
          }
       }
 "@
+
+   Add-Type @'
+      using System;
+      using System.ComponentModel;
+      using System.Runtime.InteropServices;
+      using System.Security;
+      using System.Security.Principal;
+      
+      internal sealed class Win32Sec
+      {
+         [DllImport("advapi32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+         internal static extern uint LsaOpenPolicy(
+            LSA_UNICODE_STRING[] SystemName,
+            ref LSA_OBJECT_ATTRIBUTES ObjectAttributes,
+            int AccessMask,
+            out IntPtr PolicyHandle
+         );
+
+         [DllImport("advapi32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+         internal static extern uint LsaEnumerateAccountRights(
+            IntPtr PolicyHandle,
+            IntPtr pSID,
+            out IntPtr /*LSA_UNICODE_STRING[]*/ UserRights,
+            out ulong CountOfRights
+         );
+
+         [DllImport("advapi32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+         internal static extern uint LsaEnumerateAccountsWithUserRight(
+            IntPtr PolicyHandle,
+            LSA_UNICODE_STRING[] UserRights,
+            out IntPtr EnumerationBuffer,
+            out ulong CountReturned
+         );
+
+         [DllImport("advapi32.dll", SetLastError=false)]
+         internal static extern int LsaNtStatusToWinError(int status);
+
+         [DllImport("advapi32.dll", SetLastError=true)]
+         internal static extern int LsaClose(IntPtr PolicyHandle);
+
+         [DllImport("advapi32.dll", SetLastError=true)]
+         internal static extern int LsaFreeMemory(IntPtr Buffer);
+      }
+      
+      [StructLayout(LayoutKind.Sequential)]
+      struct LSA_OBJECT_ATTRIBUTES
+      {
+         internal int Length;
+         internal IntPtr RootDirectory;
+         internal IntPtr ObjectName;
+         internal int Attributes;
+         internal IntPtr SecurityDescriptor;
+         internal IntPtr SecurityQualityOfService;
+      }
+
+      [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+      internal struct LSA_UNICODE_STRING
+      {
+         internal ushort Length;
+         internal ushort MaximumLength;
+         [MarshalAs(UnmanagedType.LPWStr)]
+         internal string Buffer;
+      }
+
+      [StructLayout(LayoutKind.Sequential)]
+      internal struct LSA_ENUMERATION_INFORMATION
+      {
+         internal IntPtr PSid;
+      }
+         
+      public class MongoDB_LSA_Helper : IDisposable
+      {
+         enum Access : int
+         {
+            POLICY_VIEW_LOCAL_INFORMATION = 0x00000001,
+            POLICY_LOOKUP_NAMES           = 0x00000800
+         }
+         
+         const uint STATUS_ACCESS_DENIED           = 0xC0000022;
+         const uint STATUS_INSUFFICIENT_RESOURCES  = 0xC000009A;
+         const uint STATUS_NO_MEMORY               = 0xC0000017;
+         const uint STATUS_OBJECT_NAME_NOT_FOUND   = 0xC0000034;
+         const uint STATUS_NO_MORE_ENTRIES         = 0x8000001A;
+
+         IntPtr lsaHandle = IntPtr.Zero;
+
+         public MongoDB_LSA_Helper()
+         {
+            LSA_OBJECT_ATTRIBUTES lsaAttr;
+            lsaAttr.RootDirectory = IntPtr.Zero;
+            lsaAttr.ObjectName = IntPtr.Zero;
+            lsaAttr.Attributes = 0;
+            lsaAttr.SecurityDescriptor = IntPtr.Zero;
+            lsaAttr.SecurityQualityOfService = IntPtr.Zero;
+            lsaAttr.Length = Marshal.SizeOf(typeof(LSA_OBJECT_ATTRIBUTES));
+            
+            LSA_UNICODE_STRING[] system = null;
+
+            uint ret = Win32Sec.LsaOpenPolicy(system, ref lsaAttr, (int)(Access.POLICY_LOOKUP_NAMES | Access.POLICY_VIEW_LOCAL_INFORMATION), out lsaHandle);
+            
+            if (ret == 0) 
+               return;
+            
+            if (ret == STATUS_ACCESS_DENIED) 
+               throw new UnauthorizedAccessException();
+            
+            if ((ret == STATUS_INSUFFICIENT_RESOURCES) || (ret == STATUS_NO_MEMORY)) 
+               throw new OutOfMemoryException();
+            
+            throw new Win32Exception(Win32Sec.LsaNtStatusToWinError((int)ret));
+         }
+         
+         // Need to support .NET 2.0 which doesn't support extension methods
+         public static IntPtr IntPtrAdd(IntPtr ptr, long offset) 
+         {
+            IntPtr ret = new IntPtr(ptr.ToInt64() + offset);
+            return ret;
+         }
+
+         public enum Rights
+         {
+            SeTrustedCredManAccessPrivilege,      // Access Credential Manager as a trusted caller
+            SeNetworkLogonRight,                  // Access this computer from the network
+            SeTcbPrivilege,                       // Act as part of the operating system
+            SeMachineAccountPrivilege,            // Add workstations to domain
+            SeIncreaseQuotaPrivilege,             // Adjust memory quotas for a process
+            SeInteractiveLogonRight,              // Allow log on locally
+            SeRemoteInteractiveLogonRight,        // Allow log on through Remote Desktop Services
+            SeBackupPrivilege,                    // Back up files and directories
+            SeChangeNotifyPrivilege,              // Bypass traverse checking
+            SeSystemtimePrivilege,                // Change the system time
+            SeTimeZonePrivilege,                  // Change the time zone
+            SeCreatePagefilePrivilege,            // Create a pagefile
+            SeCreateTokenPrivilege,               // Create a token object
+            SeCreateGlobalPrivilege,              // Create global objects
+            SeCreatePermanentPrivilege,           // Create permanent shared objects
+            SeCreateSymbolicLinkPrivilege,        // Create symbolic links
+            SeDebugPrivilege,                     // Debug programs
+            SeDenyNetworkLogonRight,              // Deny access this computer from the network
+            SeDenyBatchLogonRight,                // Deny log on as a batch job
+            SeDenyServiceLogonRight,              // Deny log on as a service
+            SeDenyInteractiveLogonRight,          // Deny log on locally
+            SeDenyRemoteInteractiveLogonRight,    // Deny log on through Remote Desktop Services
+            SeEnableDelegationPrivilege,          // Enable computer and user accounts to be trusted for delegation
+            SeRemoteShutdownPrivilege,            // Force shutdown from a remote system
+            SeAuditPrivilege,                     // Generate security audits
+            SeImpersonatePrivilege,               // Impersonate a client after authentication
+            SeIncreaseWorkingSetPrivilege,        // Increase a process working set
+            SeIncreaseBasePriorityPrivilege,      // Increase scheduling priority
+            SeLoadDriverPrivilege,                // Load and unload device drivers
+            SeLockMemoryPrivilege,                // Lock pages in memory
+            SeBatchLogonRight,                    // Log on as a batch job
+            SeServiceLogonRight,                  // Log on as a service
+            SeSecurityPrivilege,                  // Manage auditing and security log
+            SeRelabelPrivilege,                   // Modify an object label
+            SeSystemEnvironmentPrivilege,         // Modify firmware environment values
+            SeManageVolumePrivilege,              // Perform volume maintenance tasks
+            SeProfileSingleProcessPrivilege,      // Profile single process
+            SeSystemProfilePrivilege,             // Profile system performance
+            SeUnsolicitedInputPrivilege,          // "Read unsolicited input from a terminal device"
+            SeUndockPrivilege,                    // Remove computer from docking station
+            SeAssignPrimaryTokenPrivilege,        // Replace a process level token
+            SeRestorePrivilege,                   // Restore files and directories
+            SeShutdownPrivilege,                  // Shut down the system
+            SeSyncAgentPrivilege,                 // Synchronize directory service data
+            SeTakeOwnershipPrivilege              // Take ownership of files or other objects
+         }
+    
+         internal sealed class Sid : IDisposable
+         {
+            internal IntPtr pSid = IntPtr.Zero;
+            internal SecurityIdentifier sid = null;
+
+            public Sid(string account)
+            {
+               try 
+               { 
+                  sid = new SecurityIdentifier(account); 
+               }
+               catch 
+               { 
+                  sid = (SecurityIdentifier)(new NTAccount(account)).Translate(typeof(SecurityIdentifier)); 
+               }
+               
+               Byte[] buffer = new Byte[sid.BinaryLength];
+               sid.GetBinaryForm(buffer, 0);
+
+               pSid = Marshal.AllocHGlobal(sid.BinaryLength);
+               Marshal.Copy(buffer, 0, pSid, sid.BinaryLength);
+            }
+
+            public void Dispose()
+            {
+               if (pSid != IntPtr.Zero)
+               {
+                  Marshal.FreeHGlobal(pSid);
+                  pSid = IntPtr.Zero;
+               }
+               GC.SuppressFinalize(this);
+            }
+
+            ~Sid() 
+            { 
+               Dispose(); 
+            }
+         }
+
+         public Rights[] EnumerateAccountPrivileges(string account)
+         {
+            uint ret = 0;
+            ulong count = 0;
+            IntPtr privileges = IntPtr.Zero;
+            Rights[] rights = null;
+
+            using (Sid sid = new Sid(account))
+            {
+               ret = Win32Sec.LsaEnumerateAccountRights(lsaHandle, sid.pSid, out privileges, out count);
+            }
+            
+            if (ret == 0)
+            {
+               rights = new Rights[count];
+               for (int i = 0; i < (int)count; i++)
+               {
+                  LSA_UNICODE_STRING str = (LSA_UNICODE_STRING)Marshal.PtrToStructure(
+                     IntPtrAdd(privileges, i * Marshal.SizeOf(typeof(LSA_UNICODE_STRING))),
+                     typeof(LSA_UNICODE_STRING));
+                  
+                  rights[i] = (Rights)Enum.Parse(typeof(Rights), str.Buffer);
+               }
+               Win32Sec.LsaFreeMemory(privileges);
+               return rights;
+            }
+            if (ret == STATUS_OBJECT_NAME_NOT_FOUND) 
+               return null;  // No privileges assigned
+            
+            if (ret == STATUS_ACCESS_DENIED) 
+               throw new UnauthorizedAccessException();
+            
+            if ((ret == STATUS_INSUFFICIENT_RESOURCES) || (ret == STATUS_NO_MEMORY)) 
+               throw new OutOfMemoryException();
+            
+            throw new Win32Exception(Win32Sec.LsaNtStatusToWinError((int)ret));
+         }
+
+         public string[] EnumerateAccountsWithUserRight(Rights privilege)
+         {
+            uint ret = 0;
+            ulong count = 0;
+            LSA_UNICODE_STRING[] rights = new LSA_UNICODE_STRING[1];
+            rights[0] = InitLsaString(privilege.ToString());
+            IntPtr buffer = IntPtr.Zero;
+            string[] accounts = null;
+
+            ret = Win32Sec.LsaEnumerateAccountsWithUserRight(lsaHandle, rights, out buffer, out count);
+            if (ret == 0)
+            {
+               accounts = new string[count];
+               for (int i = 0; i < (int)count; i++)
+               {
+                  LSA_ENUMERATION_INFORMATION LsaInfo = (LSA_ENUMERATION_INFORMATION)Marshal.PtrToStructure(
+                     IntPtrAdd(buffer, i * Marshal.SizeOf(typeof(LSA_ENUMERATION_INFORMATION))),
+                     typeof(LSA_ENUMERATION_INFORMATION));
+
+                  try 
+                  {
+                     accounts[i] = (new SecurityIdentifier(LsaInfo.PSid)).Translate(typeof(NTAccount)).ToString();
+                  }
+                  catch (System.Security.Principal.IdentityNotMappedException) 
+                  {
+                    accounts[i] = (new SecurityIdentifier(LsaInfo.PSid)).ToString();
+                  }
+               }
+               Win32Sec.LsaFreeMemory(buffer);
+               return accounts;
+            }
+            
+            if (ret == STATUS_NO_MORE_ENTRIES) 
+               return null;  // No accounts assigned
+               
+            if (ret == STATUS_ACCESS_DENIED) 
+               throw new UnauthorizedAccessException();
+            
+            if ((ret == STATUS_INSUFFICIENT_RESOURCES) || (ret == STATUS_NO_MEMORY)) 
+               throw new OutOfMemoryException();
+               
+            throw new Win32Exception(Win32Sec.LsaNtStatusToWinError((int)ret));
+         }
+        
+         public void Dispose()
+         {
+            if (lsaHandle != IntPtr.Zero)
+            {
+               Win32Sec.LsaClose(lsaHandle);
+               lsaHandle = IntPtr.Zero;
+            }
+            GC.SuppressFinalize(this);
+         }
+
+         ~MongoDB_LSA_Helper() 
+         { 
+            Dispose();
+         }
+         
+         internal static LSA_UNICODE_STRING InitLsaString(string s)
+         {
+            // Unicode strings max. 32KB
+            if (s.Length > 32766) 
+               throw new ArgumentException("String too long");
+               
+            LSA_UNICODE_STRING lus = new LSA_UNICODE_STRING();
+            lus.Buffer = s;
+            lus.Length = (ushort)(s.Length * sizeof(char));
+            lus.MaximumLength = (ushort)(lus.Length + sizeof(char));
+            return lus;
+         }
+      }
+'@
 }
 
 #======================================================================================================================
@@ -1370,6 +1691,10 @@ function Get-Probes
             try
             {
                $owner = $proc.GetOwner()
+               $owner = if ($owner.Domain) { "$($owner.Domain)\$($owner.User)" } else { $owner.User } 
+               
+               $objUser = New-Object System.Security.Principal.NTAccount($owner)
+               $sid = $objUser.Translate([Security.Principal.SecurityIdentifier]).Value
             }
             catch
             {
@@ -1378,7 +1703,8 @@ function Get-Probes
             
             Select -InputObject $_ -Property @{ Name = 'Name'; Expr = { if ($_.MainModule.ModuleName) { $_.MainModule.ModuleName } else { $proc.ProcessName } } }, Id, 
                @{ Name = 'ParentProcessId'; Expr = { $proc.ParentProcessId } },
-               @{ Name = 'Username'; Expr = { if ($owner.Domain) { "$($owner.Domain)\$($owner.User)" } else { $owner.User } } },
+               @{ Name = 'Username'; Expr = { $owner } },
+               @{ Name = 'Sid'; Expr = { $sid } },
                Path, Description, Company, Product, FileVersion, ProductVersion, 
                BasePriority, PriorityClass, PriorityBoostEnabled, HandleCount, MinWorkingSet, MaxWorkingSet, 
                @{ Name = 'Modules'; Expr = { $_.Modules.FileName } }, 
@@ -1400,10 +1726,28 @@ function Get-Probes
    
    @{ name = "mongo-configuration";
       cmd = @'      
-         Get-WmiObject Win32_Process -Filter "Name LIKE 'mongod%' OR Name LIKE 'mongos%'" | % {
+         Get-WmiObject Win32_Process -Filter "Name = 'mongod.exe' OR Name = 'mongos.exe'" | % {
+
+            $tempFile = [IO.Path]::GetTempFileName()
+            
+            try
+            {
+               Start-Process $_.ExecutablePath '--version' -Wait -NoNewWindow -RedirectStandardOutput $tempFile
+               $version = Get-Content $tempFile -ErrorAction SilentlyContinue
+            }
+            finally
+            {
+               Remove-Item -Force -ErrorAction SilentlyContinue $tempFile
+            }
+
             if (-not $_.CommandLine)
             {
-               throw "Unable to determine command line for $($_.Name) ($($_.ProcessId))"
+               return   @{ ConfigurationFilePath = $null;
+                           ProcessId = $_.ProcessId;
+                           ExecutablePath = $_.ExecutablePath;
+                           Version = $version;
+                           ConfigFile = $null
+                        }
             }
             
             $array = [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine) | % { $_.Split('=',2) | % { return $_ } }
@@ -1423,21 +1767,9 @@ function Get-Probes
             }
 
             Write-Verbose "Discovered configuration file $path"
-
-            $tempFile = [IO.Path]::GetTempFileName()
-            
-            try
-            {
-               Start-Process $_.ExecutablePath '--version' -Wait -NoNewWindow -RedirectStandardOutput $tempFile
-               $version = Get-Content $tempFile -ErrorAction SilentlyContinue
-            }
-            finally
-            {
-               Remove-Item -Force -ErrorAction SilentlyContinue $tempFile
-            }
             
             @{ ConfigurationFilePath = $path;
-               ProcessId = $_.ProcessId
+               ProcessId = $_.ProcessId;
                ExecutablePath = $_.ExecutablePath;
                Version = $version;
                ConfigFile = (Redact-ConfigFile $path)
@@ -1448,11 +1780,15 @@ function Get-Probes
    
    @{ name = "mongod-dir-listing";
       cmd = @'      
-         Get-WmiObject Win32_Process -Filter "Name LIKE 'mongod%'" | % {
+         Get-WmiObject Win32_Process -Filter "Name = 'mongod.exe'" | % {
          
             if (-not $_.CommandLine)
             {
-               throw "Unable to determine command line for $($_.Name) ($($_.ProcessId))"
+               return   @{ DbFilePath = $null;
+                           ProcessId = $_.ProcessId;
+                           ExecutablePath = $_.ExecutablePath;
+                           DirectoryListing = $null
+                        }
             }
             
             $array = [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine) | % { $_.Split('=',2) | % { return $_ } }
@@ -1505,7 +1841,11 @@ function Get-Probes
             
             if (-not $dbPath)
             {
-               return
+               return   @{ DbFilePath = $null;
+                           ProcessId = $_.ProcessId;
+                           ExecutablePath = $_.ExecutablePath;
+                           DirectoryListing = $null
+                        }
             }
 
             Write-Verbose "Discovered dbPath $dbPath"
@@ -1587,10 +1927,34 @@ function Get-Probes
    }
 
    @{ name = "services";
-      cmd = "Get-WmiObject Win32_Service | Select Name, Status, ExitCode, DesktopInteract, ErrorControl, PathName, ServiceType, ServiceSpecificExitCode, StartName, Caption, Description, DisplayName, StartMode, ProcessId, Started, State";
-      altcmd = "Get-Service | Select Di*,ServiceName,ServiceType,@{Name='Status';Expression={`$_.Status.ToString()}},@{Name='ServicesDependedOn';Expression={@(`$_.ServicesDependedOn.Name)}}";
+      cmd = "Get-WmiClassProperties Win32_Service";
    }
 
+   @{ name = "account-privileges"
+      cmd = @'
+         # Interop call to LsaEnumerateAccountsWithUserRight()
+         
+         $lsa = New-Object MongoDB_LSA_Helper
+         $results = @{}
+          
+         [MongoDB_LSA_Helper+Rights].GetEnumNames() | % {
+            try
+            {
+               $privilege = $_
+               $accounts = @()
+               $accounts += $lsa.EnumerateAccountsWithUserRight($privilege) | ? { $_ }
+               $results.Add($privilege, $accounts)
+            }
+            catch
+            {
+               Write-Verbose "Could not enumerate $privilege"
+            }
+         }
+         
+         $results
+'@
+   }
+   
    @{ name = "firewall";
       cmd = "Get-NetFirewallRule | Where-Object {`$_.DisplayName -like '*mongo*'} | Select Name,DisplayName,Enabled,@{Name='Profile';Expression={`$_.Profile.ToString()}},@{Name='Direction';Expression={`$_.Direction.ToString()}},@{Name='Action';Expression={`$_.Action.ToString()}},@{Name='PolicyStoreSourceType';Expression={`$_.PolicyStoreSourceType.ToString()}}";
    }
