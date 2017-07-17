@@ -30,8 +30,8 @@ function Main
       os = (Get-WmiObject Win32_OperatingSystem).Caption;
       shell = "PowerShell $($PSVersionTable.PSVersion)";
       script = "mdiag";
-      version = "1.7.15";
-      revdate = "2017-06-20";
+      version = "1.7.16";
+      revdate = "2017-07-12";
    }
    
    Setup-Environment
@@ -50,6 +50,7 @@ function Main
       Compress-Files $zipFile $script:FilesToCompress
       
       $script:FilesToCompress | % {
+         Write-Verbose "Removing $_"
          if ([IO.Path]::GetDirectoryName($_) -eq [IO.Path]::GetTempPath().TrimEnd('\') -or $_ -eq $script:DiagFile)
          {
             Remove-Item -Force $_ -ErrorAction SilentlyContinue
@@ -594,7 +595,7 @@ function Get-RegistryValues($RegPath)
    }
    
    # Then we check for any sub keys and recurse them
-   Get-ChildItem $RegPath -Recurse | % {
+   Get-ChildItem $RegPath -Recurse -ErrorAction SilentlyContinue | % {
       $reg = $_
    
       $outerResult = New-Object Collections.Specialized.OrderedDictionary
@@ -1303,6 +1304,64 @@ function Add-CompiledTypes
          }
       }
 '@
+   Add-Type @"
+      using System;
+      using System.Collections.Generic;
+      using System.Runtime.InteropServices;
+      
+      public class MongoDB_Utils_CipherSuites
+      {
+         [DllImport("Bcrypt.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+         static extern uint BCryptEnumContextFunctions(
+            uint dwTable, 
+            string pszContext, 
+            uint dwInterface, 
+            ref uint pcbBuffer, 
+            ref IntPtr ppBuffer
+         );
+      
+         [DllImport("Bcrypt.dll")]
+         static extern void BCryptFreeBuffer(IntPtr pvBuffer);
+        
+         [StructLayout(LayoutKind.Sequential)]
+         public struct CRYPT_CONTEXT_FUNCTIONS
+         {
+            public uint cFunctions;
+            public IntPtr rgpszFunctions;
+         }
+
+         public const uint CRYPT_LOCAL = 0x00000001;
+         public const uint NCRYPT_SCHANNEL_INTERFACE = 0x00010002;
+
+         public static List<String> EnumerateCiphers()
+         {
+            uint cbBuffer = 0;
+            IntPtr ppBuffer = IntPtr.Zero;
+            uint ret = BCryptEnumContextFunctions(
+                    CRYPT_LOCAL,
+                    "SSL",
+                    NCRYPT_SCHANNEL_INTERFACE,
+                    ref cbBuffer,
+                    ref ppBuffer);
+            
+            List<String> results = new List<String>();
+            if (ret == 0)
+            {
+               CRYPT_CONTEXT_FUNCTIONS functions = (CRYPT_CONTEXT_FUNCTIONS)Marshal.PtrToStructure(ppBuffer, typeof(CRYPT_CONTEXT_FUNCTIONS));
+
+               IntPtr pStr = functions.rgpszFunctions;
+               for (int i = 0; i < functions.cFunctions; i++)
+               {
+                  results.Add(Marshal.PtrToStringUni(Marshal.ReadIntPtr(pStr)));
+                  pStr = new IntPtr(pStr.ToInt64() + IntPtr.Size);
+               }
+               BCryptFreeBuffer(ppBuffer);
+            }
+            
+            return results;
+         }
+      }
+"@
 }
 
 #======================================================================================================================
@@ -2014,6 +2073,18 @@ function Get-Probes
       cmd = 'Get-RegistryValues HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\Kerberos\Parameters'
    }
    
+   @{ name = "security-cipher-suites";
+      cmd = '[MongoDB_Utils_CipherSuites]::EnumerateCiphers()'
+   }
+   
+   @{ name = "security-providers";
+      cmd = 'Get-RegistryValues HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders'
+   }
+
+   @{ name = "security-fips-policy";
+      cmd = 'Get-RegistryValues HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\FipsAlgorithmPolicy'
+   }
+   
    @{ name = "tcpip-parameters";
       cmd = 'Get-RegistryValues HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters'
    }
@@ -2112,11 +2183,21 @@ function Get-Probes
             $destFile = [IO.Path]::Combine([IO.Path]::GetTempPath(), "$($env:COMPUTERNAME)_$([IO.Path]::GetFileName($_.Name))")
 
             Write-Verbose "Exporting $($_.LogfileName) to $destFile"
-            $_.BackupEventlog($destFile) | Out-Null
-
-            $script:FilesToCompress += $destFile
+            $exported = $_.BackupEventlog($destFile)
             
-            $_ | Select LogFileName, Name, NumberOfRecords, FileSize, MaxFileSize, OverwriteOutDated, OverwritePolicy
+            if ($exported -and $exported.ReturnValue -eq 0)
+            {
+               $script:FilesToCompress += $destFile
+            }
+            
+            $_ | Select LogFileName, 
+                        Name, 
+                        NumberOfRecords, 
+                        FileSize, 
+                        MaxFileSize, 
+                        OverwriteOutDated, 
+                        OverwritePolicy, 
+                        @{ Name = 'ReturnValue'; Expr = { $exported.ReturnValue } }
          }
 '@
    }
