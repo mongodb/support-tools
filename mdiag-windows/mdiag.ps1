@@ -9,10 +9,9 @@
 param(
    [string]    $SFSCTicketNumber,
    [switch]    $DoNotElevate,
-   [switch]    $Counters,
-   [String[]]  $RunOnlyTheseProbes,
-   [int]       $Interval = 15,      ## Time in seconds between samples
-   [int]       $Samples  = 40       ## Number of times Get-Counter will collect a sample of a counter
+   [String[]]  $ProbeList           = @(),
+   [int]       $Interval            =   1,       ## Time in seconds between samples
+   [int]       $Samples             = 120        ## Number of times Get-Counter will collect a sample of a counter
 )
 
 #======================================================================================================================
@@ -27,22 +26,23 @@ function Main
    # should be kept at the top of the file for ease of access
    
    Set-Variable FingerprintOutputDocument -option Constant @{
-      os = (Get-WmiObject Win32_OperatingSystem).Caption;
+      os = (Get-WmiObject Win32_OperatingSystem).Caption.Trim();
       shell = "PowerShell $($PSVersionTable.PSVersion)";
       script = "mdiag";
-      version = "1.7.16";
-      revdate = "2017-07-12";
+      version = "1.8.0";
+      revdate = "2017-07-17";
    }
    
    Setup-Environment
    
    $script:FilesToCompress = @($script:DiagFile)
-         
+   
    # Only write to output file once all probes have completed
    $probeOutput = Run-Probes 
    $probeOutput | Out-File $script:DiagFile
    
-   Write-Host "Finished.`r`n"
+   Write-Progress "Gathering diagnostic information" -Id 1 -Status "Done" -Completed
+   Write-Host "`r`nFinished collecting $script:ProbeCount probes.`r`n"
 
    try
    {      
@@ -335,10 +335,7 @@ function Hash-SHA256($StringToHash)
 #======================================================================================================================
 {
    $hasher = New-Object Security.Cryptography.SHA256Managed
-   
-   $result = ''
-   $hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes($StringToHash)) | % { $result += ([byte] $_).ToString('X2') }
-   $result
+   [String]::Join(($hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes($StringToHash)) | % { ([byte] $_).ToString('X2') }))
 }
 
 #======================================================================================================================
@@ -353,8 +350,7 @@ function Redact-ConfigFile($FilePath)
    }
    
    $optionsToRedact = @('\bquery(?:User|Password):[\s]*([^\s]*)', `
-                        '\bservers:[\s]*([^\s]*)'
-                      )
+                        '\bservers:[\s]*([^\s]*)')
 
    Get-Content $FilePath -ErrorAction Stop | % {
       if ([String]::IsNullOrEmpty($_))
@@ -447,45 +443,25 @@ function Run-Probes
    $script:RunDate = Get-Date
 
    $sb = New-Object System.Text.StringBuilder
-
-   $sb.Append('[') | Out-Null
    $sb.Append((Emit-Document "fingerprint" @{ command = $false; ok = $true; output = $FingerprintOutputDocument; })) | Out-Null
 
-   if ($RunOnlyTheseProbes)
-   {
-      $probes = Get-Probes | ? { $RunOnlyTheseProbes -contains $_.name }
-   }
-   else
-   {
-      $probes = Get-Probes
-   }
-   
+   $probes = [Array] (Get-Probes | ? { $script:ProbeList.Count -eq 0 -or $script:ProbeList -contains $_.name })
+   $script:ProbeCount = $probes.Length
    $probes | % {
-      $probeCount++
-      Write-Progress "Gathering diagnostic information ($probeCount/$($probes.Length))" -Id 1 -Status $_.name -PercentComplete (100 / $probes.Length * $probeCount)      
+      $probesRunCount++
+      if ($probes.Length)
+      {
+         $name = $_.name
+         if ($_.name -eq 'performance-counters')
+         {
+            $name += " (expected duration $($script:Samples * $script:Interval) seconds)"
+         }
+         Write-Progress "Gathering diagnostic information ($probesRunCount/$script:ProbeCount)" -Id 1 -Status $name -PercentComplete (100 / $script:ProbeCount * $probesRunCount)
+      }
       $sb.Append(",`r`n$(probe $_)") | Out-Null
    }
    
-   Write-Progress "Gathering diagnostic information" -Id 1 -Status "Done" -Completed
-   
-   if ($script:Counters)
-   {
-      # Hide progress bar as probe writes directly to console
-      $setting = $script:ProgressPreference
-      $script:ProgressPreference = 'SilentlyContinue'
-      
-      $result = probe @{ name = "performance-counters";
-                         cmd = "Collect-PerformanceCounters $script:Samples $script:Interval"
-                      }
-      
-      $sb.Append(",`r`n$result") | Out-Null
-      
-      $script:ProgressPreference = $setting
-   }
-
-   $sb.Append("]") | Out-Null
-   
-   $sb.ToString() 
+   "[$($sb.ToString())]" 
 }
 
 #======================================================================================================================
@@ -496,17 +472,10 @@ function Compress-Files($ZipFile, [String[]] $Files)
    
    $zipFolder = (New-Object -Com Shell.Application).NameSpace($ZipFile)
 
-   $Files | % {
-      if (-not (Test-Path $_)) 
-      {
-         return
-      }
-      
+   $Files | % { Resolve-Path $_ -ErrorAction SilentlyContinue | Select -ExpandProperty Path } | % { 
+      Write-Verbose "Compressing $_"
       $shortFileName = [IO.Path]::GetFileName($_)
       $zipFolder.CopyHere($_)
-      
-      Write-Verbose "Compressing $shortFileName" 
-      
       while (-not $zipFolder.Items().Item($shortFileName)) 
       {
          Start-Sleep -m 500
@@ -517,7 +486,7 @@ function Compress-Files($ZipFile, [String[]] $Files)
 #======================================================================================================================
 # Extract properties from WMI class
 #======================================================================================================================
-function Get-WmiClassProperties($WmiClass, $Filter)
+function Get-WmiClassProperties($WmiClass, $Filter = '')
 #======================================================================================================================
 {  
    if (-not (Get-WmiObject -Class $WmiClass -List))
@@ -525,16 +494,7 @@ function Get-WmiClassProperties($WmiClass, $Filter)
       throw "WMI class $WmiClass does not exist"
    }
    
-   if ($Filter)
-   {
-      $class = Get-WmiObject $WmiClass -Filter $Filter -ErrorAction Stop
-   }
-   else
-   {
-      $class = Get-WmiObject $WmiClass -ErrorAction Stop
-   }
-
-   if (-not $class)
+   if (-not ($class = Get-WmiObject $WmiClass -Filter $Filter -ErrorAction Stop))
    {
       return $null
    }
@@ -835,7 +795,7 @@ function Add-CompiledTypes
             {
                Marshal.FreeHGlobal(argv);
             }
-          }
+         }
       }
 "@
    Add-Type @"
@@ -1401,21 +1361,49 @@ function Get-RegistryLastWriteTime($RegistryKey)
 }
 
 #======================================================================================================================
-function Collect-PerformanceCounters($Samples = 60, $IntervalSeconds = 1)
+function Collect-PerformanceCounters($Samples = 1, $IntervalSeconds = 60)
 #======================================================================================================================
 {
+   ## NB: If any performance counters are missing run C:\Windows\System32\LODCTR /R
+   ##     which will rebuild the perf counters based upon installed .INI files
+
    $counterList = Get-Counter -ListSet *   
    $counters = @()
    
-   ## Paging File counters
-   $counters += $counterList | ? { $_.CounterSetName -eq 'Paging File' } | Select -ExpandProperty PathsWithInstances | ? { $_ -match '^\\Paging File\([^_][^)]*\)\\% Usage$' }
+   ## Virtual Machine counters   
+   $counterList | ? { 'Hyper-V Dynamic Memory Integration Service','VM Memory','VM Processor' -contains $_.CounterSetName } | % {
+      $counter = $_
+      switch ($_.CounterSetType)
+      {
+         'SingleInstance'
+         {
+            $counters += $counter.Paths
+         }
+         'MultiInstance'
+         {
+            $counters += $counter.PathsWithInstances
+         }
+         default
+         {
+            Write-Verbose "Unknown CounterSetType '$_'"
+         }
+      }
+   }
+   
+   ## Paging File counters - excluding (_total) counters
+   $counters += $counterList | ? { $_.CounterSetName -eq 'Paging File' } | Select -ExpandProperty PathsWithInstances | ? { $_ -match '^\\Paging File\([^_][^)]*\)\\' }
+
+   ## IO counters - excluding (_total) counters
+   $counters += $counterList | ? { $_.CounterSetName -eq 'PhysicalDisk' } | Select -ExpandProperty PathsWithInstances | ? { $_ -match '^\\PhysicalDisk\([^_][^)]*\)\\' }
    
    ## Memory counters
    $counters += @('\Memory\Available Bytes',
                   '\Memory\Committed Bytes',
                   '\Memory\Commit Limit',
                   '\Memory\Modified Page List Bytes',
+                  '\Memory\Free System Page Table Entries',
                   '\Memory\Page Faults/sec',
+                  '\Memory\Pages/sec',
                   '\Memory\Page Reads/sec',
                   '\Memory\Page Writes/sec',
                   '\Memory\Pages Input/sec',
@@ -1423,6 +1411,11 @@ function Collect-PerformanceCounters($Samples = 60, $IntervalSeconds = 1)
                   '\Memory\Cache Faults/sec',
                   '\Memory\Cache Bytes',
                   '\Memory\Cache Bytes Peak',
+                  '\Memory\Pool Nonpaged Allocs',
+                  '\Memory\Pool Nonpaged Bytes',
+                  '\Memory\Pool Paged Allocs',
+                  '\Memory\Pool Paged Bytes',
+                  '\Memory\Pool Paged Resident Bytes',
                   '\Memory\Transition Faults/sec'
                )
    
@@ -1432,20 +1425,33 @@ function Collect-PerformanceCounters($Samples = 60, $IntervalSeconds = 1)
                   '\Processor(_total)\% Privileged Time',
                   '\Processor(_total)\% Interrupt Time',
                   '\Processor(_total)\% DPC Time',
-                  '\Processor(_total)\% Idle Time'
+                  '\Processor(_total)\% Idle Time',
+                  '\System\Context Switches/sec',
+                  '\System\Processor Queue Length',
+                  '\System\System Calls/sec'
                )
 
-   ## IO counters
-   $counters += $counterList | ? { $_.CounterSetName -eq 'PhysicalDisk' } | Select -ExpandProperty PathsWithInstances | ? { $_ -match '^\\PhysicalDisk\([^_][^)]*\)\\' }
-   
+   ## mongod counters
+   $counters += @("\\$($env:COMPUTERNAME)\Process(mongo*)\ID Process",
+                  "\\$($env:COMPUTERNAME)\Process(mongo*)\Page Faults/sec",
+                  "\\$($env:COMPUTERNAME)\Process(mongo*)\Page File Bytes",
+                  "\\$($env:COMPUTERNAME)\Process(mongo*)\Pool Nonpaged Bytes",
+                  "\\$($env:COMPUTERNAME)\Process(mongo*)\Pool Paged Bytes",
+                  "\\$($env:COMPUTERNAME)\Process(mongo*)\Private Bytes",
+                  "\\$($env:COMPUTERNAME)\Process(mongo*)\Virtual Bytes",
+                  "\\$($env:COMPUTERNAME)\Process(mongo*)\Working Set",
+                  "\\$($env:COMPUTERNAME)\Process(mongo*)\Working Set - Private"
+               )
+
    Write-Verbose "Collecting the following counters:`r`n - $($counters -join `"`r`n - `")"
+   Write-Host -NoNewLine "Collecting $Samples samples of $($counters.Length) performance counters. ETA: $((Get-Date).AddSeconds($Samples * $IntervalSeconds).ToLongTimeString()) "
+   $counterData = Get-Counter $counters -MaxSamples $Samples -SampleInterval $IntervalSeconds -ErrorAction SilentlyContinue
+   Write-Host -NoNewLine "- Done."
    
-   $timeSpanComplete = New-TimeSpan -Seconds ($Samples * $IntervalSeconds)
-   
-   Write-Host "Collecting $($counters.Length) performance counters over a period of $($timeSpanComplete.TotalSeconds) seconds"
-   Write-Host "This will complete at $((Get-Date).Add($timeSpanComplete).ToString())"
-   
-   $counterData = [Microsoft.PowerShell.Commands.GetCounter.PerformanceCounterSampleSet[]] (Get-Counter $counters -MaxSamples $Samples -SampleInterval $IntervalSeconds)
+   if ($VerbosePreference -eq 'Continue')
+   {
+      Write-Host
+   }
    
    if (Get-Command Export-Counter -ErrorAction SilentlyContinue)
    {
@@ -1478,16 +1484,59 @@ function Collect-PerformanceCounters($Samples = 60, $IntervalSeconds = 1)
       }
    }
    
-   ## If we were unable to export counters fallback to embedding counter data as json documents within results
-   if (-not $csvPerformanceLog -or $script:FilesToCompress -notcontains $csvPerformanceLog)
-   {
-      $counterData | % { 
-         $results = New-Object Collections.Specialized.OrderedDictionary
-         $_ | Select -ExpandProperty CounterSamples | Sort-Object Path | % { $results.Add($_.Path.Split('\',4)[3], $_.CookedValue) } 
-      
-         @{ Timestamp = $_.Timestamp; Counters = $results }
+   ## WARN: Currently we have to support PowerShell v2 - this explains why some things are done the long way below.
+   
+   $counters = $counterData | % {
+      $_.CounterSamples | % { 
+         $obj = New-Object PSObject
+         $obj | Add-Member -Name Timestamp -MemberType NoteProperty -Value ([DateTimeOffset](_iso8601_string $_.Timestamp))
+         $obj | Add-Member -Name Path -MemberType NoteProperty -Value $_.Path.SubString("\\$($env:COMPUTERNAME)".Length)
+         $obj | Add-Member -Name Value -MemberType NoteProperty -Value $_.CookedValue
+         $obj
       }
    }
+
+   $data = $counters | Group-Object Path | Sort-Object Name | % {
+      $ordered = New-Object Collections.Specialized.OrderedDictionary
+      $ordered.Add('Path', $_.Name)
+
+      try
+      {
+         $result = $_.Group | Measure-Object Value -Minimum -Average -Maximum -ErrorAction Stop
+      }
+      catch
+      {
+         Write-Warning "Unable to get statistics for '$($_.Name)'"
+      }
+
+      $ordered.Add('Minimum', $result.Minimum)
+      $ordered.Add('Maximum', $result.Maximum) 
+      $ordered.Add('Average', $result.Average)
+      $ordered.Add('Samples', ($_.Group | Sort-Object Timestamp | Select -ExpandProperty Value))
+      $ordered
+   }
+
+   $minTimestamp = [DateTimeOffset]::MaxValue
+   $maxTimestamp = [DateTimeOffset]::MinValue
+   $counters | % { 
+      if ($_.Timestamp -lt $minTimestamp)
+      {
+         $minTimestamp = $_.Timestamp
+      }
+      if ($_.Timestamp -gt $maxTimestamp)
+      {
+         $maxTimestamp = $_.Timestamp
+      }
+   }
+   
+   $ordered = New-Object Collections.Specialized.OrderedDictionary
+   $ordered.Add('Start', $minTimestamp.DateTime)
+   $ordered.Add('Stop', $maxTimestamp.DateTime)
+   $ordered.Add('Samples', $Samples)
+   $ordered.Add('Interval', $IntervalSeconds)
+   $ordered.Add('SampleTimes', ($counterData | Select -ExpandProperty Timestamp | % { _iso8601_string $_ } | Sort-Object))
+   $ordered.Add('Data', $data)
+   $ordered
 }
 
 #======================================================================================================================
@@ -1541,7 +1590,7 @@ function Extract-EventLogEntries($FilterXml, $Limit = 10)
 #   
 #   name = verbatim content of the "section" value in the output for this probe result
 #   cmd = powershell command-line to execute and capture output from
-#   alt = alternative to cmd to try if 'cmd' reports any kind of error (stderr still goes to the console)
+#   alt = alternative to cmd to try if 'cmd' reports any kind of error
 #
 #======================================================================================================================
 function Get-Probes
@@ -1567,52 +1616,6 @@ function Get-Probes
    
    @{ name = "is_admin";
       cmd = "([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)"
-   }
-
-   @{ name = "memory-virtual";
-      cmd = "Get-WmiClassProperties Win32_PerfRawData_PerfOS_Memory"
-   }
-
-   @{ name = "vm-hyperv-dynamicmemory";
-      cmd = @"
-         # Get-Counter '\Hyper-V Dynamic Memory Integration Service\*'
-         try
-         {
-            Get-Counter '\Hyper-V Dynamic Memory Integration Service\*' -ErrorAction Stop | Select -ExpandProperty CounterSamples | % { @{ `$_.Path.Split('\',4)[3] = `$_.CookedValue } }
-         }
-         catch
-         {
-            throw "Unable to load 'Hyper-V Dynamic Memory Integration Service' counters"
-         }
-"@
-   }
-   
-   @{ name = "vm-vmware-memory";
-      cmd = @"
-         # Get-Counter '\VM Memory\*'
-         try
-         {
-            Get-Counter '\VM Memory\*' -ErrorAction Stop | Select -ExpandProperty CounterSamples | % { @{ `$_.Path.Split('\',4)[3] = `$_.CookedValue } }
-         }
-         catch
-         {
-            throw "Unable to load 'VM Memory' counters"
-         }
-"@
-   }
-
-   @{ name = "vm-vmware-processor";
-      cmd = @"
-         # Get-Counter '\VM Processor\*'
-         try
-         {
-            Get-Counter '\VM Processor\*' -ErrorAction Stop | Select -ExpandProperty CounterSamples | % { @{ `$_.Path.Split('\',4)[3] = `$_.CookedValue } }
-         }
-         catch
-         {
-            throw "Unable to load 'VM Processor' counters"
-         }
-"@
    }
    
    @{ name = "memory-status";
@@ -1740,6 +1743,69 @@ function Get-Probes
       cmd = 'Get-WmiClassProperties Win32_Processor'
    }
    
+   @{ name = "hardware-logicalprocessors";
+      cmd = @'
+         # Interop call to GetLogicalProcessorInformation()
+
+         $procCaches = @()
+
+         [MongoDB_Utils_ProcInfo]::GetLogicalProcessorInformation() | % {
+            
+            $obj = $_
+            
+            switch ($obj.Relationship) 
+            {
+               'RelationNumaNode'
+               {
+                  # Non-NUMA systems report a single record of this type.
+                  $numaNodeCount += 1
+                  break
+               }
+               
+               'RelationProcessorCore'
+               {
+                  $processorCoreCount += 1
+
+                  # A hyperthreaded core supplies more than one logical processor.
+                  $num = [MongoDB_Utils_ProcInfo]::GetNumberOfSetBits($obj.ProcessorMask)
+                  
+                  # Write-Host "$($obj.ProcessorMask) = $num"
+                  $logicalProcessorCount += $num
+                  break
+               }
+               
+               'RelationCache'
+               {
+                  $procCaches += ($cache = $obj | Select -ExpandProperty RelationUnion | Select -ExpandProperty Cache | `
+                                    Select @{ Name = 'ProcessorMask'; Expression = { $obj.ProcessorMask } }, Level, Type, LineSize, Size)
+                  break
+               }
+               
+               'RelationProcessorPackage'
+               {
+                  # Logical processors share a physical package.
+                  $processorPackageCount += 1
+                  break
+               }
+               
+               default
+               {
+                  Write-Warning "Unsupported LOGICAL_PROCESSOR_RELATIONSHIP value: $($obj.Relationship)"
+                  break
+               }
+            }
+         }
+
+         $results = @{}
+         $results.Add("NUMA nodes", $numaNodeCount)
+         $results.Add("Physical processor packages", $processorPackageCount)
+         $results.Add("Processor cores", $processorCoreCount)
+         $results.Add("Logical processors", $logicalProcessorCount)
+         $results.Add("Processor caches", $procCaches)
+         $results
+'@ 
+   }
+
    @{ name = "tasklist";
       cmd = @'
          $processes = Get-WmiObject Win32_Process
@@ -1798,40 +1864,36 @@ function Get-Probes
             {
                Remove-Item -Force -ErrorAction SilentlyContinue $tempFile
             }
-
-            if (-not $_.CommandLine)
+            
+            $configFile = $configFilePath = $null
+            
+            if ($_.CommandLine)
             {
-               return   @{ ConfigurationFilePath = $null;
-                           ProcessId = $_.ProcessId;
-                           ExecutablePath = $_.ExecutablePath;
-                           Version = $version;
-                           ConfigFile = $null
-                        }
-            }
-            
-            $array = [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine) | % { $_.Split('=',2) | % { return $_ } }
-            
-            $path = $null
-            
-            for ($i = 0; $i -lt $array.Length; $i++)
-            {
-               if ('-f','--config' -contains $array[$i] -and $i+1 -le $array.Length-1)
+               $array = [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine) | % { $_.Split('=',2) | % { return $_ } }
+               for ($i = 0; $i -lt $array.Length; $i++)
                {
-                  $path = $array[$i+1]
-                  if (-not ([IO.Path]::IsPathRooted($path)))
+                  if ('-f','--config' -contains $array[$i] -and $i+1 -le $array.Length-1)
                   {
-                     $path = [IO.Path]::Combine(([IO.Path]::GetDirectoryName($_.ExecutablePath)), ([IO.Path]::GetFileName($path)))
+                     $configFilePath = $array[$i+1]
+                     if (-not ([IO.Path]::IsPathRooted($configFilePath)))
+                     {
+                        $configFilePath = [IO.Path]::Combine(([IO.Path]::GetDirectoryName($_.ExecutablePath)), ([IO.Path]::GetFileName($configFilePath)))
+                     }
                   }
                }
             }
-
-            Write-Verbose "Discovered configuration file $path"
             
-            @{ ConfigurationFilePath = $path;
+            if ($configFilePath)
+            {
+               Write-Verbose "Discovered configuration file $configFilePath"
+               $configFile = Redact-ConfigFile $configFilePath
+            }
+            
+            @{ ConfigurationFilePath = $configFilePath;
                ProcessId = $_.ProcessId;
                ExecutablePath = $_.ExecutablePath;
                Version = $version;
-               ConfigFile = (Redact-ConfigFile $path)
+               ConfigFile = $configFile;
             }
          }
 '@
@@ -1846,8 +1908,7 @@ function Get-Probes
                return   @{ DbFilePath = $null;
                            ProcessId = $_.ProcessId;
                            ExecutablePath = $_.ExecutablePath;
-                           DirectoryListing = $null
-                        }
+                           DirectoryListing = $null }
             }
             
             $array = [MongoDB_CommandLine_Utils]::CommandLineToArgs($_.CommandLine) | % { $_.Split('=',2) | % { return $_ } }
@@ -1903,8 +1964,7 @@ function Get-Probes
                return   @{ DbFilePath = $null;
                            ProcessId = $_.ProcessId;
                            ExecutablePath = $_.ExecutablePath;
-                           DirectoryListing = $null
-                        }
+                           DirectoryListing = $null }
             }
 
             Write-Verbose "Discovered dbPath $dbPath"
@@ -1979,6 +2039,7 @@ function Get-Probes
    
    @{ name = "network-dns-cache";
       cmd = "Get-DnsClientCache | Get-Unique | Select Entry,Name,Data,DataLength,Section,Status,TimeToLive,Type";
+      alt = "ipconfig /displaydns"
    }
    
    @{ name = "network-tcp-active";
@@ -1995,18 +2056,16 @@ function Get-Probes
          
          $lsa = New-Object MongoDB_LSA_Helper
          $results = @{}
-          
-         [MongoDB_LSA_Helper+Rights].GetEnumNames() | % {
+         
+         [Enum]::GetValues([MongoDB_LSA_Helper+Rights]) | % {
+            $priv = $_.ToString()
             try
             {
-               $privilege = $_
-               $accounts = @()
-               $accounts += $lsa.EnumerateAccountsWithUserRight($privilege) | ? { $_ }
-               $results.Add($privilege, $accounts)
+               $results.Add($priv, $lsa.EnumerateAccountsWithUserRight($priv))
             }
             catch
             {
-               Write-Verbose "Could not enumerate $privilege"
+               Write-Verbose "Could not enumerate privilege $priv"
             }
          }
          
@@ -2017,6 +2076,18 @@ function Get-Probes
    @{ name = "firewall";
       cmd = "Get-NetFirewallRule | Where-Object {`$_.DisplayName -like '*mongo*'} | Select Name,DisplayName,Enabled,@{Name='Profile';Expression={`$_.Profile.ToString()}},@{Name='Direction';Expression={`$_.Direction.ToString()}},@{Name='Action';Expression={`$_.Action.ToString()}},@{Name='PolicyStoreSourceType';Expression={`$_.PolicyStoreSourceType.ToString()}}";
    }
+
+   @{ name = "storage-filecachesize";
+      cmd = @'
+         # Interop call to GetSystemFileCacheSize()
+
+         $min = $max = $flags = 0
+
+         if ([MongoDB_FileCache_Utils]::GetFileCacheSize([ref] $min, [ref] $max, [ref] $flags))
+         {
+            @{ min = $min; max = $max; flags = $flags }
+         }
+'@ }
 
    @{ name = "storage-fsutil";
       cmd = "fsutil behavior query DisableLastAccess; fsutil behavior query EncryptPagingFile"
@@ -2038,6 +2109,10 @@ function Get-Probes
       alt = "Get-WmiObject Win32_LogicalDisk | Select Compressed,Description,DeviceID,DriveType,FileSystem,FreeSpace,MediaType,Name,Size,SystemName,VolumeSerialNumber";
    }
 
+   @{ name = "storage-ntfs.sys-version";
+      cmd = "(Get-Item $env:SYSTEMROOT\system32\drivers\ntfs.sys -ErrorAction Stop).VersionInfo";
+   }
+   
    @{ name = "environment";
       cmd = "Get-Childitem env: | ForEach-Object {`$j=@{}} {`$j.Add(`$_.Name,`$_.Value)} {`$j}";
    }
@@ -2088,80 +2163,6 @@ function Get-Probes
    @{ name = "tcpip-parameters";
       cmd = 'Get-RegistryValues HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters'
    }
-   
-   @{ name = "storage-filecachesize";
-      cmd = @'
-         # Interop call to GetSystemFileCacheSize()
-
-         $min = $max = $flags = 0
-
-         if ([MongoDB_FileCache_Utils]::GetFileCacheSize([ref] $min, [ref] $max, [ref] $flags))
-         {
-            @{ min = $min; max = $max; flags = $flags }
-         }
-'@ }
-
-   @{ name = "hardware-logicalprocessors";
-      cmd = @'
-         # Interop call to GetLogicalProcessorInformation()
-
-         $procCaches = @()
-
-         [MongoDB_Utils_ProcInfo]::GetLogicalProcessorInformation() | % {
-            
-            $obj = $_
-            
-            switch ($obj.Relationship) 
-            {
-               'RelationNumaNode'
-               {
-                  # Non-NUMA systems report a single record of this type.
-                  $numaNodeCount += 1
-                  break
-               }
-               
-               'RelationProcessorCore'
-               {
-                  $processorCoreCount += 1
-
-                  # A hyperthreaded core supplies more than one logical processor.
-                  $num = [MongoDB_Utils_ProcInfo]::GetNumberOfSetBits($obj.ProcessorMask)
-                  
-                  # Write-Host "$($obj.ProcessorMask) = $num"
-                  $logicalProcessorCount += $num
-                  break
-               }
-               
-               'RelationCache'
-               {
-                  $procCaches += ($cache = $obj | Select -ExpandProperty RelationUnion | Select -ExpandProperty Cache | `
-                                    Select @{ Name = 'ProcessorMask'; Expression = { $obj.ProcessorMask } }, Level, Type, LineSize, Size)
-                  break
-               }
-               
-               'RelationProcessorPackage'
-               {
-                  # Logical processors share a physical package.
-                  $processorPackageCount += 1
-                  break
-               }
-               
-               default
-               {
-                  Write-Warning "Unsupported LOGICAL_PROCESSOR_RELATIONSHIP value: $($obj.Relationship)"
-                  break
-               }
-            }
-         }
-
-         $results = @{}
-         $results.Add("NUMA nodes", $numaNodeCount)
-         $results.Add("Physical processor packages", $processorPackageCount)
-         $results.Add("Processor cores", $processorCoreCount)
-         $results.Add("Logical processors", $logicalProcessorCount)
-         $results.Add("Processor caches", $procCaches)
-         $results
-'@ }
 
    # @todo: capture other vendor exception lists
 
@@ -2183,9 +2184,10 @@ function Get-Probes
             $destFile = [IO.Path]::Combine([IO.Path]::GetTempPath(), "$($env:COMPUTERNAME)_$([IO.Path]::GetFileName($_.Name))")
 
             Write-Verbose "Exporting $($_.LogfileName) to $destFile"
+            Remove-Item -Force $destFile -ErrorAction SilentlyContinue
             $exported = $_.BackupEventlog($destFile)
             
-            if ($exported -and $exported.ReturnValue -eq 0)
+            if ($exported.ReturnValue -eq 0)
             {
                $script:FilesToCompress += $destFile
             }
@@ -2200,6 +2202,11 @@ function Get-Probes
                         @{ Name = 'ReturnValue'; Expr = { $exported.ReturnValue } }
          }
 '@
+   }
+   
+   ## Present this last within results file
+   @{ name = "performance-counters";
+      cmd = "Collect-PerformanceCounters $script:Samples $script:Interval"
    }
 }
 
