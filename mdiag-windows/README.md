@@ -6,26 +6,28 @@ mdiag.ps1
 
 ### Description
 
-mdiag.ps1 is a Windows PowerShell script to gather a wide variety of system-level diagnostic information.
+[mdiag.ps1](https://raw.githubusercontent.com/mongodb/support-tools/master/mdiag-windows/mdiag.ps1) is a utility to gather a wide variety of system and hardware diagnostic information.
 
+### Usage
 
-## Usage
+The easiest way to run the script is by right clicking it and selecting '**Run with PowerShell**'. Note that if you are prompted for an Execution Policy Change, pressing [Y] will allow the script to run **one time**.
 
-The easiest way to run the script is by right clicking it and selecting 'Run with PowerShell'. 
+Alternatively you can launch the script from a Windows command prompt. Example command line to permit script execution:  
 
-Alternatively you can launch it from the Run dialog (Win+R) by typing the following command and pressing `Enter`:
-```bat
-powershell -ExecutionPolicy Unrestricted -File "<full-path-to-mdiag.ps1>" SF-XXXXXX
+```
+powershell -ExecutionPolicy Unrestricted -File "~\Downloads\mdiag.ps1" _casereference_
 ```
 
-This may trigger a UAC dialog to which the user will need to click Yes. Although the script will still run if UAC elevation is denied, it may provide less output.
-
-As the script progresses it will fill a text file in the Documents folder of the current user. The file is named "mdiag-\<hostname\>.txt". 
-
-Once the collection process is complete this text file along with other files collected will be added to a zip file named "mdiag-\<hostname\>.zip" under the same Documents folder. 
-
+- Replace `_casereference_` with your support case reference, if relevant.
+- This script may trigger a UAC consent prompt to which the user will need to click Yes. 
+   - Although the script will still run if UAC elevation is denied, it may provide less output.
+- As the script progresses it will log all output to a file named `mdiag-%COMPUTERNAME%.txt` in the current users `Documents` folder.
+- Once diagnostic capture completes all files will be zipped into `mdiag-%COMPUTERNAME%.zip` under the same `Documents` folder. 
 
 ### License
+
+[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
 
 DISCLAIMER
 ----------
@@ -35,5 +37,5 @@ Any use of these scripts and tools is **at your own risk**.  There is no guarant
 
 You are responsible for reviewing and testing any scripts you run *thoroughly* before use in any non-testing environment.
 
-Thanks, 
+Thanks,  
 The MongoDB Support Team
