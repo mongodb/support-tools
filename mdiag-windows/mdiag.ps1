@@ -29,8 +29,8 @@ function Main
       os = (Get-WmiObject Win32_OperatingSystem).Caption.Trim();
       shell = "PowerShell $($PSVersionTable.PSVersion)";
       script = "mdiag";
-      version = "1.8.0";
-      revdate = "2017-07-17";
+      version = "1.8.1";
+      revdate = "2017-08-02";
    }
    
    Setup-Environment
@@ -335,7 +335,7 @@ function Hash-SHA256($StringToHash)
 #======================================================================================================================
 {
    $hasher = New-Object Security.Cryptography.SHA256Managed
-   [String]::Join(($hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes($StringToHash)) | % { ([byte] $_).ToString('X2') }))
+   ($hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes($StringToHash)) | % { ([byte] $_).ToString('X2') }) -join ''
 }
 
 #======================================================================================================================
@@ -349,30 +349,22 @@ function Redact-ConfigFile($FilePath)
       return
    }
    
-   $optionsToRedact = @('\bquery(?:User|Password):[\s]*([^\s]*)', `
+   $optionsToRedact = @('\bqueryPassword:[\s]*([^\s]*)',
+                        '\bqueryUser:[\s]*([^\s]*)[\s]*$',
+                        '\bqueryUser:[\s]*(CN=.+?)(?<!\\)\,',
                         '\bservers:[\s]*([^\s]*)')
 
    Get-Content $FilePath -ErrorAction Stop | % {
-      if ([String]::IsNullOrEmpty($_))
+      if (-not ($currentLine = $_))
       {
-         return ""
+         return ''
       }
       
-      $currentLine = $_
-      $matchFound = $false
-         
-      $optionsToRedact | % {
-         if ($currentLine -match $_)
-         {
-            $currentLine.Replace($Matches[1], "<redacted sha256 $(Hash-SHA256 $Matches[1])>")
-            $matchFound = $true
-         }
+      $optionsToRedact | ? { $currentLine -match $_ } | % {
+         $currentLine = $currentLine.Replace($Matches[1], "<redacted sha256 $(Hash-SHA256 $Matches[1])>")
       }
       
-      if (-not $matchFound)
-      {
-         $currentLine
-      }
+      $currentLine
    } 
 }
 
@@ -435,6 +427,8 @@ function Run-Command($CommandString)
 
 #======================================================================================================================
 # Get list of probes and run them
+# ---------------------------------------------------------------------------------------------------------------------
+# NB: This cmdlet uses -notcontains instead of -notin because we need to support PowerShell v2
 #======================================================================================================================
 function Run-Probes
 #======================================================================================================================
@@ -445,7 +439,46 @@ function Run-Probes
    $sb = New-Object System.Text.StringBuilder
    $sb.Append((Emit-Document "fingerprint" @{ command = $false; ok = $true; output = $FingerprintOutputDocument; })) | Out-Null
 
-   $probes = [Array] (Get-Probes | ? { $script:ProbeList.Count -eq 0 -or $script:ProbeList -contains $_.name })
+   $probes = Get-Probes
+
+   if ($script:ProbeList.Count)
+   {
+      $probesToSkip = @()
+      $probesToRun = @()
+      
+      $script:ProbeList | % {
+         if (($probes | % { $_['name'] }) -notcontains $_.TrimStart('-'))
+         {
+            Write-Warning "Probe '$($_.TrimStart('-'))' not found"
+            return
+         }
+            
+         if ($_.StartsWith('-'))
+         {
+            $probesToSkip += $_.SubString(1)
+         }
+         else
+         {
+            $probesToRun += $_
+         }
+      }
+      
+      if ($probesToRun.Count -and $probesToSkip.Count)
+      {
+         Write-Warning "ProbeList parameter does not accept both probes to run and probes to skip"
+         Exit
+      }
+      
+      if ($probesToRun.Count)
+      {
+         $probes = [Array] ($probes | ? { $probesToRun -contains $_.name })
+      }
+      else
+      {
+         $probes = [Array] ($probes | ? { $probesToSkip -notcontains $_.name})
+      }
+   }
+
    $script:ProbeCount = $probes.Length
    $probes | % {
       $probesRunCount++
@@ -1058,13 +1091,6 @@ function Add-CompiledTypes
             throw new Win32Exception(Win32Sec.LsaNtStatusToWinError((int)ret));
          }
          
-         // Need to support .NET 2.0 which doesn't support extension methods
-         public static IntPtr IntPtrAdd(IntPtr ptr, long offset) 
-         {
-            IntPtr ret = new IntPtr(ptr.ToInt64() + offset);
-            return ret;
-         }
-
          public enum Rights
          {
             SeTrustedCredManAccessPrivilege,      // Access Credential Manager as a trusted caller
@@ -1171,7 +1197,7 @@ function Add-CompiledTypes
                for (int i = 0; i < (int)count; i++)
                {
                   LSA_UNICODE_STRING str = (LSA_UNICODE_STRING)Marshal.PtrToStructure(
-                     IntPtrAdd(privileges, i * Marshal.SizeOf(typeof(LSA_UNICODE_STRING))),
+                     new IntPtr(privileges.ToInt64() + i * Marshal.SizeOf(typeof(LSA_UNICODE_STRING))),
                      typeof(LSA_UNICODE_STRING));
                   
                   rights[i] = (Rights)Enum.Parse(typeof(Rights), str.Buffer);
@@ -1207,7 +1233,7 @@ function Add-CompiledTypes
                for (int i = 0; i < (int)count; i++)
                {
                   LSA_ENUMERATION_INFORMATION LsaInfo = (LSA_ENUMERATION_INFORMATION)Marshal.PtrToStructure(
-                     IntPtrAdd(buffer, i * Marshal.SizeOf(typeof(LSA_ENUMERATION_INFORMATION))),
+                     new IntPtr(buffer.ToInt64() + i * Marshal.SizeOf(typeof(LSA_ENUMERATION_INFORMATION))),
                      typeof(LSA_ENUMERATION_INFORMATION));
 
                   try 
@@ -1542,7 +1568,7 @@ function Collect-PerformanceCounters($Samples = 1, $IntervalSeconds = 60)
 #======================================================================================================================
 # Wrapper to extract entries from Windows event log
 #======================================================================================================================
-function Extract-EventLogEntries($FilterXml, $Limit = 10)
+function Extract-EventLogEntries($FilterXml, $Limit = 20)
 #======================================================================================================================
 {
    ## Get-WinEvent on PowerShell 2.0 doesn't return a message when culture is not en-US
@@ -1596,8 +1622,6 @@ function Extract-EventLogEntries($FilterXml, $Limit = 10)
 function Get-Probes
 #======================================================================================================================
 {   
-   # @todo: check to see if mongod is open to the internet
-
    @{ name = "computersystem";
       cmd = "Get-WmiClassProperties Win32_ComputerSystem"
    }
@@ -1666,7 +1690,7 @@ function Get-Probes
 "@
          }
          
-         Extract-EventLogEntries $filterXml 20
+         Extract-EventLogEntries $filterXml
 '@
    }
    
@@ -1681,7 +1705,7 @@ function Get-Probes
                </Query>
             </QueryList>
 "@         
-         Extract-EventLogEntries $filterXml 20
+         Extract-EventLogEntries $filterXml
 '@
    }
    
@@ -1700,7 +1724,7 @@ function Get-Probes
             </QueryList>
 "@
          
-         Extract-EventLogEntries $filterXml 20
+         Extract-EventLogEntries $filterXml
 '@
    }
    
@@ -1735,7 +1759,32 @@ function Get-Probes
             </QueryList>
 "@
          
-         Extract-EventLogEntries $filterXml 30
+         Extract-EventLogEntries $filterXml
+'@
+   }
+   
+   @{ name = "kernel-resource-exhaustion";
+      cmd = @'
+         # Extract-EventLogEntries for signs of Resource Exhaustion
+         
+         $filterXml = @"
+            <QueryList>
+               <Query Id="0" Path="System">
+                  <Select Path="System">*[System[Provider[@Name='Resource-Exhaustion-Detector']]]</Select>
+               </Query>
+               <Query Id="1" Path="System">
+                  <Select Path="System">*[System[Provider[@Name='srv'] and (EventID=2013)]]</Select>
+               </Query>
+               <Query Id="2" Path="System">
+                  <Select Path="System">*[System[Provider[@Name='Application Popup'] and (EventID=26)]]</Select>
+               </Query>
+               <Query Id="3" Path="Application">
+                  <Select Path="System">*[System[Provider[@Name='ESENT'] and (EventID=482)]]</Select>
+               </Query>
+            </QueryList>
+"@
+         
+         Extract-EventLogEntries $filterXml
 '@
    }
    
@@ -2014,34 +2063,20 @@ function Get-Probes
       cmd = "netsh int ipv6 show dynamicport tcp";
    }
    
-   @{ name = "spn-registrations";
-      cmd = @'
-         # Get SPN registrations
-
-         try
-         {
-            $sysInfo = New-Object -ComObject "ADSystemInfo"
-            $machineDN = $sysInfo.GetType().InvokeMember("ComputerName", [Reflection.BindingFlags]::GetProperty, $null, $sysInfo, $null)
-            ([ADSI] "LDAP://$machineDN").servicePrincipalName
-         }
-         catch 
-         {
-            $ex = $_.Exception
-            if ($ex.InnerException -and $ex.InnerException.Message)
-            {
-               throw $ex.InnerException.Message
-            }
-            
-            throw $ex.Message
-         }
-'@
-   }
-   
    @{ name = "network-dns-cache";
       cmd = "Get-DnsClientCache | Get-Unique | Select Entry,Name,Data,DataLength,Section,Status,TimeToLive,Type";
       alt = "ipconfig /displaydns"
    }
    
+   @{ name = "network-dns-names";
+      cmd = @'
+         $FQDN = [Net.Dns]::GetHostByName('localhost').Hostname
+         @{ $FQDN = [Net.Dns]::GetHostByName($FQDN) }
+         
+         [Net.Dns]::GetHostByName($FQDN) | Select -ExpandProperty AddressList | % { @{ $_.IPAddressToString = [Net.Dns]::GetHostByAddress($_) } }
+'@
+   }
+
    @{ name = "network-tcp-active";
       cmd = "netstat -ano -p TCP | select -skip 3 | foreach {`$_.Substring(2) -replace `" {2,}`",`",`" } | ConvertFrom-Csv"
    }
@@ -2148,6 +2183,226 @@ function Get-Probes
       cmd = 'Get-RegistryValues HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\Kerberos\Parameters'
    }
    
+   @{ name = "kerberos-spn-registrations";
+      cmd = @'
+         $spns = @($env:COMPUTERNAME)
+         
+         Get-WmiObject Win32_Service | ? { $_.PathName -and ($_.PathName.Contains('\mongod.exe') -or $_.PathName.Contains('\mongos.exe')) } | `
+            Select -ExpandProperty StartName | ? { $_ -and -not $_.StartsWith('NT AUTHORITY\') -and $_ -ne 'LocalSystem' } | Sort-Object -Unique | % { $spns += $_ }
+         
+         $spns | % {
+            $psInfo = New-Object System.Diagnostics.ProcessStartInfo
+            $psInfo.FileName = "$env:SYSTEMROOT\system32\setspn.exe"
+            $psInfo.Arguments = "-P -L `"$_`""
+            $psInfo.RedirectStandardError = $true
+            $psInfo.RedirectStandardOutput = $true
+            $psInfo.CreateNoWindow = $true
+            $psInfo.UseShellExecute = $false
+
+            $process = New-Object System.Diagnostics.Process
+            $process.StartInfo = $psInfo
+            
+            Write-Verbose "Running `"$($psInfo.FileName)`" $($psInfo.Arguments)"
+            if ($process.Start())
+            {
+               $process.WaitForExit()
+            }
+            
+            $stdout = $process.StandardOutput.ReadToEnd()
+            $stderr = $process.StandardError.ReadToEnd()
+            if ($stderr -or ([int] $process.ExitCode -ne 0)) 
+            {
+               if (-not $stderr) 
+               {
+                  $stderr = "setspn.exe exited with code $($process.ExitCode)"
+                  if ($stdout) 
+                  {
+                     $stderr += "`r`n`r`n$stdout"
+                  }
+               }
+               
+               $ordered = New-Object Collections.Specialized.OrderedDictionary
+               $ordered.Add('acct', $_)
+               $ordered.Add('dn', $null)
+               $ordered.Add('spns', $null)
+               $ordered.Add('error', $stderr)
+               $ordered.Add('exitcode', $process.ExitCode)
+               return $ordered
+            }
+
+            $output = $stdout.Split("`r`n") | ? { $_ } | % { $_.Replace("`t",'') }
+            if ($output[0].StartsWith('Registered ServicePrincipalNames for '))
+            {
+               $dn = $output[0].SubString('Registered ServicePrincipalNames for '.Length).TrimEnd(':')
+               $ordered = New-Object Collections.Specialized.OrderedDictionary
+               $ordered.Add('requestedAccount', $_)
+               $ordered.Add('distinguishedName', $dn)
+
+               try
+               {
+                  $adsi = [ADSI] "LDAP://$dn"
+                  'sAMAccountName','cn','dNSHostName','userPrincipalName' | % {
+                     if ($value = ($adsi.$_ | Select -First 1))
+                     {
+                        $ordered.Add($_, $value)
+                     }
+                  }
+               }
+               catch
+               {
+                  Write-Verbose $_.Exception.Message
+               }
+               
+               $ordered.Add('spns', ([Array] ($output[1..($output.Length-1)] | Sort-Object)))
+               $ordered
+            }
+         }
+'@
+   }
+   
+   @{ name = "kerberos-binding-cache";
+      cmd = @'
+         $bindings = klist.exe query_bind
+         $line = 0 
+         $bindings | % {
+            if ($_ -match "^#\d") 
+            { 
+               $binding = New-Object PSObject 
+               $binding | Add-Member -MemberType NoteProperty -Name "Index" -Value $bindings[$line].Split('>')[0].Replace('#','')
+               $binding | Add-Member -MemberType NoteProperty -Name "RealmName" -Value $bindings[$line].Split('>')[1].Split(':',2)[1].Trim()
+               $binding | Add-Member -MemberType NoteProperty -Name "KDC Address" -Value $bindings[$line+1].Split(':',2)[1].Trim()
+               $binding | Add-Member -MemberType NoteProperty -Name "KDC Name" -Value $bindings[$line+2].Split(':',2)[1].Trim()
+               $binding | Add-Member -MemberType NoteProperty -Name "Flags" -Value $bindings[$line+3].Split(':',2)[1].Trim()
+               $binding | Add-Member -MemberType NoteProperty -Name "DC Flags" -Value $bindings[$line+4].Split(':',2)[1].Trim()
+               $binding | Add-Member -MemberType NoteProperty -Name "Cache Flags" -Value $bindings[$line+5].Split(':',2)[1].Trim()
+               $binding 
+            }
+            $line++
+         }
+'@
+   }
+
+   @{ name = "kerberos-sessions";
+      cmd = @'
+         $klistSessions = klist.exe sessions
+         $sessioninfo = @{}
+         $klistSessions | % {
+            if ($_ -match '^\[\d+\] Session \d+ 0:(0x[0-9a-f]+) (.+) ([^:]+):([^\s]+)') 
+            { 
+               $session = New-Object PSObject 
+               $session | Add-Member -MemberType NoteProperty -Name 'LoginId' -Value $Matches[1]
+               $session | Add-Member -MemberType NoteProperty -Name 'Identity' -Value $Matches[2] 
+               $session | Add-Member -MemberType NoteProperty -Name 'AuthenticationPackage' -Value $Matches[3]          
+               $session | Add-Member -MemberType NoteProperty -Name 'LogonType' -Value $Matches[4]
+               $sessioninfo.Add($Matches[1], $session)
+            }
+         }
+
+         Get-WmiObject Win32_LogonSession | % {
+
+            $session = New-Object PSObject
+            $session | Add-Member -MemberType NoteProperty -Name 'LogonId' -Value "0x$([Convert]::ToString($_.LogonId, 16))"
+            $session | Add-Member -MemberType NoteProperty -Name 'AuthenticationPackage' -Value $_.AuthenticationPackage
+
+            if ($sessionInfo.ContainsKey($session.LogonId))
+            { 
+               $session | Add-Member -MemberType NoteProperty -Name 'LogonType' -Value $sessionInfo[$session.LogonId].LogonType
+               $session | Add-Member -MemberType NoteProperty -Name 'Identity' -Value $sessioninfo[$session.LogonId].Identity
+            }
+            else
+            { 
+               $session | Add-Member -MemberType NoteProperty -Name 'LogonType' -Value $_.LogonType
+            } 
+
+            $line = 0
+            $rawTGT = klist.exe tgt -li $session.LogonId 
+            $tgt = New-Object PSObject
+            $rawTGT | % {
+               if ($_.Trim() -match '^Current LogonId is 0:([x0-9a-f]+)$')
+               {
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'Current LogonId' -Value $Matches[1]
+                  $startLine = $line+1
+               }
+
+               ## Microsoft changed the spelling of "Targeted" between releases
+               if ($_.Trim() -match '^Targe[t]{1,2}ed LogonId is 0:([x0-9a-f]+)$')
+               {
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'Targeted LogonId' -Value $Matches[1]
+                  $startLine = $line+1
+               }
+               
+               if ($_.StartsWith('Cached TGT:'))
+               {
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'ServiceName' -Value $rawTGT[$line+2].Split(':',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'TargetName SPN' -Value $rawTGT[$line+3].Split(':',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'ClientName' -Value $rawTGT[$line+4].Split(':',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'DomainName' -Value $rawTGT[$line+5].Split(':',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'TargetDomainName' -Value $rawTGT[$line+6].Split(':',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'AltTargetDomainName' -Value $rawTGT[$line+7].Split(':',2)[1].Trim()
+                  
+                  $ticketFlagsLine = $rawTGT[$line+8].Split(':',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'Ticket Flags' -Value $ticketFlagsLine.SubString(0,10)
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'Ticket Flags Data' -Value $ticketFlagsLine.SubString(14).Trim()
+                  
+                  $sessionKeyLine = $rawTGT[$line+9].Split(':',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'Session Key Type' -Value $sessionKeyLine.Split('-',2)[0].Trim().Split(' ',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'Session Key Type Data' -Value $sessionKeyLine.Split('-',2)[1].Trim()
+
+                  $sessionKeyLine = $rawTGT[$line+10].Split(':',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'Session Key Length' -Value $sessionKeyLine.Split('-',2)[0].Trim().Split(' ',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'Session Key Length Data' -Value $sessionKeyLine.Split('-',2)[1].Trim()
+                  
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'StartTime' -Value ([DateTime] $rawTGT[$line+11].Split(':',2)[1].Replace('(local)','').Trim())
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'EndTime' -Value ([DateTime] $rawTGT[$line+12].Split(':',2)[1].Replace('(local)','').Trim())
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'RenewUntil' -Value ([DateTime] $rawTGT[$line+13].Split(':',2)[1].Replace('(local)','').Trim())
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'TimeSkew' -Value $rawTGT[$line+14].Split(':',2)[1].Trim()
+               }
+               $line++              
+            }
+            
+            if (-not $tgt.ServiceName)
+            {
+               $tgt | Add-Member -MemberType NoteProperty -Name Error -Value ($rawTGT[$startLine..($rawTGT.Length-1)] | ? { $_ })
+            }
+
+            $session | Add-Member -MemberType NoteProperty -Name 'Ticket Granting Ticket' -Value $tgt
+            
+            $line = 0 
+            $tickets = klist.exe tickets -li $session.LogonId
+            $sessionTickets = $tickets | % {
+               if ($_ -match "^#\d") 
+               { 
+                  $ticket = New-Object PSObject 
+                  $ticket | Add-Member -MemberType NoteProperty -Name 'Index' -Value $tickets[$line].Split('>')[0].Replace('#','')
+                  $ticket | Add-Member -MemberType NoteProperty -Name 'Client' -Value $tickets[$line].Split('>')[1].Split(':',2)[1].Trim()
+                  $ticket | Add-Member -MemberType NoteProperty -Name 'Server' -Value $tickets[$line+1].Split(':',2)[1].Trim()
+                  $ticket | Add-Member -MemberType NoteProperty -Name 'KerbTicket Encryption Type' -Value $tickets[$line+2].Split(':',2)[1].Trim()
+                  
+                  $ticketFlagsLine = $tickets[$line+3].Replace('Ticket Flags','').Trim()
+                  $ticket | Add-Member -MemberType NoteProperty -Name 'Ticket Flags' -Value $ticketFlagsLine.Split(' ')[0]
+                  $ticket | Add-Member -MemberType NoteProperty -Name 'Ticket Flags Data' -Value $ticketFlagsLine.SubString(14)
+                  
+                  $ticket | Add-Member -MemberType NoteProperty -Name 'Start Time' -Value ([DateTime] $tickets[$line+4].Split(':',2)[1].Replace('(local)','').Trim())
+                  $ticket | Add-Member -MemberType NoteProperty -Name 'End Time' -Value ([DateTime] $tickets[$line+5].Split(':',2)[1].Replace('(local)','').Trim())
+                  $ticket | Add-Member -MemberType NoteProperty -Name 'Renew Time' -Value ([DateTime] $tickets[$line+6].Split(':',2)[1].Replace('(local)','').Trim())
+                  $ticket | Add-Member -MemberType NoteProperty -Name 'Session Key Type' -Value $tickets[$line+7].Split(':',2)[1].Trim()
+
+                  if ((Get-WmiObject Win32_OperatingSystem).BuildNumber -ge 9200) 
+                  { 
+                     $ticket | Add-Member -MemberType NoteProperty -Name 'Cache Flags' -Value $tickets[$line+8].Split(':',2)[1].Trim()
+                     $ticket | Add-Member -MemberType NoteProperty -Name 'KDC Called' -Value $tickets[$line+9].Split(':',2)[1].Trim()
+                  }
+                  $ticket 
+               }
+               $line++ 
+            } 
+            
+            $session | Add-Member -MemberType NoteProperty -Name 'Session Tickets' -Value $sessionTickets
+            $session
+         }
+'@
+   }
+   
    @{ name = "security-cipher-suites";
       cmd = '[MongoDB_Utils_CipherSuites]::EnumerateCiphers()'
    }
@@ -2166,8 +2421,34 @@ function Get-Probes
 
    # @todo: capture other vendor exception lists
 
-   @{ name = 'mcafee-onaccess-exclusions';
-      cmd = 'Get-RegistryValues "HKLM:\Software\Wow6432Node\McAfee\SystemCore\vscore\On Access Scanner\McShield\Configuration\Default"'
+   @{ name = 'mcafee-av-exclusions';
+      cmd = @'
+         if ([IntPtr]::Size -eq 8)
+         {
+            ## 64 bit process
+            Get-RegistryValues "HKLM:\SOFTWARE\Wow6432Node\McAfee\SystemCore\vscore\On Access Scanner\McShield\Configuration\Default"'
+         }
+         else
+         {
+            Get-RegistryValues "HKLM:\SOFTWARE\McAfee\SystemCore\vscore\On Access Scanner\McShield\Configuration\Default"'
+         }
+         
+         Get-RegistryValues "HKLM:\SOFTWARE\McAfee\ManagedServices\VirusScan\Exclude"
+'@
+   }
+   
+   @{ name = 'symantec-av-exclusions';
+      cmd = @'
+         if ([IntPtr]::Size -eq 8)
+         {
+            ## 64 bit process
+            Get-RegistryValues "HKLM:\SOFTWARE\Wow6432Node\Symantec\Symantec Endpoint Protection\AV\Exclusions"'
+         }
+         else
+         {
+            Get-RegistryValues "HKLM:\SOFTWARE\Symantec\Symantec Endpoint Protection\AV\Exclusions"'
+         }
+'@
    }
 
    @{ name = 'windows-defender';
