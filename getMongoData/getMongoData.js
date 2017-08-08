@@ -89,7 +89,7 @@ if (DB.prototype.getRoles == null) {
 }
 
 // Taken from the >= 3.1.9 shell to capture print output
-if (typeof print.captureAllOutput === "undefined") { 
+if (typeof print.captureAllOutput === "undefined") {
     print.captureAllOutput = function (fn, args) {
         var res = {};
         res.output = [];
@@ -302,7 +302,7 @@ function printDataInfo(isMongoS) {
                     }
                     printInfo('Indexes',
                               function(){return db.getSiblingDB(mydb.name).getCollection(col).getIndexes()}, section);
-                    if (col != "system.users") {
+                    if (col != "system.users" && !_excludeDocs) {
                         printInfo('Sample document',
                                   function(){
 					var lastValCursor = db.getSiblingDB(mydb.name).getCollection(col).find().sort({'$natural': -1}).limit(-1);
@@ -358,6 +358,7 @@ function printAuthInfo() {
 
 if (typeof _printJSON === "undefined") var _printJSON = false;
 if (typeof _ref === "undefined") var _ref = null;
+if (typeof _excludeDocs === "undefined") var _excludeDocs = false;
 var _output = [];
 var _tag = ObjectId();
 if (! _printJSON) {

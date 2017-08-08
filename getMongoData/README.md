@@ -27,6 +27,10 @@ as demonstrated for the local execution:
 
     mongo --quiet --norc --eval "var _printJSON=true; var _ref = 'CS-XXXXX'" getMongoData.js > getMongoData-output.json
 
+By default, the outut will include a sample document from each non-system collection.  To disable this, include `_excludeDocs` argument as shown below:
+
+    mongo --quiet --norc --eval "var _printJSON=true; var _excludeDocs=true" getMongoData.js > getMongoData-output.json
+
 ### License
 
 [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
