@@ -89,7 +89,7 @@ if (DB.prototype.getRoles == null) {
 }
 
 // Taken from the >= 3.1.9 shell to capture print output
-if (typeof print.captureAllOutput === "undefined") { 
+if (typeof print.captureAllOutput === "undefined") {
     print.captureAllOutput = function (fn, args) {
         var res = {};
         res.output = [];
@@ -302,6 +302,29 @@ function printDataInfo(isMongoS) {
                     }
                     printInfo('Indexes',
                               function(){return db.getSiblingDB(mydb.name).getCollection(col).getIndexes()}, section);
+                    printInfo('Index Stats',
+                              function(){
+                                var res = db.getSiblingDB(mydb.name).runCommand( {
+                                  aggregate: col,
+                                  pipeline: [
+                                    {$indexStats: {}},
+                                    {$group: {_id: "$key", stats: {$push: {accesses: "$accesses.ops", host: "$host", since: "$accesses.since"}}}},
+                                    {$project: {key: "$_id", stats: 1, _id: 0}}
+                                  ]
+                                });
+
+                                if (res.hasOwnProperty('result')) {
+                                  res.result.forEach(
+                                    function(d){
+                                      d.stats.forEach(
+                                        function(d){
+                                          d.since = d.since.toUTCString();
+                                        })
+                                    });
+                                }
+
+                                return res;
+                              }, section);
                     if (col != "system.users") {
                         printInfo('Sample document',
                                   function(){
