@@ -1,13 +1,45 @@
-###################
-# mdiag.ps1 - Windows Diagnostic Script for MongoDB
+# ====================================
+# mdiag.ps1: MongoDB Diagnostic Report
+# ====================================
 #
-# https://github.com/mongodb/support-tools/tree/master/mdiag-windows
+# Copyright MongoDB, Inc, 2014, 2015, 2016, 2017
+#
+# Gather a wide variety of system and hardware diagnostic information.
+#
+
+$script:ScriptVersion = "1.8.2"
+$script:RevisionDate  = "2017-08-26"
+
+#
+# DISCLAIMER
+#
+# Please note: all tools/ scripts in this repo are released for use "AS IS" without any warranties of any kind, 
+# including, but not limited to their installation, use, or performance. We disclaim any and all warranties, either 
+# express or implied, including but not limited to any warranty of noninfringement, merchantability, and/ or fitness 
+# for a particular purpose. We do not warrant that the technology will meet your requirements, that the operation 
+# thereof will be uninterrupted or error-free, or that any errors will be corrected.
+#
+# Any use of these scripts and tools is at your own risk. There is no guarantee that they have been through thorough 
+# testing in a comparable environment and we are not responsible for any damage or data loss incurred with their use.
+#
+# You are responsible for reviewing and testing any scripts you run thoroughly before use in any non-testing environment.
+#
+#
+# LICENSE
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with 
+# the License. You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on 
+# an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+# specific language governing permissions and limitations under the License.
 #
 
 [CmdletBinding()]
-
-param(
-   [string]    $SFSCTicketNumber,
+Param(
+   [String]    $SFSCTicketNumber,
    [switch]    $DoNotElevate,
    [String[]]  $ProbeList           = @(),
    [int]       $Interval            =   1,       ## Time in seconds between samples
@@ -18,21 +50,6 @@ param(
 function Main
 #======================================================================================================================
 {
-   # ------------------------- #
-   # FingerprintOutputDocument #
-   # ------------------------- #
-   
-   # this is the output field of the fingerprint probe
-   # should be kept at the top of the file for ease of access
-   
-   Set-Variable FingerprintOutputDocument -option Constant @{
-      os = (Get-WmiObject Win32_OperatingSystem).Caption.Trim();
-      shell = "PowerShell $($PSVersionTable.PSVersion)";
-      script = "mdiag";
-      version = "1.8.1";
-      revdate = "2017-08-02";
-   }
-   
    Setup-Environment
    
    $script:FilesToCompress = @($script:DiagFile)
@@ -46,7 +63,9 @@ function Main
 
    try
    {      
-      $zipFile = [IO.Path]::Combine([IO.Path]::GetDirectoryName($script:DiagFile), [IO.Path]::GetFileNameWithoutExtension($script:DiagFile) + '.zip')    
+      $zipFile = [IO.Path]::Combine([IO.Path]::GetDirectoryName($script:DiagFile), 
+         [IO.Path]::GetFileNameWithoutExtension($script:DiagFile) + '.zip')    
+         
       Compress-Files $zipFile $script:FilesToCompress
       
       $script:FilesToCompress | % {
@@ -437,7 +456,7 @@ function Run-Probes
    $script:RunDate = Get-Date
 
    $sb = New-Object System.Text.StringBuilder
-   $sb.Append((Emit-Document "fingerprint" @{ command = $false; ok = $true; output = $FingerprintOutputDocument; })) | Out-Null
+   $sb.Append((Emit-Document "fingerprint" @{ command = $false; ok = $true; output = $script:Fingerprint; })) | Out-Null
 
    $probes = Get-Probes
 
@@ -619,8 +638,15 @@ function Get-RegistryValues($RegPath)
 function Setup-Environment
 #======================================================================================================================
 {  
-   $FingerprintOutputDocument.GetEnumerator() | % { Write-Verbose "$($_.Key) = $($_.Value)" }
-   Write-Verbose "Checking permissions"
+   $script:Fingerprint = @{
+      os = (Get-WmiObject Win32_OperatingSystem).Caption.Trim();
+      shell = "PowerShell $($PSVersionTable.PSVersion)";
+      script = "mdiag";
+      version = $script:ScriptVersion;
+      revdate = $script:RevisionDate;
+   }
+   
+   $script:Fingerprint.GetEnumerator() | % { Write-Verbose "$($_.Key) = $($_.Value)" }
 
    if ($PSVersionTable.PSVersion -lt '2.0')
    {
