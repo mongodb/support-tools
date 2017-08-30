@@ -6,10 +6,6 @@
 #
 # Gather a wide variety of system and hardware diagnostic information.
 #
-
-$script:ScriptVersion = "1.8.2"
-$script:RevisionDate  = "2017-08-26"
-
 #
 # DISCLAIMER
 #
@@ -45,6 +41,13 @@ Param(
    [int]       $Interval            =   1,       ## Time in seconds between samples
    [int]       $Samples             = 120        ## Number of times Get-Counter will collect a sample of a counter
 )
+
+#
+# VERSION
+#
+
+$script:ScriptVersion = "1.8.3"
+$script:RevisionDate  = "2017-08-31"
 
 #======================================================================================================================
 function Main
