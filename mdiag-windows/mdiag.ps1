@@ -4,8 +4,6 @@
 #
 # Copyright MongoDB, Inc, 2014, 2015, 2016, 2017
 #
-# Gather a wide variety of system and hardware diagnostic information.
-#
 #
 # DISCLAIMER
 #
@@ -37,17 +35,52 @@
 Param(
    [String]    $SFSCTicketNumber,
    [switch]    $DoNotElevate,
-   [String[]]  $ProbeList           = @(),
-   [int]       $Interval            =   1,       ## Time in seconds between samples
-   [int]       $Samples             = 120        ## Number of times Get-Counter will collect a sample of a counter
+   [String[]]  $ProbeList  = @(),
+   [int]       $Interval   =   1,
+   [int]       $Samples    = 120  
 )
 
-#
+# =======
 # VERSION
-#
+# =======
 
-$script:ScriptVersion = "1.8.3"
-$script:RevisionDate  = "2017-08-31"
+$script:ScriptVersion = "1.8.4"
+$script:RevisionDate  = "2017-09-06"
+
+<#
+   .SYNOPSIS
+
+     MongoDB Diagnostic Report script that gathers a wide 
+     variety of system and hardware diagnostic information.
+
+   .PARAMETER SFSCTicketNumber
+
+     MongoDB Tecnical Support case reference.
+
+   .PARAMETER Interval
+
+      Time in seconds between Performance Monitor counter samples.
+
+   .PARAMETER Samples
+
+      Number of Performance Monitor counter samples to collect.
+      
+   .EXAMPLE
+
+     Start mdiag interactively.
+     
+     .\mdiag.ps1
+
+   .EXAMPLE
+
+     Start mdiag by specifying your case reference.
+     
+     .\mdiag.ps1 00345123
+   
+   .LINK
+     
+     https://github.com/mongodb/support-tools/tree/master/mdiag-windows
+#>
 
 #======================================================================================================================
 function Main
@@ -94,7 +127,7 @@ function Main
    }
 
    Write-Host "Press any key to continue ..."
-   $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
    Write-Host
 }
 
@@ -165,169 +198,134 @@ function probe( $doc )
 function Escape-JSON($String) 
 #======================================================================================================================
 {
-   # order is important, ie \\ should go before \'
-   $String = $String.Replace('\','\\')
-   $String = $String.Replace('"','\"')
+   $String = $String.Replace('\','\\').Replace('"','\"')
+   $String.Replace("`n",'\n').Replace("`r",'\r').Replace("`t",'\t').Replace("`b",'\b').Replace("`f",'\f')
+}
+
+#======================================================================================================================
+# Convert the Name and Value properties to a JSON document
+#======================================================================================================================
+function _tojson_object($Object)
+#======================================================================================================================
+{
+   if ($Object -eq $null)
+   {
+      return 'null'
+   }
    
-   # Does not need to be escaped
-   # $String = $String.Replace("'","\'")
-
-   # Does not need to be escaped for MongoDB
-   # $result = $result.Replace("&",'\u0026')
-
-   $String = $String.Replace("`n",'\n')
-   $String = $String.Replace("`r",'\r')
-   $String = $String.Replace("`t",'\t')
-   $String = $String.Replace("`b",'\b')
-   $String = $String.Replace("`f",'\f')
-
-   $String
-}
-
-#======================================================================================================================
-function _tojson_string( $v ) 
-#======================================================================================================================
-{
-   "`"$(Escape-JSON $v)`""
-}
-
-#======================================================================================================================
-# provide a JSON encoded date
-#======================================================================================================================
-function _tojson_date( $v ) 
-#======================================================================================================================
-{
-   "{{ `"`$date`": `"{0}`" }}" -f $( _iso8601_string $v );
-}
-
-#======================================================================================================================
-# pipe in a stream of @{Name="",Value=*} for the properties of the object
-#======================================================================================================================
-function _tojson_object( $indent ) 
-#======================================================================================================================
-{
-   $ret = $( $input | ForEach-Object { "{0}`t`"{1}`": {2}," -f $indent, $_.Name, $( _tojson_value $( $indent + "`t" ) $_.Value ) } | Out-String )
-   "{{`r`n{0}`r`n{1}}}" -f $ret.Trim("`r`n,"), $indent
-}
-
-#======================================================================================================================
-# pipe in a stream of objects for the elements of the array
-#======================================================================================================================
-function _tojson_array( $indent ) 
-#======================================================================================================================
-{
-   if( @($input).Count -eq 0 ) {
-      "[]"
+   if ($Object.Count -eq 0)
+   {
+      return '[]'
    }
-   else {
-      $input.Reset()
-      $ret = $( $input | ForEach-Object { "{0}`t{1}," -f $indent, $( _tojson_value $( $indent + "`t" ) $_ ) } | Out-String )
-      "[`r`n{0}`r`n{1}]" -f $ret.Trim("`r`n,"), $indent
+      
+   $result = "{`r`n"
+   
+   try
+   {
+      $script:Indent += "`t"
+      
+      if ($Object -is [Collections.IEnumerable])
+      {
+         $Object = $Object.GetEnumerator()
+      }
+         
+      $Object | % { 
+         $result += "$script:Indent$(_tojson_value $_.Name): $(_tojson_value $_.Value),`r`n" 
+      }
    }
+   finally
+   {
+      $script:Indent = $script:Indent.SubString(0,$script:Indent.Length-1)
+   }
+   
+   "$($result.TrimEnd(`",`r`n`"))`r`n$script:Indent}"
 }
 
 #======================================================================================================================
 # JSON encode object value, not using ConvertTo-JSON due to TSPROJ-476
 #======================================================================================================================
-function _tojson_value( $indent, $obj ) 
+function _tojson_value($Object) 
 #======================================================================================================================
 {
-   if ($obj -eq $null)
+   if ($Object -eq $null)
    {
-      return "null"
+      return 'null'
+   }
+
+   if ($script:Indent.Length -gt 20)
+   {
+      throw "Exceeded $($script:Indent.Length) levels during recursion"
+   }
+
+   if ($Object.GetType().IsArray)
+   {
+      if (([Array] $Object).Count -eq 0)
+      {
+         return '[]'
+      }
+      
+      try
+      {
+         $result = "[`r`n"
+         $script:Indent += "`t"
+
+         $Object | % { $result += "$script:Indent$(_tojson_value $_),`r`n" }
+         $result = $result.TrimEnd(",`r`n")
+      }
+      finally
+      {
+         $script:Indent = $script:Indent.SubString(0,$script:Indent.Length-1)
+      }
+      return "$result`r`n$script:Indent]"
    }
    
-   if ($indent.Length -gt 4) 
+   if ($Object.GetType().IsEnum -or $Object -is [String] -or $Object -is [Char] -or $Object -is [TimeSpan])
    {
-      # aborting recursion due to object depth; summarize the current object
-      # if it's an array we put in the count, anything else ToString()
-      if ($obj.GetType().IsArray)
-      {
-         return $obj.Length
-      }
-      else 
-      {
-         return (_tojson_string $obj.ToString())
-      }
+      return "`"$(Escape-JSON $Object.ToString())`""
    }
 
-   switch ($obj.GetType()) 
+   if ($Object -is [DateTime])
    {
-      { $_.IsArray } {
-         $obj | _tojson_array $indent
-         break
-      }
-         
-      { $_.IsEnum -or "String","Char","TimeSpan" -contains $_.Name } {
-         _tojson_string $obj.ToString()
-         break
-      }
-            
-      { $_.Name -eq "DateTime" } {
-         _tojson_date $obj
-         break
-      }
-      
-      { $_.Name -eq "Boolean" } {
-         @('false','true')[$obj -eq $true]
-         break
-      }
-      
-      { "Uint16","Int16","Int32","UInt32","Int64","UInt64","Double","Byte","UIntPtr","IntPtr" -contains $_.Name } {
-         # symbolic or integrals, write plainly
-         $obj.ToString()
-         break
-      }
+      return "{ `"`$date`": `"$(_iso8601_string $Object)`" }"
+   }
+   
+   if ($Object -is [Boolean])
+   {
+      return @('false','true')[$Object -eq $true]
+   }
 
-      { $_.GetInterfaces() -contains [Collections.IDictionary] -or $_.GetInterfaces() -contains [Collections.IList] } {
-         if ($_.GetInterfaces() -contains [Collections.ICollection] -and -not $obj.Count)
-         {
-            "null"
-            break
-         }
-         
-         if ($_.GetInterfaces() -contains [Collections.IEnumerable])
-         {
-            $props = $obj.GetEnumerator()
-         }
-         else
-         {
-            $props = $obj
-         }
-         
-         $props | Select @{ Name = 'Name' ; Expression = { Escape-JSON $_.Key }}, Value | _tojson_object $indent
-         break
-      }
-      
-      default {
-         if ($_.IsClass) 
-         {
-            $obj.psobject.properties.GetEnumerator() | _tojson_object $indent
-         }
-         else 
-         {
-            # dunno, just represent as simple as possible
-            _tojson_string $obj.ToString()
-         }
+   if ($Object -is [Collections.IDictionary] -or $Object -is [Collections.IList] -or
+         $Object -is [Collections.DictionaryEntry])
+   {
+      return _tojson_object $Object
+   }
+
+   if ($Object.GetType().IsClass)
+   {
+      return _tojson_object $Object.PSObject.Properties
+   }
+
+   $decimal = New-Object Decimal
+   try
+   {
+      if ([Decimal]::TryParse($Object, [Globalization.NumberStyles]::Float, [CultureInfo]::InvariantCulture, [ref] $decimal))
+      {
+         return $decimal
       }
    }
-}
-
-#======================================================================================================================
-# (internal) emit to file the JSON encoding of supplied obj using whatever means is available
-#======================================================================================================================
-function _tojson( $obj ) 
-#======================================================================================================================
-{
-   # TSPROJ-476 ConvertTo-JSON dies on some data eg: Get-NetFirewallRule | ConvertTo-Json = "The converted JSON string is in bad format."
-   # using internal only now, probably forever
-   return _tojson_value "" $obj;
+   catch
+   {
+      Write-Verbose "Unable to determine if '$($Object)' ($($Object.GetType().FullName)) is numeric"
+   }
+   
+   Write-Verbose "Using JSON fallback for '$Object' ($($Object.GetType().FullName))"
+   "`"$(Escape-JSON $Object.ToString())`""
 }
 
 #======================================================================================================================
 # get current (or supplied) DateTime formatted as ISO-8601 localtime (with TZ indicator)
 #======================================================================================================================
-function _iso8601_string( [DateTime] $date ) 
+function _iso8601_string([DateTime] $date)
 #======================================================================================================================
 {
    # TSPROJ-386 timestamp formats
@@ -403,7 +401,7 @@ function Emit-Document($Section, $CmdObj)
    
    try 
    {
-      return (_tojson $CmdObj)
+      return _tojson_value $CmdObj
    }
    catch 
    {
@@ -412,7 +410,7 @@ function Emit-Document($Section, $CmdObj)
       $CmdObj.ok = $false
 
       # give it another shot without the output, just let it die if it still has an issue
-      return (_tojson $CmdObj)
+      return _tojson_value $CmdObj
    }
 }
 
@@ -2100,14 +2098,37 @@ function Get-Probes
    @{ name = "network-dns-names";
       cmd = @'
          $FQDN = [Net.Dns]::GetHostByName('localhost').Hostname
-         @{ $FQDN = [Net.Dns]::GetHostByName($FQDN) }
+         $results = New-Object Collections.Specialized.OrderedDictionary
+         $results.Add($FQDN, ([Net.Dns]::GetHostByName($FQDN) | Select -ExpandProperty AddressList | Select -ExpandProperty IPAddressToString | Sort-Object))
          
-         [Net.Dns]::GetHostByName($FQDN) | Select -ExpandProperty AddressList | % { @{ $_.IPAddressToString = [Net.Dns]::GetHostByAddress($_) } }
+         if ($ipAddresses = [Net.Dns]::GetHostByName($FQDN) | Select -ExpandProperty AddressList | Select -ExpandProperty IPAddressToString | Sort-Object)
+         {
+            $ipAddresses | % { $results.Add($_, ([Net.Dns]::GetHostByAddress($_) | Select -ExpandProperty Hostname)) }
+         }
+         
+         $results
 '@
    }
 
    @{ name = "network-tcp-active";
-      cmd = "netstat -ano -p TCP | select -skip 3 | foreach {`$_.Substring(2) -replace `" {2,}`",`",`" } | ConvertFrom-Csv"
+      cmd = @'
+         netstat -ano -p TCP | Select -Skip 4 | % {
+            $row = $_.Split(' ', [StringSplitOptions]::RemoveEmptyEntries) 
+            if ($row.Count -ne 5)
+            {
+               Write-Verbose 'Unexpected line in netstat output'
+               return
+            }
+            
+            $result = New-Object Collections.Specialized.OrderedDictionary
+            $result.Add('Proto', $row[0])
+            $result.Add('Local Address', $row[1])
+            $result.Add('Foreign Address', $row[2])
+            $result.Add('State', $row[3])
+            $result.Add('PID', $row[4])
+            $result
+         }
+'@
    }
 
    @{ name = "services";
@@ -2181,10 +2202,6 @@ function Get-Probes
       cmd = "Get-Childitem env: | ForEach-Object {`$j=@{}} {`$j.Add(`$_.Name,`$_.Value)} {`$j}";
    }
 
-   #@{ name = "user-list-local";
-   #  cmd = "Get-WMIObject Win32_UserAccount | Where-Object {`$_.LocalAccount -eq `$true} | Select Caption,Name,Domain,Description,AccountType,Disabled,Lockout,SID,Status";
-   #}
-
    @{ name = "drivers";
       cmd = "Get-WmiObject Win32_SystemDriver | Select Name, Description, PathName, ServiceType, StartMode, Status"
    }
@@ -2214,77 +2231,53 @@ function Get-Probes
    
    @{ name = "kerberos-spn-registrations";
       cmd = @'
-         $spns = @($env:COMPUTERNAME)
+         $accounts = @("$($env:COMPUTERNAME)$")
          
-         Get-WmiObject Win32_Service | ? { $_.PathName -and ($_.PathName.Contains('\mongod.exe') -or $_.PathName.Contains('\mongos.exe')) } | `
-            Select -ExpandProperty StartName | ? { $_ -and -not $_.StartsWith('NT AUTHORITY\') -and $_ -ne 'LocalSystem' } | Sort-Object -Unique | % { $spns += $_ }
-         
-         $spns | % {
-            $psInfo = New-Object System.Diagnostics.ProcessStartInfo
-            $psInfo.FileName = "$env:SYSTEMROOT\system32\setspn.exe"
-            $psInfo.Arguments = "-P -L `"$_`""
-            $psInfo.RedirectStandardError = $true
-            $psInfo.RedirectStandardOutput = $true
-            $psInfo.CreateNoWindow = $true
-            $psInfo.UseShellExecute = $false
+         $accounts += Get-WmiObject Win32_Service | ? { $_.PathName -and ($_.PathName.Contains('\mongod.exe') -or $_.PathName.Contains('\mongos.exe')) } | `
+            Select -ExpandProperty StartName | Sort-Object -Unique | ? { $_ -and -not $_.StartsWith('NT AUTHORITY\') -and $_ -ne 'LocalSystem' }
 
-            $process = New-Object System.Diagnostics.Process
-            $process.StartInfo = $psInfo
-            
-            Write-Verbose "Running `"$($psInfo.FileName)`" $($psInfo.Arguments)"
-            if ($process.Start())
+         $accounts | % {
+            $searcher = New-Object System.DirectoryServices.DirectorySearcher
+            $searcher.SearchRoot = New-Object DirectoryServices.DirectoryEntry
+            $searcher.SearchScope = 'Subtree'
+            if ($_.Contains('@'))
             {
-               $process.WaitForExit()
+               $searcher.Filter = "(userPrincipalName=$_)"
             }
-            
-            $stdout = $process.StandardOutput.ReadToEnd()
-            $stderr = $process.StandardError.ReadToEnd()
-            if ($stderr -or ([int] $process.ExitCode -ne 0)) 
+            else
             {
-               if (-not $stderr) 
-               {
-                  $stderr = "setspn.exe exited with code $($process.ExitCode)"
-                  if ($stdout) 
-                  {
-                     $stderr += "`r`n`r`n$stdout"
-                  }
-               }
-               
-               $ordered = New-Object Collections.Specialized.OrderedDictionary
-               $ordered.Add('acct', $_)
-               $ordered.Add('dn', $null)
-               $ordered.Add('spns', $null)
-               $ordered.Add('error', $stderr)
-               $ordered.Add('exitcode', $process.ExitCode)
-               return $ordered
+               $searcher.Filter = "(samAccountName=$_)"
+            }
+            'userprincipalname','distinguishedname','serviceprincipalname','samaccountname','dnshostname','cn' | % { 
+               $searcher.PropertiesToLoad.Add($_) | Out-Null
             }
 
-            $output = $stdout.Split("`r`n") | ? { $_ } | % { $_.Replace("`t",'') }
-            if ($output[0].StartsWith('Registered ServicePrincipalNames for '))
-            {
-               $dn = $output[0].SubString('Registered ServicePrincipalNames for '.Length).TrimEnd(':')
-               $ordered = New-Object Collections.Specialized.OrderedDictionary
-               $ordered.Add('requestedAccount', $_)
-               $ordered.Add('distinguishedName', $dn)
+            $ordered = New-Object Collections.Specialized.OrderedDictionary
+            $ordered.Add('requestedAccount', $_)
 
-               try
+            try
+            {
+               if ($result = $searcher.FindOne())
                {
-                  $adsi = [ADSI] "LDAP://$dn"
-                  'sAMAccountName','cn','dNSHostName','userPrincipalName' | % {
-                     if ($value = ($adsi.$_ | Select -First 1))
+                  $result.Properties.PropertyNames | ? { $_ -ne 'adspath' } | % {
+                     if ($result.Properties[$_].Count -eq 1)
                      {
-                        $ordered.Add($_, $value)
+                        $ordered.Add($_, $result.Properties[$_][0])
+                     }
+                     else
+                     {
+                        $ordered.Add($_, $result.Properties[$_])
                      }
                   }
                }
-               catch
-               {
-                  Write-Verbose $_.Exception.Message
-               }
-               
-               $ordered.Add('spns', ([Array] ($output[1..($output.Length-1)] | Sort-Object)))
-               $ordered
             }
+            catch
+            {
+               Write-Verbose $_.Exception.Message
+               $ordered.Add('error', $_.Exception.Message)
+            }
+            
+            $ordered
          }
 '@
    }
@@ -2381,9 +2374,12 @@ function Get-Probes
                   $tgt | Add-Member -MemberType NoteProperty -Name 'Session Key Length' -Value $sessionKeyLine.Split('-',2)[0].Trim().Split(' ',2)[1].Trim()
                   $tgt | Add-Member -MemberType NoteProperty -Name 'Session Key Length Data' -Value $sessionKeyLine.Split('-',2)[1].Trim()
                   
-                  $tgt | Add-Member -MemberType NoteProperty -Name 'StartTime' -Value ([DateTime] $rawTGT[$line+11].Split(':',2)[1].Replace('(local)','').Trim())
-                  $tgt | Add-Member -MemberType NoteProperty -Name 'EndTime' -Value ([DateTime] $rawTGT[$line+12].Split(':',2)[1].Replace('(local)','').Trim())
-                  $tgt | Add-Member -MemberType NoteProperty -Name 'RenewUntil' -Value ([DateTime] $rawTGT[$line+13].Split(':',2)[1].Replace('(local)','').Trim())
+                  $dt = $rawTGT[$line+11].Split(':',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'StartTime' -Value ([DateTime] $dt.SubString(0, $dt.LastIndexOf(' ')))
+                  $dt = $rawTGT[$line+12].Split(':',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'EndTime' -Value ([DateTime] $dt.SubString(0, $dt.LastIndexOf(' ')))
+                  $dt = $rawTGT[$line+13].Split(':',2)[1].Trim()
+                  $tgt | Add-Member -MemberType NoteProperty -Name 'RenewUntil' -Value ([DateTime] $dt.SubString(0, $dt.LastIndexOf(' ')))
                   $tgt | Add-Member -MemberType NoteProperty -Name 'TimeSkew' -Value $rawTGT[$line+14].Split(':',2)[1].Trim()
                }
                $line++              
@@ -2402,6 +2398,8 @@ function Get-Probes
                if ($_ -match "^#\d") 
                { 
                   $ticket = New-Object PSObject 
+                  $dateTime = New-Object DateTime
+                  
                   $ticket | Add-Member -MemberType NoteProperty -Name 'Index' -Value $tickets[$line].Split('>')[0].Replace('#','')
                   $ticket | Add-Member -MemberType NoteProperty -Name 'Client' -Value $tickets[$line].Split('>')[1].Split(':',2)[1].Trim()
                   $ticket | Add-Member -MemberType NoteProperty -Name 'Server' -Value $tickets[$line+1].Split(':',2)[1].Trim()
@@ -2411,9 +2409,36 @@ function Get-Probes
                   $ticket | Add-Member -MemberType NoteProperty -Name 'Ticket Flags' -Value $ticketFlagsLine.Split(' ')[0]
                   $ticket | Add-Member -MemberType NoteProperty -Name 'Ticket Flags Data' -Value $ticketFlagsLine.SubString(14)
                   
-                  $ticket | Add-Member -MemberType NoteProperty -Name 'Start Time' -Value ([DateTime] $tickets[$line+4].Split(':',2)[1].Replace('(local)','').Trim())
-                  $ticket | Add-Member -MemberType NoteProperty -Name 'End Time' -Value ([DateTime] $tickets[$line+5].Split(':',2)[1].Replace('(local)','').Trim())
-                  $ticket | Add-Member -MemberType NoteProperty -Name 'Renew Time' -Value ([DateTime] $tickets[$line+6].Split(':',2)[1].Replace('(local)','').Trim())
+                  $dt = $tickets[$line+4].Split(':',2)[1].Replace('(local)','').Trim()
+                  if ([DateTime]::TryParseExact($dt, 'M/d/yyyy H:mm:ss', [CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref] $dateTime))
+                  {
+                     $ticket | Add-Member -MemberType NoteProperty -Name 'Start Time' -Value $dateTime
+                  }
+                  else
+                  {
+                     $ticket | Add-Member -MemberType NoteProperty -Name 'Start Time' -Value $null
+                  }
+                  
+                  $dt = $tickets[$line+5].Split(':',2)[1].Replace('(local)','').Trim()
+                  if ([DateTime]::TryParseExact($dt, 'M/d/yyyy H:mm:ss', [CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref] $dateTime))
+                  {
+                     $ticket | Add-Member -MemberType NoteProperty -Name 'End Time' -Value $dateTime
+                  }
+                  else
+                  {
+                     $ticket | Add-Member -MemberType NoteProperty -Name 'End Time' -Value $null
+                  }
+                  
+                  $dt = $tickets[$line+6].Split(':',2)[1].Replace('(local)','').Trim()
+                  if ([DateTime]::TryParseExact($dt, 'M/d/yyyy H:mm:ss', [CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref] $dateTime))
+                  {
+                     $ticket | Add-Member -MemberType NoteProperty -Name 'Renew Time' -Value $dateTime
+                  }
+                  else
+                  {
+                     $ticket | Add-Member -MemberType NoteProperty -Name 'Renew Time' -Value $null
+                  }
+                  
                   $ticket | Add-Member -MemberType NoteProperty -Name 'Session Key Type' -Value $tickets[$line+7].Split(':',2)[1].Trim()
 
                   if ((Get-WmiObject Win32_OperatingSystem).BuildNumber -ge 9200) 
@@ -2448,10 +2473,9 @@ function Get-Probes
       cmd = 'Get-RegistryValues HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters'
    }
 
-   # @todo: capture other vendor exception lists
-
    @{ name = 'mcafee-av-exclusions';
       cmd = @'
+         # McAfee Exclusions
          if ([IntPtr]::Size -eq 8)
          {
             ## 64 bit process
@@ -2468,6 +2492,7 @@ function Get-Probes
    
    @{ name = 'symantec-av-exclusions';
       cmd = @'
+         # Symantec Exclusions
          if ([IntPtr]::Size -eq 8)
          {
             ## 64 bit process
