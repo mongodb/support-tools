@@ -44,8 +44,8 @@ Param(
 # VERSION
 # =======
 
-$script:ScriptVersion = "1.8.4"
-$script:RevisionDate  = "2017-09-06"
+$script:ScriptVersion = "1.9.0"
+$script:RevisionDate  = "2017-09-15"
 
 <#
    .SYNOPSIS
@@ -92,7 +92,7 @@ function Main
    
    # Only write to output file once all probes have completed
    $probeOutput = Run-Probes 
-   $probeOutput | Out-File $script:DiagFile
+   $probeOutput | Out-File -Encoding ASCII $script:DiagFile
    
    Write-Progress "Gathering diagnostic information" -Id 1 -Status "Done" -Completed
    Write-Host "`r`nFinished collecting $script:ProbeCount probes.`r`n"
@@ -208,16 +208,11 @@ function Escape-JSON($String)
 function _tojson_object($Object)
 #======================================================================================================================
 {
-   if ($Object -eq $null)
+   if ($Object -eq $null -or $Object.Count -eq 0)
    {
       return 'null'
    }
    
-   if ($Object.Count -eq 0)
-   {
-      return '[]'
-   }
-      
    $result = "{`r`n"
    
    try
@@ -239,6 +234,40 @@ function _tojson_object($Object)
    }
    
    "$($result.TrimEnd(`",`r`n`"))`r`n$script:Indent}"
+}
+
+#======================================================================================================================
+# Convert the Name and Value properties to a JSON array
+#======================================================================================================================
+function _tojson_array($Object)
+#======================================================================================================================
+{
+   if ($Object -eq $null -or $Object.Count -eq 0)
+   {
+      return 'null'
+   }
+   
+   $result = "[`r`n"
+   
+   try
+   {
+      $script:Indent += "`t"
+      
+      if ($Object -is [Collections.IEnumerable])
+      {
+         $Object = $Object.GetEnumerator()
+      }
+         
+      $Object | % { 
+         $result += "$script:Indent$(_tojson_value $_.Name): $(_tojson_value $_.Value),`r`n" 
+      }
+   }
+   finally
+   {
+      $script:Indent = $script:Indent.SubString(0,$script:Indent.Length-1)
+   }
+   
+   "$($result.TrimEnd(`",`r`n`"))`r`n$script:Indent]"
 }
 
 #======================================================================================================================
@@ -431,8 +460,15 @@ function Run-Command($CommandString)
    try
    {
       Write-Debug "Running command:`r`n$CommandString"
-      $result.output = Invoke-Command -ScriptBlock ([ScriptBlock]::Create($CommandString))
-      Write-Debug "Result:`r`n$($result.output | Out-String)"
+      $output = Invoke-Command -ScriptBlock ([ScriptBlock]::Create($CommandString))
+      Write-Debug "Result:`r`n$($output | Out-String)"
+
+      if ($output -is [String])
+      {
+         $output = [Array] @($output)
+      }
+
+      $result.output = $output
       $result.ok = $true
    }
    catch
@@ -457,7 +493,7 @@ function Run-Probes
    $script:RunDate = Get-Date
 
    $sb = New-Object System.Text.StringBuilder
-   $sb.Append((Emit-Document "fingerprint" @{ command = $false; ok = $true; output = $script:Fingerprint; })) | Out-Null
+   $sb.Append((_tojson_object $script:Fingerprint)) | Out-Null
 
    $probes = Get-Probes
 
@@ -639,22 +675,26 @@ function Get-RegistryValues($RegPath)
 function Setup-Environment
 #======================================================================================================================
 {  
-   $script:Fingerprint = @{
-      os = (Get-WmiObject Win32_OperatingSystem).Caption.Trim();
-      shell = "PowerShell $($PSVersionTable.PSVersion)";
-      script = "mdiag";
-      version = $script:ScriptVersion;
-      revdate = $script:RevisionDate;
-   }
-   
-   $script:Fingerprint.GetEnumerator() | % { Write-Verbose "$($_.Key) = $($_.Value)" }
-
    if ($PSVersionTable.PSVersion -lt '2.0')
    {
       Write-Warning "This script requires PowerShell 2.0 or greater"
       Exit
    }
    
+   $script:Fingerprint = @{
+      ref = $script:SFSCTicketNumber;
+      host = $env:COMPUTERNAME;
+      tag = [DateTime]::Now;
+      version = $script:ScriptVersion;
+      section = 'fingerprint'
+      script = 'mdiag.ps1';
+      revdate = $script:RevisionDate;
+      os = 'Windows';
+      shell = "PowerShell $($PSVersionTable.PSVersion)";
+      output = $null;
+      error = $null;
+   }
+
    # check if we are admin
    if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
    {
@@ -718,7 +758,7 @@ function Setup-Environment
    Add-CompiledTypes
    
    Write-Verbose "`$SFSCTicketNumber: $SFSCTicketNumber"
-   $script:DiagFile = Join-Path $([Environment]::GetFolderPath('Personal')) "mdiag-$($env:COMPUTERNAME).txt"
+   $script:DiagFile = Join-Path $([Environment]::GetFolderPath('Personal')) "mdiag-$($env:COMPUTERNAME).json"
 
    Write-Verbose "`$DiagFile: $DiagFile"
 
@@ -1649,6 +1689,10 @@ function Extract-EventLogEntries($FilterXml, $Limit = 20)
 function Get-Probes
 #======================================================================================================================
 {   
+   @{ name = "hostname_fqdn";
+      cmd = '[Net.Dns]::GetHostByName("localhost").Hostname'
+   }
+
    @{ name = "computersystem";
       cmd = "Get-WmiClassProperties Win32_ComputerSystem"
    }
@@ -2098,15 +2142,12 @@ function Get-Probes
    @{ name = "network-dns-names";
       cmd = @'
          $FQDN = [Net.Dns]::GetHostByName('localhost').Hostname
-         $results = New-Object Collections.Specialized.OrderedDictionary
-         $results.Add($FQDN, ([Net.Dns]::GetHostByName($FQDN) | Select -ExpandProperty AddressList | Select -ExpandProperty IPAddressToString | Sort-Object))
-         
+         @{ Host = $FQDN; Entries = ([Net.Dns]::GetHostByName($FQDN) | Select -ExpandProperty AddressList | Select -ExpandProperty IPAddressToString | Sort-Object) }
+
          if ($ipAddresses = [Net.Dns]::GetHostByName($FQDN) | Select -ExpandProperty AddressList | Select -ExpandProperty IPAddressToString | Sort-Object)
          {
-            $ipAddresses | % { $results.Add($_, ([Net.Dns]::GetHostByAddress($_) | Select -ExpandProperty Hostname)) }
+            $ipAddresses | % { @{ Host = $_; Entries = ([Net.Dns]::GetHostByAddress($_) | Select -ExpandProperty Hostname) } }
          }
-         
-         $results
 '@
    }
 
