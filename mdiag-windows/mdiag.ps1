@@ -33,7 +33,7 @@
 
 [CmdletBinding()]
 Param(
-   [String]    $SFSCTicketNumber,
+   [String]    $CaseReference,
    [switch]    $DoNotElevate,
    [String[]]  $ProbeList  = @(),
    [int]       $Interval   =   1,
@@ -44,8 +44,8 @@ Param(
 # VERSION
 # =======
 
-$script:ScriptVersion = "1.9.0"
-$script:RevisionDate  = "2017-09-15"
+$script:ScriptVersion = "1.9.1"
+$script:RevisionDate  = "2017-09-28"
 
 <#
    .SYNOPSIS
@@ -53,9 +53,9 @@ $script:RevisionDate  = "2017-09-15"
      MongoDB Diagnostic Report script that gathers a wide 
      variety of system and hardware diagnostic information.
 
-   .PARAMETER SFSCTicketNumber
+   .PARAMETER CaseReference
 
-     MongoDB Tecnical Support case reference.
+     MongoDB Technical Support case reference.
 
    .PARAMETER Interval
 
@@ -121,9 +121,9 @@ function Main
       $zipFile = $script:DiagFile
    }
    
-   if ($SFSCTicketNumber)
+   if ($CaseReference)
    {
-      Write-Host "Please attach '$zipFile' to MongoDB Technical Support case $SFSCTicketNumber.`r`n"
+      Write-Host "Please attach '$zipFile' to MongoDB Technical Support case $CaseReference.`r`n"
    }
 
    Write-Host "Press any key to continue ..."
@@ -237,40 +237,6 @@ function _tojson_object($Object)
 }
 
 #======================================================================================================================
-# Convert the Name and Value properties to a JSON array
-#======================================================================================================================
-function _tojson_array($Object)
-#======================================================================================================================
-{
-   if ($Object -eq $null -or $Object.Count -eq 0)
-   {
-      return 'null'
-   }
-   
-   $result = "[`r`n"
-   
-   try
-   {
-      $script:Indent += "`t"
-      
-      if ($Object -is [Collections.IEnumerable])
-      {
-         $Object = $Object.GetEnumerator()
-      }
-         
-      $Object | % { 
-         $result += "$script:Indent$(_tojson_value $_.Name): $(_tojson_value $_.Value),`r`n" 
-      }
-   }
-   finally
-   {
-      $script:Indent = $script:Indent.SubString(0,$script:Indent.Length-1)
-   }
-   
-   "$($result.TrimEnd(`",`r`n`"))`r`n$script:Indent]"
-}
-
-#======================================================================================================================
 # JSON encode object value, not using ConvertTo-JSON due to TSPROJ-476
 #======================================================================================================================
 function _tojson_value($Object) 
@@ -290,7 +256,7 @@ function _tojson_value($Object)
    {
       if (([Array] $Object).Count -eq 0)
       {
-         return '[]'
+         return 'null'
       }
       
       try
@@ -423,7 +389,7 @@ function Redact-ConfigFile($FilePath)
 function Emit-Document($Section, $CmdObj)
 #======================================================================================================================
 {
-   $CmdObj.ref = $script:SFSCTicketNumber
+   $CmdObj.ref = $script:CaseReference
    $CmdObj.tag = $script:RunDate
    $CmdObj.section = $section
    $CmdObj.ts = Get-Date
@@ -619,26 +585,25 @@ function Get-RegistryValues($RegPath)
    }
    
    # First we need to check for any values under the supplied key
-   if ($regKey = Get-ItemProperty $RegPath -ErrorAction SilentlyContinue)
+   if ($regKey = Get-Item $RegPath -ErrorAction SilentlyContinue)
    {
       $outerResult = New-Object Collections.Specialized.OrderedDictionary
       $outerResult.Add("Key", $regKey.PSPath.Split(':')[2])
       $outerResult.Add('LastModified', (Get-RegistryLastWriteTime $RegPath))
-      
-      $innerResult = New-Object Collections.Specialized.OrderedDictionary
-      
-      $regKeys = $regKey.PSObject.Properties | ? { ('PSDrive','PSPath','PSChildName','PSParentPath','PSProvider' -notcontains $_.Name) }
-      $regKeys | Select Name, TypeNameOfValue, Value | Sort-Object Name | % { 
-         if ($_.TypeNameOfValue -eq 'System.String')
-         {
-            $innerResult.Add($_.Name, ([String] $_.Value).TrimEnd("`0"))
+      $innerResult = @()
+      $regKey | % { 
+         $reg = $_
+         $reg.Property | % {
+            if ($reg.GetValueKind($_) -eq 'String')
+            {
+               $innerResult += @{ Name = $_; Type = $reg.GetValueKind($_); Data = ([String] $reg.GetValue($_)).TrimEnd("`0") }
+            }
+            else
+            {
+               $innerResult += @{ Name = $_; Type = $reg.GetValueKind($_); Data = $reg.GetValue($_) }
+            }      
          }
-         else
-         {
-            $innerResult.Add($_.Name, $_.Value)
-         }      
       }
-      
       $outerResult.Add('Values', $innerResult)
       $outerResult
    }
@@ -650,17 +615,16 @@ function Get-RegistryValues($RegPath)
       $outerResult = New-Object Collections.Specialized.OrderedDictionary
       $outerResult.Add("Key", $reg.PSPath.Split(':')[2])
       $outerResult.Add('LastModified', (Get-RegistryLastWriteTime $reg.PSPath))
-
-      $innerResult = New-Object Collections.Specialized.OrderedDictionary
+      $innerResult = @()
       
       $reg.Property | % {
-         if ($reg.GetValue($_) -is 'System.String')
+         if ($reg.GetValue($_) -is [String])
          {
-            $innerResult.Add($_, ([String] $reg.GetValue($_)).TrimEnd("`0"))
+            $innerResult += @{ Name = $_; Type = $reg.GetValueKind($_); Data = ([String] $reg.GetValue($_)).TrimEnd("`0") }
          }
          else
          {
-            $innerResult.Add($_, $reg.GetValue($_))
+            $innerResult += @{ Name = $_; Type = $reg.GetValueKind($_); Data = $reg.GetValue($_) }
          }      
       }
       
@@ -682,7 +646,7 @@ function Setup-Environment
    }
    
    $script:Fingerprint = @{
-      ref = $script:SFSCTicketNumber;
+      ref = $script:CaseReference;
       host = $env:COMPUTERNAME;
       tag = [DateTime]::Now;
       version = $script:ScriptVersion;
@@ -757,15 +721,14 @@ function Setup-Environment
    
    Add-CompiledTypes
    
-   Write-Verbose "`$SFSCTicketNumber: $SFSCTicketNumber"
    $script:DiagFile = Join-Path $([Environment]::GetFolderPath('Personal')) "mdiag-$($env:COMPUTERNAME).json"
 
    Write-Verbose "`$DiagFile: $DiagFile"
 
    # get a SFSC ticket number if we don't already have one
-   if (-not $script:SFSCTicketNumber)
+   if (-not $script:CaseReference)
    {
-      $script:SFSCTicketNumber = Read-Host 'Please provide a MongoDB Technical Support case reference'
+      $script:CaseReference = Read-Host 'Please provide a MongoDB Technical Support case reference'
    }
 }
 
@@ -1032,7 +995,7 @@ function Add-CompiledTypes
             return null;
          }
          
-         public static uint GetNumberOfSetBits(uint value) 
+         public static uint GetNumberOfSetBits(ulong value) 
          {
             uint num = 0;
             while (value > 0)
