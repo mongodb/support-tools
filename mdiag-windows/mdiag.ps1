@@ -44,8 +44,8 @@ Param(
 # VERSION
 # =======
 
-$script:ScriptVersion = "1.9.1"
-$script:RevisionDate  = "2017-09-28"
+$script:ScriptVersion = "1.9.2"
+$script:RevisionDate  = "2017-11-27"
 
 <#
    .SYNOPSIS
@@ -303,7 +303,7 @@ function _tojson_value($Object)
    $decimal = New-Object Decimal
    try
    {
-      if ([Decimal]::TryParse($Object, [Globalization.NumberStyles]::Float, [CultureInfo]::InvariantCulture, [ref] $decimal))
+      if ([Decimal]::TryParse($Object, [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref] $decimal))
       {
          return $decimal
       }
@@ -541,7 +541,7 @@ function Compress-Files($ZipFile, [String[]] $Files)
 #======================================================================================================================
 # Extract properties from WMI class
 #======================================================================================================================
-function Get-WmiClassProperties($WmiClass, $Filter = '')
+function Get-WmiClassProperties($WmiClass, $Options)
 #======================================================================================================================
 {  
    if (-not (Get-WmiObject -Class $WmiClass -List))
@@ -549,11 +549,11 @@ function Get-WmiClassProperties($WmiClass, $Filter = '')
       throw "WMI class $WmiClass does not exist"
    }
    
-   if (-not ($class = Get-WmiObject $WmiClass -Filter $Filter -ErrorAction Stop))
+   if (-not ($class = Get-WmiObject $WmiClass -ErrorAction Stop))
    {
       return $null
    }
-      
+   
    if ($class -is [Collections.IEnumerable])
    {
       $props = $class.GetEnumerator()
@@ -563,6 +563,7 @@ function Get-WmiClassProperties($WmiClass, $Filter = '')
       $props = $class
    }
    
+   $results = @()
    $props | % { 
       $result = @{}
       $class = $_
@@ -571,8 +572,15 @@ function Get-WmiClassProperties($WmiClass, $Filter = '')
          $result.Add($_.Name, "$($class.($_.Name))")
       }
       
-      $result
+      $results += $result
    }
+   
+   if ($Options.OutputArray)
+   {
+      return ,$results
+   }
+   
+   $results
 }
 
 #======================================================================================================================
@@ -1689,7 +1697,7 @@ function Get-Probes
    }
 
    @{ name = "memory-pagefileusage";
-      cmd = "Get-WmiClassProperties Win32_PageFileUsage"
+      cmd = 'Get-WmiClassProperties Win32_PageFileUsage @{ OutputArray = $true }'
    }
    
    @{ name = "bios";
@@ -1823,7 +1831,7 @@ function Get-Probes
    }
    
    @{ name = "hardware-cpu";
-      cmd = 'Get-WmiClassProperties Win32_Processor'
+      cmd = 'Get-WmiClassProperties Win32_Processor @{ OutputArray = $true }'
    }
    
    @{ name = "hardware-logicalprocessors";
@@ -1933,7 +1941,9 @@ function Get-Probes
    }
    
    @{ name = "mongo-configuration";
-      cmd = @'      
+      cmd = @'
+         # Collect mongos/mongod configuration 
+         $results = @()
          Get-WmiObject Win32_Process -Filter "Name = 'mongod.exe' OR Name = 'mongos.exe'" | % {
 
             $tempFile = [IO.Path]::GetTempFileName()
@@ -1972,13 +1982,13 @@ function Get-Probes
                $configFile = Redact-ConfigFile $configFilePath
             }
             
-            @{ ConfigurationFilePath = $configFilePath;
-               ProcessId = $_.ProcessId;
-               ExecutablePath = $_.ExecutablePath;
-               Version = $version;
-               ConfigFile = $configFile;
-            }
+            $results += @{ ConfigurationFilePath = $configFilePath;
+                           ProcessId = $_.ProcessId;
+                           ExecutablePath = $_.ExecutablePath;
+                           Version = $version;
+                           ConfigFile = $configFile; }
          }
+         ,$results
 '@
    }
    
@@ -2183,21 +2193,42 @@ function Get-Probes
    }
    
    @{ name = "storage-disk";
-      cmd = "Get-Disk | Select PartitionStyle,ProvisioningType,OperationalStatus,HealthStatus,BusType,BootFromDisk,FirmwareVersion,FriendlyName,IsBoot,IsClustered,IsOffline,IsReadOnly,IsSystem,LogicalSectorSize,Manufacturer,Model,Number,NumberOfPartitions,Path,PhysicalSectorSize,SerialNumber,Size";
-      alt = "Get-WmiObject Win32_DiskDrive | Select SystemName,BytesPerSector,Caption,CompressionMethod,Description,DeviceID,InterfaceType,Manufacturer,MediaType,Model,Name,Partitions,PNPDeviceID,SCSIBus,SCSILogicalUnit,SCSIPort,SCSITargetId,SectorsPerTrack,SerialNumber,Signature,Size,Status,TotalCylinders,TotalHeads,TotalSectors,TotalTracks,TracksPerCylinder";
+      cmd = 'Get-WmiClassProperties Win32_DiskDrive @{ OutputArray = $true }'
    }
    
    @{ name = "storage-partition";
-      # DriverLetter is borked, need to detect the nul byte included in the length for non-mapped partitions (..yeah)
-      cmd = "Get-Partition | Select OperationalStatus,Type,AccessPaths,DiskId,DiskNumber,@{Name='DriveLetter';Expression={@(`$null,`$_.DriveLetter)[`$_.DriveLetter -ge 'A']}},GptType,Guid,IsActive,IsBoot,IsHidden,IsOffline,IsReadOnly,IsShadowCopy,IsSystem,MbrType,NoDefaultDriveLetter,Offset,PartitionNumber,Size,TransitionState";
-      alt = "Get-WmiClassProperties Win32_DiskPartition"
+      cmd = 'Get-WmiClassProperties Win32_DiskPartition @{ OutputArray = $true }'
    }
    
    @{ name = "storage-volume";
-      cmd = 'Get-Volume | Select OperationalStatus, HealthStatus, DriveType, FileSystemType, DedupMode, Path, AllocationUnitSize, @{ Name = "DriveLetter"; Expression = { @($null,$_.DriveLetter)[$_.DriveLetter -ge "A"]}}, FileSystem, FileSystemLabel, Size, SizeRemaining';
-      alt = "Get-WmiObject Win32_LogicalDisk | Select Compressed,Description,DeviceID,DriveType,FileSystem,FreeSpace,MediaType,Name,Size,SystemName,VolumeSerialNumber";
+      cmd = 'Get-WmiClassProperties Win32_Volume @{ OutputArray = $true }'
    }
+   
+   @{ name = "storage-logicaldisk";
+      cmd = 'Get-WmiClassProperties Win32_LogicalDisk @{ OutputArray = $true }'
+   }
+   
+   @{ name = "storage-logicaldisktopartition";
+      cmd = @'
+         # Get Win32_DiskDrive to Win32_DiskPartition mapping
+         $results = @()
+         Get-WmiObject Win32_DiskDrive | % {
+            $devId = $_.DeviceId
+            $model = $_.Model
+           
+            Get-WmiObject -Query "ASSOCIATORS OF {Win32_DiskDrive.DeviceID=`"$($devId.Replace('\','\\'))`"} WHERE AssocClass = Win32_DiskDriveToDiskPartition" | % {
+               $partition = $_
+               $driveLetter = Get-WmiObject -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID=`"$($partition.DeviceID)`"} WHERE AssocClass = Win32_LogicalDiskToPartition"  | Select -ExpandProperty DeviceID
+            }
+            
+            $results += @{ DeviceId = $devId;
+                           Partition = $partition.Name;
+                           DriveLetter = $driveLetter }
+         }
 
+         ,$results
+'@ }
+   
    @{ name = "storage-ntfs.sys-version";
       cmd = "(Get-Item $env:SYSTEMROOT\system32\drivers\ntfs.sys -ErrorAction Stop).VersionInfo";
    }
@@ -2414,7 +2445,7 @@ function Get-Probes
                   $ticket | Add-Member -MemberType NoteProperty -Name 'Ticket Flags Data' -Value $ticketFlagsLine.SubString(14)
                   
                   $dt = $tickets[$line+4].Split(':',2)[1].Replace('(local)','').Trim()
-                  if ([DateTime]::TryParseExact($dt, 'M/d/yyyy H:mm:ss', [CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref] $dateTime))
+                  if ([DateTime]::TryParseExact($dt, 'M/d/yyyy H:mm:ss', [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref] $dateTime))
                   {
                      $ticket | Add-Member -MemberType NoteProperty -Name 'Start Time' -Value $dateTime
                   }
@@ -2424,7 +2455,7 @@ function Get-Probes
                   }
                   
                   $dt = $tickets[$line+5].Split(':',2)[1].Replace('(local)','').Trim()
-                  if ([DateTime]::TryParseExact($dt, 'M/d/yyyy H:mm:ss', [CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref] $dateTime))
+                  if ([DateTime]::TryParseExact($dt, 'M/d/yyyy H:mm:ss', [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref] $dateTime))
                   {
                      $ticket | Add-Member -MemberType NoteProperty -Name 'End Time' -Value $dateTime
                   }
@@ -2434,7 +2465,7 @@ function Get-Probes
                   }
                   
                   $dt = $tickets[$line+6].Split(':',2)[1].Replace('(local)','').Trim()
-                  if ([DateTime]::TryParseExact($dt, 'M/d/yyyy H:mm:ss', [CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref] $dateTime))
+                  if ([DateTime]::TryParseExact($dt, 'M/d/yyyy H:mm:ss', [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref] $dateTime))
                   {
                      $ticket | Add-Member -MemberType NoteProperty -Name 'Renew Time' -Value $dateTime
                   }
