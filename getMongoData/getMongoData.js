@@ -310,7 +310,8 @@ function printDataInfo(isMongoS) {
                                     {$indexStats: {}},
                                     {$group: {_id: "$key", stats: {$push: {accesses: "$accesses.ops", host: "$host", since: "$accesses.since"}}}},
                                     {$project: {key: "$_id", stats: 1, _id: 0}}
-                                  ]
+                                  ],
+                                  cursor: {}
                                 });
 
                                 if (res.hasOwnProperty('result')) {
