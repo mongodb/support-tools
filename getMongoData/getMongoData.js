@@ -314,8 +314,8 @@ function printDataInfo(isMongoS) {
                                   cursor: {}
                                 });
 
-                                if (res.hasOwnProperty('result')) {
-                                  res.result.forEach(
+                                if (res.hasOwnProperty('cursor') && res.cursor.hasOwnProperty('firstBatch')) {
+                                  res.cursor.firstBatch.forEach(
                                     function(d){
                                       d.stats.forEach(
                                         function(d){
