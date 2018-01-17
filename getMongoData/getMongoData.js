@@ -314,6 +314,9 @@ function printDataInfo(isMongoS) {
                                   cursor: {}
                                 });
 
+                                //It is assumed that there always will be a single batch as collections
+                                //are limited to 64 indexes and usage from all shards is grouped
+                                //into a single document
                                 if (res.hasOwnProperty('cursor') && res.cursor.hasOwnProperty('firstBatch')) {
                                   res.cursor.firstBatch.forEach(
                                     function(d){
