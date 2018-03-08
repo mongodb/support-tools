@@ -2,7 +2,7 @@
 # mdiag.ps1: MongoDB Diagnostic Report
 # ====================================
 #
-# Copyright MongoDB, Inc, 2014, 2015, 2016, 2017
+# Copyright MongoDB, Inc, 2014, 2015, 2016, 2017, 2018
 #
 #
 # DISCLAIMER
@@ -44,8 +44,8 @@ Param(
 # VERSION
 # =======
 
-$script:ScriptVersion = "1.9.2"
-$script:RevisionDate  = "2017-11-27"
+$script:ScriptVersion = "1.9.3"
+$script:RevisionDate  = "2018-03-06"
 
 <#
    .SYNOPSIS
@@ -2060,9 +2060,10 @@ function Get-Probes
                            DirectoryListing = $null }
             }
 
+            $dbPath = $dbPath.Trim('"')
             Write-Verbose "Discovered dbPath $dbPath"
             
-            $dirListing = Get-ChildItem -Force -Recurse $dbPath | % {
+            $dirListing = Get-ChildItem -Force -ErrorAction SilentlyContinue -Recurse $dbPath | % {
                $ordered = New-Object Collections.Specialized.OrderedDictionary
                $ordered.Add('FullName', $_.FullName);
                if ($_.Attributes -notcontains 'Directory')
@@ -2215,7 +2216,8 @@ function Get-Probes
          Get-WmiObject Win32_DiskDrive | % {
             $devId = $_.DeviceId
             $model = $_.Model
-           
+            $driveLetter = $null
+            
             Get-WmiObject -Query "ASSOCIATORS OF {Win32_DiskDrive.DeviceID=`"$($devId.Replace('\','\\'))`"} WHERE AssocClass = Win32_DiskDriveToDiskPartition" | % {
                $partition = $_
                $driveLetter = Get-WmiObject -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID=`"$($partition.DeviceID)`"} WHERE AssocClass = Win32_LogicalDiskToPartition"  | Select -ExpandProperty DeviceID
