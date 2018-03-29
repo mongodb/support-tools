@@ -44,8 +44,8 @@ Param(
 # VERSION
 # =======
 
-$script:ScriptVersion = "1.9.3"
-$script:RevisionDate  = "2018-03-06"
+$script:ScriptVersion = "1.9.4"
+$script:RevisionDate  = "2018-03-29"
 
 <#
    .SYNOPSIS
@@ -99,9 +99,9 @@ function Main
 
    try
    {      
-      $zipFile = [IO.Path]::Combine([IO.Path]::GetDirectoryName($script:DiagFile), 
-         [IO.Path]::GetFileNameWithoutExtension($script:DiagFile) + '.zip')    
-         
+      # Save MDiag output to the current users Documents folder
+      $zipFile = Join-Path ([Environment]::GetFolderPath('Personal')) ([IO.Path]::GetFileNameWithoutExtension($script:DiagFile) + '.zip')
+      
       Compress-Files $zipFile $script:FilesToCompress
       
       $script:FilesToCompress | % {
@@ -124,6 +124,10 @@ function Main
    if ($CaseReference)
    {
       Write-Host "Please attach '$zipFile' to MongoDB Technical Support case $CaseReference.`r`n"
+   }
+   else
+   {
+      Write-Host "MDiag output has been saved to $zipFile`r`n"
    }
 
    Write-Host "Press any key to continue ..."
@@ -729,7 +733,7 @@ function Setup-Environment
    
    Add-CompiledTypes
    
-   $script:DiagFile = Join-Path $([Environment]::GetFolderPath('Personal')) "mdiag-$($env:COMPUTERNAME).json"
+   $script:DiagFile = Join-Path ([IO.Path]::GetTempPath()) "mdiag-$($env:COMPUTERNAME).json"
 
    Write-Verbose "`$DiagFile: $DiagFile"
 
