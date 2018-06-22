@@ -18,7 +18,7 @@ sudo bash mdiag.sh _casereference_
 - It is not necessary to `chmod` the script.
 - Bash version 4.0 or later is required.
 - Replace `_casereference_` with your support case reference, if relevant.
-- The program will generate an output file in `/tmp/mdiag-$HOSTNAME.txt` with the information.
+- The program will generate an output file in `/tmp/mdiag-$HOSTNAME.json` with the information.
 
 ### License
 
