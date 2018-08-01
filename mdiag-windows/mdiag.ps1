@@ -44,8 +44,8 @@ Param(
 # VERSION
 # =======
 
-$script:ScriptVersion = "1.9.4"
-$script:RevisionDate  = "2018-03-29"
+$script:ScriptVersion = "1.9.5"
+$script:RevisionDate  = "2018-07-23"
 
 <#
    .SYNOPSIS
@@ -1997,9 +1997,10 @@ function Get-Probes
    }
    
    @{ name = "mongod-dir-listing";
-      cmd = @'      
-         Get-WmiObject Win32_Process -Filter "Name = 'mongod.exe'" | % {
-         
+      cmd = @'
+         # Collect mongod directory listings
+         $results = @()
+         $results += Get-WmiObject Win32_Process -Filter "Name = 'mongod.exe'" | % {
             if (-not $_.CommandLine)
             {
                return   @{ DbFilePath = $null;
@@ -2086,6 +2087,7 @@ function Get-Probes
                DirectoryListing = $dirListing
             }
          }
+         ,$results
 '@
    }
    
