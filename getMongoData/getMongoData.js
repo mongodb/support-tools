@@ -310,11 +310,15 @@ function printDataInfo(isMongoS) {
                                     {$indexStats: {}},
                                     {$group: {_id: "$key", stats: {$push: {accesses: "$accesses.ops", host: "$host", since: "$accesses.since"}}}},
                                     {$project: {key: "$_id", stats: 1, _id: 0}}
-                                  ]
+                                  ],
+                                  cursor: {}
                                 });
 
-                                if (res.hasOwnProperty('result')) {
-                                  res.result.forEach(
+                                //It is assumed that there always will be a single batch as collections
+                                //are limited to 64 indexes and usage from all shards is grouped
+                                //into a single document
+                                if (res.hasOwnProperty('cursor') && res.cursor.hasOwnProperty('firstBatch')) {
+                                  res.cursor.firstBatch.forEach(
                                     function(d){
                                       d.stats.forEach(
                                         function(d){
