@@ -44,8 +44,8 @@ Param(
 # VERSION
 # =======
 
-$script:ScriptVersion = "1.9.5"
-$script:RevisionDate  = "2018-07-23"
+$script:ScriptVersion = "1.9.6"
+$script:RevisionDate  = "2019-05-17"
 
 <#
    .SYNOPSIS
@@ -1393,6 +1393,48 @@ function Add-CompiledTypes
 }
 
 #======================================================================================================================
+function Recurse-Tree($JsonObject)
+#======================================================================================================================
+{
+   $JsonObject | % { 
+      if ($_ -isnot [Collections.Generic.Dictionary[String, Object]] -and $_ -isnot [Object[]])
+      {
+         return ,@($_)
+      }
+        
+      $obj = New-Object PSObject
+      foreach ($key in $_.Keys)
+      {
+         if ($_[$key] -is [Collections.Generic.Dictionary[String, Object]] -or $_[$key] -is [Object[]])
+         {
+            $obj | Add-Member -MemberType NoteProperty -Name $key -Value (Recurse-Tree $_[$key])
+         } 
+         else 
+         {
+            $obj | Add-Member -MemberType NoteProperty -Name $key -Value $_[$key]
+         }
+      }
+      $obj
+   }
+}
+
+#======================================================================================================================
+function Deserialize-Json
+#======================================================================================================================
+{ 
+   [CmdletBinding()]
+   Param(
+      [Parameter(ValueFromPipeline=$true)]
+      [object] $Object
+   )
+
+   Add-Type -Assembly System.Web.Extensions
+
+   $serializer = New-Object Web.Script.Serialization.JavaScriptSerializer
+   return (Recurse-Tree $serializer.DeserializeObject($Object))
+}
+
+#======================================================================================================================
 function Get-RegistryLastWriteTime($RegistryKey)
 #======================================================================================================================
 {
@@ -2578,6 +2620,36 @@ function Get-Probes
                         OverwriteOutDated, 
                         OverwritePolicy, 
                         @{ Name = 'ReturnValue'; Expr = { $exported.ReturnValue } }
+         }
+'@
+   }
+   
+   @{ name = 'cloud-provider';
+      cmd = @'
+         # Checks for known cloud providers
+         try
+         {
+            if ((Get-WmiObject Win32_ComputerSystemProduct).UUID.SubString(0, 3) -eq 'EC2')
+            {
+               $idUrl = 'http://169.254.169.254/latest/dynamic/instance-identity/document'
+               $idDocument = Deserialize-Json (New-Object Net.WebClient).DownloadString($idUrl)
+               return @{ Type = 'AWS'; Data = $idDocument }
+            }
+            elseif ((Get-WmiObject Win32_ComputerSystem).Model -eq 'Virtual Machine' -and `
+                    (Get-WmiObject Win32_SystemDriver | ? { $_.Name -eq 'VMBus' -and $_.State -eq 'Running' }))
+            {
+               $idUrl = 'http://169.254.169.254/metadata/instance?api-version=2018-10-01'
+               $wc = New-Object Net.WebClient
+               $wc.Headers.Add("Metadata", "true")
+               $idDocument = Deserialize-Json $wc.DownloadString($idUrl)
+               return @{ Type = 'Azure'; Data = $idDocument }
+            }
+         }
+         catch
+         {
+            $idDocument.Type = $_.Exception.GetType().FullName
+            $idDocument.Exception = $_.Exception.ToString()
+            return @{ Type = 'Unknown'; Data = $idDocument }
          }
 '@
    }
