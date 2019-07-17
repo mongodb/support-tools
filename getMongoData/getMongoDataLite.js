@@ -3,15 +3,7 @@
 // mongo --quiet < getMongoDataLite.js > out.json
 //
 
-print("{\n\"dbstats\": [");
-db._adminCommand("listDatabases").databases.forEach(
-    function (d, idx, array) {
-        mdb = db.getSiblingDB(d.name);
-        // print(d.name + ": ")
-        printjson(mdb.stats());
-        if (idx < array.length - 1) print(",")
-});
-print("]\n, \n\"collstats\": {");
+print("{");
 db.getMongo().getDBNames().forEach(function (name, idx, array) {
     var mdb = db.getSiblingDB(name);
     print("\"" + name + "\": { \n\t\t\"stats\":");
@@ -24,4 +16,4 @@ db.getMongo().getDBNames().forEach(function (name, idx, array) {
     print("\t]\n}")
     if (idx < array.length - 1) print(",");
 });
-print("\n\t}\n}");
+print("\n}");
