@@ -1,7 +1,8 @@
 /**
-* Launch with `node processLite.js`
+* Launch with `node processLite.js` or `node processList.js <MYFILE.json>`
 */
 
+var markdown = true; // include markdown summary table
 var args = process.argv.slice(2);
 var filename = args.length > 0 ? args[0] : 'out.json';
 
@@ -19,6 +20,10 @@ storageSizeTotal = 0
 objectsViaColls = 0 // total objects in ALL databases/collections
 bytesViaColls = 0
 
+if (markdown) {
+  console.log(`| Database | dataSize | storageSize | indexSize |`)
+  console.log(`| ---- | ---: | ---: | ----: |`)
+}
 Object.keys(json).forEach(function(key) {
   if (key != 'admin'  && key != 'config') {
     dbs.push(key);
@@ -26,8 +31,13 @@ Object.keys(json).forEach(function(key) {
     // collection via db.stats()
     objectsViaDb += elem.stats.objects;
     bytesViaDb += elem.stats.dataSize;
+    // console.log(`dataSize ${key}: ${(elem.stats.dataSize/1024/1024/1024).toFixed(1)}GB`)
     indexSizeTotal += elem.stats.indexSize;
+    // console.log(`indexSize ${key}: ${(elem.stats.indexSize/1024/1024/1024).toFixed(1)}GB`)
     storageSizeTotal += elem.stats.storageSize;
+    // console.log(`storageSize ${key}: ${(elem.stats.storageSize/1024/1024/1024).toFixed(1)}GB`)
+    if (markdown)
+      console.log(`| ${key} | ${(elem.stats.dataSize/1024/1024/1024).toFixed(1)} | ${(elem.stats.storageSize/1024/1024/1024).toFixed(1)} | ${(elem.stats.indexSize/1024/1024/1024).toFixed(1)} | `)
     // same for getCollectionNames
     elem.collections.forEach(function(coll){
       collections.push(coll.ns);
@@ -37,15 +47,27 @@ Object.keys(json).forEach(function(key) {
 }
 });
 
-console.log(`{`)
-console.log(`\tdbs: "${dbs}",`);
-console.log(`\tdbCount: ${dbs.length},`);
-console.log(`\tcolls: "${collections}",`);
-console.log(`\tcollCount: ${collections.length},`);
-console.log(`\tobjectsViaDb: ${objectsViaDb},`);
-console.log(`\tobjectsViaColls: ${objectsViaColls},`);
-console.log(`\tbytesViaDb: ${bytesViaDb},`);
-console.log(`\tbytesViaColls: ${bytesViaColls},`);
-console.log(`\tindexSizeTotal: ${indexSizeTotal},`);
-console.log(`\tstorageSizeTotal: ${storageSizeTotal},`);
-console.log(`}`)
+console.log(`{\n` +
+  `\tdbs: ${JSON.stringify(dbs)},\n`+
+  `\tdbCount: ${dbs.length},\n`+
+  `\tcolls: ${JSON.stringify(collections)},\n`+
+  `\tcollCount: ${collections.length},\n`+
+  `\tobjectsViaDb: ${objectsViaDb},\n`+
+  `\tobjectsViaColls: ${objectsViaColls},\n`+
+  `\tbytesViaDb: {\n`+
+  `\t\traw: ${bytesViaDb},\n`+
+  `\t\tgb: ${bytesViaDb/1024/1024/1024}\n`+
+  `\t},\n` +
+  `\tbytesViaColls: {\n`+
+  `\t\traw: ${bytesViaColls},\n`+
+  `\t\tgb: ${(bytesViaColls/1024/1024).toFixed(0)}\n`+
+  `\t},\n` +
+  `\tindexSizeTotal: {\n`+
+  `\t\traw: ${indexSizeTotal},\n`+
+  `\t\tgb: ${(bytesViaColls/1024/1024).toFixed(0)},\n`+
+  `\t},\n` +
+  `\tstorageSizeTotal: {\n`+
+    `\t\traw: ${storageSizeTotal},\n`+
+      `\t\tgb: ${(storageSizeTotal/1024/1024).toFixed(0)},\n`+
+      `\t},\n` +
+  `}`)
