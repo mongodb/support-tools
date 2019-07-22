@@ -6,23 +6,31 @@ var markdown = true; // include markdown summary table
 var args = process.argv.slice(2);
 var filename = args.length > 0 ? args[0] : 'out.json';
 
+console.log(`Reading data from ${filename}`);
+
 var fs = require('fs');
-var json = JSON.parse(fs.readFileSync(filename, 'utf8'));
+var content = fs.readFileSync(filename, 'utf8');
 
-dbs = []
-collections = [] // collection names
+content = content.replace(/Timestamp\(.*\)/g, '1');
+content = content.replace(/NumberLong\((.*)\)/g, '$1');
+content = content.replace(/ObjectId\((.*)\)/g, '$1');
+
+var json = JSON.parse(content);
+
+dbs = [];
+collections = []; // collection names
 // collection via DB and collection (and assert they are the same)
-objectsViaDb = 0
-bytesViaDb = 0 // data size
-indexSizeTotal = 0
-storageSizeTotal = 0
+objectsViaDb = 0;
+bytesViaDb = 0; // data size
+indexSizeTotal = 0;
+storageSizeTotal = 0;
 
-objectsViaColls = 0 // total objects in ALL databases/collections
-bytesViaColls = 0
+objectsViaColls = 0; // total objects in ALL databases/collections
+bytesViaColls = 0;
 
 if (markdown) {
-  console.log(`| Database | dataSize | storageSize | indexSize |`)
-  console.log(`| ---- | ---: | ---: | ----: |`)
+  console.log(`| Database | dataSize | storageSize | indexSize |`);
+  console.log(`| ---- | ---: | ---: | ----: |`);
 }
 Object.keys(json).forEach(function(key) {
   if (key != 'admin'  && key != 'config') {
@@ -39,7 +47,7 @@ Object.keys(json).forEach(function(key) {
     if (markdown)
       console.log(`| ${key} | ${(elem.stats.dataSize/1024/1024/1024).toFixed(1)} | ${(elem.stats.storageSize/1024/1024/1024).toFixed(1)} | ${(elem.stats.indexSize/1024/1024/1024).toFixed(1)} | `)
     // same for getCollectionNames
-    elem.collections.forEach(function(coll){
+    elem.collections.forEach(function(coll) {
       collections.push(coll.ns);
       objectsViaColls += coll.count;
       bytesViaColls += coll.size;
@@ -70,4 +78,4 @@ console.log(`{\n` +
     `\t\traw: ${storageSizeTotal},\n`+
       `\t\tgb: ${(storageSizeTotal/1024/1024).toFixed(0)},\n`+
       `\t},\n` +
-  `}`)
+  `}`);
