@@ -4,7 +4,7 @@
 # mdiag.sh: MongoDB Diagnostic Report
 # ===================================
 #
-# Copyright MongoDB, Inc, 2014, 2015, 2016, 2017
+# Copyright MongoDB, Inc, 2014, 2015, 2016, 2017, 2018, 2019
 #
 # Gather a wide variety of system and hardware diagnostic information.
 #
@@ -44,8 +44,8 @@
 # limitations under the License.
 
 
-version="2.0.4"
-revdate="2017-03-01"
+version="2.0.5"
+revdate="2019-08-26"
 
 PATH="$PATH${PATH+:}/usr/sbin:/sbin:/usr/bin:/bin"
 
@@ -370,7 +370,7 @@ function getfiles {
 		_addfield string "filename" "$f"
 		if [ -e "$f" ]; then
 			_addfield boolean exists true
-			_addfield string ls "$(ls -l "$f" 2>&1)"
+			_addfield lines_array ls "$(ls -l "$f" 2>&1)"
 
 			# FIXME: this doesn't need an associative array; remove it
 			declare -lA _stat
@@ -486,11 +486,9 @@ function lsfiles {
 # Internal internal functions (not directly used by the tests)
 ###############################################################
 
-_lf="$(echo -ne '\r')"
-
 function _showversion {
 	echo "mdiag.sh: MongoDB System Diagnostic Information Gathering Tool"
-	echo "version $version, copyright (c) 2014-2016, MongoDB, Inc."
+	echo "version $version, copyright (c) 2014-2019, MongoDB, Inc."
 }
 
 function _showhelp {
@@ -832,24 +830,19 @@ function _ungraboutput {
 
 function _json_strings_arrayify {
 	local a=("$@")
-	a=("${a[@]//\\/\\\\}") # this fixes vim syntax highlighting -> "
-	a=("${a[@]//\"/\\\"}")
-	a=("${a[@]//	/\\t}")
-	a=("${a[@]//$_lf/\\r}")
-	a=("${a[@]/#/\"}")
-	a=("${a[@]/%/\",}")
-	if [ ${#a[@]} -gt 0 ]; then
-		a[$(( ${#a[@]} - 1 ))]="${a[$(( ${#a[@]} - 1 ))]%,}"
-	fi
+	for i in ${!a[@]}; do
+	   a[$i]=$(_json_stringify "${a[$i]}")
+	   if [ ${#a[@]} -gt 0 -a $i -lt $(( ${#a[@]} - 1 )) ]; then
+	      a[$i]="${a[$i]},"
+	   fi
+	done
 	echo -n "[ ${a[@]} ]"
 }
 
 function _json_stringify {
-	local s="$*"
-	s="${s//\\/\\\\}" # this fixes vim syntax highlighting -> "
-	s="${s//\"/\\\"}"
-	s="${s//	/\\t}"
-	s="${s//$_lf/\\r}"
+	# The use of echo for an additional trailing newline is intentional
+	local s="$(echo -e "$*" | sed -e 's/\\/\\\\/g' -e 's/\"/\\\"/g' \
+			-e "s/\t/\\\t/g" -e "s/\r/\\\r/g" -e ':a;N;$!ba' -e "s/\n/\\\n/g")"
 	echo -n "\"$s\""
 }
 
@@ -924,6 +917,9 @@ function _jsonify {
 			;;
 		file_lines_array)
 			val="$(_json_lines_arrayify "$1")"
+			;;
+		lines_array)
+			val="$(_json_lines_arrayify <<< "$*")"
 			;;
 		*)
 			val="$*"
