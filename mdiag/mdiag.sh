@@ -486,6 +486,8 @@ function lsfiles {
 # Internal internal functions (not directly used by the tests)
 ###############################################################
 
+_lf="$(echo -ne '\r')"
+
 function _showversion {
 	echo "mdiag.sh: MongoDB System Diagnostic Information Gathering Tool"
 	echo "version $version, copyright (c) 2014-2019, MongoDB, Inc."
@@ -831,19 +833,30 @@ function _ungraboutput {
 function _json_strings_arrayify {
 	local a=("$@")
 	for i in ${!a[@]}; do
-	   a[$i]=$(_json_stringify "${a[$i]}")
-	   if [ ${#a[@]} -gt 0 -a $i -lt $(( ${#a[@]} - 1 )) ]; then
-	      a[$i]="${a[$i]},"
-	   fi
+		a[$i]=$(_json_stringify "${a[$i]}")
+		if [ ${#a[@]} -gt 0 -a $i -lt $(( ${#a[@]} - 1 )) ]; then
+			a[$i]="${a[$i]},"
+		fi
 	done
 	echo -n "[ ${a[@]} ]"
 }
 
 function _json_stringify {
-	# The use of echo for an additional trailing newline is intentional
-	local s="$(echo -e "$*" | sed -e 's/\\/\\\\/g' -e 's/\"/\\\"/g' \
-			-e "s/\t/\\\t/g" -e "s/\r/\\\r/g" -e ':a;N;$!ba' -e "s/\n/\\\n/g")"
-	echo -n "\"$s\""
+	local s="$*"
+	s="${s//\\/\\\\}" # this fixes vim syntax highlighting -> "
+	s="${s//\"/\\\"}"
+	s="${s//	/\\t}"
+	s="${s//$_lf/\\r}"
+	echo -n '"'
+	local multi=0
+	while read -r line; do
+		if [ $multi -eq 1 ]; then
+			echo -n "\\n"
+		fi
+		echo -n "$line"
+		multi=1
+	done <<< "$s"
+	echo -n '"'
 }
 
 function _json_dateify {
