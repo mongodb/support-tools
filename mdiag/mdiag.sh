@@ -44,8 +44,8 @@
 # limitations under the License.
 
 
-version="2.0.4"
-revdate="2017-03-01"
+version="2.0.5"
+revdate="2018-05-21"
 
 PATH="$PATH${PATH+:}/usr/sbin:/sbin:/usr/bin:/bin"
 
@@ -153,6 +153,12 @@ function _main {
 	section scheduler getfilesfromcommand find /sys -name scheduler
 	section rotational getfilesfromcommand find /sys -name rotational
 
+    # rq_affinity settings for CPU preference to service I/O requests
+    section rq_affinity getfiles /sys/block/*/queue/rq_affinity
+
+    # Disk entropy contribution settings
+    section add_random getfiles /sys/block/*/queue/add_random
+
 	# Network info
 	section ifconfig runcommand ifconfig -a
 	section route runcommand route -n
@@ -170,6 +176,14 @@ function _main {
 	section networks getfiles /etc/networks
 	section rpcinfo runcommand rpcinfo -p
 	section netstat runcommand netstat -anpoe
+
+    # Receive Packet Steering (RPS) information
+    section rps subsection rpsinfo getfiles /sys/class/net/*/queues/rx-*/rps_cpus
+    section rps subsection rpsflowinfo getfiles /sys/class/net/*/queues/rx-*/rps_flow_cnt
+    section rps subsection rpsflowlimit getfiles /proc/sys/net/core/flow_limit_cpu_bitmap
+    section rps subsection rfsinfo getfiles /proc/sys/net/core/rps_sock_flow_entries
+    section rps subsection txinfo getfiles /sys/class/net/*/queues/tx-*/xps_cpus
+    section rps subsection txlimit getfiles/sys/class/net/*/queues/tx-*/tx_maxrate
 
 	# Network time info
 	section ntp getfiles /etc/ntp.conf
