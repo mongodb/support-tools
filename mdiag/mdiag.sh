@@ -44,8 +44,8 @@
 # limitations under the License.
 
 
-version="2.0.4"
-revdate="2017-03-01"
+version="2.0.5"
+revdate="2020-01-06"
 
 PATH="$PATH${PATH+:}/usr/sbin:/sbin:/usr/bin:/bin"
 
@@ -199,17 +199,19 @@ function _main {
 	section ps runcommand ps -eLFww
 
 	# Dynamic/monitoring info
-	section top
-	runcommands
-	COLUMNS=512 top -b -d 1 -n 30 -c | sed -e 's/ *$//g'
-	endruncommands
-	endsection
-	section top_threads
-	runcommands
-	COLUMNS=512 top -b -d 1 -n 30 -c -H | sed -e 's/ *$//g'
-	endruncommands
-	endsection
-	section iostat runcommand iostat -xtm 1 120
+	if [ "$fast" != "y" ]; then
+		section top
+		runcommands
+		COLUMNS=512 top -b -d 1 -n 30 -c | sed -e 's/ *$//g'
+		endruncommands
+		endsection
+		section top_threads
+		runcommands
+		COLUMNS=512 top -b -d 1 -n 30 -c -H | sed -e 's/ *$//g'
+		endruncommands
+		endsection
+		section iostat runcommand iostat -xtm 1 120
+	fi
 
 	# Mongo process info
 	mongo_pids="`pgrep mongo`"
@@ -506,6 +508,7 @@ function _showhelp {
 	echo "    --txt, --text    Output in legacy plain text format"
 	echo "    --json           Output in JSON format"
 	echo "    --answer [ynqd]  At prompts, answer \"yes\", \"no\", \"quit\" or the default"
+	echo "    --fast           Skip checks that take a long time"
 	echo "    --help, -h       Show this help"
 	echo "    --version, -v    Show the mdiag.sh version"
 	echo ""
@@ -521,6 +524,7 @@ function _user_error_fatal {
 
 function _set_defaults {
 	outputformat=json
+	fast=n
 	inhibit_new_version_check=n
 	inhibit_version_update=n
 	ref=""
@@ -556,6 +560,9 @@ function _parse_cmdline {
 						_user_error_fatal "unknown value for --answer: \"$1\""
 						;;
 				esac
+				;;
+			--fast)
+				fast=y
 				;;
 			--inhibit-new-version-check)
 				inhibit_new_version_check=y
