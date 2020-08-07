@@ -4,7 +4,7 @@
 # mdiag.sh: MongoDB Diagnostic Report
 # ===================================
 #
-# Copyright MongoDB, Inc, 2014, 2015, 2016, 2017
+# Copyright MongoDB, Inc, 2014, 2015, 2016, 2017, 2018, 2019
 #
 # Gather a wide variety of system and hardware diagnostic information.
 #
@@ -44,8 +44,8 @@
 # limitations under the License.
 
 
-version="2.0.4"
-revdate="2017-03-01"
+version="2.0.5"
+revdate="2019-08-26"
 
 PATH="$PATH${PATH+:}/usr/sbin:/sbin:/usr/bin:/bin"
 
@@ -298,10 +298,7 @@ function endruncommands {
 	set +x
 	_ungraboutput
 	ts_ended="$(_now)"
-	# FIXME: this should be able to be done quicker with sed
-	grep -Ev '^\+ (_?end ?runcommands( runcommands)?|rc=-?[0-9]+|set \+x)$' "$errfile" > "$errfile.new" ; mv -f "$errfile.new" "$errfile"
-	#_addfield file_lines_array output "$outfile"
-	#_addfield file_lines_array error "$errfile"
+	_striptraceoutput "$(< "$errfile")" > "$errfile"
 	_emit
 }
 
@@ -354,8 +351,6 @@ function getenvvars {
 			declare -p "$i"
 			_ungraboutput
 			output_fieldname="declaration"
-			#_addfield file_lines_array declaration "$outfile"
-			#_addfield file_lines_array error "$errfile"
 		else
 			_addfield boolean set false
 		fi
@@ -370,74 +365,42 @@ function getfiles {
 		_addfield string "filename" "$f"
 		if [ -e "$f" ]; then
 			_addfield boolean exists true
-			_addfield string ls "$(ls -l "$f" 2>&1)"
+			_addfield lines_array ls "$(ls -l "$f" 2>&1)"
 
-			# FIXME: this doesn't need an associative array; remove it
-			declare -lA _stat
-			local format
-			format+="_stat[mode_oct]='%a' "
-			format+="_stat[mode_sym]='%A' "
-			format+="_stat[num_blocks]='%b' "
-			format+="_stat[block_size]='%B' "
-			format+="_stat[context]='%C' "
-			format+="_stat[device]='%d' "
-			format+="_stat[type]='%F' "
-			format+="_stat[gid]='%g' "
-			format+="_stat[group]='%G' "
-			format+="_stat[links]='%h' "
-			format+="_stat[inode]='%i' "
-			format+="_stat[mountpoint]='%m' "
-			format+="_stat[iohint]='%o' "
-			format+="_stat[size]='%s' "
-			format+="_stat[major]='%t' "
-			format+="_stat[minor]='%T' "
-			format+="_stat[uid]='%u' "
-			format+="_stat[user]='%U' "
-			format+="_stat[time_birth]='%w' "
-			format+="_stat[time_birth_epoch]='%W' "
-			format+="_stat[time_access]='%x' "
-			format+="_stat[time_access_epoch]='%X' "
-			format+="_stat[time_mod]='%y' "
-			format+="_stat[time_mod_epoch]='%Y' "
-			format+="_stat[time_change]='%z' "
-			format+="_stat[time_change_epoch]='%Z' "
-			eval "$(stat --printf "$format" "$f" 2>/dev/null)"
-
+			eval "$(stat --printf "$_stat_format" "$f" 2>/dev/null)"
 			local i
-			i="mode_oct"          ; _addfield string "$i" "${_stat[$i]}"
-			i="mode_sym"          ; _addfield string "$i" "${_stat[$i]}"
-			i="num_blocks"        ; _addfield number "$i" "${_stat[$i]}"
-			i="block_size"        ; _addfield number "$i" "${_stat[$i]}"
-			i="context"           ; _addfield string "$i" "${_stat[$i]}"
-			i="device"            ; _addfield number "$i" "${_stat[$i]}"
-			i="type"              ; _addfield string "$i" "${_stat[$i]}"
-			i="gid"               ; _addfield number "$i" "${_stat[$i]}"
-			i="group"             ; _addfield string "$i" "${_stat[$i]}"
-			i="links"             ; _addfield number "$i" "${_stat[$i]}"
-			i="inode"             ; _addfield number "$i" "${_stat[$i]}"
-			i="mountpoint"        ; _addfield string "$i" "${_stat[$i]}"
-			i="iohint"            ; _addfield number "$i" "${_stat[$i]}"
-			i="size"              ; _addfield number "$i" "${_stat[$i]}"
-			i="major"             ; _addfield number "$i" "${_stat[$i]}"
-			i="minor"             ; _addfield number "$i" "${_stat[$i]}"
-			i="uid"               ; _addfield number "$i" "${_stat[$i]}"
-			i="user"              ; _addfield string "$i" "${_stat[$i]}"
-			i="time_birth"        ; _addfield string "$i" "${_stat[$i]}"
-			i="time_birth_epoch"  ; _addfield number "$i" "${_stat[$i]}"
-			i="time_access"       ; _addfield string "$i" "${_stat[$i]}"
-			i="time_access_epoch" ; _addfield number "$i" "${_stat[$i]}"
-			i="time_mod"          ; _addfield string "$i" "${_stat[$i]}"
-			i="time_mod_epoch"    ; _addfield number "$i" "${_stat[$i]}"
-			i="time_change"       ; _addfield string "$i" "${_stat[$i]}"
-			i="time_change_epoch" ; _addfield number "$i" "${_stat[$i]}"
+			i="mode_oct"          ; _addfield string "$i" "${!i}"
+			i="mode_sym"          ; _addfield string "$i" "${!i}"
+			i="num_blocks"        ; _addfield number "$i" "${!i}"
+			i="block_size"        ; _addfield number "$i" "${!i}"
+			i="context"           ; _addfield string "$i" "${!i}"
+			i="device"            ; _addfield number "$i" "${!i}"
+			i="type"              ; _addfield string "$i" "${!i}"
+			i="gid"               ; _addfield number "$i" "${!i}"
+			i="group"             ; _addfield string "$i" "${!i}"
+			i="links"             ; _addfield number "$i" "${!i}"
+			i="inode"             ; _addfield number "$i" "${!i}"
+			i="mountpoint"        ; _addfield string "$i" "${!i}"
+			i="iohint"            ; _addfield number "$i" "${!i}"
+			i="size"              ; _addfield number "$i" "${!i}"
+			i="major"             ; _addfield number "$i" "${!i}"
+			i="minor"             ; _addfield number "$i" "${!i}"
+			i="uid"               ; _addfield number "$i" "${!i}"
+			i="user"              ; _addfield string "$i" "${!i}"
+			i="time_birth"        ; _addfield string "$i" "${!i}"
+			i="time_birth_epoch"  ; _addfield number "$i" "${!i}"
+			i="time_access"       ; _addfield string "$i" "${!i}"
+			i="time_access_epoch" ; _addfield number "$i" "${!i}"
+			i="time_mod"          ; _addfield string "$i" "${!i}"
+			i="time_mod_epoch"    ; _addfield number "$i" "${!i}"
+			i="time_change"       ; _addfield string "$i" "${!i}"
+			i="time_change_epoch" ; _addfield number "$i" "${!i}"
 
 			_nextoutput
 			_graboutput
 			cat "$f"
 			_ungraboutput
 			output_fieldname="content"
-			#_addfield file_lines_array content "$outfile"
-			#_addfield file_lines_array error "$errfile"
 		else
 			_addfield boolean exists false
 		fi
@@ -488,9 +451,38 @@ function lsfiles {
 
 _lf="$(echo -ne '\r')"
 
+read -r -d '' _stat_format <<EOF
+	mode_oct='%a'
+	mode_sym='%A'
+	num_blocks='%b'
+	block_size='%B'
+	context='%C'
+	device='%d'
+	type='%F'
+	gid='%g'
+	group='%G'
+	links='%h'
+	inode='%i'
+	mountpoint='%m'
+	iohint='%o'
+	size='%s'
+	major='%t'
+	minor='%T'
+	uid='%u'
+	user='%U'
+	time_birth='%w'
+	time_birth_epoch='%W'
+	time_access='%x'
+	time_access_epoch='%X'
+	time_mod='%y'
+	time_mod_epoch='%Y'
+	time_change='%z'
+	time_change_epoch='%Z'
+EOF
+
 function _showversion {
 	echo "mdiag.sh: MongoDB System Diagnostic Information Gathering Tool"
-	echo "version $version, copyright (c) 2014-2016, MongoDB, Inc."
+	echo "version $version, copyright (c) 2014-2019, MongoDB, Inc."
 }
 
 function _showhelp {
@@ -501,7 +493,7 @@ function _showhelp {
 	echo "    sudo bash mdiag.sh [options] [reference]"
 	echo ""
 	echo "Parameters:"
-	echo "    [reference]      Reference to ticket, e.g. CS-12435"
+	echo "    [reference]      Reference to ticket, e.g. 00523198"
 	echo "    --format <fmt>   Output in given format (txt or json)"
 	echo "    --txt, --text    Output in legacy plain text format"
 	echo "    --json           Output in JSON format"
@@ -830,17 +822,23 @@ function _ungraboutput {
 	exec 1>&3 2>&4
 }
 
+function _striptraceoutput {
+	while read -r line; do
+		if [[ $line =~ ^\+\ (_?end\ ?runcommands( runcommands)?|rc=-?[0-9]+|set\ \+x)$ ]]; then
+			continue;
+		fi
+		echo "$line"
+	done <<< "$*"
+}
+
 function _json_strings_arrayify {
 	local a=("$@")
-	a=("${a[@]//\\/\\\\}") # this fixes vim syntax highlighting -> "
-	a=("${a[@]//\"/\\\"}")
-	a=("${a[@]//	/\\t}")
-	a=("${a[@]//$_lf/\\r}")
-	a=("${a[@]/#/\"}")
-	a=("${a[@]/%/\",}")
-	if [ ${#a[@]} -gt 0 ]; then
-		a[$(( ${#a[@]} - 1 ))]="${a[$(( ${#a[@]} - 1 ))]%,}"
-	fi
+	for i in ${!a[@]}; do
+		a[$i]=$(_json_stringify "${a[$i]}")
+		if [ ${#a[@]} -gt 0 -a $i -lt $(( ${#a[@]} - 1 )) ]; then
+			a[$i]="${a[$i]},"
+		fi
+	done
 	echo -n "[ ${a[@]} ]"
 }
 
@@ -850,7 +848,16 @@ function _json_stringify {
 	s="${s//\"/\\\"}"
 	s="${s//	/\\t}"
 	s="${s//$_lf/\\r}"
-	echo -n "\"$s\""
+	echo -n '"'
+	local multi=0
+	while read -r line; do
+		if [ $multi -eq 1 ]; then
+			echo -n "\\n"
+		fi
+		echo -n "$line"
+		multi=1
+	done <<< "$s"
+	echo -n '"'
 }
 
 function _json_dateify {
@@ -925,6 +932,9 @@ function _jsonify {
 		file_lines_array)
 			val="$(_json_lines_arrayify "$1")"
 			;;
+		lines_array)
+			val="$(_json_lines_arrayify <<< "$*")"
+			;;
 		*)
 			val="$*"
 			;;
@@ -975,7 +985,7 @@ function _emit_txt {
 	fi
 	if [ -e "$outfile" ]; then
 		echo "Output:"
-		grep -Ev '^\+ (_?end ?runcommands( runcommands)?|rc=-?[0-9]+|set \+x)$' "$outfile"
+		_striptraceoutput "$(< "$outfile")"
 		rm -f "$outfile"
 	fi
 	if [ "$subsection" ]; then
