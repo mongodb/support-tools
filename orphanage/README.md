@@ -6,7 +6,7 @@ orphanage.js
 
 ## This script is provided for historical reference only
 
-MongoDB 2.6 adds the cleanupOrphaned command which should always be preferred to this script. Deleting orphans with this script should only be used on MongoDB versions prior to 2.6 Additionally in MongoDB 4.4, orphans are less likely to be created due to improved resilience on the deletion process.
+MongoDB 2.6 adds the cleanupOrphaned command which should always be preferred to this script. Deleting orphans with this script should only be used on MongoDB versions prior to 2.6 Additionally in MongoDB 4.4, orphans are less likely to be created due to the improved resilience of the deletion process.
 
 ### Description
 
