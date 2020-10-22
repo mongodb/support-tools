@@ -6,14 +6,14 @@ split_sessions.js
 
 ### Description
 
-_indexStats.js_ is a script to be executed in Sharded Clusters to split the _config.system.sessions_ collection in as many chunks as Shards present in the Cluster at the moment of execution.
+_split_sessions.js_ is a script to be executed in Sharded Clusters to split the _config.system.sessions_ collection in as many chunks as Shards present in the Cluster at the moment of execution.
 
 To successfully execute the script, the following role must be granted to the user executing it:
  - db.createRole({role:"split-config-system-sessions","privileges":[{"resource":{"db":"config","collection":"system.sessions"},"actions":["splitchunk","splitVector","collStats"]},{"resource":{"db":"config","collection":"collections"},"actions":["update"]},{"resource":{"db":"config","collection":"system.sessions"},"actions":["movechunk"]}],roles:[]})
 
 ### Usage
 
-Run _split_sessions.js_ via Mongo Shell connectiong to a _mongos_.
+Run _split_sessions.js_ via Mongo Shell connected to a _mongos_.
  - mongo --host <mongos_host> --port <mongos_port> -u session_split_usr /path/to/split_sessions.js 
  
 
@@ -37,5 +37,5 @@ their use.
 You are responsible for reviewing and testing any scripts you run *thoroughly* before use in any non-testing 
 environment.
 
-Thanks,  
+Thanks,
 The MongoDB Support Team
