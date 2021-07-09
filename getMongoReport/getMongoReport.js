@@ -1,24 +1,24 @@
 /* global db, tojson, tojsononeline, rs, print, printjson */
 
 /* =================================================
- * getMongoData.js: MongoDB Config and Schema Report
+ * getMongoReport.js: MongoDB Deployment and Schema Report
  * =================================================
  *
  * Copyright MongoDB, Inc, 2015
  *
- * Gather MongoDB configuration and schema information.
+ * Gather MongoDB deployment and schema information.
  *
  * To execute on a locally running mongod on default port (27017) without
  * authentication, run:
  *
- *     mongo getMongoData.js > getMongoData.log
+ *     mongo getMongoReport.js > getMongoReport.log
  *
  * To execute on a remote mongod or mongos with authentication, run:
  *
- *     mongo HOST:PORT/admin -u ADMIN_USER -p ADMIN_PASSWORD getMongoData.js > getMongoData.log
+ *     mongo HOST:PORT/admin -u ADMIN_USER -p ADMIN_PASSWORD getMongoReport.js > getMongoReport.log
  *
  * For details, see
- * https://github.com/mongodb/support-tools/tree/master/getMongoData.
+ * https://github.com/mongodb/support-tools/tree/master/getMongoReport.
  *
  *
  * DISCLAIMER
@@ -62,31 +62,6 @@ var _version = "2.6.0";
    "use strict";
 }());
 
-// For MongoDB 2.4 and before
-if (DB.prototype.getUsers == null) {
-    DB.prototype.getUsers = function (args) {
-        var cmdObj = {usersInfo: 1};
-        Object.extend(cmdObj, args);
-        var res = this.runCommand(cmdObj);
-        if (!res.ok) {
-            var authSchemaIncompatibleCode = 69;
-            if (res.code == authSchemaIncompatibleCode ||
-                    (res.code == null && res.errmsg == "no such cmd: usersInfo")) {
-                // Working with 2.4 schema user data
-                return this.system.users.find({}).toArray();
-            }
-            throw Error(res.errmsg);
-        }
-        return res.users;
-    }
-}
-
-// For MongoDB 2.4 and before
-if (DB.prototype.getRoles == null) {
-    DB.prototype.getRoles = function (args) {
-        return "No custom roles";
-    }
-}
 
 // Taken from the >= 3.1.9 shell to capture print output
 if (typeof print.captureAllOutput === "undefined") {
@@ -329,18 +304,6 @@ function printDataInfo(isMongoS) {
 
                                 return res;
                               }, section);
-                    if (col != "system.users") {
-                        printInfo('Sample document',
-                                  function(){
-					var lastValCursor = db.getSiblingDB(mydb.name).getCollection(col).find().sort({'$natural': -1}).limit(-1);
-					if (lastValCursor.hasNext()) {
-						return lastValCursor.next()
-					}
-					else {
-						return null;
-					}
-				  }, section);
-                    }
                 });
             }
         });
@@ -389,8 +352,8 @@ var _output = [];
 var _tag = ObjectId();
 if (! _printJSON) {
     print("================================");
-    print("MongoDB Config and Schema Report");
-    print("getMongoData.js version " + _version);
+    print("MongoDB Deployment and Schema Report");
+    print("getMongoReport.js version " + _version);
     print("================================");
 }
 var _host = hostname();
