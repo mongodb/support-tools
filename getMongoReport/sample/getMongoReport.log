@@ -1,10 +1,10 @@
 MongoDB shell version v4.9.0-rc0
 connecting to: mongodb://127.0.0.1:27017/?compressors=disabled&gssapiServiceName=mongodb
-Implicit session: session { "id" : UUID("1556d058-df86-47a9-a9dd-251dacf18247") }
+Implicit session: session { "id" : UUID("2a1e706c-5fec-4134-9be1-0ea03ea350a7") }
 MongoDB server version: 4.9.0-rc0
 ================================
 MongoDB Deployment and Schema Report
-getMongoReport.js version 1.0.0
+getMongoReport.js version 2.6.0
 ================================
 
 ** Shell version:
@@ -22,22 +22,22 @@ getMongoReport.js version 1.0.0
 	"version" : "4.9.0-rc0",
 	"process" : "mongod",
 	"pid" : NumberLong(18598),
-	"uptime" : 547,
-	"uptimeMillis" : NumberLong(547136),
-	"uptimeEstimate" : NumberLong(547),
-	"localTime" : ISODate("2021-07-09T10:48:28.149Z"),
+	"uptime" : 4165,
+	"uptimeMillis" : NumberLong(4165294),
+	"uptimeEstimate" : NumberLong(4165),
+	"localTime" : ISODate("2021-07-09T11:48:46.307Z"),
 	"asserts" : {
 		"regular" : 0,
 		"warning" : 0,
 		"msg" : 0,
-		"user" : 58,
+		"user" : 84,
 		"tripwire" : 0,
 		"rollovers" : 0
 	},
 	"connections" : {
 		"current" : 1,
 		"available" : 203,
-		"totalCreated" : 14,
+		"totalCreated" : 16,
 		"active" : 1,
 		"threaded" : 1,
 		"exhaustIsMaster" : 0,
@@ -83,7 +83,7 @@ getMongoReport.js version 1.0.0
 	"flowControl" : {
 		"enabled" : true,
 		"targetRateLimit" : 1000000000,
-		"timeAcquiringMicros" : NumberLong(48),
+		"timeAcquiringMicros" : NumberLong(293),
 		"locksPerKiloOp" : 0,
 		"sustainerRate" : 0,
 		"isLagged" : false,
@@ -94,7 +94,7 @@ getMongoReport.js version 1.0.0
 		"state" : "undecided"
 	},
 	"globalLock" : {
-		"totalTime" : NumberLong(547132000),
+		"totalTime" : NumberLong("4165290000"),
 		"currentQueue" : {
 			"total" : 0,
 			"readers" : 0,
@@ -109,64 +109,64 @@ getMongoReport.js version 1.0.0
 	"locks" : {
 		"ParallelBatchWriterMode" : {
 			"acquireCount" : {
-				"r" : NumberLong(140)
+				"r" : NumberLong(331)
 			}
 		},
 		"ReplicationStateTransition" : {
 			"acquireCount" : {
-				"w" : NumberLong(2405)
+				"w" : NumberLong(17111)
 			}
 		},
 		"Global" : {
 			"acquireCount" : {
-				"r" : NumberLong(2644),
-				"w" : NumberLong(30),
+				"r" : NumberLong(17438),
+				"w" : NumberLong(153),
 				"W" : NumberLong(5)
 			}
 		},
 		"Database" : {
 			"acquireCount" : {
-				"r" : NumberLong(146),
-				"w" : NumberLong(29),
-				"R" : NumberLong(30),
+				"r" : NumberLong(238),
+				"w" : NumberLong(152),
+				"R" : NumberLong(50),
 				"W" : NumberLong(1)
 			}
 		},
 		"Collection" : {
 			"acquireCount" : {
-				"r" : NumberLong(240),
-				"w" : NumberLong(25),
+				"r" : NumberLong(388),
+				"w" : NumberLong(148),
 				"W" : NumberLong(2)
 			}
 		},
 		"Mutex" : {
 			"acquireCount" : {
-				"r" : NumberLong(481)
+				"r" : NumberLong(927)
 			}
 		}
 	},
 	"logicalSessionRecordCache" : {
-		"activeSessionsCount" : 3,
-		"sessionsCollectionJobCount" : 2,
-		"lastSessionsCollectionJobDurationMillis" : 1,
-		"lastSessionsCollectionJobTimestamp" : ISODate("2021-07-09T10:44:22.404Z"),
+		"activeSessionsCount" : 2,
+		"sessionsCollectionJobCount" : 14,
+		"lastSessionsCollectionJobDurationMillis" : 0,
+		"lastSessionsCollectionJobTimestamp" : ISODate("2021-07-09T11:44:22.482Z"),
 		"lastSessionsCollectionJobEntriesRefreshed" : 0,
-		"lastSessionsCollectionJobEntriesEnded" : 7,
+		"lastSessionsCollectionJobEntriesEnded" : 0,
 		"lastSessionsCollectionJobCursorsClosed" : 0,
-		"transactionReaperJobCount" : 2,
+		"transactionReaperJobCount" : 14,
 		"lastTransactionReaperJobDurationMillis" : 1,
-		"lastTransactionReaperJobTimestamp" : ISODate("2021-07-09T10:44:22.404Z"),
+		"lastTransactionReaperJobTimestamp" : ISODate("2021-07-09T11:44:22.482Z"),
 		"lastTransactionReaperJobEntriesCleanedUp" : 0,
 		"sessionCatalogSize" : 0
 	},
 	"network" : {
-		"bytesIn" : NumberLong(65863),
-		"bytesOut" : NumberLong(2117954),
-		"physicalBytesIn" : NumberLong(65729),
-		"physicalBytesOut" : NumberLong(2117954),
+		"bytesIn" : NumberLong(105889),
+		"bytesOut" : NumberLong(3513796),
+		"physicalBytesIn" : NumberLong(105755),
+		"physicalBytesOut" : NumberLong(3513796),
 		"numSlowDNSOperations" : NumberLong(0),
 		"numSlowSSLOperations" : NumberLong(0),
-		"numRequests" : NumberLong(389),
+		"numRequests" : NumberLong(623),
 		"tcpFastOpen" : {
 			"serverSupported" : false,
 			"clientSupported" : false,
@@ -221,16 +221,16 @@ getMongoReport.js version 1.0.0
 	},
 	"opLatencies" : {
 		"reads" : {
-			"latency" : NumberLong(13400),
-			"ops" : NumberLong(75)
+			"latency" : NumberLong(21803),
+			"ops" : NumberLong(125)
 		},
 		"writes" : {
 			"latency" : NumberLong(0),
 			"ops" : NumberLong(0)
 		},
 		"commands" : {
-			"latency" : NumberLong(147089),
-			"ops" : NumberLong(313)
+			"latency" : NumberLong(236972),
+			"ops" : NumberLong(497)
 		},
 		"transactions" : {
 			"latency" : NumberLong(0),
@@ -239,11 +239,11 @@ getMongoReport.js version 1.0.0
 	},
 	"opcounters" : {
 		"insert" : NumberLong(0),
-		"query" : NumberLong(5),
-		"update" : NumberLong(0),
-		"delete" : NumberLong(7),
+		"query" : NumberLong(18),
+		"update" : NumberLong(1),
+		"delete" : NumberLong(9),
 		"getmore" : NumberLong(0),
-		"command" : NumberLong(393)
+		"command" : NumberLong(651)
 	},
 	"opcountersRepl" : {
 		"insert" : NumberLong(0),
@@ -255,7 +255,7 @@ getMongoReport.js version 1.0.0
 	},
 	"readConcernCounters" : {
 		"nonTransactionOps" : {
-			"none" : NumberLong(75),
+			"none" : NumberLong(125),
 			"local" : NumberLong(0),
 			"available" : NumberLong(0),
 			"majority" : NumberLong(0),
@@ -386,13 +386,13 @@ getMongoReport.js version 1.0.0
 		"uri" : "statistics:",
 		"block-manager" : {
 			"blocks pre-loaded" : 1603,
-			"blocks read" : 187,
-			"blocks written" : 243,
-			"bytes read" : 876544,
+			"blocks read" : 252,
+			"blocks written" : 660,
+			"bytes read" : 1142784,
 			"bytes read via memory map API" : 0,
 			"bytes read via system call API" : 0,
-			"bytes written" : 1622016,
-			"bytes written for checkpoint" : 1622016,
+			"bytes written" : 6598656,
+			"bytes written for checkpoint" : 6598656,
 			"bytes written via memory map API" : 0,
 			"bytes written via system call API" : 0,
 			"mapped blocks read" : 0,
@@ -403,32 +403,32 @@ getMongoReport.js version 1.0.0
 		"cache" : {
 			"application threads page read from disk to cache count" : 9,
 			"application threads page read from disk to cache time (usecs)" : 1584,
-			"application threads page write from cache to disk count" : 35,
-			"application threads page write from cache to disk time (usecs)" : 11051,
-			"bytes allocated for updates" : 95398,
+			"application threads page write from cache to disk count" : 228,
+			"application threads page write from cache to disk time (usecs)" : 28445,
+			"bytes allocated for updates" : 96884,
 			"bytes belonging to page images in the cache" : 216892,
 			"bytes belonging to the history store table in the cache" : 579,
-			"bytes not belonging to page images in the cache" : 221841,
+			"bytes not belonging to page images in the cache" : 223327,
 			"cache overflow score" : 0,
-			"eviction calls to get a page" : 87,
-			"eviction calls to get a page found queue empty" : 67,
-			"eviction calls to get a page found queue empty after locking" : 1,
+			"eviction calls to get a page" : 557,
+			"eviction calls to get a page found queue empty" : 427,
+			"eviction calls to get a page found queue empty after locking" : 3,
 			"eviction currently operating in aggressive mode" : 0,
 			"eviction empty score" : 0,
 			"eviction passes of a file" : 0,
 			"eviction server candidate queue empty when topping up" : 0,
 			"eviction server candidate queue not empty when topping up" : 0,
 			"eviction server evicting pages" : 0,
-			"eviction server slept, because we did not make progress with eviction" : 10,
+			"eviction server slept, because we did not make progress with eviction" : 69,
 			"eviction server unable to reach eviction goal" : 0,
-			"eviction server waiting for a leaf page" : 7,
+			"eviction server waiting for a leaf page" : 9,
 			"eviction state" : 64,
 			"eviction walk target strategy both clean and dirty pages" : 0,
 			"eviction walk target strategy only clean pages" : 0,
 			"eviction walk target strategy only dirty pages" : 0,
 			"eviction worker thread active" : 4,
 			"eviction worker thread created" : 0,
-			"eviction worker thread evicting pages" : 17,
+			"eviction worker thread evicting pages" : 109,
 			"eviction worker thread removed" : 0,
 			"eviction worker thread stable number" : 0,
 			"files with active eviction walks" : 0,
@@ -446,8 +446,8 @@ getMongoReport.js version 1.0.0
 			"forced eviction - pages selected unable to be evicted count" : 0,
 			"forced eviction - pages selected unable to be evicted time" : 0,
 			"forced eviction - session returned rollback error while force evicting due to being oldest" : 0,
-			"hazard pointer check calls" : 17,
-			"hazard pointer check entries walked" : 15,
+			"hazard pointer check calls" : 109,
+			"hazard pointer check entries walked" : 86,
 			"hazard pointer maximum array length" : 3,
 			"history store score" : 0,
 			"history store table max on-disk size" : 0,
@@ -461,10 +461,10 @@ getMongoReport.js version 1.0.0
 			"operations timed out waiting for space in cache" : 0,
 			"pages currently held in the cache" : 75,
 			"pages evicted by application threads" : 0,
-			"pages evicted in parallel with checkpoint" : 17,
+			"pages evicted in parallel with checkpoint" : 109,
 			"pages queued for eviction" : 0,
 			"pages queued for eviction post lru sorting" : 0,
-			"pages queued for urgent eviction" : 17,
+			"pages queued for urgent eviction" : 109,
 			"pages queued for urgent eviction during walk" : 0,
 			"pages queued for urgent eviction from history store due to high dirty content" : 0,
 			"pages seen by eviction walk that are already queued" : 0,
@@ -475,12 +475,12 @@ getMongoReport.js version 1.0.0
 			"pages walked for eviction" : 0,
 			"percentage overhead" : 8,
 			"tracked bytes belonging to internal pages in the cache" : 159427,
-			"tracked bytes belonging to leaf pages in the cache" : 279306,
+			"tracked bytes belonging to leaf pages in the cache" : 280792,
 			"tracked dirty pages in the cache" : 3,
-			"bytes currently in the cache" : 438733,
-			"bytes dirty in the cache cumulative" : 1412873,
+			"bytes currently in the cache" : 440219,
+			"bytes dirty in the cache cumulative" : 8162334,
 			"bytes read into cache" : 200826,
-			"bytes written from cache" : 726122,
+			"bytes written from cache" : 4109717,
 			"checkpoint blocked page eviction" : 0,
 			"eviction walk target pages histogram - 0-9" : 0,
 			"eviction walk target pages histogram - 10-31" : 0,
@@ -516,16 +516,16 @@ getMongoReport.js version 1.0.0
 			"internal pages evicted" : 0,
 			"internal pages split during eviction" : 0,
 			"leaf pages split during eviction" : 0,
-			"modified pages evicted" : 17,
+			"modified pages evicted" : 109,
 			"overflow pages read into cache" : 0,
 			"page split during eviction deepened the tree" : 0,
 			"page written requiring history store records" : 0,
 			"pages read into cache" : 65,
-			"pages read into cache after truncate" : 18,
+			"pages read into cache after truncate" : 110,
 			"pages read into cache after truncate in prepare state" : 0,
-			"pages requested from the cache" : 3922,
+			"pages requested from the cache" : 10483,
 			"pages seen by eviction walk" : 0,
-			"pages written from cache" : 91,
+			"pages written from cache" : 284,
 			"pages written requiring in-memory restoration" : 0,
 			"tracked dirty bytes in the cache" : 1393,
 			"unmodified pages evicted" : 0
@@ -535,10 +535,10 @@ getMongoReport.js version 1.0.0
 			"background fsync file handles synced" : 0,
 			"background fsync time (msecs)" : 0,
 			"bytes read" : 376832,
-			"bytes written for checkpoint" : 639861,
+			"bytes written for checkpoint" : 4015073,
 			"bytes written for eviction" : 0,
-			"bytes written for log" : 831598336,
-			"bytes written total" : 832238197,
+			"bytes written for log" : 831691008,
+			"bytes written total" : 835706081,
 			"threshold to call fsync" : 0,
 			"time waiting due to total capacity (usecs)" : 0,
 			"time waiting during checkpoint (usecs)" : 0,
@@ -547,135 +547,135 @@ getMongoReport.js version 1.0.0
 			"time waiting during read (usecs)" : 0
 		},
 		"checkpoint-cleanup" : {
-			"pages added for eviction" : 17,
+			"pages added for eviction" : 109,
 			"pages removed" : 0,
 			"pages skipped during tree walk" : 0,
-			"pages visited" : 57
+			"pages visited" : 396
 		},
 		"connection" : {
-			"auto adjusting condition resets" : 126,
-			"auto adjusting condition wait calls" : 3472,
+			"auto adjusting condition resets" : 439,
+			"auto adjusting condition wait calls" : 25821,
 			"auto adjusting condition wait raced to update timeout and skipped updating" : 0,
 			"detected system time went backwards" : 0,
 			"files currently open" : 64,
 			"hash bucket array size for data handles" : 512,
 			"hash bucket array size general" : 512,
-			"memory allocations" : 55319,
-			"memory frees" : 50278,
-			"memory re-allocations" : 3450,
-			"pthread mutex condition wait calls" : 8900,
-			"pthread mutex shared lock read-lock calls" : 14278,
-			"pthread mutex shared lock write-lock calls" : 1830,
-			"total fsync I/Os" : 146,
-			"total read I/Os" : 1097,
-			"total write I/Os" : 276
+			"memory allocations" : 232134,
+			"memory frees" : 226992,
+			"memory re-allocations" : 16346,
+			"pthread mutex condition wait calls" : 67109,
+			"pthread mutex shared lock read-lock calls" : 86565,
+			"pthread mutex shared lock write-lock calls" : 6544,
+			"total fsync I/Os" : 580,
+			"total read I/Os" : 1222,
+			"total write I/Os" : 848
 		},
 		"cursor" : {
-			"cached cursor count" : 22,
+			"cached cursor count" : 25,
 			"cursor bulk loaded cursor insert calls" : 0,
-			"cursor close calls that result in cache" : 4987,
-			"cursor create calls" : 435,
-			"cursor insert calls" : 116,
-			"cursor insert key and value bytes" : 113792,
+			"cursor close calls that result in cache" : 35474,
+			"cursor create calls" : 582,
+			"cursor insert calls" : 400,
+			"cursor insert key and value bytes" : 309602,
 			"cursor modify calls" : 0,
 			"cursor modify key and value bytes affected" : 0,
 			"cursor modify value bytes modified" : 0,
-			"cursor next calls" : 1042,
+			"cursor next calls" : 1135,
 			"cursor operation restarted" : 0,
-			"cursor prev calls" : 83,
-			"cursor remove calls" : 0,
-			"cursor remove key bytes removed" : 0,
+			"cursor prev calls" : 175,
+			"cursor remove calls" : 3,
+			"cursor remove key bytes removed" : 79,
 			"cursor reserve calls" : 0,
-			"cursor reset calls" : 8649,
-			"cursor search calls" : 2903,
+			"cursor reset calls" : 45269,
+			"cursor search calls" : 5084,
 			"cursor search history store calls" : 0,
-			"cursor search near calls" : 149,
-			"cursor sweep buckets" : 786,
+			"cursor search near calls" : 274,
+			"cursor sweep buckets" : 5922,
 			"cursor sweep cursors closed" : 0,
-			"cursor sweep cursors examined" : 1,
-			"cursor sweeps" : 131,
+			"cursor sweep cursors examined" : 19,
+			"cursor sweeps" : 987,
 			"cursor truncate calls" : 0,
 			"cursor update calls" : 0,
 			"cursor update key and value bytes" : 0,
 			"cursor update value size change" : 0,
-			"cursors reused from cache" : 4965,
+			"cursors reused from cache" : 35449,
 			"Total number of entries skipped by cursor next calls" : 0,
-			"Total number of entries skipped by cursor prev calls" : 0,
+			"Total number of entries skipped by cursor prev calls" : 1,
 			"Total number of entries skipped to position the history store cursor" : 0,
 			"cursor next calls that skip due to a globally visible history store tombstone" : 0,
 			"cursor next calls that skip greater than or equal to 100 entries" : 0,
-			"cursor next calls that skip less than 100 entries" : 1041,
+			"cursor next calls that skip less than 100 entries" : 1134,
 			"cursor prev calls that skip due to a globally visible history store tombstone" : 0,
 			"cursor prev calls that skip greater than or equal to 100 entries" : 0,
-			"cursor prev calls that skip less than 100 entries" : 83,
+			"cursor prev calls that skip less than 100 entries" : 175,
 			"open cursor count" : 7
 		},
 		"data-handle" : {
 			"connection data handle size" : 456,
-			"connection data handles currently active" : 124,
+			"connection data handles currently active" : 121,
 			"connection sweep candidate became referenced" : 0,
 			"connection sweep dhandles closed" : 0,
-			"connection sweep dhandles removed from hash list" : 85,
-			"connection sweep time-of-death sets" : 294,
-			"connection sweeps" : 54,
+			"connection sweep dhandles removed from hash list" : 247,
+			"connection sweep time-of-death sets" : 1006,
+			"connection sweeps" : 416,
 			"connection sweeps skipped due to checkpoint gathering handles" : 0,
-			"session dhandles swept" : 412,
-			"session sweep attempts" : 88
+			"session dhandles swept" : 2986,
+			"session sweep attempts" : 148
 		},
 		"lock" : {
-			"checkpoint lock acquisitions" : 10,
-			"checkpoint lock application thread wait time (usecs)" : 0,
+			"checkpoint lock acquisitions" : 70,
+			"checkpoint lock application thread wait time (usecs)" : 1,
 			"checkpoint lock internal thread wait time (usecs)" : 1,
-			"dhandle lock application thread time waiting (usecs)" : 3,
+			"dhandle lock application thread time waiting (usecs)" : 26,
 			"dhandle lock internal thread time waiting (usecs)" : 0,
-			"dhandle read lock acquisitions" : 2328,
-			"dhandle write lock acquisitions" : 412,
+			"dhandle read lock acquisitions" : 17156,
+			"dhandle write lock acquisitions" : 733,
 			"durable timestamp queue lock application thread time waiting (usecs)" : 0,
 			"durable timestamp queue lock internal thread time waiting (usecs)" : 0,
 			"durable timestamp queue read lock acquisitions" : 0,
 			"durable timestamp queue write lock acquisitions" : 0,
-			"metadata lock acquisitions" : 10,
+			"metadata lock acquisitions" : 70,
 			"metadata lock application thread wait time (usecs)" : 0,
 			"metadata lock internal thread wait time (usecs)" : 0,
 			"read timestamp queue lock application thread time waiting (usecs)" : 0,
 			"read timestamp queue lock internal thread time waiting (usecs)" : 0,
 			"read timestamp queue read lock acquisitions" : 0,
 			"read timestamp queue write lock acquisitions" : 0,
-			"schema lock acquisitions" : 77,
+			"schema lock acquisitions" : 137,
 			"schema lock application thread wait time (usecs)" : 0,
 			"schema lock internal thread wait time (usecs)" : 0,
 			"table lock application thread time waiting for the table lock (usecs)" : 0,
 			"table lock internal thread time waiting for the table lock (usecs)" : 0,
 			"table read lock acquisitions" : 0,
-			"table write lock acquisitions" : 475,
+			"table write lock acquisitions" : 751,
 			"txn global lock application thread time waiting (usecs)" : 0,
 			"txn global lock internal thread time waiting (usecs)" : 0,
-			"txn global read lock acquisitions" : 153,
-			"txn global write lock acquisitions" : 35
+			"txn global read lock acquisitions" : 579,
+			"txn global write lock acquisitions" : 217
 		},
 		"log" : {
 			"busy returns attempting to switch slots" : 0,
 			"force archive time sleeping (usecs)" : 0,
-			"log bytes of payload data" : 14440,
-			"log bytes written" : 17664,
+			"log bytes of payload data" : 91737,
+			"log bytes written" : 110336,
 			"log files manually zero-filled" : 0,
-			"log flush operations" : 5320,
-			"log force write operations" : 5916,
-			"log force write operations skipped" : 5908,
-			"log records compressed" : 10,
-			"log records not compressed" : 0,
-			"log records too small to compress" : 22,
-			"log release advances write LSN" : 11,
+			"log flush operations" : 40575,
+			"log force write operations" : 45085,
+			"log force write operations skipped" : 45042,
+			"log records compressed" : 70,
+			"log records not compressed" : 1,
+			"log records too small to compress" : 145,
+			"log release advances write LSN" : 71,
 			"log scan operations" : 4,
 			"log scan records requiring two reads" : 3,
-			"log server thread advances write LSN" : 8,
-			"log server thread write LSN walk skipped" : 1538,
-			"log sync operations" : 19,
-			"log sync time duration (usecs)" : 192877,
+			"log server thread advances write LSN" : 43,
+			"log server thread write LSN walk skipped" : 5082,
+			"log sync operations" : 114,
+			"log sync time duration (usecs)" : 1300288,
 			"log sync_dir operations" : 1,
 			"log sync_dir time duration (usecs)" : 11043,
-			"log write operations" : 32,
-			"logging bytes consolidated" : 17152,
+			"log write operations" : 216,
+			"logging bytes consolidated" : 109824,
 			"maximum log file size" : 104857600,
 			"number of pre-allocated log files to create" : 2,
 			"pre-allocated log files not ready and missed" : 1,
@@ -684,10 +684,10 @@ getMongoReport.js version 1.0.0
 			"records processed by log scan" : 12,
 			"slot close lost race" : 0,
 			"slot close unbuffered waits" : 0,
-			"slot closures" : 19,
+			"slot closures" : 114,
 			"slot join atomic update races" : 0,
 			"slot join calls atomic updates raced" : 0,
-			"slot join calls did not yield" : 32,
+			"slot join calls did not yield" : 216,
 			"slot join calls found active slot closed" : 0,
 			"slot join calls slept" : 0,
 			"slot join calls yielded" : 0,
@@ -695,9 +695,9 @@ getMongoReport.js version 1.0.0
 			"slot joins yield time (usecs)" : 0,
 			"slot transitions unable to find free slot" : 0,
 			"slot unbuffered writes" : 0,
-			"total in-memory size of compressed records" : 39736,
+			"total in-memory size of compressed records" : 237637,
 			"total log buffer size" : 33554432,
-			"total size of compressed records" : 13902,
+			"total size of compressed records" : 88129,
 			"written slots coalesced" : 0,
 			"yields waiting for previous log file close" : 0
 		},
@@ -709,7 +709,7 @@ getMongoReport.js version 1.0.0
 			"file system read latency histogram (bucket 5) - 500-999ms" : 0,
 			"file system read latency histogram (bucket 6) - 1000ms+" : 0,
 			"file system write latency histogram (bucket 1) - 10-49ms" : 0,
-			"file system write latency histogram (bucket 2) - 50-99ms" : 0,
+			"file system write latency histogram (bucket 2) - 50-99ms" : 2,
 			"file system write latency histogram (bucket 3) - 100-249ms" : 0,
 			"file system write latency histogram (bucket 4) - 250-499ms" : 0,
 			"file system write latency histogram (bucket 5) - 500-999ms" : 0,
@@ -731,18 +731,18 @@ getMongoReport.js version 1.0.0
 			"maximum seconds spent in a reconciliation call" : 0,
 			"page reconciliation calls that resulted in values with prepared transaction metadata" : 0,
 			"page reconciliation calls that resulted in values with timestamps" : 0,
-			"page reconciliation calls that resulted in values with transaction ids" : 24,
+			"page reconciliation calls that resulted in values with transaction ids" : 136,
 			"pages written including at least one prepare state" : 0,
 			"pages written including at least one start timestamp" : 0,
 			"records written including a prepare state" : 0,
 			"split bytes currently awaiting free" : 0,
 			"split objects currently awaiting free" : 0,
 			"approximate byte size of timestamps in pages written" : 0,
-			"approximate byte size of transaction IDs in pages written" : 864,
+			"approximate byte size of transaction IDs in pages written" : 2872,
 			"fast-path pages deleted" : 0,
-			"page reconciliation calls" : 149,
-			"page reconciliation calls for eviction" : 17,
-			"pages deleted" : 58,
+			"page reconciliation calls" : 620,
+			"page reconciliation calls for eviction" : 109,
+			"pages deleted" : 336,
 			"pages written including an aggregated newest start durable timestamp " : 0,
 			"pages written including an aggregated newest stop durable timestamp " : 0,
 			"pages written including an aggregated newest stop timestamp " : 0,
@@ -751,13 +751,13 @@ getMongoReport.js version 1.0.0
 			"pages written including an aggregated oldest start timestamp " : 0,
 			"pages written including an aggregated prepare" : 0,
 			"pages written including at least one start durable timestamp" : 0,
-			"pages written including at least one start transaction ID" : 24,
+			"pages written including at least one start transaction ID" : 136,
 			"pages written including at least one stop durable timestamp" : 0,
 			"pages written including at least one stop timestamp" : 0,
 			"pages written including at least one stop transaction ID" : 0,
 			"records written including a start durable timestamp" : 0,
 			"records written including a start timestamp" : 0,
-			"records written including a start transaction ID" : 108,
+			"records written including a start transaction ID" : 359,
 			"records written including a stop durable timestamp" : 0,
 			"records written including a stop timestamp" : 0,
 			"records written including a stop transaction ID" : 0
@@ -813,7 +813,7 @@ getMongoReport.js version 1.0.0
 			"prepared transactions committed" : 0,
 			"prepared transactions currently active" : 0,
 			"prepared transactions rolled back" : 0,
-			"query timestamp calls" : 547,
+			"query timestamp calls" : 4156,
 			"rollback to stable calls" : 0,
 			"rollback to stable pages visited" : 1,
 			"rollback to stable tree walk skipping pages" : 0,
@@ -825,19 +825,19 @@ getMongoReport.js version 1.0.0
 			"set timestamp oldest updates" : 0,
 			"set timestamp stable calls" : 0,
 			"set timestamp stable updates" : 0,
-			"transaction begins" : 512,
+			"transaction begins" : 976,
 			"transaction checkpoint currently running" : 0,
-			"transaction checkpoint generation" : 11,
-			"transaction checkpoint history store file duration (usecs)" : 1355,
+			"transaction checkpoint generation" : 71,
+			"transaction checkpoint history store file duration (usecs)" : 1347,
 			"transaction checkpoint max time (msecs)" : 480,
-			"transaction checkpoint min time (msecs)" : 53,
-			"transaction checkpoint most recent duration for gathering all handles (usecs)" : 360,
-			"transaction checkpoint most recent duration for gathering applied handles (usecs)" : 185,
-			"transaction checkpoint most recent duration for gathering skipped handles (usecs)" : 73,
+			"transaction checkpoint min time (msecs)" : 36,
+			"transaction checkpoint most recent duration for gathering all handles (usecs)" : 354,
+			"transaction checkpoint most recent duration for gathering applied handles (usecs)" : 152,
+			"transaction checkpoint most recent duration for gathering skipped handles (usecs)" : 71,
 			"transaction checkpoint most recent handles applied" : 3,
 			"transaction checkpoint most recent handles skipped" : 57,
 			"transaction checkpoint most recent handles walked" : 123,
-			"transaction checkpoint most recent time (msecs)" : 59,
+			"transaction checkpoint most recent time (msecs)" : 47,
 			"transaction checkpoint prepare currently running" : 0,
 			"transaction checkpoint prepare max time (msecs)" : 3,
 			"transaction checkpoint prepare min time (msecs)" : 0,
@@ -845,12 +845,12 @@ getMongoReport.js version 1.0.0
 			"transaction checkpoint prepare total time (msecs)" : 4,
 			"transaction checkpoint scrub dirty target" : 0,
 			"transaction checkpoint scrub time (msecs)" : 0,
-			"transaction checkpoint total time (msecs)" : 1057,
-			"transaction checkpoints" : 10,
+			"transaction checkpoint total time (msecs)" : 4444,
+			"transaction checkpoints" : 70,
 			"transaction checkpoints skipped because database was clean" : 0,
 			"transaction failures due to history store" : 0,
-			"transaction fsync calls for checkpoint after allocating the transaction ID" : 10,
-			"transaction fsync duration for checkpoint after allocating the transaction ID (usecs)" : 20593,
+			"transaction fsync calls for checkpoint after allocating the transaction ID" : 70,
+			"transaction fsync duration for checkpoint after allocating the transaction ID (usecs)" : 19664,
 			"transaction range of IDs currently pinned" : 0,
 			"transaction range of IDs currently pinned by a checkpoint" : 0,
 			"transaction range of timestamps currently pinned" : 0,
@@ -859,9 +859,9 @@ getMongoReport.js version 1.0.0
 			"transaction range of timestamps pinned by the oldest timestamp" : 0,
 			"transaction read timestamp of the oldest active reader" : 0,
 			"transaction sync calls" : 0,
-			"transaction walk of concurrent sessions" : 739,
-			"transactions committed" : 2,
-			"transactions rolled back" : 510,
+			"transaction walk of concurrent sessions" : 4913,
+			"transactions committed" : 6,
+			"transactions rolled back" : 970,
 			"race to read prepared update retry" : 0,
 			"rollback to stable history store records with stop timestamps older than newer records" : 0,
 			"rollback to stable inconsistent checkpoint" : 0,
@@ -902,7 +902,7 @@ getMongoReport.js version 1.0.0
 	"mem" : {
 		"bits" : 64,
 		"resident" : 33,
-		"virtual" : 5476,
+		"virtual" : 5477,
 		"supported" : true
 	},
 	"metrics" : {
@@ -918,7 +918,7 @@ getMongoReport.js version 1.0.0
 			"$_internalInhibitOptimization" : NumberLong(0),
 			"$_internalSplitPipeline" : NumberLong(0),
 			"$_internalUnpackBucket" : NumberLong(0),
-			"$addFields" : NumberLong(3),
+			"$addFields" : NumberLong(4),
 			"$bucket" : NumberLong(0),
 			"$bucketAuto" : NumberLong(0),
 			"$changeStream" : NumberLong(0),
@@ -928,119 +928,125 @@ getMongoReport.js version 1.0.0
 			"$facet" : NumberLong(0),
 			"$geoNear" : NumberLong(0),
 			"$graphLookup" : NumberLong(0),
-			"$group" : NumberLong(75),
-			"$indexStats" : NumberLong(75),
+			"$group" : NumberLong(125),
+			"$indexStats" : NumberLong(125),
 			"$limit" : NumberLong(0),
 			"$listLocalSessions" : NumberLong(0),
 			"$listSessions" : NumberLong(0),
 			"$lookup" : NumberLong(0),
-			"$match" : NumberLong(3),
+			"$match" : NumberLong(4),
 			"$merge" : NumberLong(0),
 			"$mergeCursors" : NumberLong(0),
 			"$operationMetrics" : NumberLong(0),
 			"$out" : NumberLong(0),
 			"$planCacheStats" : NumberLong(0),
-			"$project" : NumberLong(75),
+			"$project" : NumberLong(125),
 			"$redact" : NumberLong(0),
 			"$replaceRoot" : NumberLong(0),
 			"$replaceWith" : NumberLong(0),
 			"$sample" : NumberLong(0),
-			"$set" : NumberLong(0),
+			"$set" : NumberLong(1),
 			"$skip" : NumberLong(0),
-			"$sort" : NumberLong(3),
+			"$sort" : NumberLong(4),
 			"$sortByCount" : NumberLong(0),
 			"$unionWith" : NumberLong(0),
-			"$unset" : NumberLong(3),
+			"$unset" : NumberLong(4),
 			"$unwind" : NumberLong(0)
 		},
 		"commands" : {
 			"aggregate" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(75)
+				"total" : NumberLong(125)
 			},
 			"buildInfo" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(13)
+				"total" : NumberLong(17)
 			},
 			"collStats" : {
-				"failed" : NumberLong(3),
-				"total" : NumberLong(75)
+				"failed" : NumberLong(5),
+				"total" : NumberLong(125)
 			},
 			"dbStats" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(30)
+				"total" : NumberLong(50)
 			},
 			"delete" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(1)
+				"total" : NumberLong(2)
 			},
 			"endSessions" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(8)
+				"total" : NumberLong(10)
 			},
 			"find" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(5)
+				"total" : NumberLong(18)
 			},
 			"getCmdLineOpts" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(6)
+				"total" : NumberLong(8)
 			},
 			"hostInfo" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(3)
+				"total" : NumberLong(5)
 			},
 			"isMaster" : {
 				"failed" : NumberLong(3),
-				"total" : NumberLong(21)
+				"total" : NumberLong(25)
 			},
 			"listCollections" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(30)
+				"total" : NumberLong(50)
 			},
 			"listDatabases" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(3)
+				"total" : NumberLong(5)
 			},
 			"listIndexes" : {
-				"failed" : NumberLong(3),
-				"total" : NumberLong(79)
+				"failed" : NumberLong(5),
+				"total" : NumberLong(153)
 			},
 			"profile" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(30)
+				"total" : NumberLong(50)
 			},
 			"replSetGetStatus" : {
-				"failed" : NumberLong(3),
-				"total" : NumberLong(3)
+				"failed" : NumberLong(5),
+				"total" : NumberLong(5)
 			},
 			"rolesInfo" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(3)
+				"total" : NumberLong(4)
 			},
 			"serverStatus" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(4)
+				"total" : NumberLong(6)
+			},
+			"update" : {
+				"arrayFilters" : NumberLong(0),
+				"failed" : NumberLong(0),
+				"pipeline" : NumberLong(1),
+				"total" : NumberLong(1)
 			},
 			"usersInfo" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(3)
+				"total" : NumberLong(4)
 			},
 			"whatsmyuri" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(7)
+				"total" : NumberLong(9)
 			}
 		},
 		"cursor" : {
 			"moreThanOneBatch" : NumberLong(0),
 			"timedOut" : NumberLong(0),
-			"totalOpened" : NumberLong(78),
+			"totalOpened" : NumberLong(129),
 			"lifespan" : {
 				"greaterThanOrEqual10Minutes" : NumberLong(0),
 				"lessThan10Minutes" : NumberLong(0),
 				"lessThan15Seconds" : NumberLong(0),
 				"lessThan1Minute" : NumberLong(0),
-				"lessThan1Second" : NumberLong(78),
+				"lessThan1Second" : NumberLong(129),
 				"lessThan30Seconds" : NumberLong(0),
 				"lessThan5Seconds" : NumberLong(0)
 			},
@@ -1053,7 +1059,7 @@ getMongoReport.js version 1.0.0
 		"document" : {
 			"deleted" : NumberLong(0),
 			"inserted" : NumberLong(0),
-			"returned" : NumberLong(108),
+			"returned" : NumberLong(178),
 			"updated" : NumberLong(0)
 		},
 		"getLastError" : {
@@ -1082,8 +1088,8 @@ getMongoReport.js version 1.0.0
 			"updateOneOpStyleBroadcastWithExactIDCount" : NumberLong(0)
 		},
 		"queryExecutor" : {
-			"scanned" : NumberLong(6),
-			"scannedObjects" : NumberLong(6),
+			"scanned" : NumberLong(8),
+			"scannedObjects" : NumberLong(8),
 			"collectionScans" : {
 				"nonTailable" : NumberLong(0),
 				"total" : NumberLong(0)
@@ -1160,8 +1166,8 @@ getMongoReport.js version 1.0.0
 			}
 		},
 		"ttl" : {
-			"deletedDocuments" : NumberLong(0),
-			"passes" : NumberLong(9)
+			"deletedDocuments" : NumberLong(1),
+			"passes" : NumberLong(69)
 		}
 	},
 	"ok" : 1
@@ -1170,7 +1176,7 @@ getMongoReport.js version 1.0.0
 ** Host info:
 {
 	"system" : {
-		"currentTime" : ISODate("2021-07-09T10:48:28.162Z"),
+		"currentTime" : ISODate("2021-07-09T11:48:46.316Z"),
 		"hostname" : "MacBook-Pro-de-Sergi.local",
 		"cpuAddrSize" : 64,
 		"memSizeMB" : NumberLong(16384),
@@ -1264,9 +1270,9 @@ getMongoReport.js version 1.0.0
 	"maxBsonObjectSize" : 16777216,
 	"maxMessageSizeBytes" : 48000000,
 	"maxWriteBatchSize" : 100000,
-	"localTime" : ISODate("2021-07-09T10:48:28.164Z"),
+	"localTime" : ISODate("2021-07-09T11:48:46.318Z"),
 	"logicalSessionTimeoutMinutes" : 30,
-	"connectionId" : 14,
+	"connectionId" : 16,
 	"minWireVersion" : 0,
 	"maxWireVersion" : 12,
 	"readOnly" : false,
@@ -1274,53 +1280,6 @@ getMongoReport.js version 1.0.0
 }
 
 ** Connected to standalone
-
-** Users:
-[
-	{
-		"_id" : "admin.admin",
-		"userId" : UUID("536c5c34-90dd-4eb7-8937-24c29fc7e146"),
-		"user" : "admin",
-		"db" : "admin",
-		"roles" : [
-			{
-				"role" : "userAdminAnyDatabase",
-				"db" : "admin"
-			},
-			{
-				"role" : "readWriteAnyDatabase",
-				"db" : "admin"
-			}
-		],
-		"mechanisms" : [
-			"SCRAM-SHA-1",
-			"SCRAM-SHA-256"
-		]
-	},
-	{
-		"_id" : "admin.test",
-		"userId" : UUID("8a1a3566-ee27-4120-9320-894711ebaa38"),
-		"user" : "test",
-		"db" : "admin",
-		"roles" : [
-			{
-				"role" : "userAdminAnyDatabase",
-				"db" : "admin"
-			},
-			{
-				"role" : "readWriteAnyDatabase",
-				"db" : "admin"
-			}
-		],
-		"mechanisms" : [
-			"SCRAM-SHA-1",
-			"SCRAM-SHA-256"
-		]
-	}
-]
-
-** Custom roles:
-[ ]
 
 ** List of databases:
 {
@@ -1400,7 +1359,7 @@ getMongoReport.js version 1.0.0
 	"totalSize" : 2098.19140625,
 	"totalFreeStorageSize" : 0.71484375,
 	"scaleFactor" : 1048576,
-	"fsUsedSize" : 211640.70703125,
+	"fsUsedSize" : 212726.16015625,
 	"fsTotalSize" : 239072.39453125,
 	"ok" : 1
 }
@@ -1451,7 +1410,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -1714,7 +1673,7 @@ getMongoReport.js version 1.0.0
 	"totalSize" : 0.15625,
 	"totalFreeStorageSize" : 0.05859375,
 	"scaleFactor" : 1048576,
-	"fsUsedSize" : 211640.70703125,
+	"fsUsedSize" : 212726.16015625,
 	"fsTotalSize" : 239072.39453125,
 	"ok" : 1
 }
@@ -1765,7 +1724,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -2011,6 +1970,18 @@ getMongoReport.js version 1.0.0
 			{
 				"stats" : [
 					{
+						"accesses" : NumberLong(0),
+						"host" : "MacBook-Pro-de-Sergi.local:27017",
+						"since" : "Fri, 09 Jul 2021 10:39:22 GMT"
+					}
+				],
+				"key" : {
+					"_id" : 1
+				}
+			},
+			{
+				"stats" : [
+					{
 						"accesses" : NumberLong(4),
 						"host" : "MacBook-Pro-de-Sergi.local:27017",
 						"since" : "Fri, 09 Jul 2021 10:39:22 GMT"
@@ -2019,18 +1990,6 @@ getMongoReport.js version 1.0.0
 				"key" : {
 					"user" : 1,
 					"db" : 1
-				}
-			},
-			{
-				"stats" : [
-					{
-						"accesses" : NumberLong(0),
-						"host" : "MacBook-Pro-de-Sergi.local:27017",
-						"since" : "Fri, 09 Jul 2021 10:39:22 GMT"
-					}
-				],
-				"key" : {
-					"_id" : 1
 				}
 			}
 		],
@@ -2083,7 +2042,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -2346,7 +2305,7 @@ getMongoReport.js version 1.0.0
 	"totalSize" : 0.03515625,
 	"totalFreeStorageSize" : 0.01171875,
 	"scaleFactor" : 1048576,
-	"fsUsedSize" : 211640.70703125,
+	"fsUsedSize" : 212726.16015625,
 	"fsTotalSize" : 239072.39453125,
 	"ok" : 1
 }
@@ -2384,9 +2343,9 @@ getMongoReport.js version 1.0.0
 			"sleep for LSM merge throttle" : 0
 		},
 		"block-manager" : {
-			"allocations requiring file extension" : 0,
-			"blocks allocated" : 1,
-			"blocks freed" : 0,
+			"allocations requiring file extension" : 4,
+			"blocks allocated" : 7,
+			"blocks freed" : 1,
 			"checkpoint size" : 0,
 			"file allocation unit size" : 4096,
 			"file bytes available for reuse" : 4096,
@@ -2396,7 +2355,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -2409,7 +2368,7 @@ getMongoReport.js version 1.0.0
 			"maximum leaf page key size" : 2867,
 			"maximum leaf page size" : 32768,
 			"maximum leaf page value size" : 67108864,
-			"maximum tree depth" : 0,
+			"maximum tree depth" : 3,
 			"number of key/value pairs" : 0,
 			"overflow pages" : 0,
 			"pages rewritten by compaction" : 0,
@@ -2421,9 +2380,9 @@ getMongoReport.js version 1.0.0
 			"data source pages selected for eviction unable to be evicted" : 0,
 			"eviction walk passes of a file" : 0,
 			"bytes currently in the cache" : 493,
-			"bytes dirty in the cache cumulative" : 493,
+			"bytes dirty in the cache cumulative" : 4093,
 			"bytes read into cache" : 0,
-			"bytes written from cache" : 0,
+			"bytes written from cache" : 195,
 			"checkpoint blocked page eviction" : 0,
 			"eviction walk target pages histogram - 0-9" : 0,
 			"eviction walk target pages histogram - 10-31" : 0,
@@ -2459,16 +2418,16 @@ getMongoReport.js version 1.0.0
 			"internal pages evicted" : 0,
 			"internal pages split during eviction" : 0,
 			"leaf pages split during eviction" : 0,
-			"modified pages evicted" : 0,
+			"modified pages evicted" : 1,
 			"overflow pages read into cache" : 0,
 			"page split during eviction deepened the tree" : 0,
 			"page written requiring history store records" : 0,
 			"pages read into cache" : 0,
-			"pages read into cache after truncate" : 0,
+			"pages read into cache after truncate" : 1,
 			"pages read into cache after truncate in prepare state" : 0,
-			"pages requested from the cache" : 1,
+			"pages requested from the cache" : 7,
 			"pages seen by eviction walk" : 0,
-			"pages written from cache" : 0,
+			"pages written from cache" : 2,
 			"pages written requiring in-memory restoration" : 0,
 			"tracked dirty bytes in the cache" : 0,
 			"unmodified pages evicted" : 0
@@ -2497,10 +2456,10 @@ getMongoReport.js version 1.0.0
 			"Total number of pages currently in cache" : 0
 		},
 		"checkpoint-cleanup" : {
-			"pages added for eviction" : 0,
+			"pages added for eviction" : 1,
 			"pages removed" : 0,
 			"pages skipped during tree walk" : 0,
-			"pages visited" : 0
+			"pages visited" : 3
 		},
 		"compression" : {
 			"compressed page maximum internal page size prior to compression" : 4096,
@@ -2508,26 +2467,26 @@ getMongoReport.js version 1.0.0
 			"compressed pages read" : 0,
 			"compressed pages written" : 0,
 			"page written failed to compress" : 0,
-			"page written was too small to compress" : 0
+			"page written was too small to compress" : 2
 		},
 		"cursor" : {
 			"bulk loaded cursor insert calls" : 0,
-			"cache cursors reuse count" : 0,
-			"close calls that result in cache" : 0,
-			"create calls" : 0,
-			"insert calls" : 0,
-			"insert key and value bytes" : 0,
+			"cache cursors reuse count" : 2,
+			"close calls that result in cache" : 4,
+			"create calls" : 2,
+			"insert calls" : 1,
+			"insert key and value bytes" : 100,
 			"modify" : 0,
 			"modify key and value bytes affected" : 0,
 			"modify value bytes modified" : 0,
 			"next calls" : 0,
 			"operation restarted" : 0,
-			"prev calls" : 0,
-			"remove calls" : 0,
-			"remove key bytes removed" : 0,
+			"prev calls" : 1,
+			"remove calls" : 1,
+			"remove key bytes removed" : 1,
 			"reserve calls" : 0,
-			"reset calls" : 0,
-			"search calls" : 0,
+			"reset calls" : 9,
+			"search calls" : 2,
 			"search history store calls" : 0,
 			"search near calls" : 0,
 			"truncate calls" : 0,
@@ -2542,7 +2501,7 @@ getMongoReport.js version 1.0.0
 			"cursor next calls that skip less than 100 entries" : 0,
 			"cursor prev calls that skip due to a globally visible history store tombstone" : 0,
 			"cursor prev calls that skip greater than or equal to 100 entries" : 0,
-			"cursor prev calls that skip less than 100 entries" : 0,
+			"cursor prev calls that skip less than 100 entries" : 1,
 			"open cursor count" : 1
 		},
 		"reconciliation" : {
@@ -2553,7 +2512,7 @@ getMongoReport.js version 1.0.0
 			"leaf page key bytes discarded using prefix compression" : 0,
 			"leaf page multi-block writes" : 0,
 			"leaf-page overflow keys" : 0,
-			"maximum blocks required for a page" : 0,
+			"maximum blocks required for a page" : 1,
 			"overflow values written" : 0,
 			"page checksum matches" : 0,
 			"pages written including at least one prepare" : 0,
@@ -2562,9 +2521,9 @@ getMongoReport.js version 1.0.0
 			"approximate byte size of timestamps in pages written" : 0,
 			"approximate byte size of transaction IDs in pages written" : 0,
 			"fast-path pages deleted" : 0,
-			"page reconciliation calls" : 1,
-			"page reconciliation calls for eviction" : 0,
-			"pages deleted" : 1,
+			"page reconciliation calls" : 7,
+			"page reconciliation calls for eviction" : 1,
+			"pages deleted" : 5,
 			"pages written including an aggregated newest start durable timestamp " : 0,
 			"pages written including an aggregated newest stop durable timestamp " : 0,
 			"pages written including an aggregated newest stop timestamp " : 0,
@@ -2641,7 +2600,7 @@ getMongoReport.js version 1.0.0
 			{
 				"stats" : [
 					{
-						"accesses" : NumberLong(7),
+						"accesses" : NumberLong(10),
 						"host" : "MacBook-Pro-de-Sergi.local:27017",
 						"since" : "Fri, 09 Jul 2021 10:39:22 GMT"
 					}
@@ -2688,7 +2647,7 @@ getMongoReport.js version 1.0.0
 	"totalSize" : 0.140625,
 	"totalFreeStorageSize" : 0.05859375,
 	"scaleFactor" : 1048576,
-	"fsUsedSize" : 211640.70703125,
+	"fsUsedSize" : 212726.16015625,
 	"fsTotalSize" : 239072.39453125,
 	"ok" : 1
 }
@@ -2739,7 +2698,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -3028,7 +2987,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -3291,7 +3250,7 @@ getMongoReport.js version 1.0.0
 	"totalSize" : 14.74609375,
 	"totalFreeStorageSize" : 1.6328125,
 	"scaleFactor" : 1048576,
-	"fsUsedSize" : 211640.7109375,
+	"fsUsedSize" : 212726.16015625,
 	"fsTotalSize" : 239072.39453125,
 	"ok" : 1
 }
@@ -3342,7 +3301,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -3700,7 +3659,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -3986,7 +3945,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -4273,7 +4232,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -4565,7 +4524,7 @@ getMongoReport.js version 1.0.0
 	"totalSize" : 4.19921875,
 	"totalFreeStorageSize" : 0.0234375,
 	"scaleFactor" : 1048576,
-	"fsUsedSize" : 211640.83203125,
+	"fsUsedSize" : 212726.16015625,
 	"fsTotalSize" : 239072.39453125,
 	"ok" : 1
 }
@@ -4616,7 +4575,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -4886,7 +4845,7 @@ getMongoReport.js version 1.0.0
 	"totalSize" : 1.05078125,
 	"totalFreeStorageSize" : 0.1796875,
 	"scaleFactor" : 1048576,
-	"fsUsedSize" : 211640.83203125,
+	"fsUsedSize" : 212726.16015625,
 	"fsTotalSize" : 239072.39453125,
 	"ok" : 1
 }
@@ -4937,7 +4896,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -5224,7 +5183,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -5511,7 +5470,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -5798,7 +5757,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -6085,7 +6044,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -6372,7 +6331,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -6635,7 +6594,7 @@ getMongoReport.js version 1.0.0
 	"totalSize" : 149.20703125,
 	"totalFreeStorageSize" : 4.78515625,
 	"scaleFactor" : 1048576,
-	"fsUsedSize" : 211640.83203125,
+	"fsUsedSize" : 212726.16015625,
 	"fsTotalSize" : 239072.39453125,
 	"ok" : 1
 }
@@ -6686,7 +6645,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -6973,7 +6932,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -7233,18 +7192,6 @@ getMongoReport.js version 1.0.0
 					}
 				],
 				"key" : {
-					"DCU_Id " : 1
-				}
-			},
-			{
-				"stats" : [
-					{
-						"accesses" : NumberLong(0),
-						"host" : "MacBook-Pro-de-Sergi.local:27017",
-						"since" : "Fri, 09 Jul 2021 10:39:22 GMT"
-					}
-				],
-				"key" : {
 					"timestamp" : 1
 				}
 			},
@@ -7258,6 +7205,18 @@ getMongoReport.js version 1.0.0
 				],
 				"key" : {
 					"_id" : 1
+				}
+			},
+			{
+				"stats" : [
+					{
+						"accesses" : NumberLong(0),
+						"host" : "MacBook-Pro-de-Sergi.local:27017",
+						"since" : "Fri, 09 Jul 2021 10:39:22 GMT"
+					}
+				],
+				"key" : {
+					"DCU_Id " : 1
 				}
 			}
 		],
@@ -7310,7 +7269,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -7573,7 +7532,7 @@ getMongoReport.js version 1.0.0
 	"totalSize" : 0.03515625,
 	"totalFreeStorageSize" : 0.01171875,
 	"scaleFactor" : 1048576,
-	"fsUsedSize" : 211640.8359375,
+	"fsUsedSize" : 212726.16015625,
 	"fsTotalSize" : 239072.39453125,
 	"ok" : 1
 }
@@ -7623,7 +7582,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -7915,7 +7874,7 @@ getMongoReport.js version 1.0.0
 	"totalSize" : 0.1875,
 	"totalFreeStorageSize" : 0.0703125,
 	"scaleFactor" : 1048576,
-	"fsUsedSize" : 211640.8359375,
+	"fsUsedSize" : 212726.16015625,
 	"fsTotalSize" : 239072.39453125,
 	"ok" : 1
 }
@@ -7966,7 +7925,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -8253,7 +8212,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
@@ -8540,7 +8499,7 @@ getMongoReport.js version 1.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 11,
+			"btree checkpoint generation" : 71,
 			"btree clean tree checkpoint expiration time" : NumberLong("9223372036854775807"),
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,

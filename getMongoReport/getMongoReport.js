@@ -338,12 +338,6 @@ function printShardOrReplicaSetInfo() {
     return false;
 }
 
-function printAuthInfo() {
-    section = "auth_info";
-    db = db.getSiblingDB('admin');
-    printInfo('Users', function(){return db.getUsers()}, section);
-    printInfo('Custom roles', function(){return db.getRoles()}, section);
-}
 
 
 if (typeof _printJSON === "undefined") var _printJSON = false;
@@ -359,6 +353,5 @@ if (! _printJSON) {
 var _host = hostname();
 printServerInfo();
 var isMongoS = printShardOrReplicaSetInfo();
-printAuthInfo();
 printDataInfo(isMongoS);
 if (_printJSON) print(JSON.stringify(_output, jsonStringifyReplacer, 4));
