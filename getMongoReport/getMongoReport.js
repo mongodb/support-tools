@@ -58,6 +58,11 @@
 
 var _version = "1.0.0";
 
+// Hard limits to avoid the script affecting the performance
+// of a large MongoDB deployment
+const _LIMIT_COLLECTIONS = 1000;
+const _LIMIT_DATABASES = 1000;
+
 (function () {
    "use strict";
 }());
@@ -255,7 +260,10 @@ function printDataInfo(isMongoS) {
     section = "data_info";
     var dbs = printInfo('List of databases', function(){return db.getMongo().getDBs()}, section);
 
-    if (dbs.databases) {
+    
+        if (dbs.databases && dbs.databases.length > LIMIT_COLLECTIONS) {
+            print("Too many databases to process, stopped to avoid stressing the server");
+        } else if (dbs.databases) {
         dbs.databases.forEach(function(mydb) {
             var collections = printInfo("List of collections for database '"+ mydb.name +"'",
                                         function(){return db.getSiblingDB(mydb.name).getCollectionNames()}, section);
@@ -267,7 +275,9 @@ function printDataInfo(isMongoS) {
                           function(){return db.getSiblingDB(mydb.name).getProfilingStatus()}, section);
             }
 
-            if (collections) {
+            if (collections && collections.length > LIMIT_COLLECTIONS) {
+                print("Too many collections to process, stopped to avoid stressing the server");
+            } else if (collections) {
                 collections.forEach(function(col) {
                     printInfo('Collection stats (MB)',
                               function(){return db.getSiblingDB(mydb.name).getCollection(col).stats(1024*1024)}, section);
