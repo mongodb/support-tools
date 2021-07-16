@@ -58,10 +58,9 @@
 
 var _version = "1.0.0";
 
-// Hard limits to avoid the script affecting the performance
-// of a large MongoDB deployment
-const _LIMIT_COLLECTIONS = 1000;
-const _LIMIT_DATABASES = 1000;
+// Limits the number of collections that this script will gather stats on in order to avoid 
+// the possibility of running out of file descriptors.
+const _LIMIT_COLLECTIONS = 2500;
 
 (function () {
    "use strict";
@@ -261,9 +260,7 @@ function printDataInfo(isMongoS) {
     var dbs = printInfo('List of databases', function(){return db.getMongo().getDBs()}, section);
 
     
-        if (dbs.databases && dbs.databases.length > LIMIT_COLLECTIONS) {
-            print("Too many databases to process, stopped to avoid stressing the server");
-        } else if (dbs.databases) {
+        if (dbs.databases) {
         dbs.databases.forEach(function(mydb) {
             var collections = printInfo("List of collections for database '"+ mydb.name +"'",
                                         function(){return db.getSiblingDB(mydb.name).getCollectionNames()}, section);
