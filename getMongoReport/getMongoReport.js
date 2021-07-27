@@ -60,7 +60,7 @@ var _version = "1.0.0";
 
 // Limits the number of collections that this script will gather stats on in order to avoid 
 // the possibility of running out of file descriptors.
-const _LIMIT_COLLECTIONS = 2500;
+var _LIMIT_COLLECTIONS = 2500;
 
 (function () {
    "use strict";
@@ -272,7 +272,7 @@ function printDataInfo(isMongoS) {
                           function(){return db.getSiblingDB(mydb.name).getProfilingStatus()}, section);
             }
 
-            if (collections && collections.length > LIMIT_COLLECTIONS) {
+            if (collections && collections.length > _LIMIT_COLLECTIONS) {
                 print("Too many collections to process, stopped to avoid stressing the server");
             } else if (collections) {
                 collections.forEach(function(col) {
