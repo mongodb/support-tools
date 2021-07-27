@@ -258,10 +258,10 @@ function printReplicaSetInfo() {
 function printDataInfo(isMongoS) {
     section = "data_info";
     var dbs = printInfo('List of databases', function(){return db.getMongo().getDBs()}, section);
-
     
         if (dbs.databases) {
-        dbs.databases.forEach(function(mydb) {
+        dbs.databases.forEach(function(mydb) {            
+
             var collections = printInfo("List of collections for database '"+ mydb.name +"'",
                                         function(){return db.getSiblingDB(mydb.name).getCollectionNames()}, section);
 
@@ -272,10 +272,16 @@ function printDataInfo(isMongoS) {
                           function(){return db.getSiblingDB(mydb.name).getProfilingStatus()}, section);
             }
 
-            if (collections && collections.length > _LIMIT_COLLECTIONS) {
-                print("Too many collections to process, stopped to avoid stressing the server");
+            if (collections && _collections_counter > _LIMIT_COLLECTIONS) {
+                print("Error: Too many collections to process, stopped to avoid stressing the server");
             } else if (collections) {
-                collections.forEach(function(col) {
+
+                for (let c = 0; c < collections.length; c++) {                    
+                    var col = collections[c];
+                    _collections_counter++;
+
+                    if (_collections_counter > _LIMIT_COLLECTIONS) { break; }
+
                     printInfo('Collection stats (MB)',
                               function(){return db.getSiblingDB(mydb.name).getCollection(col).stats(1024*1024)}, section);
                     if (isMongoS) {
@@ -311,7 +317,7 @@ function printDataInfo(isMongoS) {
 
                                 return res;
                               }, section);
-                });
+                }
             }
         });
     }
@@ -349,6 +355,7 @@ function printShardOrReplicaSetInfo() {
 
 if (typeof _printJSON === "undefined") var _printJSON = false;
 if (typeof _ref === "undefined") var _ref = null;
+var _collections_counter = 0;
 var _output = [];
 var _tag = ObjectId();
 if (! _printJSON) {
