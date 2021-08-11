@@ -404,12 +404,6 @@ test
 
 ** Connected to standalone
 
-** Users:
-[ ]
-
-** Custom roles:
-[ ]
-
 ** List of databases:
 {
 	"databases" : [
@@ -483,37 +477,6 @@ test
 
 ** Indexes:
 [ ]
-
-** Sample document:
-{
-	"_id" : "Jamess-MacBook-Air.local-1427900568384",
-	"hostname" : "Jamess-MacBook-Air.local",
-	"startTime" : ISODate("2015-04-01T15:02:48Z"),
-	"startTimeLocal" : "Wed Apr  1 16:02:48.384",
-	"cmdLine" : {
-		"fork" : true,
-		"syslog" : true
-	},
-	"pid" : 45491,
-	"buildinfo" : {
-		"version" : "2.4.11",
-		"gitVersion" : "fa13d1ee8da0f112f588570b4070f73d7af2f7fd",
-		"sysInfo" : "Darwin bs-osx-106-x86-64-2.10gen.cc 10.8.0 Darwin Kernel Version 10.8.0: Tue Jun  7 16:32:41 PDT 2011; root:xnu-1504.15.3~1/RELEASE_X86_64 x86_64 BOOST_LIB_VERSION=1_49",
-		"loaderFlags" : "-fPIC -pthread -rdynamic -m64",
-		"compilerFlags" : "-Wnon-virtual-dtor -Woverloaded-virtual -fPIC -fno-strict-aliasing -ggdb -pthread -Wall -Wsign-compare -Wno-unknown-pragmas -Winvalid-pch -O3 -m64",
-		"allocator" : "system",
-		"versionArray" : [
-			2,
-			4,
-			11,
-			0
-		],
-		"javascriptEngine" : "V8",
-		"bits" : 64,
-		"debug" : false,
-		"maxBsonObjectSize" : 16777216
-	}
-}
 
 ** Collection stats (MB):
 {
