@@ -56,37 +56,11 @@
  * limitations under the License.
  */
 
-var _version = "2.6.0";
+var _version = "3.0.0";
 
 (function () {
    "use strict";
 }());
-
-// For MongoDB 2.4 and before
-if (DB.prototype.getUsers == null) {
-    DB.prototype.getUsers = function (args) {
-        var cmdObj = {usersInfo: 1};
-        Object.extend(cmdObj, args);
-        var res = this.runCommand(cmdObj);
-        if (!res.ok) {
-            var authSchemaIncompatibleCode = 69;
-            if (res.code == authSchemaIncompatibleCode ||
-                    (res.code == null && res.errmsg == "no such cmd: usersInfo")) {
-                // Working with 2.4 schema user data
-                return this.system.users.find({}).toArray();
-            }
-            throw Error(res.errmsg);
-        }
-        return res.users;
-    }
-}
-
-// For MongoDB 2.4 and before
-if (DB.prototype.getRoles == null) {
-    DB.prototype.getRoles = function (args) {
-        return "No custom roles";
-    }
-}
 
 // Taken from the >= 3.1.9 shell to capture print output
 if (typeof print.captureAllOutput === "undefined") {
@@ -279,6 +253,7 @@ function printReplicaSetInfo() {
 function printDataInfo(isMongoS) {
     section = "data_info";
     var dbs = printInfo('List of databases', function(){return db.getMongo().getDBs()}, section);
+    var collections_counter = 0;
 
     if (dbs.databases) {
         dbs.databases.forEach(function(mydb) {
@@ -296,6 +271,10 @@ function printDataInfo(isMongoS) {
                 collections.forEach(function(col) {
                     printInfo('Collection stats (MB)',
                               function(){return db.getSiblingDB(mydb.name).getCollection(col).stats(1024*1024)}, section);
+                    collections_counter++;
+                    if (collections_counter > _maxCollections) {
+                        throw(`Already asked for stats on ${collections_counter} collections which is above the max allowed for this script.`);
+                    }
                     if (isMongoS) {
                         printInfo('Shard distribution',
                                   function(){return db.getSiblingDB(mydb.name).getCollection(col).getShardDistribution()}, section, true);
@@ -329,18 +308,6 @@ function printDataInfo(isMongoS) {
 
                                 return res;
                               }, section);
-                    if (col != "system.users") {
-                        printInfo('Sample document',
-                                  function(){
-					var lastValCursor = db.getSiblingDB(mydb.name).getCollection(col).find().sort({'$natural': -1}).limit(-1);
-					if (lastValCursor.hasNext()) {
-						return lastValCursor.next()
-					}
-					else {
-						return null;
-					}
-				  }, section);
-                    }
                 });
             }
         });
@@ -375,16 +342,16 @@ function printShardOrReplicaSetInfo() {
     return false;
 }
 
-function printAuthInfo() {
-    section = "auth_info";
-    db = db.getSiblingDB('admin');
-    printInfo('Users', function(){return db.getUsers()}, section);
-    printInfo('Custom roles', function(){return db.getRoles()}, section);
-}
-
-
 if (typeof _printJSON === "undefined") var _printJSON = false;
 if (typeof _ref === "undefined") var _ref = null;
+
+// Limit the number of collections this script gathers stats on in order
+// to avoid the possibility of running out of file descriptors. This has
+// been set to an extremely conservative number but can be overridden
+// by setting _maxCollections to a higher number prior to running this
+// script.
+if (typeof _maxCollections === "undefined") var _maxCollections = 2500;
+
 var _output = [];
 var _tag = ObjectId();
 if (! _printJSON) {
@@ -394,8 +361,13 @@ if (! _printJSON) {
     print("================================");
 }
 var _host = hostname();
-printServerInfo();
-var isMongoS = printShardOrReplicaSetInfo();
-printAuthInfo();
-printDataInfo(isMongoS);
-if (_printJSON) print(JSON.stringify(_output, jsonStringifyReplacer, 4));
+
+try {
+    printServerInfo();
+    var isMongoS = printShardOrReplicaSetInfo();
+    printDataInfo(isMongoS);
+    if (_printJSON) print(JSON.stringify(_output, jsonStringifyReplacer, 4));
+} catch(e) {
+    print(`ERROR: ${e}`);
+    quit(1);
+}
