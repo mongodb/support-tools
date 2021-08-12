@@ -273,7 +273,7 @@ function printDataInfo(isMongoS) {
                               function(){return db.getSiblingDB(mydb.name).getCollection(col).stats(1024*1024)}, section);
                     collections_counter++;
                     if (collections_counter > _maxCollections) {
-                        throw(`Already asked for stats on ${collections_counter} collections which is above the max allowed for this script.`);
+                        throw('Already asked for stats on '+collections_counter+' collections which is above the max allowed for this script.');
                     }
                     if (isMongoS) {
                         printInfo('Shard distribution',
@@ -368,6 +368,6 @@ try {
     printDataInfo(isMongoS);
     if (_printJSON) print(JSON.stringify(_output, jsonStringifyReplacer, 4));
 } catch(e) {
-    print(`ERROR: ${e}`);
+    print('ERROR: '+e);
     quit(1);
 }
