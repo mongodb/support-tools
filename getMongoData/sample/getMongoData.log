@@ -1,84 +1,58 @@
+MongoDB shell version: 3.2.22
+connecting to: localhost:27887/admin
 ================================
 MongoDB Config and Schema Report
-getMongoData.js version 2.5.1
+getMongoData.js version 3.0.0
 ================================
 
 ** Shell version:
-"3.0.1"
+"3.2.22"
 
 ** Shell hostname:
-"Jamess-MacBook-Air.local"
+"ec2-54-160-126-72.compute-1.amazonaws.com"
 
 ** db:
-test
+"admin"
 
 ** Server status info:
 {
-	"host" : "Jamess-MacBook-Air.local",
-	"version" : "3.0.1",
+	"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+	"advisoryHostFQDNs" : [
+		"ip-172-31-58-106.ec2.internal"
+	],
+	"version" : "3.2.22",
 	"process" : "mongod",
-	"pid" : NumberLong(23132),
-	"uptime" : 93,
-	"uptimeMillis" : NumberLong(92160),
-	"uptimeEstimate" : 84,
-	"localTime" : ISODate("2015-04-09T10:46:47.110Z"),
+	"pid" : NumberLong(5928),
+	"uptime" : 762,
+	"uptimeMillis" : NumberLong(762236),
+	"uptimeEstimate" : 750,
+	"localTime" : ISODate("2021-08-18T15:54:35.920Z"),
 	"asserts" : {
 		"regular" : 0,
 		"warning" : 0,
 		"msg" : 0,
-		"user" : 0,
+		"user" : 33,
 		"rollovers" : 0
-	},
-	"backgroundFlushing" : {
-		"flushes" : 1,
-		"total_ms" : 24,
-		"average_ms" : 24,
-		"last_ms" : 24,
-		"last_finished" : ISODate("2015-04-09T10:46:15.015Z")
 	},
 	"connections" : {
 		"current" : 1,
-		"available" : 3890,
-		"totalCreated" : NumberLong(3)
-	},
-	"cursors" : {
-		"note" : "deprecated, use server status metrics",
-		"clientCursors_size" : 0,
-		"totalOpen" : 0,
-		"pinned" : 0,
-		"totalNoTimeout" : 0,
-		"timedOut" : 0
-	},
-	"dur" : {
-		"commits" : 27,
-		"journaledMB" : 0,
-		"writeToDataFilesMB" : 0,
-		"compression" : 0,
-		"commitsInWriteLock" : 0,
-		"earlyCommits" : 0,
-		"timeMs" : {
-			"dt" : 3027,
-			"prepLogBuffer" : 0,
-			"writeToJournal" : 0,
-			"writeToDataFiles" : 0,
-			"remapPrivateView" : 0,
-			"commits" : 1,
-			"commitsInWriteLock" : 0
-		}
+		"available" : 52427,
+		"totalCreated" : NumberLong(17)
 	},
 	"extra_info" : {
 		"note" : "fields vary by platform",
-		"page_faults" : 1982
+		"heap_usage_bytes" : 63407800,
+		"page_faults" : 0
 	},
 	"globalLock" : {
-		"totalTime" : NumberLong(92159000),
+		"totalTime" : NumberLong(762234000),
 		"currentQueue" : {
 			"total" : 0,
 			"readers" : 0,
 			"writers" : 0
 		},
 		"activeClients" : {
-			"total" : 9,
+			"total" : 16,
 			"readers" : 0,
 			"writers" : 0
 		}
@@ -86,59 +60,67 @@ test
 	"locks" : {
 		"Global" : {
 			"acquireCount" : {
-				"r" : NumberLong(152),
-				"w" : NumberLong(11),
+				"r" : NumberLong(5979),
+				"w" : NumberLong(55),
+				"R" : NumberLong(1),
 				"W" : NumberLong(5)
-			}
-		},
-		"MMAPV1Journal" : {
-			"acquireCount" : {
-				"r" : NumberLong(150),
-				"w" : NumberLong(29493),
-				"R" : NumberLong(825)
 			},
 			"acquireWaitCount" : {
-				"w" : NumberLong(3),
-				"R" : NumberLong(4)
+				"w" : NumberLong(2),
+				"W" : NumberLong(1)
 			},
 			"timeAcquiringMicros" : {
-				"w" : NumberLong(9352),
-				"R" : NumberLong(22256)
+				"w" : NumberLong(10645),
+				"W" : NumberLong(20)
 			}
 		},
 		"Database" : {
 			"acquireCount" : {
-				"r" : NumberLong(147),
-				"w" : NumberLong(3),
-				"R" : NumberLong(5),
-				"W" : NumberLong(8)
+				"r" : NumberLong(2885),
+				"w" : NumberLong(8),
+				"R" : NumberLong(74),
+				"W" : NumberLong(47)
+			},
+			"acquireWaitCount" : {
+				"r" : NumberLong(1),
+				"W" : NumberLong(1)
+			},
+			"timeAcquiringMicros" : {
+				"r" : NumberLong(8453),
+				"W" : NumberLong(9)
 			}
 		},
 		"Collection" : {
 			"acquireCount" : {
-				"R" : NumberLong(149),
-				"W" : NumberLong(3)
+				"r" : NumberLong(1889),
+				"w" : NumberLong(1),
+				"W" : NumberLong(1)
 			}
 		},
 		"Metadata" : {
 			"acquireCount" : {
-				"R" : NumberLong(2),
-				"W" : NumberLong(11)
+				"w" : NumberLong(6)
+			}
+		},
+		"oplog" : {
+			"acquireCount" : {
+				"r" : NumberLong(1024),
+				"w" : NumberLong(7)
 			}
 		}
 	},
 	"network" : {
-		"bytesIn" : 2905199,
-		"bytesOut" : 18477,
-		"numRequests" : 40
+		"bytesIn" : NumberLong(74810),
+		"bytesOut" : NumberLong(1484096),
+		"numRequests" : NumberLong(655)
 	},
 	"opcounters" : {
-		"insert" : 29470,
-		"query" : 6,
+		"insert" : 1,
+		"query" : 23,
 		"update" : 0,
 		"delete" : 0,
 		"getmore" : 0,
-		"command" : 34
+		"command" : 600
 	},
 	"opcountersRepl" : {
 		"insert" : 0,
@@ -148,91 +130,441 @@ test
 		"getmore" : 0,
 		"command" : 0
 	},
+	"repl" : {
+		"hosts" : [
+			"ec2-54-160-126-72.compute-1.amazonaws.com:27887"
+		],
+		"setName" : "my-rs",
+		"setVersion" : 1,
+		"ismaster" : true,
+		"secondary" : false,
+		"primary" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+		"me" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+		"electionId" : ObjectId("7fffffff0000000000000001"),
+		"rbid" : 1279865209
+	},
 	"storageEngine" : {
-		"name" : "mmapv1"
+		"name" : "wiredTiger",
+		"supportsCommittedReads" : true,
+		"persistent" : true
+	},
+	"tcmalloc" : {
+		"generic" : {
+			"current_allocated_bytes" : 63409336,
+			"heap_size" : 68182016
+		},
+		"tcmalloc" : {
+			"pageheap_free_bytes" : 2039808,
+			"pageheap_unmapped_bytes" : 0,
+			"max_total_thread_cache_bytes" : NumberLong(1073741824),
+			"current_total_thread_cache_bytes" : 2126976,
+			"total_free_bytes" : 2732872,
+			"central_cache_free_bytes" : 605896,
+			"transfer_cache_free_bytes" : 0,
+			"thread_cache_free_bytes" : 2126976,
+			"aggressive_memory_decommit" : 0,
+			"pageheap_committed_bytes" : 68182016,
+			"pageheap_scavenge_count" : 0,
+			"pageheap_commit_count" : 47,
+			"pageheap_total_commit_bytes" : 68182016,
+			"pageheap_decommit_count" : 0,
+			"pageheap_total_decommit_bytes" : 0,
+			"pageheap_reserve_count" : 47,
+			"pageheap_total_reserve_bytes" : 68182016,
+			"spinlock_total_delay_ns" : 0,
+			"formattedString" : "------------------------------------------------\nMALLOC:       63409784 (   60.5 MiB) Bytes in use by application\nMALLOC: +      2039808 (    1.9 MiB) Bytes in page heap freelist\nMALLOC: +       605896 (    0.6 MiB) Bytes in central cache freelist\nMALLOC: +            0 (    0.0 MiB) Bytes in transfer cache freelist\nMALLOC: +      2126528 (    2.0 MiB) Bytes in thread cache freelists\nMALLOC: +      1208536 (    1.2 MiB) Bytes in malloc metadata\nMALLOC:   ------------\nMALLOC: =     69390552 (   66.2 MiB) Actual memory used (physical + swap)\nMALLOC: +            0 (    0.0 MiB) Bytes released to OS (aka unmapped)\nMALLOC:   ------------\nMALLOC: =     69390552 (   66.2 MiB) Virtual address space used\nMALLOC:\nMALLOC:            402              Spans in use\nMALLOC:             58              Thread heaps in use\nMALLOC:           8192              Tcmalloc page size\n------------------------------------------------\nCall ReleaseFreeMemory() to release freelist memory to the OS (via madvise()).\nBytes released to the OS take up virtual address space but no physical memory.\n"
+		}
+	},
+	"wiredTiger" : {
+		"uri" : "statistics:",
+		"LSM" : {
+			"application work units currently queued" : 0,
+			"merge work units currently queued" : 0,
+			"rows merged in an LSM tree" : 0,
+			"sleep for LSM checkpoint throttle" : 0,
+			"sleep for LSM merge throttle" : 0,
+			"switch work units currently queued" : 0,
+			"tree maintenance operations discarded" : 0,
+			"tree maintenance operations executed" : 0,
+			"tree maintenance operations scheduled" : 0,
+			"tree queue hit maximum" : 0
+		},
+		"async" : {
+			"current work queue length" : 0,
+			"maximum work queue length" : 0,
+			"number of allocation state races" : 0,
+			"number of flush calls" : 0,
+			"number of operation slots viewed for allocation" : 0,
+			"number of times operation allocation failed" : 0,
+			"number of times worker found no work" : 0,
+			"total allocations" : 0,
+			"total compact calls" : 0,
+			"total insert calls" : 0,
+			"total remove calls" : 0,
+			"total search calls" : 0,
+			"total update calls" : 0
+		},
+		"block-manager" : {
+			"blocks pre-loaded" : 11,
+			"blocks read" : 42,
+			"blocks written" : 115,
+			"bytes read" : 184320,
+			"bytes written" : 614400,
+			"bytes written for checkpoint" : 610304,
+			"mapped blocks read" : 0,
+			"mapped bytes read" : 0
+		},
+		"cache" : {
+			"application threads page read from disk to cache count" : 9,
+			"application threads page read from disk to cache time (usecs)" : 30,
+			"application threads page write from cache to disk count" : 8,
+			"application threads page write from cache to disk time (usecs)" : 295,
+			"bytes belonging to page images in the cache" : 18255,
+			"bytes currently in the cache" : 140732,
+			"bytes not belonging to page images in the cache" : 122477,
+			"bytes read into cache" : 16903,
+			"bytes written from cache" : 187529,
+			"checkpoint blocked page eviction" : 0,
+			"eviction calls to get a page" : 0,
+			"eviction calls to get a page found queue empty" : 0,
+			"eviction calls to get a page found queue empty after locking" : 0,
+			"eviction currently operating in aggressive mode" : 0,
+			"eviction empty score" : 0,
+			"eviction server candidate queue empty when topping up" : 0,
+			"eviction server candidate queue not empty when topping up" : 0,
+			"eviction server evicting pages" : 0,
+			"eviction server slept, because we did not make progress with eviction" : 0,
+			"eviction server unable to reach eviction goal" : 0,
+			"eviction state" : 16,
+			"eviction walks abandoned" : 0,
+			"eviction worker thread active" : 0,
+			"eviction worker thread created" : 0,
+			"eviction worker thread evicting pages" : 0,
+			"eviction worker thread removed" : 0,
+			"eviction worker thread stable number" : 0,
+			"failed eviction of pages that exceeded the in-memory maximum" : 0,
+			"files with active eviction walks" : 0,
+			"files with new eviction walks started" : 0,
+			"force re-tuning of eviction workers once in a while" : 0,
+			"hazard pointer blocked page eviction" : 0,
+			"hazard pointer check calls" : 0,
+			"hazard pointer check entries walked" : 0,
+			"hazard pointer maximum array length" : 0,
+			"in-memory page passed criteria to be split" : 0,
+			"in-memory page splits" : 0,
+			"internal pages evicted" : 0,
+			"internal pages split during eviction" : 0,
+			"leaf pages split during eviction" : 0,
+			"lookaside table insert calls" : 0,
+			"lookaside table remove calls" : 0,
+			"maximum bytes configured" : 1073741824,
+			"maximum page size at eviction" : 0,
+			"modified pages evicted" : 2,
+			"modified pages evicted by application threads" : 0,
+			"overflow pages read into cache" : 0,
+			"overflow values cached in memory" : 0,
+			"page split during eviction deepened the tree" : 0,
+			"page written requiring lookaside records" : 0,
+			"pages currently held in the cache" : 44,
+			"pages evicted because they exceeded the in-memory maximum" : 0,
+			"pages evicted because they had chains of deleted items" : 0,
+			"pages evicted by application threads" : 0,
+			"pages queued for eviction" : 0,
+			"pages queued for urgent eviction" : 0,
+			"pages queued for urgent eviction during walk" : 0,
+			"pages read into cache" : 21,
+			"pages read into cache requiring lookaside entries" : 0,
+			"pages requested from the cache" : 6359,
+			"pages seen by eviction walk" : 0,
+			"pages selected for eviction unable to be evicted" : 0,
+			"pages walked for eviction" : 0,
+			"pages written from cache" : 63,
+			"pages written requiring in-memory restoration" : 0,
+			"percentage overhead" : 8,
+			"tracked bytes belonging to internal pages in the cache" : 34984,
+			"tracked bytes belonging to leaf pages in the cache" : 105748,
+			"tracked dirty bytes in the cache" : 65484,
+			"tracked dirty pages in the cache" : 2,
+			"unmodified pages evicted" : 0
+		},
+		"connection" : {
+			"auto adjusting condition resets" : 45,
+			"auto adjusting condition wait calls" : 4703,
+			"detected system time went backwards" : 0,
+			"files currently open" : 26,
+			"memory allocations" : 55686,
+			"memory frees" : 54007,
+			"memory re-allocations" : 13822,
+			"pthread mutex condition wait calls" : 12407,
+			"pthread mutex shared lock read-lock calls" : 7436,
+			"pthread mutex shared lock write-lock calls" : 891,
+			"total fsync I/Os" : 104,
+			"total read I/Os" : 1311,
+			"total write I/Os" : 171
+		},
+		"cursor" : {
+			"cursor create calls" : 105,
+			"cursor insert calls" : 114,
+			"cursor next calls" : 101,
+			"cursor prev calls" : 23,
+			"cursor remove calls" : 1,
+			"cursor reset calls" : 6304,
+			"cursor restarted searches" : 0,
+			"cursor search calls" : 7042,
+			"cursor search near calls" : 54,
+			"cursor update calls" : 0,
+			"truncate calls" : 0
+		},
+		"data-handle" : {
+			"connection data handles currently active" : 23,
+			"connection sweep candidate became referenced" : 0,
+			"connection sweep dhandles closed" : 0,
+			"connection sweep dhandles removed from hash list" : 13,
+			"connection sweep time-of-death sets" : 15,
+			"connection sweeps" : 76,
+			"session dhandles swept" : 0,
+			"session sweep attempts" : 41
+		},
+		"lock" : {
+			"checkpoint lock acquisitions" : 8,
+			"checkpoint lock application thread wait time (usecs)" : 0,
+			"checkpoint lock internal thread wait time (usecs)" : 3,
+			"handle-list lock eviction thread wait time (usecs)" : 2569,
+			"metadata lock acquisitions" : 8,
+			"metadata lock application thread wait time (usecs)" : 0,
+			"metadata lock internal thread wait time (usecs)" : 1,
+			"schema lock acquisitions" : 36,
+			"schema lock application thread wait time (usecs)" : 0,
+			"schema lock internal thread wait time (usecs)" : 0,
+			"table lock acquisitions" : 0,
+			"table lock application thread time waiting for the table lock (usecs)" : 0,
+			"table lock internal thread time waiting for the table lock (usecs)" : 0
+		},
+		"log" : {
+			"busy returns attempting to switch slots" : 0,
+			"consolidated slot closures" : 32,
+			"consolidated slot join active slot closed" : 0,
+			"consolidated slot join races" : 0,
+			"consolidated slot join transitions" : 32,
+			"consolidated slot joins" : 88,
+			"consolidated slot transitions unable to find free slot" : 0,
+			"consolidated slot unbuffered writes" : 0,
+			"log bytes of payload data" : 26821,
+			"log bytes written" : 33536,
+			"log files manually zero-filled" : 0,
+			"log flush operations" : 7607,
+			"log force write operations" : 8428,
+			"log force write operations skipped" : 8419,
+			"log records compressed" : 34,
+			"log records not compressed" : 25,
+			"log records too small to compress" : 29,
+			"log release advances write LSN" : 23,
+			"log scan operations" : 5,
+			"log scan records requiring two reads" : 0,
+			"log server thread advances write LSN" : 9,
+			"log server thread write LSN walk skipped" : 1751,
+			"log sync operations" : 32,
+			"log sync time duration (usecs)" : 48252,
+			"log sync_dir operations" : 1,
+			"log sync_dir time duration (usecs)" : 2,
+			"log write operations" : 88,
+			"logging bytes consolidated" : 33152,
+			"maximum log file size" : 104857600,
+			"number of pre-allocated log files to create" : 2,
+			"pre-allocated log files not ready and missed" : 1,
+			"pre-allocated log files prepared" : 2,
+			"pre-allocated log files used" : 0,
+			"records processed by log scan" : 10,
+			"total in-memory size of compressed records" : 43837,
+			"total log buffer size" : 33554432,
+			"total size of compressed records" : 20947,
+			"written slots coalesced" : 0,
+			"yields waiting for previous log file close" : 0
+		},
+		"reconciliation" : {
+			"fast-path pages deleted" : 0,
+			"page reconciliation calls" : 62,
+			"page reconciliation calls for eviction" : 1,
+			"pages deleted" : 0,
+			"split bytes currently awaiting free" : 0,
+			"split objects currently awaiting free" : 0
+		},
+		"session" : {
+			"open cursor count" : 49,
+			"open session count" : 18,
+			"table alter failed calls" : 0,
+			"table alter successful calls" : 0,
+			"table alter unchanged and skipped" : 0,
+			"table compact failed calls" : 0,
+			"table compact successful calls" : 0,
+			"table create failed calls" : 0,
+			"table create successful calls" : 13,
+			"table drop failed calls" : 0,
+			"table drop successful calls" : 0,
+			"table rebalance failed calls" : 0,
+			"table rebalance successful calls" : 0,
+			"table rename failed calls" : 0,
+			"table rename successful calls" : 0,
+			"table salvage failed calls" : 0,
+			"table salvage successful calls" : 0,
+			"table truncate failed calls" : 0,
+			"table truncate successful calls" : 0,
+			"table verify failed calls" : 0,
+			"table verify successful calls" : 0
+		},
+		"thread-state" : {
+			"active filesystem fsync calls" : 0,
+			"active filesystem read calls" : 0,
+			"active filesystem write calls" : 0
+		},
+		"thread-yield" : {
+			"application thread time evicting (usecs)" : 0,
+			"application thread time waiting for cache (usecs)" : 0,
+			"page acquire busy blocked" : 0,
+			"page acquire eviction blocked" : 0,
+			"page acquire locked blocked" : 0,
+			"page acquire read blocked" : 0,
+			"page acquire time sleeping (usecs)" : 0
+		},
+		"transaction" : {
+			"number of named snapshots created" : 0,
+			"number of named snapshots dropped" : 0,
+			"transaction begins" : 1092,
+			"transaction checkpoint currently running" : 0,
+			"transaction checkpoint generation" : 8,
+			"transaction checkpoint max time (msecs)" : 17,
+			"transaction checkpoint min time (msecs)" : 3,
+			"transaction checkpoint most recent time (msecs)" : 8,
+			"transaction checkpoint scrub dirty target" : 0,
+			"transaction checkpoint scrub time (msecs)" : 0,
+			"transaction checkpoint total time (msecs)" : 71,
+			"transaction checkpoints" : 8,
+			"transaction checkpoints skipped because database was clean" : 6,
+			"transaction failures due to cache overflow" : 0,
+			"transaction fsync calls for checkpoint after allocating the transaction ID" : 8,
+			"transaction fsync duration for checkpoint after allocating the transaction ID (usecs)" : 3477,
+			"transaction range of IDs currently pinned" : 0,
+			"transaction range of IDs currently pinned by a checkpoint" : 0,
+			"transaction range of IDs currently pinned by named snapshots" : 0,
+			"transaction sync calls" : 0,
+			"transactions committed" : 23,
+			"transactions rolled back" : 1069
+		},
+		"concurrentTransactions" : {
+			"write" : {
+				"out" : 0,
+				"available" : 128,
+				"totalTickets" : 128
+			},
+			"read" : {
+				"out" : 0,
+				"available" : 128,
+				"totalTickets" : 128
+			}
+		}
 	},
 	"writeBacksQueued" : false,
 	"mem" : {
 		"bits" : 64,
-		"resident" : 85,
-		"virtual" : 2819,
+		"resident" : 49,
+		"virtual" : 900,
 		"supported" : true,
-		"mapped" : 160,
-		"mappedWithJournal" : 320
+		"mapped" : 0,
+		"mappedWithJournal" : 0
 	},
 	"metrics" : {
 		"commands" : {
+			"aggregate" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(60)
+			},
 			"buildInfo" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(1)
+				"total" : NumberLong(14)
 			},
 			"collStats" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(4)
+				"total" : NumberLong(100)
+			},
+			"count" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(10)
+			},
+			"createIndexes" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(1)
 			},
 			"dbStats" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(2)
+				"total" : NumberLong(30)
+			},
+			"find" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(22)
 			},
 			"getCmdLineOpts" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(1)
+				"total" : NumberLong(10)
 			},
-			"getLastError" : {
+			"getLog" : {
 				"failed" : NumberLong(0),
 				"total" : NumberLong(3)
 			},
-			"getnonce" : {
-				"failed" : NumberLong(0),
-				"total" : NumberLong(1)
-			},
 			"hostInfo" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(10)
+			},
+			"insert" : {
 				"failed" : NumberLong(0),
 				"total" : NumberLong(1)
 			},
 			"isMaster" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(3)
+				"total" : NumberLong(53)
 			},
 			"listCollections" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(2)
+				"total" : NumberLong(42)
 			},
 			"listDatabases" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(1)
+				"total" : NumberLong(13)
 			},
 			"listIndexes" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(4)
-			},
-			"ping" : {
-				"failed" : NumberLong(0),
-				"total" : NumberLong(2)
+				"total" : NumberLong(91)
 			},
 			"profile" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(2)
+				"total" : NumberLong(30)
+			},
+			"replSetGetConfig" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(11)
 			},
 			"replSetGetStatus" : {
 				"failed" : NumberLong(1),
-				"total" : NumberLong(1)
+				"total" : NumberLong(47)
 			},
-			"rolesInfo" : {
+			"replSetInitiate" : {
 				"failed" : NumberLong(0),
 				"total" : NumberLong(1)
+			},
+			"saslContinue" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(30)
+			},
+			"saslStart" : {
+				"failed" : NumberLong(1),
+				"total" : NumberLong(16)
 			},
 			"serverStatus" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(2)
-			},
-			"usersInfo" : {
-				"failed" : NumberLong(0),
-				"total" : NumberLong(1)
+				"total" : NumberLong(11)
 			},
 			"whatsmyuri" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(2)
+				"total" : NumberLong(17)
 			}
 		},
 		"cursor" : {
@@ -245,8 +577,8 @@ test
 		},
 		"document" : {
 			"deleted" : NumberLong(0),
-			"inserted" : NumberLong(29470),
-			"returned" : NumberLong(3),
+			"inserted" : NumberLong(2),
+			"returned" : NumberLong(21),
 			"updated" : NumberLong(0)
 		},
 		"getLastError" : {
@@ -264,13 +596,40 @@ test
 		},
 		"queryExecutor" : {
 			"scanned" : NumberLong(0),
-			"scannedObjects" : NumberLong(3)
+			"scannedObjects" : NumberLong(21)
 		},
 		"record" : {
 			"moves" : NumberLong(0)
 		},
 		"repl" : {
+			"executor" : {
+				"counters" : {
+					"eventCreated" : 7,
+					"eventWait" : 7,
+					"cancels" : 2,
+					"waits" : 1550,
+					"scheduledNetCmd" : 0,
+					"scheduledDBWork" : 1,
+					"scheduledXclWork" : 0,
+					"scheduledWorkAt" : 2,
+					"scheduledWork" : 1554,
+					"schedulingFailures" : 0
+				},
+				"queues" : {
+					"networkInProgress" : 0,
+					"dbWorkInProgress" : 0,
+					"exclusiveInProgress" : 0,
+					"sleepers" : 0,
+					"ready" : 0,
+					"free" : 3
+				},
+				"unsignaledEvents" : 0,
+				"eventWaiters" : 0,
+				"shuttingDown" : false,
+				"networkInterface" : "NetworkInterfaceASIO inShutdown: 0"
+			},
 			"apply" : {
+				"attemptsToBecomeSecondary" : NumberLong(1),
 				"batches" : {
 					"num" : 0,
 					"totalMillis" : 0
@@ -289,7 +648,7 @@ test
 					"totalMillis" : 0
 				},
 				"ops" : NumberLong(0),
-				"readersCreated" : NumberLong(0)
+				"readersCreated" : NumberLong(1)
 			},
 			"preload" : {
 				"docs" : {
@@ -306,14 +665,14 @@ test
 			"freelist" : {
 				"search" : {
 					"bucketExhausted" : NumberLong(0),
-					"requests" : NumberLong(29602),
+					"requests" : NumberLong(0),
 					"scanned" : NumberLong(0)
 				}
 			}
 		},
 		"ttl" : {
 			"deletedDocuments" : NumberLong(0),
-			"passes" : NumberLong(1)
+			"passes" : NumberLong(11)
 		}
 	},
 	"ok" : 1
@@ -322,30 +681,28 @@ test
 ** Host info:
 {
 	"system" : {
-		"currentTime" : ISODate("2015-04-09T10:46:47.120Z"),
-		"hostname" : "Jamess-MacBook-Air.local",
+		"currentTime" : ISODate("2021-08-18T15:54:35.929Z"),
+		"hostname" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
 		"cpuAddrSize" : 64,
-		"memSizeMB" : 8192,
-		"numCores" : 4,
-		"cpuArch" : "x86_64\u0000",
+		"memSizeMB" : 983,
+		"numCores" : 1,
+		"cpuArch" : "x86_64",
 		"numaEnabled" : false
 	},
 	"os" : {
-		"type" : "Darwin",
-		"name" : "Mac OS X",
-		"version" : "14.1.0\u0000"
+		"type" : "Linux",
+		"name" : "Amazon Linux release 2 (Karoo)",
+		"version" : "Kernel 4.14.238-182.422.amzn2.x86_64"
 	},
 	"extra" : {
-		"versionString" : "Darwin Kernel Version 14.1.0: Thu Feb 26 19:26:47 PST 2015; root:xnu-2782.10.73~1/RELEASE_X86_64\u0000",
-		"alwaysFullSync" : 0,
-		"nfsAsync" : 0,
-		"model" : "MacBookAir6,2\u0000",
-		"physicalCores" : 2,
-		"cpuFrequencyMHz" : 1700,
-		"cpuString" : "Intel(R) Core(TM) i7-4650U CPU @ 1.70GHz\u0000",
-		"cpuFeatures" : "FPU VME DE PSE TSC MSR PAE MCE CX8 APIC SEP MTRR PGE MCA CMOV PAT PSE36 CLFSH DS ACPI MMX FXSR SSE SSE2 SS HTT TM PBE SSE3 PCLMULQDQ DTES64 MON DSCPL VMX SMX EST TM2 SSSE3 FMA CX16 TPR PDCM SSE4.1 SSE4.2 x2APIC MOVBE POPCNT AES PCID XSAVE OSXSAVE SEGLIM64 TSCTMR AVX1.0 RDRAND F16C\u0000 SYSCALL XD 1GBPAGE EM64T LAHF LZCNT RDTSCP TSCI\u0000",
-		"pageSize" : 4096,
-		"scheduler" : "multiq\u0000"
+		"versionString" : "Linux version 4.14.238-182.422.amzn2.x86_64 (mockbuild@ip-10-0-1-132) (gcc version 7.3.1 20180712 (Red Hat 7.3.1-13) (GCC)) #1 SMP Tue Jul 20 20:35:54 UTC 2021",
+		"libcVersion" : "2.26",
+		"kernelVersion" : "4.14.238-182.422.amzn2.x86_64",
+		"cpuFrequencyMHz" : "2400.042",
+		"cpuFeatures" : "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx rdtscp lm constant_tsc rep_good nopl xtopology cpuid pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm cpuid_fault invpcid_single pti fsgsbase bmi1 avx2 smep bmi2 erms invpcid xsaveopt",
+		"pageSize" : NumberLong(4096),
+		"numPages" : 251723,
+		"maxOpenFiles" : 65535
 	},
 	"ok" : 1
 }
@@ -353,16 +710,37 @@ test
 ** Command line info:
 {
 	"argv" : [
-		"mongod",
+		"mongodb-linux-x86_64-amazon-3.2.22/bin/mongod",
+		"--dbpath",
+		"/home/ec2-user/mongodb/dbpath/",
+		"--logpath",
+		"/home/ec2-user/mongodb/logpath/mongodb.log",
 		"--fork",
-		"--syslog"
+		"--port",
+		"27887",
+		"--auth",
+		"--replSet",
+		"my-rs"
 	],
 	"parsed" : {
+		"net" : {
+			"port" : 27887
+		},
 		"processManagement" : {
 			"fork" : true
 		},
+		"replication" : {
+			"replSet" : "my-rs"
+		},
+		"security" : {
+			"authorization" : "enabled"
+		},
+		"storage" : {
+			"dbPath" : "/home/ec2-user/mongodb/dbpath/"
+		},
 		"systemLog" : {
-			"destination" : "syslog"
+			"destination" : "file",
+			"path" : "/home/ec2-user/mongodb/logpath/mongodb.log"
 		}
 	},
 	"ok" : 1
@@ -370,164 +748,184 @@ test
 
 ** Server build info:
 {
-	"version" : "3.0.1",
-	"gitVersion" : "534b5a3f9d10f00cd27737fbcd951032248b5952",
-	"OpenSSLVersion" : "",
-	"sysInfo" : "Darwin bs-osx108-7 12.5.0 Darwin Kernel Version 12.5.0: Sun Sep 29 13:33:47 PDT 2013; root:xnu-2050.48.12~1/RELEASE_X86_64 x86_64 BOOST_LIB_VERSION=1_49",
-	"loaderFlags" : "-fPIC -pthread -Wl,-bind_at_load -mmacosx-version-min=10.7 -stdlib=libc++",
-	"compilerFlags" : "-Wnon-virtual-dtor -Woverloaded-virtual -stdlib=libc++ -std=c++11 -fPIC -fno-strict-aliasing -ggdb -pthread -Wall -Wsign-compare -Wno-unknown-pragmas -Winvalid-pch -pipe -Werror -O3 -Wno-unused-function -Wno-unused-private-field -Wno-deprecated-declarations -Wno-tautological-constant-out-of-range-compare -Wno-unused-const-variable -Wno-missing-braces -mmacosx-version-min=10.7 -std=c99",
-	"allocator" : "system",
+	"version" : "3.2.22",
+	"gitVersion" : "105acca0d443f9a47c1a5bd608fd7133840a58dd",
+	"modules" : [ ],
+	"allocator" : "tcmalloc",
+	"javascriptEngine" : "mozjs",
+	"sysInfo" : "deprecated",
 	"versionArray" : [
 		3,
-		0,
-		1,
+		2,
+		22,
 		0
 	],
-	"javascriptEngine" : "V8",
+	"openssl" : {
+		"running" : "OpenSSL 1.0.0-fips 29 Mar 2010",
+		"compiled" : "OpenSSL 1.0.1e-fips 11 Feb 2013"
+	},
+	"buildEnvironment" : {
+		"distmod" : "amazon",
+		"distarch" : "x86_64",
+		"cc" : "/opt/mongodbtoolchain/bin/gcc: gcc (GCC) 4.8.2",
+		"ccflags" : "-fno-omit-frame-pointer -fPIC -fno-strict-aliasing -ggdb -pthread -Wall -Wsign-compare -Wno-unknown-pragmas -Winvalid-pch -Werror -O2 -Wno-unused-local-typedefs -Wno-unused-function -Wno-deprecated-declarations -Wno-unused-but-set-variable -Wno-missing-braces -fno-builtin-memcmp",
+		"cxx" : "/opt/mongodbtoolchain/bin/g++: g++ (GCC) 4.8.2",
+		"cxxflags" : "-Wnon-virtual-dtor -Woverloaded-virtual -Wno-maybe-uninitialized -std=c++11",
+		"linkflags" : "-fPIC -pthread -Wl,-z,now -rdynamic -fuse-ld=gold -Wl,-z,noexecstack -Wl,--warn-execstack",
+		"target_arch" : "x86_64",
+		"target_os" : "linux"
+	},
 	"bits" : 64,
 	"debug" : false,
 	"maxBsonObjectSize" : 16777216,
+	"storageEngines" : [
+		"devnull",
+		"ephemeralForTest",
+		"mmapv1",
+		"wiredTiger"
+	],
 	"ok" : 1
 }
 
 ** isMaster:
 {
+	"hosts" : [
+		"ec2-54-160-126-72.compute-1.amazonaws.com:27887"
+	],
+	"setName" : "my-rs",
+	"setVersion" : 1,
 	"ismaster" : true,
+	"secondary" : false,
+	"primary" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+	"me" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+	"electionId" : ObjectId("7fffffff0000000000000001"),
 	"maxBsonObjectSize" : 16777216,
 	"maxMessageSizeBytes" : 48000000,
 	"maxWriteBatchSize" : 1000,
-	"localTime" : ISODate("2015-04-09T10:46:47.122Z"),
-	"maxWireVersion" : 3,
+	"localTime" : ISODate("2021-08-18T15:54:35.930Z"),
+	"maxWireVersion" : 4,
 	"minWireVersion" : 0,
 	"ok" : 1
 }
 
-** Connected to standalone
+** Connected to PRIMARY
+
+** Replica set config:
+{
+	"_id" : "my-rs",
+	"version" : 1,
+	"protocolVersion" : NumberLong(1),
+	"members" : [
+		{
+			"_id" : 0,
+			"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+			"arbiterOnly" : false,
+			"buildIndexes" : true,
+			"hidden" : false,
+			"priority" : 1,
+			"tags" : {
+				
+			},
+			"slaveDelay" : NumberLong(0),
+			"votes" : 1
+		}
+	],
+	"settings" : {
+		"chainingAllowed" : true,
+		"heartbeatIntervalMillis" : 2000,
+		"heartbeatTimeoutSecs" : 10,
+		"electionTimeoutMillis" : 10000,
+		"getLastErrorModes" : {
+			
+		},
+		"getLastErrorDefaults" : {
+			"w" : 1,
+			"wtimeout" : 0
+		},
+		"replicaSetId" : ObjectId("611d2a98f5f9fceb6b1114b0")
+	}
+}
+
+** Replica status:
+{
+	"set" : "my-rs",
+	"date" : ISODate("2021-08-18T15:54:35.932Z"),
+	"myState" : 1,
+	"term" : NumberLong(1),
+	"heartbeatIntervalMillis" : NumberLong(2000),
+	"members" : [
+		{
+			"_id" : 0,
+			"name" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+			"health" : 1,
+			"state" : 1,
+			"stateStr" : "PRIMARY",
+			"uptime" : 762,
+			"optime" : {
+				"ts" : Timestamp(1629301991, 1),
+				"t" : NumberLong(1)
+			},
+			"optimeDate" : ISODate("2021-08-18T15:53:11Z"),
+			"electionTime" : Timestamp(1629301400, 2),
+			"electionDate" : ISODate("2021-08-18T15:43:20Z"),
+			"configVersion" : 1,
+			"self" : true
+		}
+	],
+	"ok" : 1
+}
+
+** Replica info:
+{
+	"logSizeMB" : 990,
+	"usedMB" : 0.01,
+	"timeDiff" : 591,
+	"timeDiffHours" : 0.16,
+	"tFirst" : "Wed Aug 18 2021 15:43:20 GMT+0000 (UTC)",
+	"tLast" : "Wed Aug 18 2021 15:53:11 GMT+0000 (UTC)",
+	"now" : "Wed Aug 18 2021 15:54:35 GMT+0000 (UTC)"
+}
+
+** Replica slave info:
+{ "output" : [ ], "result" : undefined }
 
 ** List of databases:
 {
 	"databases" : [
 		{
-			"name" : "local",
-			"sizeOnDisk" : 83886080,
+			"name" : "admin",
+			"sizeOnDisk" : 81920,
 			"empty" : false
 		},
 		{
-			"name" : "test",
-			"sizeOnDisk" : 83886080,
+			"name" : "local",
+			"sizeOnDisk" : 233472,
+			"empty" : false
+		},
+		{
+			"name" : "my-db",
+			"sizeOnDisk" : 49152,
 			"empty" : false
 		}
 	],
-	"totalSize" : 167772160,
+	"totalSize" : 364544,
 	"ok" : 1
 }
 
-** List of collections for database 'local':
-[ "startup_log", "system.indexes" ]
+** List of collections for database 'admin':
+[ "system.users", "system.version" ]
 
 ** Database stats (MB):
 {
-	"db" : "local",
-	"collections" : 3,
-	"objects" : 8,
-	"avgObjSize" : 777.5,
-	"dataSize" : 0.005931854248046875,
-	"storageSize" : 10.0078125,
-	"numExtents" : 2,
-	"indexes" : 0,
-	"indexSize" : 0,
-	"fileSize" : 64,
-	"nsSizeMB" : 16,
-	"extentFreeList" : {
-		"num" : 0,
-		"totalSize" : 0
-	},
-	"dataFileVersion" : {
-		"major" : 4,
-		"minor" : 21
-	},
-	"ok" : 1
-}
-
-** Database profiler:
-{ "was" : 0, "slowms" : 100 }
-
-** Collection stats (MB):
-{
-	"ns" : "local.startup_log",
-	"count" : 6,
-	"size" : 0,
-	"avgObjSize" : 1012,
-	"numExtents" : 1,
-	"storageSize" : 10,
-	"lastExtentSize" : 10,
-	"paddingFactor" : 1,
-	"paddingFactorNote" : "paddingFactor is unused and unmaintained in 3.0. It remains hard coded to 1.0 for compatibility only.",
-	"userFlags" : 0,
-	"capped" : true,
-	"max" : NumberLong("9223372036854775807"),
-	"maxSize" : 10,
-	"nindexes" : 0,
-	"totalIndexSize" : 0,
-	"indexSizes" : {
-		
-	},
-	"ok" : 1
-}
-
-** Indexes:
-[ ]
-
-** Collection stats (MB):
-{
-	"ns" : "local.system.indexes",
-	"count" : 0,
-	"size" : 0,
+	"db" : "admin",
+	"collections" : 2,
+	"objects" : 2,
+	"avgObjSize" : 163.5,
+	"dataSize" : 0.00031185150146484375,
+	"storageSize" : 0.03125,
 	"numExtents" : 0,
-	"storageSize" : 0,
-	"lastExtentSize" : 0,
-	"paddingFactor" : 1,
-	"paddingFactorNote" : "paddingFactor is unused and unmaintained in 3.0. It remains hard coded to 1.0 for compatibility only.",
-	"userFlags" : 0,
-	"capped" : false,
-	"nindexes" : 0,
-	"totalIndexSize" : 0,
-	"indexSizes" : {
-		
-	},
-	"ok" : 1
-}
-
-** Indexes:
-[ ]
-
-** Sample document:
-null
-
-** List of collections for database 'test':
-[ "system.indexes", "zips" ]
-
-** Database stats (MB):
-{
-	"db" : "test",
-	"collections" : 3,
-	"objects" : 29474,
-	"avgObjSize" : 225.00210354889055,
-	"dataSize" : 6.324493408203125,
-	"storageSize" : 10.67578125,
-	"numExtents" : 8,
-	"indexes" : 1,
-	"indexSize" : 0.920074462890625,
-	"fileSize" : 64,
-	"nsSizeMB" : 16,
-	"extentFreeList" : {
-		"num" : 0,
-		"totalSize" : 0
-	},
-	"dataFileVersion" : {
-		"major" : 4,
-		"minor" : 22
-	},
+	"indexes" : 3,
+	"indexSize" : 0.046875,
 	"ok" : 1
 }
 
@@ -536,44 +934,354 @@ null
 
 ** Collection stats (MB):
 {
-	"ns" : "test.system.indexes",
+	"ns" : "admin.system.users",
 	"count" : 1,
 	"size" : 0,
-	"avgObjSize" : 112,
-	"numExtents" : 1,
+	"avgObjSize" : 282,
 	"storageSize" : 0,
-	"lastExtentSize" : 0.0078125,
-	"paddingFactor" : 1,
-	"paddingFactorNote" : "paddingFactor is unused and unmaintained in 3.0. It remains hard coded to 1.0 for compatibility only.",
-	"userFlags" : 0,
 	"capped" : false,
-	"nindexes" : 0,
+	"wiredTiger" : {
+		"metadata" : {
+			"formatVersion" : 1
+		},
+		"creationString" : "access_pattern_hint=none,allocation_size=4KB,app_metadata=(formatVersion=1),block_allocation=best,block_compressor=snappy,cache_resident=false,checksum=on,colgroups=,collator=,columns=,dictionary=0,encryption=(keyid=,name=),exclusive=false,extractor=,format=btree,huffman_key=,huffman_value=,ignore_in_memory_cache_size=false,immutable=false,internal_item_max=0,internal_key_max=0,internal_key_truncate=true,internal_page_max=4KB,key_format=q,key_gap=10,leaf_item_max=0,leaf_key_max=0,leaf_page_max=32KB,leaf_value_max=64MB,log=(enabled=true),lsm=(auto_throttle=true,bloom=true,bloom_bit_count=16,bloom_config=,bloom_hash_count=8,bloom_oldest=false,chunk_count_limit=0,chunk_max=5GB,chunk_size=10MB,merge_max=15,merge_min=0),memory_page_max=10m,os_cache_dirty_max=0,os_cache_max=0,prefix_compression=false,prefix_compression_min=4,source=,split_deepen_min_child=0,split_deepen_per_child=0,split_pct=90,type=file,value_format=u",
+		"type" : "file",
+		"uri" : "statistics:table:collection-4--7948011220576263657",
+		"LSM" : {
+			"bloom filter false positives" : 0,
+			"bloom filter hits" : 0,
+			"bloom filter misses" : 0,
+			"bloom filter pages evicted from cache" : 0,
+			"bloom filter pages read into cache" : 0,
+			"bloom filters in the LSM tree" : 0,
+			"chunks in the LSM tree" : 0,
+			"highest merge generation in the LSM tree" : 0,
+			"queries that could have benefited from a Bloom filter that did not exist" : 0,
+			"sleep for LSM checkpoint throttle" : 0,
+			"sleep for LSM merge throttle" : 0,
+			"total size of bloom filters" : 0
+		},
+		"block-manager" : {
+			"allocations requiring file extension" : 0,
+			"blocks allocated" : 0,
+			"blocks freed" : 0,
+			"checkpoint size" : 4096,
+			"file allocation unit size" : 4096,
+			"file bytes available for reuse" : 0,
+			"file magic number" : 120897,
+			"file major version number" : 1,
+			"file size in bytes" : 16384,
+			"minor version number" : 0
+		},
+		"btree" : {
+			"btree checkpoint generation" : 8,
+			"column-store fixed-size leaf pages" : 0,
+			"column-store internal pages" : 0,
+			"column-store variable-size RLE encoded values" : 0,
+			"column-store variable-size deleted values" : 0,
+			"column-store variable-size leaf pages" : 0,
+			"fixed-record size" : 0,
+			"maximum internal page key size" : 368,
+			"maximum internal page size" : 4096,
+			"maximum leaf page key size" : 2867,
+			"maximum leaf page size" : 32768,
+			"maximum leaf page value size" : 67108864,
+			"maximum tree depth" : 3,
+			"number of key/value pairs" : 0,
+			"overflow pages" : 0,
+			"pages rewritten by compaction" : 0,
+			"row-store internal pages" : 0,
+			"row-store leaf pages" : 0
+		},
+		"cache" : {
+			"bytes currently in the cache" : 650,
+			"bytes read into cache" : 378,
+			"bytes written from cache" : 0,
+			"checkpoint blocked page eviction" : 0,
+			"data source pages selected for eviction unable to be evicted" : 0,
+			"hazard pointer blocked page eviction" : 0,
+			"in-memory page passed criteria to be split" : 0,
+			"in-memory page splits" : 0,
+			"internal pages evicted" : 0,
+			"internal pages split during eviction" : 0,
+			"leaf pages split during eviction" : 0,
+			"modified pages evicted" : 0,
+			"overflow pages read into cache" : 0,
+			"overflow values cached in memory" : 0,
+			"page split during eviction deepened the tree" : 0,
+			"page written requiring lookaside records" : 0,
+			"pages read into cache" : 2,
+			"pages read into cache requiring lookaside entries" : 0,
+			"pages requested from the cache" : 63,
+			"pages written from cache" : 0,
+			"pages written requiring in-memory restoration" : 0,
+			"tracked dirty bytes in the cache" : 0,
+			"unmodified pages evicted" : 0
+		},
+		"cache_walk" : {
+			"Average difference between current eviction generation when the page was last considered" : 0,
+			"Average on-disk page image size seen" : 0,
+			"Clean pages currently in cache" : 0,
+			"Current eviction generation" : 0,
+			"Dirty pages currently in cache" : 0,
+			"Entries in the root page" : 0,
+			"Internal pages currently in cache" : 0,
+			"Leaf pages currently in cache" : 0,
+			"Maximum difference between current eviction generation when the page was last considered" : 0,
+			"Maximum page size seen" : 0,
+			"Minimum on-disk page image size seen" : 0,
+			"On-disk page image sizes smaller than a single allocation unit" : 0,
+			"Pages created in memory and never written" : 0,
+			"Pages currently queued for eviction" : 0,
+			"Pages that could not be queued for eviction" : 0,
+			"Refs skipped during cache traversal" : 0,
+			"Size of the root page" : 0,
+			"Total number of pages currently in cache" : 0
+		},
+		"compression" : {
+			"compressed pages read" : 0,
+			"compressed pages written" : 0,
+			"page written failed to compress" : 0,
+			"page written was too small to compress" : 0,
+			"raw compression call failed, additional data available" : 0,
+			"raw compression call failed, no additional data available" : 0,
+			"raw compression call succeeded" : 0
+		},
+		"cursor" : {
+			"bulk-loaded cursor-insert calls" : 0,
+			"create calls" : 1,
+			"cursor-insert key and value bytes inserted" : 0,
+			"cursor-remove key bytes removed" : 0,
+			"cursor-update value bytes updated" : 0,
+			"insert calls" : 0,
+			"next calls" : 1,
+			"prev calls" : 1,
+			"remove calls" : 0,
+			"reset calls" : 63,
+			"restarted searches" : 0,
+			"search calls" : 61,
+			"search near calls" : 0,
+			"truncate calls" : 0,
+			"update calls" : 0
+		},
+		"reconciliation" : {
+			"dictionary matches" : 0,
+			"fast-path pages deleted" : 0,
+			"internal page key bytes discarded using suffix compression" : 0,
+			"internal page multi-block writes" : 0,
+			"internal-page overflow keys" : 0,
+			"leaf page key bytes discarded using prefix compression" : 0,
+			"leaf page multi-block writes" : 0,
+			"leaf-page overflow keys" : 0,
+			"maximum blocks required for a page" : 0,
+			"overflow values written" : 0,
+			"page checksum matches" : 0,
+			"page reconciliation calls" : 0,
+			"page reconciliation calls for eviction" : 0,
+			"pages deleted" : 0
+		},
+		"session" : {
+			"object compaction" : 0,
+			"open cursor count" : 1
+		},
+		"transaction" : {
+			"update conflicts" : 0
+		}
+	},
+	"nindexes" : 2,
 	"totalIndexSize" : 0,
 	"indexSizes" : {
-		
+		"_id_" : 0,
+		"user_1_db_1" : 0
 	},
 	"ok" : 1
 }
 
 ** Indexes:
-[ ]
+[
+	{
+		"v" : 1,
+		"key" : {
+			"_id" : 1
+		},
+		"name" : "_id_",
+		"ns" : "admin.system.users"
+	},
+	{
+		"v" : 1,
+		"unique" : true,
+		"key" : {
+			"user" : 1,
+			"db" : 1
+		},
+		"name" : "user_1_db_1",
+		"ns" : "admin.system.users"
+	}
+]
 
-** Sample document:
-{ "v" : 1, "key" : { "_id" : 1 }, "name" : "_id_", "ns" : "test.zips" }
+** Index Stats:
+{
+	"ok" : 0,
+	"errmsg" : "not authorized on admin to execute command { aggregate: \"system.users\", pipeline: [ { $indexStats: {} }, { $group: { _id: \"$key\", stats: { $push: { accesses: \"$accesses.ops\", host: \"$host\", since: \"$accesses.since\" } } } }, { $project: { key: \"$_id\", stats: 1.0, _id: 0.0 } } ], cursor: {} }",
+	"code" : 13
+}
 
 ** Collection stats (MB):
 {
-	"ns" : "test.zips",
-	"count" : 29470,
-	"size" : 6,
-	"avgObjSize" : 225,
-	"numExtents" : 6,
-	"storageSize" : 10,
-	"lastExtentSize" : 8,
-	"paddingFactor" : 1,
-	"paddingFactorNote" : "paddingFactor is unused and unmaintained in 3.0. It remains hard coded to 1.0 for compatibility only.",
-	"userFlags" : 1,
+	"ns" : "admin.system.version",
+	"count" : 1,
+	"size" : 0,
+	"avgObjSize" : 45,
+	"storageSize" : 0,
 	"capped" : false,
+	"wiredTiger" : {
+		"metadata" : {
+			"formatVersion" : 1
+		},
+		"creationString" : "access_pattern_hint=none,allocation_size=4KB,app_metadata=(formatVersion=1),block_allocation=best,block_compressor=snappy,cache_resident=false,checksum=on,colgroups=,collator=,columns=,dictionary=0,encryption=(keyid=,name=),exclusive=false,extractor=,format=btree,huffman_key=,huffman_value=,ignore_in_memory_cache_size=false,immutable=false,internal_item_max=0,internal_key_max=0,internal_key_truncate=true,internal_page_max=4KB,key_format=q,key_gap=10,leaf_item_max=0,leaf_key_max=0,leaf_page_max=32KB,leaf_value_max=64MB,log=(enabled=true),lsm=(auto_throttle=true,bloom=true,bloom_bit_count=16,bloom_config=,bloom_hash_count=8,bloom_oldest=false,chunk_count_limit=0,chunk_max=5GB,chunk_size=10MB,merge_max=15,merge_min=0),memory_page_max=10m,os_cache_dirty_max=0,os_cache_max=0,prefix_compression=false,prefix_compression_min=4,source=,split_deepen_min_child=0,split_deepen_per_child=0,split_pct=90,type=file,value_format=u",
+		"type" : "file",
+		"uri" : "statistics:table:collection-2--7948011220576263657",
+		"LSM" : {
+			"bloom filter false positives" : 0,
+			"bloom filter hits" : 0,
+			"bloom filter misses" : 0,
+			"bloom filter pages evicted from cache" : 0,
+			"bloom filter pages read into cache" : 0,
+			"bloom filters in the LSM tree" : 0,
+			"chunks in the LSM tree" : 0,
+			"highest merge generation in the LSM tree" : 0,
+			"queries that could have benefited from a Bloom filter that did not exist" : 0,
+			"sleep for LSM checkpoint throttle" : 0,
+			"sleep for LSM merge throttle" : 0,
+			"total size of bloom filters" : 0
+		},
+		"block-manager" : {
+			"allocations requiring file extension" : 0,
+			"blocks allocated" : 0,
+			"blocks freed" : 0,
+			"checkpoint size" : 4096,
+			"file allocation unit size" : 4096,
+			"file bytes available for reuse" : 0,
+			"file magic number" : 120897,
+			"file major version number" : 1,
+			"file size in bytes" : 16384,
+			"minor version number" : 0
+		},
+		"btree" : {
+			"btree checkpoint generation" : 8,
+			"column-store fixed-size leaf pages" : 0,
+			"column-store internal pages" : 0,
+			"column-store variable-size RLE encoded values" : 0,
+			"column-store variable-size deleted values" : 0,
+			"column-store variable-size leaf pages" : 0,
+			"fixed-record size" : 0,
+			"maximum internal page key size" : 368,
+			"maximum internal page size" : 4096,
+			"maximum leaf page key size" : 2867,
+			"maximum leaf page size" : 32768,
+			"maximum leaf page value size" : 67108864,
+			"maximum tree depth" : 3,
+			"number of key/value pairs" : 0,
+			"overflow pages" : 0,
+			"pages rewritten by compaction" : 0,
+			"row-store internal pages" : 0,
+			"row-store leaf pages" : 0
+		},
+		"cache" : {
+			"bytes currently in the cache" : 392,
+			"bytes read into cache" : 139,
+			"bytes written from cache" : 0,
+			"checkpoint blocked page eviction" : 0,
+			"data source pages selected for eviction unable to be evicted" : 0,
+			"hazard pointer blocked page eviction" : 0,
+			"in-memory page passed criteria to be split" : 0,
+			"in-memory page splits" : 0,
+			"internal pages evicted" : 0,
+			"internal pages split during eviction" : 0,
+			"leaf pages split during eviction" : 0,
+			"modified pages evicted" : 0,
+			"overflow pages read into cache" : 0,
+			"overflow values cached in memory" : 0,
+			"page split during eviction deepened the tree" : 0,
+			"page written requiring lookaside records" : 0,
+			"pages read into cache" : 2,
+			"pages read into cache requiring lookaside entries" : 0,
+			"pages requested from the cache" : 3,
+			"pages written from cache" : 0,
+			"pages written requiring in-memory restoration" : 0,
+			"tracked dirty bytes in the cache" : 0,
+			"unmodified pages evicted" : 0
+		},
+		"cache_walk" : {
+			"Average difference between current eviction generation when the page was last considered" : 0,
+			"Average on-disk page image size seen" : 0,
+			"Clean pages currently in cache" : 0,
+			"Current eviction generation" : 0,
+			"Dirty pages currently in cache" : 0,
+			"Entries in the root page" : 0,
+			"Internal pages currently in cache" : 0,
+			"Leaf pages currently in cache" : 0,
+			"Maximum difference between current eviction generation when the page was last considered" : 0,
+			"Maximum page size seen" : 0,
+			"Minimum on-disk page image size seen" : 0,
+			"On-disk page image sizes smaller than a single allocation unit" : 0,
+			"Pages created in memory and never written" : 0,
+			"Pages currently queued for eviction" : 0,
+			"Pages that could not be queued for eviction" : 0,
+			"Refs skipped during cache traversal" : 0,
+			"Size of the root page" : 0,
+			"Total number of pages currently in cache" : 0
+		},
+		"compression" : {
+			"compressed pages read" : 0,
+			"compressed pages written" : 0,
+			"page written failed to compress" : 0,
+			"page written was too small to compress" : 0,
+			"raw compression call failed, additional data available" : 0,
+			"raw compression call failed, no additional data available" : 0,
+			"raw compression call succeeded" : 0
+		},
+		"cursor" : {
+			"bulk-loaded cursor-insert calls" : 0,
+			"create calls" : 1,
+			"cursor-insert key and value bytes inserted" : 0,
+			"cursor-remove key bytes removed" : 0,
+			"cursor-update value bytes updated" : 0,
+			"insert calls" : 0,
+			"next calls" : 0,
+			"prev calls" : 1,
+			"remove calls" : 0,
+			"reset calls" : 3,
+			"restarted searches" : 0,
+			"search calls" : 2,
+			"search near calls" : 0,
+			"truncate calls" : 0,
+			"update calls" : 0
+		},
+		"reconciliation" : {
+			"dictionary matches" : 0,
+			"fast-path pages deleted" : 0,
+			"internal page key bytes discarded using suffix compression" : 0,
+			"internal page multi-block writes" : 0,
+			"internal-page overflow keys" : 0,
+			"leaf page key bytes discarded using prefix compression" : 0,
+			"leaf page multi-block writes" : 0,
+			"leaf-page overflow keys" : 0,
+			"maximum blocks required for a page" : 0,
+			"overflow values written" : 0,
+			"page checksum matches" : 0,
+			"page reconciliation calls" : 0,
+			"page reconciliation calls for eviction" : 0,
+			"pages deleted" : 0
+		},
+		"session" : {
+			"object compaction" : 0,
+			"open cursor count" : 1
+		},
+		"transaction" : {
+			"update conflicts" : 0
+		}
+	},
 	"nindexes" : 1,
 	"totalIndexSize" : 0,
 	"indexSizes" : {
@@ -590,19 +1298,1451 @@ null
 			"_id" : 1
 		},
 		"name" : "_id_",
-		"ns" : "test.zips"
+		"ns" : "admin.system.version"
 	}
 ]
 
-** Sample document:
+** Index Stats:
 {
-	"_id" : ObjectId("55265852557cec9ebe14b008"),
-	"city" : "ACMAR",
-	"zip" : "35004",
-	"loc" : {
-		"y" : 33.584132,
-		"x" : 86.51557
+	"ok" : 0,
+	"errmsg" : "not authorized on admin to execute command { aggregate: \"system.version\", pipeline: [ { $indexStats: {} }, { $group: { _id: \"$key\", stats: { $push: { accesses: \"$accesses.ops\", host: \"$host\", since: \"$accesses.since\" } } } }, { $project: { key: \"$_id\", stats: 1.0, _id: 0.0 } } ], cursor: {} }",
+	"code" : 13
+}
+
+** List of collections for database 'local':
+[
+	"me",
+	"oplog.rs",
+	"replset.election",
+	"replset.minvalid",
+	"startup_log",
+	"system.replset"
+]
+
+** Database stats (MB):
+{
+	"db" : "local",
+	"collections" : 6,
+	"objects" : 11,
+	"avgObjSize" : 401.54545454545456,
+	"dataSize" : 0.004212379455566406,
+	"storageSize" : 0.12890625,
+	"numExtents" : 0,
+	"indexes" : 5,
+	"indexSize" : 0.09375,
+	"ok" : 1
+}
+
+** Database profiler:
+{ "was" : 0, "slowms" : 100 }
+
+** Collection stats (MB):
+{
+	"ns" : "local.me",
+	"count" : 1,
+	"size" : 0,
+	"avgObjSize" : 74,
+	"storageSize" : 0,
+	"capped" : false,
+	"wiredTiger" : {
+		"metadata" : {
+			"formatVersion" : 1
+		},
+		"creationString" : "access_pattern_hint=none,allocation_size=4KB,app_metadata=(formatVersion=1),block_allocation=best,block_compressor=snappy,cache_resident=false,checksum=on,colgroups=,collator=,columns=,dictionary=0,encryption=(keyid=,name=),exclusive=false,extractor=,format=btree,huffman_key=,huffman_value=,ignore_in_memory_cache_size=false,immutable=false,internal_item_max=0,internal_key_max=0,internal_key_truncate=true,internal_page_max=4KB,key_format=q,key_gap=10,leaf_item_max=0,leaf_key_max=0,leaf_page_max=32KB,leaf_value_max=64MB,log=(enabled=true),lsm=(auto_throttle=true,bloom=true,bloom_bit_count=16,bloom_config=,bloom_hash_count=8,bloom_oldest=false,chunk_count_limit=0,chunk_max=5GB,chunk_size=10MB,merge_max=15,merge_min=0),memory_page_max=10m,os_cache_dirty_max=0,os_cache_max=0,prefix_compression=false,prefix_compression_min=4,source=,split_deepen_min_child=0,split_deepen_per_child=0,split_pct=90,type=file,value_format=u",
+		"type" : "file",
+		"uri" : "statistics:table:collection-0--8934111563282386122",
+		"LSM" : {
+			"bloom filter false positives" : 0,
+			"bloom filter hits" : 0,
+			"bloom filter misses" : 0,
+			"bloom filter pages evicted from cache" : 0,
+			"bloom filter pages read into cache" : 0,
+			"bloom filters in the LSM tree" : 0,
+			"chunks in the LSM tree" : 0,
+			"highest merge generation in the LSM tree" : 0,
+			"queries that could have benefited from a Bloom filter that did not exist" : 0,
+			"sleep for LSM checkpoint throttle" : 0,
+			"sleep for LSM merge throttle" : 0,
+			"total size of bloom filters" : 0
+		},
+		"block-manager" : {
+			"allocations requiring file extension" : 3,
+			"blocks allocated" : 3,
+			"blocks freed" : 0,
+			"checkpoint size" : 4096,
+			"file allocation unit size" : 4096,
+			"file bytes available for reuse" : 0,
+			"file magic number" : 120897,
+			"file major version number" : 1,
+			"file size in bytes" : 16384,
+			"minor version number" : 0
+		},
+		"btree" : {
+			"btree checkpoint generation" : 8,
+			"column-store fixed-size leaf pages" : 0,
+			"column-store internal pages" : 0,
+			"column-store variable-size RLE encoded values" : 0,
+			"column-store variable-size deleted values" : 0,
+			"column-store variable-size leaf pages" : 0,
+			"fixed-record size" : 0,
+			"maximum internal page key size" : 368,
+			"maximum internal page size" : 4096,
+			"maximum leaf page key size" : 2867,
+			"maximum leaf page size" : 32768,
+			"maximum leaf page value size" : 67108864,
+			"maximum tree depth" : 3,
+			"number of key/value pairs" : 0,
+			"overflow pages" : 0,
+			"pages rewritten by compaction" : 0,
+			"row-store internal pages" : 0,
+			"row-store leaf pages" : 0
+		},
+		"cache" : {
+			"bytes currently in the cache" : 918,
+			"bytes read into cache" : 0,
+			"bytes written from cache" : 169,
+			"checkpoint blocked page eviction" : 0,
+			"data source pages selected for eviction unable to be evicted" : 0,
+			"hazard pointer blocked page eviction" : 0,
+			"in-memory page passed criteria to be split" : 0,
+			"in-memory page splits" : 0,
+			"internal pages evicted" : 0,
+			"internal pages split during eviction" : 0,
+			"leaf pages split during eviction" : 0,
+			"modified pages evicted" : 0,
+			"overflow pages read into cache" : 0,
+			"overflow values cached in memory" : 0,
+			"page split during eviction deepened the tree" : 0,
+			"page written requiring lookaside records" : 0,
+			"pages read into cache" : 0,
+			"pages read into cache requiring lookaside entries" : 0,
+			"pages requested from the cache" : 1,
+			"pages written from cache" : 2,
+			"pages written requiring in-memory restoration" : 0,
+			"tracked dirty bytes in the cache" : 0,
+			"unmodified pages evicted" : 0
+		},
+		"cache_walk" : {
+			"Average difference between current eviction generation when the page was last considered" : 0,
+			"Average on-disk page image size seen" : 0,
+			"Clean pages currently in cache" : 0,
+			"Current eviction generation" : 0,
+			"Dirty pages currently in cache" : 0,
+			"Entries in the root page" : 0,
+			"Internal pages currently in cache" : 0,
+			"Leaf pages currently in cache" : 0,
+			"Maximum difference between current eviction generation when the page was last considered" : 0,
+			"Maximum page size seen" : 0,
+			"Minimum on-disk page image size seen" : 0,
+			"On-disk page image sizes smaller than a single allocation unit" : 0,
+			"Pages created in memory and never written" : 0,
+			"Pages currently queued for eviction" : 0,
+			"Pages that could not be queued for eviction" : 0,
+			"Refs skipped during cache traversal" : 0,
+			"Size of the root page" : 0,
+			"Total number of pages currently in cache" : 0
+		},
+		"compression" : {
+			"compressed pages read" : 0,
+			"compressed pages written" : 0,
+			"page written failed to compress" : 0,
+			"page written was too small to compress" : 2,
+			"raw compression call failed, additional data available" : 0,
+			"raw compression call failed, no additional data available" : 0,
+			"raw compression call succeeded" : 0
+		},
+		"cursor" : {
+			"bulk-loaded cursor-insert calls" : 0,
+			"create calls" : 2,
+			"cursor-insert key and value bytes inserted" : 75,
+			"cursor-remove key bytes removed" : 0,
+			"cursor-update value bytes updated" : 0,
+			"insert calls" : 1,
+			"next calls" : 1,
+			"prev calls" : 1,
+			"remove calls" : 0,
+			"reset calls" : 3,
+			"restarted searches" : 0,
+			"search calls" : 0,
+			"search near calls" : 0,
+			"truncate calls" : 0,
+			"update calls" : 0
+		},
+		"reconciliation" : {
+			"dictionary matches" : 0,
+			"fast-path pages deleted" : 0,
+			"internal page key bytes discarded using suffix compression" : 0,
+			"internal page multi-block writes" : 0,
+			"internal-page overflow keys" : 0,
+			"leaf page key bytes discarded using prefix compression" : 0,
+			"leaf page multi-block writes" : 0,
+			"leaf-page overflow keys" : 0,
+			"maximum blocks required for a page" : 0,
+			"overflow values written" : 0,
+			"page checksum matches" : 0,
+			"page reconciliation calls" : 2,
+			"page reconciliation calls for eviction" : 0,
+			"pages deleted" : 0
+		},
+		"session" : {
+			"object compaction" : 0,
+			"open cursor count" : 2
+		},
+		"transaction" : {
+			"update conflicts" : 0
+		}
 	},
-	"pop" : 6055,
-	"state" : "AL"
+	"nindexes" : 1,
+	"totalIndexSize" : 0,
+	"indexSizes" : {
+		"_id_" : 0
+	},
+	"ok" : 1
+}
+
+** Indexes:
+[
+	{
+		"v" : 1,
+		"key" : {
+			"_id" : 1
+		},
+		"name" : "_id_",
+		"ns" : "local.me"
+	}
+]
+
+** Index Stats:
+{
+	"waitedMS" : NumberLong(0),
+	"cursor" : {
+		"id" : NumberLong(0),
+		"ns" : "local.me",
+		"firstBatch" : [
+			{
+				"stats" : [
+					{
+						"accesses" : NumberLong(0),
+						"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+						"since" : "Wed, 18 Aug 2021 15:41:54 GMT"
+					}
+				],
+				"key" : {
+					"_id" : 1
+				}
+			}
+		]
+	},
+	"ok" : 1
+}
+
+** Collection stats (MB):
+{
+	"ns" : "local.oplog.rs",
+	"count" : 5,
+	"size" : 0,
+	"avgObjSize" : 109,
+	"storageSize" : 0,
+	"capped" : true,
+	"max" : -1,
+	"maxSize" : 990,
+	"sleepCount" : 0,
+	"sleepMS" : 0,
+	"wiredTiger" : {
+		"metadata" : {
+			"formatVersion" : 1,
+			"oplogKeyExtractionVersion" : 1
+		},
+		"creationString" : "access_pattern_hint=none,allocation_size=4KB,app_metadata=(formatVersion=1,oplogKeyExtractionVersion=1),block_allocation=best,block_compressor=snappy,cache_resident=false,checksum=on,colgroups=,collator=,columns=,dictionary=0,encryption=(keyid=,name=),exclusive=false,extractor=,format=btree,huffman_key=,huffman_value=,ignore_in_memory_cache_size=false,immutable=false,internal_item_max=0,internal_key_max=0,internal_key_truncate=true,internal_page_max=4KB,key_format=q,key_gap=10,leaf_item_max=0,leaf_key_max=0,leaf_page_max=32KB,leaf_value_max=64MB,log=(enabled=true),lsm=(auto_throttle=true,bloom=true,bloom_bit_count=16,bloom_config=,bloom_hash_count=8,bloom_oldest=false,chunk_count_limit=0,chunk_max=5GB,chunk_size=10MB,merge_max=15,merge_min=0),memory_page_max=10m,os_cache_dirty_max=0,os_cache_max=0,prefix_compression=false,prefix_compression_min=4,source=,split_deepen_min_child=0,split_deepen_per_child=0,split_pct=90,type=file,value_format=u",
+		"type" : "file",
+		"uri" : "statistics:table:collection-2--8934111563282386122",
+		"LSM" : {
+			"bloom filter false positives" : 0,
+			"bloom filter hits" : 0,
+			"bloom filter misses" : 0,
+			"bloom filter pages evicted from cache" : 0,
+			"bloom filter pages read into cache" : 0,
+			"bloom filters in the LSM tree" : 0,
+			"chunks in the LSM tree" : 0,
+			"highest merge generation in the LSM tree" : 0,
+			"queries that could have benefited from a Bloom filter that did not exist" : 0,
+			"sleep for LSM checkpoint throttle" : 0,
+			"sleep for LSM merge throttle" : 0,
+			"total size of bloom filters" : 0
+		},
+		"block-manager" : {
+			"allocations requiring file extension" : 8,
+			"blocks allocated" : 11,
+			"blocks freed" : 2,
+			"checkpoint size" : 4096,
+			"file allocation unit size" : 4096,
+			"file bytes available for reuse" : 16384,
+			"file magic number" : 120897,
+			"file major version number" : 1,
+			"file size in bytes" : 36864,
+			"minor version number" : 0
+		},
+		"btree" : {
+			"btree checkpoint generation" : 8,
+			"column-store fixed-size leaf pages" : 0,
+			"column-store internal pages" : 0,
+			"column-store variable-size RLE encoded values" : 0,
+			"column-store variable-size deleted values" : 0,
+			"column-store variable-size leaf pages" : 0,
+			"fixed-record size" : 0,
+			"maximum internal page key size" : 368,
+			"maximum internal page size" : 4096,
+			"maximum leaf page key size" : 2867,
+			"maximum leaf page size" : 32768,
+			"maximum leaf page value size" : 67108864,
+			"maximum tree depth" : 3,
+			"number of key/value pairs" : 0,
+			"overflow pages" : 0,
+			"pages rewritten by compaction" : 0,
+			"row-store internal pages" : 0,
+			"row-store leaf pages" : 0
+		},
+		"cache" : {
+			"bytes currently in the cache" : 1769,
+			"bytes read into cache" : 0,
+			"bytes written from cache" : 1526,
+			"checkpoint blocked page eviction" : 0,
+			"data source pages selected for eviction unable to be evicted" : 0,
+			"hazard pointer blocked page eviction" : 0,
+			"in-memory page passed criteria to be split" : 0,
+			"in-memory page splits" : 0,
+			"internal pages evicted" : 0,
+			"internal pages split during eviction" : 0,
+			"leaf pages split during eviction" : 0,
+			"modified pages evicted" : 0,
+			"overflow pages read into cache" : 0,
+			"overflow values cached in memory" : 0,
+			"page split during eviction deepened the tree" : 0,
+			"page written requiring lookaside records" : 0,
+			"pages read into cache" : 0,
+			"pages read into cache requiring lookaside entries" : 0,
+			"pages requested from the cache" : 29,
+			"pages written from cache" : 6,
+			"pages written requiring in-memory restoration" : 0,
+			"tracked dirty bytes in the cache" : 0,
+			"unmodified pages evicted" : 0
+		},
+		"cache_walk" : {
+			"Average difference between current eviction generation when the page was last considered" : 0,
+			"Average on-disk page image size seen" : 0,
+			"Clean pages currently in cache" : 0,
+			"Current eviction generation" : 0,
+			"Dirty pages currently in cache" : 0,
+			"Entries in the root page" : 0,
+			"Internal pages currently in cache" : 0,
+			"Leaf pages currently in cache" : 0,
+			"Maximum difference between current eviction generation when the page was last considered" : 0,
+			"Maximum page size seen" : 0,
+			"Minimum on-disk page image size seen" : 0,
+			"On-disk page image sizes smaller than a single allocation unit" : 0,
+			"Pages created in memory and never written" : 0,
+			"Pages currently queued for eviction" : 0,
+			"Pages that could not be queued for eviction" : 0,
+			"Refs skipped during cache traversal" : 0,
+			"Size of the root page" : 0,
+			"Total number of pages currently in cache" : 0
+		},
+		"compression" : {
+			"compressed pages read" : 0,
+			"compressed pages written" : 0,
+			"page written failed to compress" : 0,
+			"page written was too small to compress" : 6,
+			"raw compression call failed, additional data available" : 0,
+			"raw compression call failed, no additional data available" : 0,
+			"raw compression call succeeded" : 0
+		},
+		"cursor" : {
+			"bulk-loaded cursor-insert calls" : 0,
+			"create calls" : 2,
+			"cursor-insert key and value bytes inserted" : 590,
+			"cursor-remove key bytes removed" : 0,
+			"cursor-update value bytes updated" : 0,
+			"insert calls" : 5,
+			"next calls" : 12,
+			"prev calls" : 14,
+			"remove calls" : 0,
+			"reset calls" : 31,
+			"restarted searches" : 0,
+			"search calls" : 0,
+			"search near calls" : 0,
+			"truncate calls" : 0,
+			"update calls" : 0
+		},
+		"reconciliation" : {
+			"dictionary matches" : 0,
+			"fast-path pages deleted" : 0,
+			"internal page key bytes discarded using suffix compression" : 0,
+			"internal page multi-block writes" : 0,
+			"internal-page overflow keys" : 0,
+			"leaf page key bytes discarded using prefix compression" : 0,
+			"leaf page multi-block writes" : 0,
+			"leaf-page overflow keys" : 0,
+			"maximum blocks required for a page" : 0,
+			"overflow values written" : 0,
+			"page checksum matches" : 0,
+			"page reconciliation calls" : 6,
+			"page reconciliation calls for eviction" : 0,
+			"pages deleted" : 0
+		},
+		"session" : {
+			"object compaction" : 0,
+			"open cursor count" : 2
+		},
+		"transaction" : {
+			"update conflicts" : 0
+		}
+	},
+	"nindexes" : 0,
+	"totalIndexSize" : 0,
+	"indexSizes" : {
+		
+	},
+	"ok" : 1
+}
+
+** Indexes:
+[ ]
+
+** Index Stats:
+{
+	"waitedMS" : NumberLong(0),
+	"cursor" : {
+		"id" : NumberLong(0),
+		"ns" : "local.oplog.rs",
+		"firstBatch" : [ ]
+	},
+	"ok" : 1
+}
+
+** Collection stats (MB):
+{
+	"ns" : "local.replset.election",
+	"count" : 1,
+	"size" : 0,
+	"avgObjSize" : 60,
+	"storageSize" : 0,
+	"capped" : false,
+	"wiredTiger" : {
+		"metadata" : {
+			"formatVersion" : 1
+		},
+		"creationString" : "access_pattern_hint=none,allocation_size=4KB,app_metadata=(formatVersion=1),block_allocation=best,block_compressor=snappy,cache_resident=false,checksum=on,colgroups=,collator=,columns=,dictionary=0,encryption=(keyid=,name=),exclusive=false,extractor=,format=btree,huffman_key=,huffman_value=,ignore_in_memory_cache_size=false,immutable=false,internal_item_max=0,internal_key_max=0,internal_key_truncate=true,internal_page_max=4KB,key_format=q,key_gap=10,leaf_item_max=0,leaf_key_max=0,leaf_page_max=32KB,leaf_value_max=64MB,log=(enabled=true),lsm=(auto_throttle=true,bloom=true,bloom_bit_count=16,bloom_config=,bloom_hash_count=8,bloom_oldest=false,chunk_count_limit=0,chunk_max=5GB,chunk_size=10MB,merge_max=15,merge_min=0),memory_page_max=10m,os_cache_dirty_max=0,os_cache_max=0,prefix_compression=false,prefix_compression_min=4,source=,split_deepen_min_child=0,split_deepen_per_child=0,split_pct=90,type=file,value_format=u",
+		"type" : "file",
+		"uri" : "statistics:table:collection-7--8934111563282386122",
+		"LSM" : {
+			"bloom filter false positives" : 0,
+			"bloom filter hits" : 0,
+			"bloom filter misses" : 0,
+			"bloom filter pages evicted from cache" : 0,
+			"bloom filter pages read into cache" : 0,
+			"bloom filters in the LSM tree" : 0,
+			"chunks in the LSM tree" : 0,
+			"highest merge generation in the LSM tree" : 0,
+			"queries that could have benefited from a Bloom filter that did not exist" : 0,
+			"sleep for LSM checkpoint throttle" : 0,
+			"sleep for LSM merge throttle" : 0,
+			"total size of bloom filters" : 0
+		},
+		"block-manager" : {
+			"allocations requiring file extension" : 3,
+			"blocks allocated" : 3,
+			"blocks freed" : 0,
+			"checkpoint size" : 4096,
+			"file allocation unit size" : 4096,
+			"file bytes available for reuse" : 0,
+			"file magic number" : 120897,
+			"file major version number" : 1,
+			"file size in bytes" : 16384,
+			"minor version number" : 0
+		},
+		"btree" : {
+			"btree checkpoint generation" : 8,
+			"column-store fixed-size leaf pages" : 0,
+			"column-store internal pages" : 0,
+			"column-store variable-size RLE encoded values" : 0,
+			"column-store variable-size deleted values" : 0,
+			"column-store variable-size leaf pages" : 0,
+			"fixed-record size" : 0,
+			"maximum internal page key size" : 368,
+			"maximum internal page size" : 4096,
+			"maximum leaf page key size" : 2867,
+			"maximum leaf page size" : 32768,
+			"maximum leaf page value size" : 67108864,
+			"maximum tree depth" : 3,
+			"number of key/value pairs" : 0,
+			"overflow pages" : 0,
+			"pages rewritten by compaction" : 0,
+			"row-store internal pages" : 0,
+			"row-store leaf pages" : 0
+		},
+		"cache" : {
+			"bytes currently in the cache" : 918,
+			"bytes read into cache" : 0,
+			"bytes written from cache" : 154,
+			"checkpoint blocked page eviction" : 0,
+			"data source pages selected for eviction unable to be evicted" : 0,
+			"hazard pointer blocked page eviction" : 0,
+			"in-memory page passed criteria to be split" : 0,
+			"in-memory page splits" : 0,
+			"internal pages evicted" : 0,
+			"internal pages split during eviction" : 0,
+			"leaf pages split during eviction" : 0,
+			"modified pages evicted" : 0,
+			"overflow pages read into cache" : 0,
+			"overflow values cached in memory" : 0,
+			"page split during eviction deepened the tree" : 0,
+			"page written requiring lookaside records" : 0,
+			"pages read into cache" : 0,
+			"pages read into cache requiring lookaside entries" : 0,
+			"pages requested from the cache" : 1,
+			"pages written from cache" : 2,
+			"pages written requiring in-memory restoration" : 0,
+			"tracked dirty bytes in the cache" : 0,
+			"unmodified pages evicted" : 0
+		},
+		"cache_walk" : {
+			"Average difference between current eviction generation when the page was last considered" : 0,
+			"Average on-disk page image size seen" : 0,
+			"Clean pages currently in cache" : 0,
+			"Current eviction generation" : 0,
+			"Dirty pages currently in cache" : 0,
+			"Entries in the root page" : 0,
+			"Internal pages currently in cache" : 0,
+			"Leaf pages currently in cache" : 0,
+			"Maximum difference between current eviction generation when the page was last considered" : 0,
+			"Maximum page size seen" : 0,
+			"Minimum on-disk page image size seen" : 0,
+			"On-disk page image sizes smaller than a single allocation unit" : 0,
+			"Pages created in memory and never written" : 0,
+			"Pages currently queued for eviction" : 0,
+			"Pages that could not be queued for eviction" : 0,
+			"Refs skipped during cache traversal" : 0,
+			"Size of the root page" : 0,
+			"Total number of pages currently in cache" : 0
+		},
+		"compression" : {
+			"compressed pages read" : 0,
+			"compressed pages written" : 0,
+			"page written failed to compress" : 0,
+			"page written was too small to compress" : 2,
+			"raw compression call failed, additional data available" : 0,
+			"raw compression call failed, no additional data available" : 0,
+			"raw compression call succeeded" : 0
+		},
+		"cursor" : {
+			"bulk-loaded cursor-insert calls" : 0,
+			"create calls" : 2,
+			"cursor-insert key and value bytes inserted" : 61,
+			"cursor-remove key bytes removed" : 0,
+			"cursor-update value bytes updated" : 0,
+			"insert calls" : 1,
+			"next calls" : 1,
+			"prev calls" : 1,
+			"remove calls" : 0,
+			"reset calls" : 3,
+			"restarted searches" : 0,
+			"search calls" : 0,
+			"search near calls" : 0,
+			"truncate calls" : 0,
+			"update calls" : 0
+		},
+		"reconciliation" : {
+			"dictionary matches" : 0,
+			"fast-path pages deleted" : 0,
+			"internal page key bytes discarded using suffix compression" : 0,
+			"internal page multi-block writes" : 0,
+			"internal-page overflow keys" : 0,
+			"leaf page key bytes discarded using prefix compression" : 0,
+			"leaf page multi-block writes" : 0,
+			"leaf-page overflow keys" : 0,
+			"maximum blocks required for a page" : 0,
+			"overflow values written" : 0,
+			"page checksum matches" : 0,
+			"page reconciliation calls" : 2,
+			"page reconciliation calls for eviction" : 0,
+			"pages deleted" : 0
+		},
+		"session" : {
+			"object compaction" : 0,
+			"open cursor count" : 2
+		},
+		"transaction" : {
+			"update conflicts" : 0
+		}
+	},
+	"nindexes" : 1,
+	"totalIndexSize" : 0,
+	"indexSizes" : {
+		"_id_" : 0
+	},
+	"ok" : 1
+}
+
+** Indexes:
+[
+	{
+		"v" : 1,
+		"key" : {
+			"_id" : 1
+		},
+		"name" : "_id_",
+		"ns" : "local.replset.election"
+	}
+]
+
+** Index Stats:
+{
+	"waitedMS" : NumberLong(0),
+	"cursor" : {
+		"id" : NumberLong(0),
+		"ns" : "local.replset.election",
+		"firstBatch" : [
+			{
+				"stats" : [
+					{
+						"accesses" : NumberLong(0),
+						"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+						"since" : "Wed, 18 Aug 2021 15:43:20 GMT"
+					}
+				],
+				"key" : {
+					"_id" : 1
+				}
+			}
+		]
+	},
+	"ok" : 1
+}
+
+** Collection stats (MB):
+{
+	"ns" : "local.replset.minvalid",
+	"count" : 1,
+	"size" : 0,
+	"avgObjSize" : 45,
+	"storageSize" : 0,
+	"capped" : false,
+	"wiredTiger" : {
+		"metadata" : {
+			"formatVersion" : 1
+		},
+		"creationString" : "access_pattern_hint=none,allocation_size=4KB,app_metadata=(formatVersion=1),block_allocation=best,block_compressor=snappy,cache_resident=false,checksum=on,colgroups=,collator=,columns=,dictionary=0,encryption=(keyid=,name=),exclusive=false,extractor=,format=btree,huffman_key=,huffman_value=,ignore_in_memory_cache_size=false,immutable=false,internal_item_max=0,internal_key_max=0,internal_key_truncate=true,internal_page_max=4KB,key_format=q,key_gap=10,leaf_item_max=0,leaf_key_max=0,leaf_page_max=32KB,leaf_value_max=64MB,log=(enabled=true),lsm=(auto_throttle=true,bloom=true,bloom_bit_count=16,bloom_config=,bloom_hash_count=8,bloom_oldest=false,chunk_count_limit=0,chunk_max=5GB,chunk_size=10MB,merge_max=15,merge_min=0),memory_page_max=10m,os_cache_dirty_max=0,os_cache_max=0,prefix_compression=false,prefix_compression_min=4,source=,split_deepen_min_child=0,split_deepen_per_child=0,split_pct=90,type=file,value_format=u",
+		"type" : "file",
+		"uri" : "statistics:table:collection-5--8934111563282386122",
+		"LSM" : {
+			"bloom filter false positives" : 0,
+			"bloom filter hits" : 0,
+			"bloom filter misses" : 0,
+			"bloom filter pages evicted from cache" : 0,
+			"bloom filter pages read into cache" : 0,
+			"bloom filters in the LSM tree" : 0,
+			"chunks in the LSM tree" : 0,
+			"highest merge generation in the LSM tree" : 0,
+			"queries that could have benefited from a Bloom filter that did not exist" : 0,
+			"sleep for LSM checkpoint throttle" : 0,
+			"sleep for LSM merge throttle" : 0,
+			"total size of bloom filters" : 0
+		},
+		"block-manager" : {
+			"allocations requiring file extension" : 3,
+			"blocks allocated" : 3,
+			"blocks freed" : 0,
+			"checkpoint size" : 4096,
+			"file allocation unit size" : 4096,
+			"file bytes available for reuse" : 0,
+			"file magic number" : 120897,
+			"file major version number" : 1,
+			"file size in bytes" : 16384,
+			"minor version number" : 0
+		},
+		"btree" : {
+			"btree checkpoint generation" : 8,
+			"column-store fixed-size leaf pages" : 0,
+			"column-store internal pages" : 0,
+			"column-store variable-size RLE encoded values" : 0,
+			"column-store variable-size deleted values" : 0,
+			"column-store variable-size leaf pages" : 0,
+			"fixed-record size" : 0,
+			"maximum internal page key size" : 368,
+			"maximum internal page size" : 4096,
+			"maximum leaf page key size" : 2867,
+			"maximum leaf page size" : 32768,
+			"maximum leaf page value size" : 67108864,
+			"maximum tree depth" : 3,
+			"number of key/value pairs" : 0,
+			"overflow pages" : 0,
+			"pages rewritten by compaction" : 0,
+			"row-store internal pages" : 0,
+			"row-store leaf pages" : 0
+		},
+		"cache" : {
+			"bytes currently in the cache" : 918,
+			"bytes read into cache" : 0,
+			"bytes written from cache" : 139,
+			"checkpoint blocked page eviction" : 0,
+			"data source pages selected for eviction unable to be evicted" : 0,
+			"hazard pointer blocked page eviction" : 0,
+			"in-memory page passed criteria to be split" : 0,
+			"in-memory page splits" : 0,
+			"internal pages evicted" : 0,
+			"internal pages split during eviction" : 0,
+			"leaf pages split during eviction" : 0,
+			"modified pages evicted" : 0,
+			"overflow pages read into cache" : 0,
+			"overflow values cached in memory" : 0,
+			"page split during eviction deepened the tree" : 0,
+			"page written requiring lookaside records" : 0,
+			"pages read into cache" : 0,
+			"pages read into cache requiring lookaside entries" : 0,
+			"pages requested from the cache" : 7,
+			"pages written from cache" : 2,
+			"pages written requiring in-memory restoration" : 0,
+			"tracked dirty bytes in the cache" : 0,
+			"unmodified pages evicted" : 0
+		},
+		"cache_walk" : {
+			"Average difference between current eviction generation when the page was last considered" : 0,
+			"Average on-disk page image size seen" : 0,
+			"Clean pages currently in cache" : 0,
+			"Current eviction generation" : 0,
+			"Dirty pages currently in cache" : 0,
+			"Entries in the root page" : 0,
+			"Internal pages currently in cache" : 0,
+			"Leaf pages currently in cache" : 0,
+			"Maximum difference between current eviction generation when the page was last considered" : 0,
+			"Maximum page size seen" : 0,
+			"Minimum on-disk page image size seen" : 0,
+			"On-disk page image sizes smaller than a single allocation unit" : 0,
+			"Pages created in memory and never written" : 0,
+			"Pages currently queued for eviction" : 0,
+			"Pages that could not be queued for eviction" : 0,
+			"Refs skipped during cache traversal" : 0,
+			"Size of the root page" : 0,
+			"Total number of pages currently in cache" : 0
+		},
+		"compression" : {
+			"compressed pages read" : 0,
+			"compressed pages written" : 0,
+			"page written failed to compress" : 0,
+			"page written was too small to compress" : 2,
+			"raw compression call failed, additional data available" : 0,
+			"raw compression call failed, no additional data available" : 0,
+			"raw compression call succeeded" : 0
+		},
+		"cursor" : {
+			"bulk-loaded cursor-insert calls" : 0,
+			"create calls" : 2,
+			"cursor-insert key and value bytes inserted" : 46,
+			"cursor-remove key bytes removed" : 0,
+			"cursor-update value bytes updated" : 0,
+			"insert calls" : 1,
+			"next calls" : 6,
+			"prev calls" : 1,
+			"remove calls" : 0,
+			"reset calls" : 9,
+			"restarted searches" : 0,
+			"search calls" : 0,
+			"search near calls" : 1,
+			"truncate calls" : 0,
+			"update calls" : 0
+		},
+		"reconciliation" : {
+			"dictionary matches" : 0,
+			"fast-path pages deleted" : 0,
+			"internal page key bytes discarded using suffix compression" : 0,
+			"internal page multi-block writes" : 0,
+			"internal-page overflow keys" : 0,
+			"leaf page key bytes discarded using prefix compression" : 0,
+			"leaf page multi-block writes" : 0,
+			"leaf-page overflow keys" : 0,
+			"maximum blocks required for a page" : 0,
+			"overflow values written" : 0,
+			"page checksum matches" : 0,
+			"page reconciliation calls" : 2,
+			"page reconciliation calls for eviction" : 0,
+			"pages deleted" : 0
+		},
+		"session" : {
+			"object compaction" : 0,
+			"open cursor count" : 2
+		},
+		"transaction" : {
+			"update conflicts" : 0
+		}
+	},
+	"nindexes" : 1,
+	"totalIndexSize" : 0,
+	"indexSizes" : {
+		"_id_" : 0
+	},
+	"ok" : 1
+}
+
+** Indexes:
+[
+	{
+		"v" : 1,
+		"key" : {
+			"_id" : 1
+		},
+		"name" : "_id_",
+		"ns" : "local.replset.minvalid"
+	}
+]
+
+** Index Stats:
+{
+	"waitedMS" : NumberLong(0),
+	"cursor" : {
+		"id" : NumberLong(0),
+		"ns" : "local.replset.minvalid",
+		"firstBatch" : [
+			{
+				"stats" : [
+					{
+						"accesses" : NumberLong(0),
+						"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+						"since" : "Wed, 18 Aug 2021 15:43:20 GMT"
+					}
+				],
+				"key" : {
+					"_id" : 1
+				}
+			}
+		]
+	},
+	"ok" : 1
+}
+
+** Collection stats (MB):
+{
+	"ns" : "local.startup_log",
+	"count" : 2,
+	"size" : 0,
+	"avgObjSize" : 1617,
+	"storageSize" : 0,
+	"capped" : true,
+	"max" : -1,
+	"maxSize" : 10,
+	"sleepCount" : 0,
+	"sleepMS" : 0,
+	"wiredTiger" : {
+		"metadata" : {
+			"formatVersion" : 1
+		},
+		"creationString" : "access_pattern_hint=none,allocation_size=4KB,app_metadata=(formatVersion=1),block_allocation=best,block_compressor=snappy,cache_resident=false,checksum=on,colgroups=,collator=,columns=,dictionary=0,encryption=(keyid=,name=),exclusive=false,extractor=,format=btree,huffman_key=,huffman_value=,ignore_in_memory_cache_size=false,immutable=false,internal_item_max=0,internal_key_max=0,internal_key_truncate=true,internal_page_max=4KB,key_format=q,key_gap=10,leaf_item_max=0,leaf_key_max=0,leaf_page_max=32KB,leaf_value_max=64MB,log=(enabled=true),lsm=(auto_throttle=true,bloom=true,bloom_bit_count=16,bloom_config=,bloom_hash_count=8,bloom_oldest=false,chunk_count_limit=0,chunk_max=5GB,chunk_size=10MB,merge_max=15,merge_min=0),memory_page_max=10m,os_cache_dirty_max=0,os_cache_max=0,prefix_compression=false,prefix_compression_min=4,source=,split_deepen_min_child=0,split_deepen_per_child=0,split_pct=90,type=file,value_format=u",
+		"type" : "file",
+		"uri" : "statistics:table:collection-0--7948011220576263657",
+		"LSM" : {
+			"bloom filter false positives" : 0,
+			"bloom filter hits" : 0,
+			"bloom filter misses" : 0,
+			"bloom filter pages evicted from cache" : 0,
+			"bloom filter pages read into cache" : 0,
+			"bloom filters in the LSM tree" : 0,
+			"chunks in the LSM tree" : 0,
+			"highest merge generation in the LSM tree" : 0,
+			"queries that could have benefited from a Bloom filter that did not exist" : 0,
+			"sleep for LSM checkpoint throttle" : 0,
+			"sleep for LSM merge throttle" : 0,
+			"total size of bloom filters" : 0
+		},
+		"block-manager" : {
+			"allocations requiring file extension" : 4,
+			"blocks allocated" : 4,
+			"blocks freed" : 1,
+			"checkpoint size" : 4096,
+			"file allocation unit size" : 4096,
+			"file bytes available for reuse" : 12288,
+			"file magic number" : 120897,
+			"file major version number" : 1,
+			"file size in bytes" : 32768,
+			"minor version number" : 0
+		},
+		"btree" : {
+			"btree checkpoint generation" : 8,
+			"column-store fixed-size leaf pages" : 0,
+			"column-store internal pages" : 0,
+			"column-store variable-size RLE encoded values" : 0,
+			"column-store variable-size deleted values" : 0,
+			"column-store variable-size leaf pages" : 0,
+			"fixed-record size" : 0,
+			"maximum internal page key size" : 368,
+			"maximum internal page size" : 4096,
+			"maximum leaf page key size" : 2867,
+			"maximum leaf page size" : 32768,
+			"maximum leaf page value size" : 67108864,
+			"maximum tree depth" : 3,
+			"number of key/value pairs" : 0,
+			"overflow pages" : 0,
+			"pages rewritten by compaction" : 0,
+			"row-store internal pages" : 0,
+			"row-store leaf pages" : 0
+		},
+		"cache" : {
+			"bytes currently in the cache" : 4457,
+			"bytes read into cache" : 1662,
+			"bytes written from cache" : 3336,
+			"checkpoint blocked page eviction" : 0,
+			"data source pages selected for eviction unable to be evicted" : 0,
+			"hazard pointer blocked page eviction" : 0,
+			"in-memory page passed criteria to be split" : 0,
+			"in-memory page splits" : 0,
+			"internal pages evicted" : 0,
+			"internal pages split during eviction" : 0,
+			"leaf pages split during eviction" : 0,
+			"modified pages evicted" : 0,
+			"overflow pages read into cache" : 0,
+			"overflow values cached in memory" : 0,
+			"page split during eviction deepened the tree" : 0,
+			"page written requiring lookaside records" : 0,
+			"pages read into cache" : 2,
+			"pages read into cache requiring lookaside entries" : 0,
+			"pages requested from the cache" : 3,
+			"pages written from cache" : 2,
+			"pages written requiring in-memory restoration" : 0,
+			"tracked dirty bytes in the cache" : 0,
+			"unmodified pages evicted" : 0
+		},
+		"cache_walk" : {
+			"Average difference between current eviction generation when the page was last considered" : 0,
+			"Average on-disk page image size seen" : 0,
+			"Clean pages currently in cache" : 0,
+			"Current eviction generation" : 0,
+			"Dirty pages currently in cache" : 0,
+			"Entries in the root page" : 0,
+			"Internal pages currently in cache" : 0,
+			"Leaf pages currently in cache" : 0,
+			"Maximum difference between current eviction generation when the page was last considered" : 0,
+			"Maximum page size seen" : 0,
+			"Minimum on-disk page image size seen" : 0,
+			"On-disk page image sizes smaller than a single allocation unit" : 0,
+			"Pages created in memory and never written" : 0,
+			"Pages currently queued for eviction" : 0,
+			"Pages that could not be queued for eviction" : 0,
+			"Refs skipped during cache traversal" : 0,
+			"Size of the root page" : 0,
+			"Total number of pages currently in cache" : 0
+		},
+		"compression" : {
+			"compressed pages read" : 0,
+			"compressed pages written" : 0,
+			"page written failed to compress" : 0,
+			"page written was too small to compress" : 2,
+			"raw compression call failed, additional data available" : 0,
+			"raw compression call failed, no additional data available" : 0,
+			"raw compression call succeeded" : 0
+		},
+		"cursor" : {
+			"bulk-loaded cursor-insert calls" : 0,
+			"create calls" : 1,
+			"cursor-insert key and value bytes inserted" : 1670,
+			"cursor-remove key bytes removed" : 0,
+			"cursor-update value bytes updated" : 0,
+			"insert calls" : 1,
+			"next calls" : 0,
+			"prev calls" : 2,
+			"remove calls" : 0,
+			"reset calls" : 3,
+			"restarted searches" : 0,
+			"search calls" : 0,
+			"search near calls" : 0,
+			"truncate calls" : 0,
+			"update calls" : 0
+		},
+		"reconciliation" : {
+			"dictionary matches" : 0,
+			"fast-path pages deleted" : 0,
+			"internal page key bytes discarded using suffix compression" : 0,
+			"internal page multi-block writes" : 0,
+			"internal-page overflow keys" : 0,
+			"leaf page key bytes discarded using prefix compression" : 0,
+			"leaf page multi-block writes" : 0,
+			"leaf-page overflow keys" : 0,
+			"maximum blocks required for a page" : 0,
+			"overflow values written" : 0,
+			"page checksum matches" : 0,
+			"page reconciliation calls" : 2,
+			"page reconciliation calls for eviction" : 0,
+			"pages deleted" : 0
+		},
+		"session" : {
+			"object compaction" : 0,
+			"open cursor count" : 1
+		},
+		"transaction" : {
+			"update conflicts" : 0
+		}
+	},
+	"nindexes" : 1,
+	"totalIndexSize" : 0,
+	"indexSizes" : {
+		"_id_" : 0
+	},
+	"ok" : 1
+}
+
+** Indexes:
+[
+	{
+		"v" : 1,
+		"key" : {
+			"_id" : 1
+		},
+		"name" : "_id_",
+		"ns" : "local.startup_log"
+	}
+]
+
+** Index Stats:
+{
+	"waitedMS" : NumberLong(0),
+	"cursor" : {
+		"id" : NumberLong(0),
+		"ns" : "local.startup_log",
+		"firstBatch" : [
+			{
+				"stats" : [
+					{
+						"accesses" : NumberLong(0),
+						"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+						"since" : "Wed, 18 Aug 2021 15:41:54 GMT"
+					}
+				],
+				"key" : {
+					"_id" : 1
+				}
+			}
+		]
+	},
+	"ok" : 1
+}
+
+** Collection stats (MB):
+{
+	"ns" : "local.system.replset",
+	"count" : 1,
+	"size" : 0,
+	"avgObjSize" : 458,
+	"storageSize" : 0,
+	"capped" : false,
+	"wiredTiger" : {
+		"metadata" : {
+			"formatVersion" : 1
+		},
+		"creationString" : "access_pattern_hint=none,allocation_size=4KB,app_metadata=(formatVersion=1),block_allocation=best,block_compressor=snappy,cache_resident=false,checksum=on,colgroups=,collator=,columns=,dictionary=0,encryption=(keyid=,name=),exclusive=false,extractor=,format=btree,huffman_key=,huffman_value=,ignore_in_memory_cache_size=false,immutable=false,internal_item_max=0,internal_key_max=0,internal_key_truncate=true,internal_page_max=4KB,key_format=q,key_gap=10,leaf_item_max=0,leaf_key_max=0,leaf_page_max=32KB,leaf_value_max=64MB,log=(enabled=true),lsm=(auto_throttle=true,bloom=true,bloom_bit_count=16,bloom_config=,bloom_hash_count=8,bloom_oldest=false,chunk_count_limit=0,chunk_max=5GB,chunk_size=10MB,merge_max=15,merge_min=0),memory_page_max=10m,os_cache_dirty_max=0,os_cache_max=0,prefix_compression=false,prefix_compression_min=4,source=,split_deepen_min_child=0,split_deepen_per_child=0,split_pct=90,type=file,value_format=u",
+		"type" : "file",
+		"uri" : "statistics:table:collection-3--8934111563282386122",
+		"LSM" : {
+			"bloom filter false positives" : 0,
+			"bloom filter hits" : 0,
+			"bloom filter misses" : 0,
+			"bloom filter pages evicted from cache" : 0,
+			"bloom filter pages read into cache" : 0,
+			"bloom filters in the LSM tree" : 0,
+			"chunks in the LSM tree" : 0,
+			"highest merge generation in the LSM tree" : 0,
+			"queries that could have benefited from a Bloom filter that did not exist" : 0,
+			"sleep for LSM checkpoint throttle" : 0,
+			"sleep for LSM merge throttle" : 0,
+			"total size of bloom filters" : 0
+		},
+		"block-manager" : {
+			"allocations requiring file extension" : 3,
+			"blocks allocated" : 3,
+			"blocks freed" : 0,
+			"checkpoint size" : 4096,
+			"file allocation unit size" : 4096,
+			"file bytes available for reuse" : 0,
+			"file magic number" : 120897,
+			"file major version number" : 1,
+			"file size in bytes" : 16384,
+			"minor version number" : 0
+		},
+		"btree" : {
+			"btree checkpoint generation" : 8,
+			"column-store fixed-size leaf pages" : 0,
+			"column-store internal pages" : 0,
+			"column-store variable-size RLE encoded values" : 0,
+			"column-store variable-size deleted values" : 0,
+			"column-store variable-size leaf pages" : 0,
+			"fixed-record size" : 0,
+			"maximum internal page key size" : 368,
+			"maximum internal page size" : 4096,
+			"maximum leaf page key size" : 2867,
+			"maximum leaf page size" : 32768,
+			"maximum leaf page value size" : 67108864,
+			"maximum tree depth" : 3,
+			"number of key/value pairs" : 0,
+			"overflow pages" : 0,
+			"pages rewritten by compaction" : 0,
+			"row-store internal pages" : 0,
+			"row-store leaf pages" : 0
+		},
+		"cache" : {
+			"bytes currently in the cache" : 1332,
+			"bytes read into cache" : 0,
+			"bytes written from cache" : 554,
+			"checkpoint blocked page eviction" : 0,
+			"data source pages selected for eviction unable to be evicted" : 0,
+			"hazard pointer blocked page eviction" : 0,
+			"in-memory page passed criteria to be split" : 0,
+			"in-memory page splits" : 0,
+			"internal pages evicted" : 0,
+			"internal pages split during eviction" : 0,
+			"leaf pages split during eviction" : 0,
+			"modified pages evicted" : 0,
+			"overflow pages read into cache" : 0,
+			"overflow values cached in memory" : 0,
+			"page split during eviction deepened the tree" : 0,
+			"page written requiring lookaside records" : 0,
+			"pages read into cache" : 0,
+			"pages read into cache requiring lookaside entries" : 0,
+			"pages requested from the cache" : 1,
+			"pages written from cache" : 2,
+			"pages written requiring in-memory restoration" : 0,
+			"tracked dirty bytes in the cache" : 0,
+			"unmodified pages evicted" : 0
+		},
+		"cache_walk" : {
+			"Average difference between current eviction generation when the page was last considered" : 0,
+			"Average on-disk page image size seen" : 0,
+			"Clean pages currently in cache" : 0,
+			"Current eviction generation" : 0,
+			"Dirty pages currently in cache" : 0,
+			"Entries in the root page" : 0,
+			"Internal pages currently in cache" : 0,
+			"Leaf pages currently in cache" : 0,
+			"Maximum difference between current eviction generation when the page was last considered" : 0,
+			"Maximum page size seen" : 0,
+			"Minimum on-disk page image size seen" : 0,
+			"On-disk page image sizes smaller than a single allocation unit" : 0,
+			"Pages created in memory and never written" : 0,
+			"Pages currently queued for eviction" : 0,
+			"Pages that could not be queued for eviction" : 0,
+			"Refs skipped during cache traversal" : 0,
+			"Size of the root page" : 0,
+			"Total number of pages currently in cache" : 0
+		},
+		"compression" : {
+			"compressed pages read" : 0,
+			"compressed pages written" : 0,
+			"page written failed to compress" : 0,
+			"page written was too small to compress" : 2,
+			"raw compression call failed, additional data available" : 0,
+			"raw compression call failed, no additional data available" : 0,
+			"raw compression call succeeded" : 0
+		},
+		"cursor" : {
+			"bulk-loaded cursor-insert calls" : 0,
+			"create calls" : 2,
+			"cursor-insert key and value bytes inserted" : 459,
+			"cursor-remove key bytes removed" : 0,
+			"cursor-update value bytes updated" : 0,
+			"insert calls" : 1,
+			"next calls" : 1,
+			"prev calls" : 1,
+			"remove calls" : 0,
+			"reset calls" : 3,
+			"restarted searches" : 0,
+			"search calls" : 0,
+			"search near calls" : 0,
+			"truncate calls" : 0,
+			"update calls" : 0
+		},
+		"reconciliation" : {
+			"dictionary matches" : 0,
+			"fast-path pages deleted" : 0,
+			"internal page key bytes discarded using suffix compression" : 0,
+			"internal page multi-block writes" : 0,
+			"internal-page overflow keys" : 0,
+			"leaf page key bytes discarded using prefix compression" : 0,
+			"leaf page multi-block writes" : 0,
+			"leaf-page overflow keys" : 0,
+			"maximum blocks required for a page" : 0,
+			"overflow values written" : 0,
+			"page checksum matches" : 0,
+			"page reconciliation calls" : 2,
+			"page reconciliation calls for eviction" : 0,
+			"pages deleted" : 0
+		},
+		"session" : {
+			"object compaction" : 0,
+			"open cursor count" : 2
+		},
+		"transaction" : {
+			"update conflicts" : 0
+		}
+	},
+	"nindexes" : 1,
+	"totalIndexSize" : 0,
+	"indexSizes" : {
+		"_id_" : 0
+	},
+	"ok" : 1
+}
+
+** Indexes:
+[
+	{
+		"v" : 1,
+		"key" : {
+			"_id" : 1
+		},
+		"name" : "_id_",
+		"ns" : "local.system.replset"
+	}
+]
+
+** Index Stats:
+{
+	"ok" : 0,
+	"errmsg" : "not authorized on local to execute command { aggregate: \"system.replset\", pipeline: [ { $indexStats: {} }, { $group: { _id: \"$key\", stats: { $push: { accesses: \"$accesses.ops\", host: \"$host\", since: \"$accesses.since\" } } } }, { $project: { key: \"$_id\", stats: 1.0, _id: 0.0 } } ], cursor: {} }",
+	"code" : 13
+}
+
+** List of collections for database 'my-db':
+[ "my-coll" ]
+
+** Database stats (MB):
+{
+	"db" : "my-db",
+	"collections" : 1,
+	"objects" : 1,
+	"avgObjSize" : 31,
+	"dataSize" : 0.00002956390380859375,
+	"storageSize" : 0.015625,
+	"numExtents" : 0,
+	"indexes" : 2,
+	"indexSize" : 0.03125,
+	"ok" : 1
+}
+
+** Database profiler:
+{ "was" : 0, "slowms" : 100 }
+
+** Collection stats (MB):
+{
+	"ns" : "my-db.my-coll",
+	"count" : 1,
+	"size" : 0,
+	"avgObjSize" : 31,
+	"storageSize" : 0,
+	"capped" : false,
+	"wiredTiger" : {
+		"metadata" : {
+			"formatVersion" : 1
+		},
+		"creationString" : "access_pattern_hint=none,allocation_size=4KB,app_metadata=(formatVersion=1),block_allocation=best,block_compressor=snappy,cache_resident=false,checksum=on,colgroups=,collator=,columns=,dictionary=0,encryption=(keyid=,name=),exclusive=false,extractor=,format=btree,huffman_key=,huffman_value=,ignore_in_memory_cache_size=false,immutable=false,internal_item_max=0,internal_key_max=0,internal_key_truncate=true,internal_page_max=4KB,key_format=q,key_gap=10,leaf_item_max=0,leaf_key_max=0,leaf_page_max=32KB,leaf_value_max=64MB,log=(enabled=true),lsm=(auto_throttle=true,bloom=true,bloom_bit_count=16,bloom_config=,bloom_hash_count=8,bloom_oldest=false,chunk_count_limit=0,chunk_max=5GB,chunk_size=10MB,merge_max=15,merge_min=0),memory_page_max=10m,os_cache_dirty_max=0,os_cache_max=0,prefix_compression=false,prefix_compression_min=4,source=,split_deepen_min_child=0,split_deepen_per_child=0,split_pct=90,type=file,value_format=u",
+		"type" : "file",
+		"uri" : "statistics:table:collection-9--8934111563282386122",
+		"LSM" : {
+			"bloom filter false positives" : 0,
+			"bloom filter hits" : 0,
+			"bloom filter misses" : 0,
+			"bloom filter pages evicted from cache" : 0,
+			"bloom filter pages read into cache" : 0,
+			"bloom filters in the LSM tree" : 0,
+			"chunks in the LSM tree" : 0,
+			"highest merge generation in the LSM tree" : 0,
+			"queries that could have benefited from a Bloom filter that did not exist" : 0,
+			"sleep for LSM checkpoint throttle" : 0,
+			"sleep for LSM merge throttle" : 0,
+			"total size of bloom filters" : 0
+		},
+		"block-manager" : {
+			"allocations requiring file extension" : 3,
+			"blocks allocated" : 3,
+			"blocks freed" : 0,
+			"checkpoint size" : 4096,
+			"file allocation unit size" : 4096,
+			"file bytes available for reuse" : 0,
+			"file magic number" : 120897,
+			"file major version number" : 1,
+			"file size in bytes" : 16384,
+			"minor version number" : 0
+		},
+		"btree" : {
+			"btree checkpoint generation" : 8,
+			"column-store fixed-size leaf pages" : 0,
+			"column-store internal pages" : 0,
+			"column-store variable-size RLE encoded values" : 0,
+			"column-store variable-size deleted values" : 0,
+			"column-store variable-size leaf pages" : 0,
+			"fixed-record size" : 0,
+			"maximum internal page key size" : 368,
+			"maximum internal page size" : 4096,
+			"maximum leaf page key size" : 2867,
+			"maximum leaf page size" : 32768,
+			"maximum leaf page value size" : 67108864,
+			"maximum tree depth" : 3,
+			"number of key/value pairs" : 0,
+			"overflow pages" : 0,
+			"pages rewritten by compaction" : 0,
+			"row-store internal pages" : 0,
+			"row-store leaf pages" : 0
+		},
+		"cache" : {
+			"bytes currently in the cache" : 883,
+			"bytes read into cache" : 0,
+			"bytes written from cache" : 125,
+			"checkpoint blocked page eviction" : 0,
+			"data source pages selected for eviction unable to be evicted" : 0,
+			"hazard pointer blocked page eviction" : 0,
+			"in-memory page passed criteria to be split" : 0,
+			"in-memory page splits" : 0,
+			"internal pages evicted" : 0,
+			"internal pages split during eviction" : 0,
+			"leaf pages split during eviction" : 0,
+			"modified pages evicted" : 0,
+			"overflow pages read into cache" : 0,
+			"overflow values cached in memory" : 0,
+			"page split during eviction deepened the tree" : 0,
+			"page written requiring lookaside records" : 0,
+			"pages read into cache" : 0,
+			"pages read into cache requiring lookaside entries" : 0,
+			"pages requested from the cache" : 3,
+			"pages written from cache" : 2,
+			"pages written requiring in-memory restoration" : 0,
+			"tracked dirty bytes in the cache" : 0,
+			"unmodified pages evicted" : 0
+		},
+		"cache_walk" : {
+			"Average difference between current eviction generation when the page was last considered" : 0,
+			"Average on-disk page image size seen" : 0,
+			"Clean pages currently in cache" : 0,
+			"Current eviction generation" : 0,
+			"Dirty pages currently in cache" : 0,
+			"Entries in the root page" : 0,
+			"Internal pages currently in cache" : 0,
+			"Leaf pages currently in cache" : 0,
+			"Maximum difference between current eviction generation when the page was last considered" : 0,
+			"Maximum page size seen" : 0,
+			"Minimum on-disk page image size seen" : 0,
+			"On-disk page image sizes smaller than a single allocation unit" : 0,
+			"Pages created in memory and never written" : 0,
+			"Pages currently queued for eviction" : 0,
+			"Pages that could not be queued for eviction" : 0,
+			"Refs skipped during cache traversal" : 0,
+			"Size of the root page" : 0,
+			"Total number of pages currently in cache" : 0
+		},
+		"compression" : {
+			"compressed pages read" : 0,
+			"compressed pages written" : 0,
+			"page written failed to compress" : 0,
+			"page written was too small to compress" : 2,
+			"raw compression call failed, additional data available" : 0,
+			"raw compression call failed, no additional data available" : 0,
+			"raw compression call succeeded" : 0
+		},
+		"cursor" : {
+			"bulk-loaded cursor-insert calls" : 0,
+			"create calls" : 1,
+			"cursor-insert key and value bytes inserted" : 32,
+			"cursor-remove key bytes removed" : 0,
+			"cursor-update value bytes updated" : 0,
+			"insert calls" : 1,
+			"next calls" : 4,
+			"prev calls" : 1,
+			"remove calls" : 0,
+			"reset calls" : 4,
+			"restarted searches" : 0,
+			"search calls" : 0,
+			"search near calls" : 0,
+			"truncate calls" : 0,
+			"update calls" : 0
+		},
+		"reconciliation" : {
+			"dictionary matches" : 0,
+			"fast-path pages deleted" : 0,
+			"internal page key bytes discarded using suffix compression" : 0,
+			"internal page multi-block writes" : 0,
+			"internal-page overflow keys" : 0,
+			"leaf page key bytes discarded using prefix compression" : 0,
+			"leaf page multi-block writes" : 0,
+			"leaf-page overflow keys" : 0,
+			"maximum blocks required for a page" : 0,
+			"overflow values written" : 0,
+			"page checksum matches" : 0,
+			"page reconciliation calls" : 2,
+			"page reconciliation calls for eviction" : 0,
+			"pages deleted" : 0
+		},
+		"session" : {
+			"object compaction" : 0,
+			"open cursor count" : 1
+		},
+		"transaction" : {
+			"update conflicts" : 0
+		}
+	},
+	"nindexes" : 2,
+	"totalIndexSize" : 0,
+	"indexSizes" : {
+		"_id_" : 0,
+		"a_1" : 0
+	},
+	"ok" : 1
+}
+
+** Indexes:
+[
+	{
+		"v" : 1,
+		"key" : {
+			"_id" : 1
+		},
+		"name" : "_id_",
+		"ns" : "my-db.my-coll"
+	},
+	{
+		"v" : 1,
+		"key" : {
+			"a" : 1
+		},
+		"name" : "a_1",
+		"ns" : "my-db.my-coll"
+	}
+]
+
+** Index Stats:
+{
+	"waitedMS" : NumberLong(0),
+	"cursor" : {
+		"id" : NumberLong(0),
+		"ns" : "my-db.my-coll",
+		"firstBatch" : [
+			{
+				"stats" : [
+					{
+						"accesses" : NumberLong(0),
+						"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+						"since" : "Wed, 18 Aug 2021 15:43:58 GMT"
+					}
+				],
+				"key" : {
+					"_id" : 1
+				}
+			},
+			{
+				"stats" : [
+					{
+						"accesses" : NumberLong(1),
+						"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+						"since" : "Wed, 18 Aug 2021 15:53:11 GMT"
+					}
+				],
+				"key" : {
+					"a" : 1
+				}
+			}
+		]
+	},
+	"ok" : 1
 }
