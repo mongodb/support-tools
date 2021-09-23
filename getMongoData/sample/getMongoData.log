@@ -9,16 +9,16 @@ getMongoData.js version 3.0.0
 "3.2.22"
 
 ** Shell hostname:
-"ec2-54-160-126-72.compute-1.amazonaws.com"
+"host1.example.com"
 
 ** db:
 "admin"
 
 ** Server status info:
 {
-	"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+	"host" : "host1.example.com:27887",
 	"advisoryHostFQDNs" : [
-		"ip-172-31-58-106.ec2.internal"
+		"host2.example.com"
 	],
 	"version" : "3.2.22",
 	"process" : "mongod",
@@ -132,14 +132,14 @@ getMongoData.js version 3.0.0
 	},
 	"repl" : {
 		"hosts" : [
-			"ec2-54-160-126-72.compute-1.amazonaws.com:27887"
+			"host1.example.com:27887"
 		],
 		"setName" : "my-rs",
 		"setVersion" : 1,
 		"ismaster" : true,
 		"secondary" : false,
-		"primary" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
-		"me" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+		"primary" : "host1.example.com:27887",
+		"me" : "host1.example.com:27887",
 		"electionId" : ObjectId("7fffffff0000000000000001"),
 		"rbid" : 1279865209
 	},
@@ -682,7 +682,7 @@ getMongoData.js version 3.0.0
 {
 	"system" : {
 		"currentTime" : ISODate("2021-08-18T15:54:35.929Z"),
-		"hostname" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+		"hostname" : "host1.example.com:27887",
 		"cpuAddrSize" : 64,
 		"memSizeMB" : 983,
 		"numCores" : 1,
@@ -712,9 +712,9 @@ getMongoData.js version 3.0.0
 	"argv" : [
 		"mongodb-linux-x86_64-amazon-3.2.22/bin/mongod",
 		"--dbpath",
-		"/home/ec2-user/mongodb/dbpath/",
+		"/home/my-user/mongodb/dbpath/",
 		"--logpath",
-		"/home/ec2-user/mongodb/logpath/mongodb.log",
+		"/home/my-user/mongodb/logpath/mongodb.log",
 		"--fork",
 		"--port",
 		"27887",
@@ -736,11 +736,11 @@ getMongoData.js version 3.0.0
 			"authorization" : "enabled"
 		},
 		"storage" : {
-			"dbPath" : "/home/ec2-user/mongodb/dbpath/"
+			"dbPath" : "/home/my-user/mongodb/dbpath/"
 		},
 		"systemLog" : {
 			"destination" : "file",
-			"path" : "/home/ec2-user/mongodb/logpath/mongodb.log"
+			"path" : "/home/my-user/mongodb/logpath/mongodb.log"
 		}
 	},
 	"ok" : 1
@@ -790,14 +790,14 @@ getMongoData.js version 3.0.0
 ** isMaster:
 {
 	"hosts" : [
-		"ec2-54-160-126-72.compute-1.amazonaws.com:27887"
+		"host1.example.com:27887"
 	],
 	"setName" : "my-rs",
 	"setVersion" : 1,
 	"ismaster" : true,
 	"secondary" : false,
-	"primary" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
-	"me" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+	"primary" : "host1.example.com:27887",
+	"me" : "host1.example.com:27887",
 	"electionId" : ObjectId("7fffffff0000000000000001"),
 	"maxBsonObjectSize" : 16777216,
 	"maxMessageSizeBytes" : 48000000,
@@ -818,7 +818,7 @@ getMongoData.js version 3.0.0
 	"members" : [
 		{
 			"_id" : 0,
-			"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+			"host" : "host1.example.com:27887",
 			"arbiterOnly" : false,
 			"buildIndexes" : true,
 			"hidden" : false,
@@ -856,7 +856,7 @@ getMongoData.js version 3.0.0
 	"members" : [
 		{
 			"_id" : 0,
-			"name" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+			"name" : "host1.example.com:27887",
 			"health" : 1,
 			"state" : 1,
 			"stateStr" : "PRIMARY",
@@ -1523,7 +1523,7 @@ getMongoData.js version 3.0.0
 				"stats" : [
 					{
 						"accesses" : NumberLong(0),
-						"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+						"host" : "host1.example.com:27887",
 						"since" : "Wed, 18 Aug 2021 15:41:54 GMT"
 					}
 				],
@@ -1906,7 +1906,7 @@ getMongoData.js version 3.0.0
 				"stats" : [
 					{
 						"accesses" : NumberLong(0),
-						"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+						"host" : "host1.example.com:27887",
 						"since" : "Wed, 18 Aug 2021 15:43:20 GMT"
 					}
 				],
@@ -2106,7 +2106,7 @@ getMongoData.js version 3.0.0
 				"stats" : [
 					{
 						"accesses" : NumberLong(0),
-						"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+						"host" : "host1.example.com:27887",
 						"since" : "Wed, 18 Aug 2021 15:43:20 GMT"
 					}
 				],
@@ -2310,7 +2310,7 @@ getMongoData.js version 3.0.0
 				"stats" : [
 					{
 						"accesses" : NumberLong(0),
-						"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+						"host" : "host1.example.com:27887",
 						"since" : "Wed, 18 Aug 2021 15:41:54 GMT"
 					}
 				],
@@ -2722,7 +2722,7 @@ getMongoData.js version 3.0.0
 				"stats" : [
 					{
 						"accesses" : NumberLong(0),
-						"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+						"host" : "host1.example.com:27887",
 						"since" : "Wed, 18 Aug 2021 15:43:58 GMT"
 					}
 				],
@@ -2734,7 +2734,7 @@ getMongoData.js version 3.0.0
 				"stats" : [
 					{
 						"accesses" : NumberLong(1),
-						"host" : "ec2-54-160-126-72.compute-1.amazonaws.com:27887",
+						"host" : "host1.example.com:27887",
 						"since" : "Wed, 18 Aug 2021 15:53:11 GMT"
 					}
 				],
