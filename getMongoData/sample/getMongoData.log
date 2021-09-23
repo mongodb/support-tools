@@ -23,29 +23,29 @@ getMongoData.js version 3.0.0
 	"version" : "3.2.22",
 	"process" : "mongod",
 	"pid" : NumberLong(5928),
-	"uptime" : 762,
-	"uptimeMillis" : NumberLong(762236),
-	"uptimeEstimate" : 750,
-	"localTime" : ISODate("2021-08-18T15:54:35.920Z"),
+	"uptime" : 3125866,
+	"uptimeMillis" : NumberLong("3125866266"),
+	"uptimeEstimate" : 3080291,
+	"localTime" : ISODate("2021-09-23T19:59:39.950Z"),
 	"asserts" : {
 		"regular" : 0,
 		"warning" : 0,
 		"msg" : 0,
-		"user" : 33,
+		"user" : 39,
 		"rollovers" : 0
 	},
 	"connections" : {
 		"current" : 1,
 		"available" : 52427,
-		"totalCreated" : NumberLong(17)
+		"totalCreated" : NumberLong(22)
 	},
 	"extra_info" : {
 		"note" : "fields vary by platform",
-		"heap_usage_bytes" : 63407800,
-		"page_faults" : 0
+		"heap_usage_bytes" : 63402448,
+		"page_faults" : 22
 	},
 	"globalLock" : {
-		"totalTime" : NumberLong(762234000),
+		"totalTime" : NumberLong("3125866264000"),
 		"currentQueue" : {
 			"total" : 0,
 			"readers" : 0,
@@ -60,8 +60,8 @@ getMongoData.js version 3.0.0
 	"locks" : {
 		"Global" : {
 			"acquireCount" : {
-				"r" : NumberLong(5979),
-				"w" : NumberLong(55),
+				"r" : NumberLong(20631099),
+				"w" : NumberLong(61),
 				"R" : NumberLong(1),
 				"W" : NumberLong(5)
 			},
@@ -76,10 +76,10 @@ getMongoData.js version 3.0.0
 		},
 		"Database" : {
 			"acquireCount" : {
-				"r" : NumberLong(2885),
+				"r" : NumberLong(10315428),
 				"w" : NumberLong(8),
-				"R" : NumberLong(74),
-				"W" : NumberLong(47)
+				"R" : NumberLong(88),
+				"W" : NumberLong(53)
 			},
 			"acquireWaitCount" : {
 				"r" : NumberLong(1),
@@ -92,7 +92,7 @@ getMongoData.js version 3.0.0
 		},
 		"Collection" : {
 			"acquireCount" : {
-				"r" : NumberLong(1889),
+				"r" : NumberLong(6668499),
 				"w" : NumberLong(1),
 				"W" : NumberLong(1)
 			}
@@ -104,23 +104,23 @@ getMongoData.js version 3.0.0
 		},
 		"oplog" : {
 			"acquireCount" : {
-				"r" : NumberLong(1024),
+				"r" : NumberLong(3959461),
 				"w" : NumberLong(7)
 			}
 		}
 	},
 	"network" : {
-		"bytesIn" : NumberLong(74810),
-		"bytesOut" : NumberLong(1484096),
-		"numRequests" : NumberLong(655)
+		"bytesIn" : NumberLong(91669),
+		"bytesOut" : NumberLong(1799576),
+		"numRequests" : NumberLong(802)
 	},
 	"opcounters" : {
 		"insert" : 1,
-		"query" : 23,
+		"query" : 27,
 		"update" : 0,
 		"delete" : 0,
 		"getmore" : 0,
-		"command" : 600
+		"command" : 737
 	},
 	"opcountersRepl" : {
 		"insert" : 0,
@@ -150,29 +150,29 @@ getMongoData.js version 3.0.0
 	},
 	"tcmalloc" : {
 		"generic" : {
-			"current_allocated_bytes" : 63409336,
-			"heap_size" : 68182016
+			"current_allocated_bytes" : 63403984,
+			"heap_size" : 74113024
 		},
 		"tcmalloc" : {
-			"pageheap_free_bytes" : 2039808,
-			"pageheap_unmapped_bytes" : 0,
+			"pageheap_free_bytes" : 2859008,
+			"pageheap_unmapped_bytes" : 245760,
 			"max_total_thread_cache_bytes" : NumberLong(1073741824),
-			"current_total_thread_cache_bytes" : 2126976,
-			"total_free_bytes" : 2732872,
-			"central_cache_free_bytes" : 605896,
-			"transfer_cache_free_bytes" : 0,
-			"thread_cache_free_bytes" : 2126976,
+			"current_total_thread_cache_bytes" : 2718984,
+			"total_free_bytes" : 7604272,
+			"central_cache_free_bytes" : 887816,
+			"transfer_cache_free_bytes" : 3997472,
+			"thread_cache_free_bytes" : 2718984,
 			"aggressive_memory_decommit" : 0,
-			"pageheap_committed_bytes" : 68182016,
-			"pageheap_scavenge_count" : 0,
-			"pageheap_commit_count" : 47,
-			"pageheap_total_commit_bytes" : 68182016,
-			"pageheap_decommit_count" : 0,
-			"pageheap_total_decommit_bytes" : 0,
-			"pageheap_reserve_count" : 47,
-			"pageheap_total_reserve_bytes" : 68182016,
+			"pageheap_committed_bytes" : 73867264,
+			"pageheap_scavenge_count" : 151,
+			"pageheap_commit_count" : 473,
+			"pageheap_total_commit_bytes" : 284762112,
+			"pageheap_decommit_count" : 151,
+			"pageheap_total_decommit_bytes" : 210894848,
+			"pageheap_reserve_count" : 52,
+			"pageheap_total_reserve_bytes" : 74113024,
 			"spinlock_total_delay_ns" : 0,
-			"formattedString" : "------------------------------------------------\nMALLOC:       63409784 (   60.5 MiB) Bytes in use by application\nMALLOC: +      2039808 (    1.9 MiB) Bytes in page heap freelist\nMALLOC: +       605896 (    0.6 MiB) Bytes in central cache freelist\nMALLOC: +            0 (    0.0 MiB) Bytes in transfer cache freelist\nMALLOC: +      2126528 (    2.0 MiB) Bytes in thread cache freelists\nMALLOC: +      1208536 (    1.2 MiB) Bytes in malloc metadata\nMALLOC:   ------------\nMALLOC: =     69390552 (   66.2 MiB) Actual memory used (physical + swap)\nMALLOC: +            0 (    0.0 MiB) Bytes released to OS (aka unmapped)\nMALLOC:   ------------\nMALLOC: =     69390552 (   66.2 MiB) Virtual address space used\nMALLOC:\nMALLOC:            402              Spans in use\nMALLOC:             58              Thread heaps in use\nMALLOC:           8192              Tcmalloc page size\n------------------------------------------------\nCall ReleaseFreeMemory() to release freelist memory to the OS (via madvise()).\nBytes released to the OS take up virtual address space but no physical memory.\n"
+			"formattedString" : "------------------------------------------------\nMALLOC:       63404432 (   60.5 MiB) Bytes in use by application\nMALLOC: +      2859008 (    2.7 MiB) Bytes in page heap freelist\nMALLOC: +       887816 (    0.8 MiB) Bytes in central cache freelist\nMALLOC: +      3997472 (    3.8 MiB) Bytes in transfer cache freelist\nMALLOC: +      2718536 (    2.6 MiB) Bytes in thread cache freelists\nMALLOC: +      1208536 (    1.2 MiB) Bytes in malloc metadata\nMALLOC:   ------------\nMALLOC: =     75075800 (   71.6 MiB) Actual memory used (physical + swap)\nMALLOC: +       245760 (    0.2 MiB) Bytes released to OS (aka unmapped)\nMALLOC:   ------------\nMALLOC: =     75321560 (   71.8 MiB) Virtual address space used\nMALLOC:\nMALLOC:            706              Spans in use\nMALLOC:             58              Thread heaps in use\nMALLOC:           8192              Tcmalloc page size\n------------------------------------------------\nCall ReleaseFreeMemory() to release freelist memory to the OS (via madvise()).\nBytes released to the OS take up virtual address space but no physical memory.\n"
 		}
 	},
 	"wiredTiger" : {
@@ -206,11 +206,11 @@ getMongoData.js version 3.0.0
 		},
 		"block-manager" : {
 			"blocks pre-loaded" : 11,
-			"blocks read" : 42,
-			"blocks written" : 115,
-			"bytes read" : 184320,
-			"bytes written" : 614400,
-			"bytes written for checkpoint" : 610304,
+			"blocks read" : 45,
+			"blocks written" : 127,
+			"bytes read" : 196608,
+			"bytes written" : 712704,
+			"bytes written for checkpoint" : 708608,
 			"mapped blocks read" : 0,
 			"mapped bytes read" : 0
 		},
@@ -223,10 +223,10 @@ getMongoData.js version 3.0.0
 			"bytes currently in the cache" : 140732,
 			"bytes not belonging to page images in the cache" : 122477,
 			"bytes read into cache" : 16903,
-			"bytes written from cache" : 187529,
+			"bytes written from cache" : 245589,
 			"checkpoint blocked page eviction" : 0,
-			"eviction calls to get a page" : 0,
-			"eviction calls to get a page found queue empty" : 0,
+			"eviction calls to get a page" : 14,
+			"eviction calls to get a page found queue empty" : 14,
 			"eviction calls to get a page found queue empty after locking" : 0,
 			"eviction currently operating in aggressive mode" : 0,
 			"eviction empty score" : 0,
@@ -274,44 +274,44 @@ getMongoData.js version 3.0.0
 			"pages queued for urgent eviction during walk" : 0,
 			"pages read into cache" : 21,
 			"pages read into cache requiring lookaside entries" : 0,
-			"pages requested from the cache" : 6359,
+			"pages requested from the cache" : 16622003,
 			"pages seen by eviction walk" : 0,
 			"pages selected for eviction unable to be evicted" : 0,
 			"pages walked for eviction" : 0,
-			"pages written from cache" : 63,
+			"pages written from cache" : 69,
 			"pages written requiring in-memory restoration" : 0,
 			"percentage overhead" : 8,
 			"tracked bytes belonging to internal pages in the cache" : 34984,
 			"tracked bytes belonging to leaf pages in the cache" : 105748,
-			"tracked dirty bytes in the cache" : 65484,
-			"tracked dirty pages in the cache" : 2,
+			"tracked dirty bytes in the cache" : 0,
+			"tracked dirty pages in the cache" : 0,
 			"unmodified pages evicted" : 0
 		},
 		"connection" : {
-			"auto adjusting condition resets" : 45,
-			"auto adjusting condition wait calls" : 4703,
+			"auto adjusting condition resets" : 55,
+			"auto adjusting condition wait calls" : 18752236,
 			"detected system time went backwards" : 0,
 			"files currently open" : 26,
-			"memory allocations" : 55686,
-			"memory frees" : 54007,
-			"memory re-allocations" : 13822,
-			"pthread mutex condition wait calls" : 12407,
-			"pthread mutex shared lock read-lock calls" : 7436,
-			"pthread mutex shared lock write-lock calls" : 891,
-			"total fsync I/Os" : 104,
-			"total read I/Os" : 1311,
-			"total write I/Os" : 171
+			"memory allocations" : 146935347,
+			"memory frees" : 146933563,
+			"memory re-allocations" : 53140929,
+			"pthread mutex condition wait calls" : 50328414,
+			"pthread mutex shared lock read-lock calls" : 25161562,
+			"pthread mutex shared lock write-lock calls" : 3125373,
+			"total fsync I/Os" : 113,
+			"total read I/Os" : 1318,
+			"total write I/Os" : 187
 		},
 		"cursor" : {
-			"cursor create calls" : 105,
-			"cursor insert calls" : 114,
-			"cursor next calls" : 101,
-			"cursor prev calls" : 23,
+			"cursor create calls" : 123,
+			"cursor insert calls" : 115,
+			"cursor next calls" : 121,
+			"cursor prev calls" : 25,
 			"cursor remove calls" : 1,
-			"cursor reset calls" : 6304,
+			"cursor reset calls" : 16621933,
 			"cursor restarted searches" : 0,
-			"cursor search calls" : 7042,
-			"cursor search near calls" : 54,
+			"cursor search calls" : 19747797,
+			"cursor search near calls" : 82,
 			"cursor update calls" : 0,
 			"truncate calls" : 0
 		},
@@ -319,21 +319,21 @@ getMongoData.js version 3.0.0
 			"connection data handles currently active" : 23,
 			"connection sweep candidate became referenced" : 0,
 			"connection sweep dhandles closed" : 0,
-			"connection sweep dhandles removed from hash list" : 13,
-			"connection sweep time-of-death sets" : 15,
-			"connection sweeps" : 76,
-			"session dhandles swept" : 0,
-			"session sweep attempts" : 41
+			"connection sweep dhandles removed from hash list" : 14,
+			"connection sweep time-of-death sets" : 34,
+			"connection sweeps" : 312581,
+			"session dhandles swept" : 9,
+			"session sweep attempts" : 43
 		},
 		"lock" : {
-			"checkpoint lock acquisitions" : 8,
+			"checkpoint lock acquisitions" : 10,
 			"checkpoint lock application thread wait time (usecs)" : 0,
 			"checkpoint lock internal thread wait time (usecs)" : 3,
-			"handle-list lock eviction thread wait time (usecs)" : 2569,
-			"metadata lock acquisitions" : 8,
+			"handle-list lock eviction thread wait time (usecs)" : 4633338,
+			"metadata lock acquisitions" : 10,
 			"metadata lock application thread wait time (usecs)" : 0,
-			"metadata lock internal thread wait time (usecs)" : 1,
-			"schema lock acquisitions" : 36,
+			"metadata lock internal thread wait time (usecs)" : 2,
+			"schema lock acquisitions" : 38,
 			"schema lock application thread wait time (usecs)" : 0,
 			"schema lock internal thread wait time (usecs)" : 0,
 			"table lock acquisitions" : 0,
@@ -342,55 +342,55 @@ getMongoData.js version 3.0.0
 		},
 		"log" : {
 			"busy returns attempting to switch slots" : 0,
-			"consolidated slot closures" : 32,
+			"consolidated slot closures" : 34,
 			"consolidated slot join active slot closed" : 0,
 			"consolidated slot join races" : 0,
-			"consolidated slot join transitions" : 32,
-			"consolidated slot joins" : 88,
+			"consolidated slot join transitions" : 34,
+			"consolidated slot joins" : 91,
 			"consolidated slot transitions unable to find free slot" : 0,
 			"consolidated slot unbuffered writes" : 0,
-			"log bytes of payload data" : 26821,
-			"log bytes written" : 33536,
+			"log bytes of payload data" : 27564,
+			"log bytes written" : 34560,
 			"log files manually zero-filled" : 0,
-			"log flush operations" : 7607,
-			"log force write operations" : 8428,
-			"log force write operations skipped" : 8419,
-			"log records compressed" : 34,
+			"log flush operations" : 31207927,
+			"log force write operations" : 34333239,
+			"log force write operations skipped" : 34333230,
+			"log records compressed" : 35,
 			"log records not compressed" : 25,
-			"log records too small to compress" : 29,
-			"log release advances write LSN" : 23,
+			"log records too small to compress" : 31,
+			"log release advances write LSN" : 25,
 			"log scan operations" : 5,
 			"log scan records requiring two reads" : 0,
 			"log server thread advances write LSN" : 9,
-			"log server thread write LSN walk skipped" : 1751,
-			"log sync operations" : 32,
-			"log sync time duration (usecs)" : 48252,
+			"log server thread write LSN walk skipped" : 3126382,
+			"log sync operations" : 34,
+			"log sync time duration (usecs)" : 50872,
 			"log sync_dir operations" : 1,
 			"log sync_dir time duration (usecs)" : 2,
-			"log write operations" : 88,
-			"logging bytes consolidated" : 33152,
+			"log write operations" : 91,
+			"logging bytes consolidated" : 34176,
 			"maximum log file size" : 104857600,
 			"number of pre-allocated log files to create" : 2,
 			"pre-allocated log files not ready and missed" : 1,
 			"pre-allocated log files prepared" : 2,
 			"pre-allocated log files used" : 0,
 			"records processed by log scan" : 10,
-			"total in-memory size of compressed records" : 43837,
+			"total in-memory size of compressed records" : 44746,
 			"total log buffer size" : 33554432,
-			"total size of compressed records" : 20947,
+			"total size of compressed records" : 21646,
 			"written slots coalesced" : 0,
 			"yields waiting for previous log file close" : 0
 		},
 		"reconciliation" : {
 			"fast-path pages deleted" : 0,
-			"page reconciliation calls" : 62,
+			"page reconciliation calls" : 68,
 			"page reconciliation calls for eviction" : 1,
 			"pages deleted" : 0,
 			"split bytes currently awaiting free" : 0,
 			"split objects currently awaiting free" : 0
 		},
 		"session" : {
-			"open cursor count" : 49,
+			"open cursor count" : 29,
 			"open session count" : 18,
 			"table alter failed calls" : 0,
 			"table alter successful calls" : 0,
@@ -429,26 +429,26 @@ getMongoData.js version 3.0.0
 		"transaction" : {
 			"number of named snapshots created" : 0,
 			"number of named snapshots dropped" : 0,
-			"transaction begins" : 1092,
+			"transaction begins" : 3282523,
 			"transaction checkpoint currently running" : 0,
-			"transaction checkpoint generation" : 8,
+			"transaction checkpoint generation" : 10,
 			"transaction checkpoint max time (msecs)" : 17,
 			"transaction checkpoint min time (msecs)" : 3,
-			"transaction checkpoint most recent time (msecs)" : 8,
+			"transaction checkpoint most recent time (msecs)" : 3,
 			"transaction checkpoint scrub dirty target" : 0,
 			"transaction checkpoint scrub time (msecs)" : 0,
-			"transaction checkpoint total time (msecs)" : 71,
-			"transaction checkpoints" : 8,
-			"transaction checkpoints skipped because database was clean" : 6,
+			"transaction checkpoint total time (msecs)" : 79,
+			"transaction checkpoints" : 10,
+			"transaction checkpoints skipped because database was clean" : 52089,
 			"transaction failures due to cache overflow" : 0,
-			"transaction fsync calls for checkpoint after allocating the transaction ID" : 8,
-			"transaction fsync duration for checkpoint after allocating the transaction ID (usecs)" : 3477,
+			"transaction fsync calls for checkpoint after allocating the transaction ID" : 10,
+			"transaction fsync duration for checkpoint after allocating the transaction ID (usecs)" : 0,
 			"transaction range of IDs currently pinned" : 0,
 			"transaction range of IDs currently pinned by a checkpoint" : 0,
 			"transaction range of IDs currently pinned by named snapshots" : 0,
 			"transaction sync calls" : 0,
 			"transactions committed" : 23,
-			"transactions rolled back" : 1069
+			"transactions rolled back" : 3282500
 		},
 		"concurrentTransactions" : {
 			"write" : {
@@ -466,8 +466,8 @@ getMongoData.js version 3.0.0
 	"writeBacksQueued" : false,
 	"mem" : {
 		"bits" : 64,
-		"resident" : 49,
-		"virtual" : 900,
+		"resident" : 52,
+		"virtual" : 905,
 		"supported" : true,
 		"mapped" : 0,
 		"mappedWithJournal" : 0
@@ -476,19 +476,19 @@ getMongoData.js version 3.0.0
 		"commands" : {
 			"aggregate" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(60)
+				"total" : NumberLong(72)
 			},
 			"buildInfo" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(14)
+				"total" : NumberLong(20)
 			},
 			"collStats" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(100)
+				"total" : NumberLong(120)
 			},
 			"count" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(10)
+				"total" : NumberLong(12)
 			},
 			"createIndexes" : {
 				"failed" : NumberLong(0),
@@ -496,23 +496,27 @@ getMongoData.js version 3.0.0
 			},
 			"dbStats" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(30)
+				"total" : NumberLong(36)
 			},
 			"find" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(22)
+				"total" : NumberLong(26)
 			},
 			"getCmdLineOpts" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(10)
+				"total" : NumberLong(13)
 			},
 			"getLog" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(3)
+				"total" : NumberLong(5)
+			},
+			"getParameter" : {
+				"failed" : NumberLong(0),
+				"total" : NumberLong(1)
 			},
 			"hostInfo" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(10)
+				"total" : NumberLong(12)
 			},
 			"insert" : {
 				"failed" : NumberLong(0),
@@ -520,31 +524,31 @@ getMongoData.js version 3.0.0
 			},
 			"isMaster" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(53)
+				"total" : NumberLong(67)
 			},
 			"listCollections" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(42)
+				"total" : NumberLong(50)
 			},
 			"listDatabases" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(13)
+				"total" : NumberLong(15)
 			},
 			"listIndexes" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(91)
+				"total" : NumberLong(109)
 			},
 			"profile" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(30)
+				"total" : NumberLong(36)
 			},
 			"replSetGetConfig" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(11)
+				"total" : NumberLong(13)
 			},
 			"replSetGetStatus" : {
 				"failed" : NumberLong(1),
-				"total" : NumberLong(47)
+				"total" : NumberLong(55)
 			},
 			"replSetInitiate" : {
 				"failed" : NumberLong(0),
@@ -552,19 +556,19 @@ getMongoData.js version 3.0.0
 			},
 			"saslContinue" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(30)
+				"total" : NumberLong(42)
 			},
 			"saslStart" : {
 				"failed" : NumberLong(1),
-				"total" : NumberLong(16)
+				"total" : NumberLong(22)
 			},
 			"serverStatus" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(11)
+				"total" : NumberLong(13)
 			},
 			"whatsmyuri" : {
 				"failed" : NumberLong(0),
-				"total" : NumberLong(17)
+				"total" : NumberLong(22)
 			}
 		},
 		"cursor" : {
@@ -578,7 +582,7 @@ getMongoData.js version 3.0.0
 		"document" : {
 			"deleted" : NumberLong(0),
 			"inserted" : NumberLong(2),
-			"returned" : NumberLong(21),
+			"returned" : NumberLong(25),
 			"updated" : NumberLong(0)
 		},
 		"getLastError" : {
@@ -596,7 +600,7 @@ getMongoData.js version 3.0.0
 		},
 		"queryExecutor" : {
 			"scanned" : NumberLong(0),
-			"scannedObjects" : NumberLong(21)
+			"scannedObjects" : NumberLong(25)
 		},
 		"record" : {
 			"moves" : NumberLong(0)
@@ -607,12 +611,12 @@ getMongoData.js version 3.0.0
 					"eventCreated" : 7,
 					"eventWait" : 7,
 					"cancels" : 2,
-					"waits" : 1550,
+					"waits" : 6251782,
 					"scheduledNetCmd" : 0,
 					"scheduledDBWork" : 1,
 					"scheduledXclWork" : 0,
 					"scheduledWorkAt" : 2,
-					"scheduledWork" : 1554,
+					"scheduledWork" : 6251786,
 					"schedulingFailures" : 0
 				},
 				"queues" : {
@@ -672,7 +676,7 @@ getMongoData.js version 3.0.0
 		},
 		"ttl" : {
 			"deletedDocuments" : NumberLong(0),
-			"passes" : NumberLong(11)
+			"passes" : NumberLong(52096)
 		}
 	},
 	"ok" : 1
@@ -681,7 +685,7 @@ getMongoData.js version 3.0.0
 ** Host info:
 {
 	"system" : {
-		"currentTime" : ISODate("2021-08-18T15:54:35.929Z"),
+		"currentTime" : ISODate("2021-09-23T19:59:39.959Z"),
 		"hostname" : "host1.example.com:27887",
 		"cpuAddrSize" : 64,
 		"memSizeMB" : 983,
@@ -787,6 +791,162 @@ getMongoData.js version 3.0.0
 	"ok" : 1
 }
 
+** Server parameters:
+{
+	"ShardingTaskExecutorPoolHostTimeoutMS" : -1,
+	"ShardingTaskExecutorPoolMaxConnecting" : -1,
+	"ShardingTaskExecutorPoolMaxSize" : -1,
+	"ShardingTaskExecutorPoolMinSize" : 1,
+	"ShardingTaskExecutorPoolRefreshRequirementMS" : -1,
+	"ShardingTaskExecutorPoolRefreshTimeoutMS" : -1,
+	"allowUnsafeRenamesDuringInitialSync" : false,
+	"authSchemaVersion" : 5,
+	"authenticationMechanisms" : [
+		"MONGODB-CR",
+		"MONGODB-X509",
+		"SCRAM-SHA-1"
+	],
+	"clusterAuthMode" : "undefined",
+	"connPoolMaxConnsPerHost" : 200,
+	"connPoolMaxShardedConnsPerHost" : 200,
+	"cursorTimeoutMillis" : 600000,
+	"diagnosticDataCollectionDirectorySizeMB" : 200,
+	"diagnosticDataCollectionEnabled" : true,
+	"diagnosticDataCollectionFileSizeMB" : 10,
+	"diagnosticDataCollectionPeriodMillis" : 1000,
+	"diagnosticDataCollectionSamplesPerChunk" : 300,
+	"diagnosticDataCollectionSamplesPerInterimUpdate" : 10,
+	"disableJavaScriptJIT" : false,
+	"disableNonSSLConnectionLogging" : false,
+	"enableCollectionLocking" : true,
+	"enableLocalhostAuthBypass" : true,
+	"enableReplSnapshotThread" : false,
+	"enableTestCommands" : false,
+	"failIndexKeyTooLong" : true,
+	"heapProfilingEnabled" : false,
+	"heapProfilingSampleIntervalBytes" : NumberLong(262144),
+	"internalAggregationLookupBatchSize" : 101,
+	"internalGeoNearQuery2DMaxCoveringCells" : 16,
+	"internalGeoPredicateQuery2DMaxCoveringCells" : 16,
+	"internalQueryCacheEvictionRatio" : 10,
+	"internalQueryCacheFeedbacksStored" : 20,
+	"internalQueryCacheSize" : 5000,
+	"internalQueryEnumerationMaxIntersectPerAnd" : 3,
+	"internalQueryEnumerationMaxOrSolutions" : 10,
+	"internalQueryExecMaxBlockingSortBytes" : 33554432,
+	"internalQueryExecYieldIterations" : 128,
+	"internalQueryExecYieldPeriodMS" : 10,
+	"internalQueryForceIntersectionPlans" : false,
+	"internalQueryMaxScansToExplode" : 200,
+	"internalQueryPlanEvaluationCollFraction" : 0.3,
+	"internalQueryPlanEvaluationMaxResults" : 101,
+	"internalQueryPlanEvaluationWorks" : 10000,
+	"internalQueryPlanOrChildrenIndependently" : true,
+	"internalQueryPlannerEnableHashIntersection" : false,
+	"internalQueryPlannerEnableIndexIntersection" : true,
+	"internalQueryPlannerMaxIndexedSolutions" : 64,
+	"internalQueryS2GeoCoarsestLevel" : 0,
+	"internalQueryS2GeoFinestLevel" : 23,
+	"internalQueryS2GeoMaxCells" : 20,
+	"internalSCCAllowFastestAuthConfigReads" : false,
+	"internalSCCAllowFastestMetadataConfigReads" : false,
+	"javascriptProtection" : false,
+	"journalCommitInterval" : 0,
+	"logComponentVerbosity" : {
+		"verbosity" : 0,
+		"accessControl" : {
+			"verbosity" : -1
+		},
+		"command" : {
+			"verbosity" : -1
+		},
+		"control" : {
+			"verbosity" : -1
+		},
+		"executor" : {
+			"verbosity" : -1
+		},
+		"geo" : {
+			"verbosity" : -1
+		},
+		"index" : {
+			"verbosity" : -1
+		},
+		"network" : {
+			"verbosity" : -1,
+			"asio" : {
+				"verbosity" : -1
+			},
+			"bridge" : {
+				"verbosity" : -1
+			}
+		},
+		"query" : {
+			"verbosity" : -1
+		},
+		"replication" : {
+			"verbosity" : -1
+		},
+		"sharding" : {
+			"verbosity" : -1
+		},
+		"storage" : {
+			"verbosity" : -1,
+			"journal" : {
+				"verbosity" : -1
+			}
+		},
+		"write" : {
+			"verbosity" : -1
+		},
+		"ftdc" : {
+			"verbosity" : -1
+		}
+	},
+	"logLevel" : 0,
+	"logUserIds" : false,
+	"maxIndexBuildMemoryUsageMegabytes" : 500,
+	"maxSyncSourceLagSecs" : 30,
+	"newCollectionsUsePowerOf2Sizes" : true,
+	"notablescan" : false,
+	"opensslCipherConfig" : "",
+	"priorityTakeoverFreshnessWindowSeconds" : 2,
+	"queueForMigrationCommit" : true,
+	"quiet" : false,
+	"recoverShardingState" : true,
+	"replApplyBatchSize" : 1,
+	"replElectionTimeoutOffsetLimitFraction" : 0.15,
+	"replIndexPrefetch" : "all",
+	"replMonitorMaxFailedChecks" : 30,
+	"replSnapshotThreadThrottleMicros" : 1000,
+	"replWriterThreadCount" : 16,
+	"saslHostName" : "host1.example.com",
+	"saslServiceName" : "mongodb",
+	"saslauthdPath" : "",
+	"scramIterationCount" : 10000,
+	"scriptingEngineInterruptIntervalMS" : 1000,
+	"skipCorruptDocumentsWhenCloning" : false,
+	"skipShardingConfigurationChecks" : false,
+	"sslMode" : "disabled",
+	"startupAuthSchemaValidation" : true,
+	"syncdelay" : 60,
+	"taskExecutorPoolSize" : 0,
+	"tcmallocAggressiveMemoryDecommit" : 0,
+	"tcmallocEnableMarkThreadIdle" : true,
+	"tcmallocMaxTotalThreadCacheBytes" : NumberLong(1073741824),
+	"testingSnapshotBehaviorInIsolation" : false,
+	"textSearchEnabled" : true,
+	"timeOutMonitoringReplicaSets" : false,
+	"traceExceptions" : false,
+	"traceWriteConflictExceptions" : false,
+	"ttlMonitorEnabled" : true,
+	"ttlMonitorSleepSecs" : 60,
+	"wiredTigerConcurrentReadTransactions" : 128,
+	"wiredTigerConcurrentWriteTransactions" : 128,
+	"wiredTigerEngineRuntimeConfig" : "",
+	"ok" : 1
+}
+
 ** isMaster:
 {
 	"hosts" : [
@@ -802,7 +962,7 @@ getMongoData.js version 3.0.0
 	"maxBsonObjectSize" : 16777216,
 	"maxMessageSizeBytes" : 48000000,
 	"maxWriteBatchSize" : 1000,
-	"localTime" : ISODate("2021-08-18T15:54:35.930Z"),
+	"localTime" : ISODate("2021-09-23T19:59:39.962Z"),
 	"maxWireVersion" : 4,
 	"minWireVersion" : 0,
 	"ok" : 1
@@ -849,7 +1009,7 @@ getMongoData.js version 3.0.0
 ** Replica status:
 {
 	"set" : "my-rs",
-	"date" : ISODate("2021-08-18T15:54:35.932Z"),
+	"date" : ISODate("2021-09-23T19:59:39.963Z"),
 	"myState" : 1,
 	"term" : NumberLong(1),
 	"heartbeatIntervalMillis" : NumberLong(2000),
@@ -860,7 +1020,7 @@ getMongoData.js version 3.0.0
 			"health" : 1,
 			"state" : 1,
 			"stateStr" : "PRIMARY",
-			"uptime" : 762,
+			"uptime" : 3125866,
 			"optime" : {
 				"ts" : Timestamp(1629301991, 1),
 				"t" : NumberLong(1)
@@ -883,7 +1043,7 @@ getMongoData.js version 3.0.0
 	"timeDiffHours" : 0.16,
 	"tFirst" : "Wed Aug 18 2021 15:43:20 GMT+0000 (UTC)",
 	"tLast" : "Wed Aug 18 2021 15:53:11 GMT+0000 (UTC)",
-	"now" : "Wed Aug 18 2021 15:54:35 GMT+0000 (UTC)"
+	"now" : "Thu Sep 23 2021 19:59:39 GMT+0000 (UTC)"
 }
 
 ** Replica slave info:
@@ -974,7 +1134,7 @@ getMongoData.js version 3.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 8,
+			"btree checkpoint generation" : 10,
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
 			"column-store variable-size RLE encoded values" : 0,
@@ -1012,7 +1172,7 @@ getMongoData.js version 3.0.0
 			"page written requiring lookaside records" : 0,
 			"pages read into cache" : 2,
 			"pages read into cache requiring lookaside entries" : 0,
-			"pages requested from the cache" : 63,
+			"pages requested from the cache" : 83,
 			"pages written from cache" : 0,
 			"pages written requiring in-memory restoration" : 0,
 			"tracked dirty bytes in the cache" : 0,
@@ -1049,7 +1209,7 @@ getMongoData.js version 3.0.0
 		},
 		"cursor" : {
 			"bulk-loaded cursor-insert calls" : 0,
-			"create calls" : 1,
+			"create calls" : 2,
 			"cursor-insert key and value bytes inserted" : 0,
 			"cursor-remove key bytes removed" : 0,
 			"cursor-update value bytes updated" : 0,
@@ -1057,9 +1217,9 @@ getMongoData.js version 3.0.0
 			"next calls" : 1,
 			"prev calls" : 1,
 			"remove calls" : 0,
-			"reset calls" : 63,
+			"reset calls" : 83,
 			"restarted searches" : 0,
-			"search calls" : 61,
+			"search calls" : 81,
 			"search near calls" : 0,
 			"truncate calls" : 0,
 			"update calls" : 0
@@ -1168,7 +1328,7 @@ getMongoData.js version 3.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 8,
+			"btree checkpoint generation" : 10,
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
 			"column-store variable-size RLE encoded values" : 0,
@@ -1276,7 +1436,7 @@ getMongoData.js version 3.0.0
 		},
 		"session" : {
 			"object compaction" : 0,
-			"open cursor count" : 1
+			"open cursor count" : 0
 		},
 		"transaction" : {
 			"update conflicts" : 0
@@ -1378,7 +1538,7 @@ getMongoData.js version 3.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 8,
+			"btree checkpoint generation" : 10,
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
 			"column-store variable-size RLE encoded values" : 0,
@@ -1486,7 +1646,7 @@ getMongoData.js version 3.0.0
 		},
 		"session" : {
 			"object compaction" : 0,
-			"open cursor count" : 2
+			"open cursor count" : 0
 		},
 		"transaction" : {
 			"update conflicts" : 0
@@ -1583,7 +1743,7 @@ getMongoData.js version 3.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 8,
+			"btree checkpoint generation" : 10,
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
 			"column-store variable-size RLE encoded values" : 0,
@@ -1621,7 +1781,7 @@ getMongoData.js version 3.0.0
 			"page written requiring lookaside records" : 0,
 			"pages read into cache" : 0,
 			"pages read into cache requiring lookaside entries" : 0,
-			"pages requested from the cache" : 29,
+			"pages requested from the cache" : 33,
 			"pages written from cache" : 6,
 			"pages written requiring in-memory restoration" : 0,
 			"tracked dirty bytes in the cache" : 0,
@@ -1658,15 +1818,15 @@ getMongoData.js version 3.0.0
 		},
 		"cursor" : {
 			"bulk-loaded cursor-insert calls" : 0,
-			"create calls" : 2,
+			"create calls" : 3,
 			"cursor-insert key and value bytes inserted" : 590,
 			"cursor-remove key bytes removed" : 0,
 			"cursor-update value bytes updated" : 0,
 			"insert calls" : 5,
-			"next calls" : 12,
-			"prev calls" : 14,
+			"next calls" : 14,
+			"prev calls" : 16,
 			"remove calls" : 0,
-			"reset calls" : 31,
+			"reset calls" : 35,
 			"restarted searches" : 0,
 			"search calls" : 0,
 			"search near calls" : 0,
@@ -1691,7 +1851,7 @@ getMongoData.js version 3.0.0
 		},
 		"session" : {
 			"object compaction" : 0,
-			"open cursor count" : 2
+			"open cursor count" : 1
 		},
 		"transaction" : {
 			"update conflicts" : 0
@@ -1761,7 +1921,7 @@ getMongoData.js version 3.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 8,
+			"btree checkpoint generation" : 10,
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
 			"column-store variable-size RLE encoded values" : 0,
@@ -1869,7 +2029,7 @@ getMongoData.js version 3.0.0
 		},
 		"session" : {
 			"object compaction" : 0,
-			"open cursor count" : 2
+			"open cursor count" : 0
 		},
 		"transaction" : {
 			"update conflicts" : 0
@@ -1961,7 +2121,7 @@ getMongoData.js version 3.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 8,
+			"btree checkpoint generation" : 10,
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
 			"column-store variable-size RLE encoded values" : 0,
@@ -2069,7 +2229,7 @@ getMongoData.js version 3.0.0
 		},
 		"session" : {
 			"object compaction" : 0,
-			"open cursor count" : 2
+			"open cursor count" : 0
 		},
 		"transaction" : {
 			"update conflicts" : 0
@@ -2165,7 +2325,7 @@ getMongoData.js version 3.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 8,
+			"btree checkpoint generation" : 10,
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
 			"column-store variable-size RLE encoded values" : 0,
@@ -2273,7 +2433,7 @@ getMongoData.js version 3.0.0
 		},
 		"session" : {
 			"object compaction" : 0,
-			"open cursor count" : 1
+			"open cursor count" : 0
 		},
 		"transaction" : {
 			"update conflicts" : 0
@@ -2365,7 +2525,7 @@ getMongoData.js version 3.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 8,
+			"btree checkpoint generation" : 10,
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
 			"column-store variable-size RLE encoded values" : 0,
@@ -2473,7 +2633,7 @@ getMongoData.js version 3.0.0
 		},
 		"session" : {
 			"object compaction" : 0,
-			"open cursor count" : 2
+			"open cursor count" : 0
 		},
 		"transaction" : {
 			"update conflicts" : 0
@@ -2568,7 +2728,7 @@ getMongoData.js version 3.0.0
 			"minor version number" : 0
 		},
 		"btree" : {
-			"btree checkpoint generation" : 8,
+			"btree checkpoint generation" : 10,
 			"column-store fixed-size leaf pages" : 0,
 			"column-store internal pages" : 0,
 			"column-store variable-size RLE encoded values" : 0,
@@ -2676,7 +2836,7 @@ getMongoData.js version 3.0.0
 		},
 		"session" : {
 			"object compaction" : 0,
-			"open cursor count" : 1
+			"open cursor count" : 0
 		},
 		"transaction" : {
 			"update conflicts" : 0
