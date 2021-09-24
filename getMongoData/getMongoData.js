@@ -240,6 +240,7 @@ function printServerInfo() {
     printInfo('Host info',          function(){return db.hostInfo()}, section);
     printInfo('Command line info',  function(){return db.serverCmdLineOpts()}, section);
     printInfo('Server build info',  function(){return db.serverBuildInfo()}, section);
+    printInfo('Server parameters',  function(){return db.adminCommand({getParameter: '*'})}, section);
 }
 
 function printReplicaSetInfo() {
