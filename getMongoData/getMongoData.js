@@ -118,9 +118,17 @@ function printShardInfo(){
     section = "shard_info";
     var configDB = db.getSiblingDB("config");
 
-    printInfo("Sharding version",
-              function(){return db.getSiblingDB("config").getCollection("version").findOne()},
-              section);
+    printInfo("Sharding version", function(){
+        return configDB.getCollection('version').findOne();
+    }, section);
+
+    printInfo("Sharding settings", function(){
+        return configDB.settings.find().sort({ _id : 1 }).toArray();
+    }, section);
+
+    printInfo("Routers", function(){
+        return configDB.mongos.find().sort({ _id : 1 }).toArray();
+    }, section);
 
     printInfo("Shards", function(){
         return configDB.shards.find().sort({ _id : 1 }).toArray();
