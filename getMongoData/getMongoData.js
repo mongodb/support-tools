@@ -215,8 +215,9 @@ function printInfo(message, command, section, printCapture) {
         if (! _printJSON) {
             print("Error running '" + command + "':");
             print(err);
+        } else {
+	    throw("Error running '" + command + "': " + err);
         }
-        result = null
     }
     endTime = new Date();
     doc = {};
@@ -267,7 +268,14 @@ function printDataInfo(isMongoS) {
     if (dbs.databases) {
         dbs.databases.forEach(function(mydb) {
             var collections = printInfo("List of collections for database '"+ mydb.name +"'",
-                                        function(){return db.getSiblingDB(mydb.name).getCollectionNames()}, section);
+                                        function(){
+					    // Filter out the collections with the "system." prefix in the system databases
+					    if (mydb.name == "config" || mydb.name == "local" || mydb.name == "admin") {
+						return db.getSiblingDB(mydb.name).getCollectionNames().filter(function (str) { return str.indexOf("system.") != 0; });
+					    } else {
+						return db.getSiblingDB(mydb.name).getCollectionNames();
+					    }
+					}, section);
 
             printInfo('Database stats (MB)',
                       function(){return db.getSiblingDB(mydb.name).stats(1024*1024)}, section);
