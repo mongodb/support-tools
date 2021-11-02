@@ -165,17 +165,19 @@ function printShardInfo(){
                                     collDoc['distribution'].push(chunkDistDoc);
                                 } );
 
-                                collDoc['chunks'] = [];
-                                configDB.chunks.find( { "ns" : coll._id } ).sort( { min : 1 } ).forEach(
-                                    function(chunk) {
-                                        chunkDoc = {}
-                                        chunkDoc['min'] = chunk.min;
-                                        chunkDoc['max'] = chunk.max;
-                                        chunkDoc['shard'] = chunk.shard;
-                                        chunkDoc['jumbo'] = chunk.jumbo ? true : false;
-                                        collDoc['chunks'].push(chunkDoc);
-                                    }
-                                );
+				if (_printChunkDetails) {
+                                    collDoc['chunks'] = [];
+                                    configDB.chunks.find( { "ns" : coll._id } ).sort( { min : 1 } ).forEach(
+					function(chunk) {
+                                            chunkDoc = {}
+                                            chunkDoc['min'] = chunk.min;
+                                            chunkDoc['max'] = chunk.max;
+                                            chunkDoc['shard'] = chunk.shard;
+                                            chunkDoc['jumbo'] = chunk.jumbo ? true : false;
+                                            collDoc['chunks'].push(chunkDoc);
+					}
+                                    );
+				}
 
                                 collDoc['tags'] = [];
                                 configDB.tags.find( { ns : coll._id } ).sort( { min : 1 } ).forEach(
@@ -360,6 +362,7 @@ function printShardOrReplicaSetInfo() {
 }
 
 if (typeof _printJSON === "undefined") var _printJSON = false;
+if (typeof _printChunkDetails === "undefined") var _printChunkDetails = false;
 if (typeof _ref === "undefined") var _ref = null;
 
 // Limit the number of collections this script gathers stats on in order
