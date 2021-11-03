@@ -27,7 +27,7 @@ as demonstrated for the local execution:
 
     mongo --quiet --norc --eval "var _printJSON=true; var _ref = 'CS-XXXXX'" getMongoData.js > getMongoData-output.json
 
-To have the output include the full details of chunk distribution across shards, include `var _printChunkDetails=true` in the `--eval` option.
+For sharded clusters to have the output include the full details of chunk distribution across shards, include `var _printChunkDetails=true` in the `--eval` option.
 
 ### License
 
