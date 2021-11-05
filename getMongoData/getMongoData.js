@@ -151,6 +151,7 @@ function printShardInfo(){
                                 collDoc = {};
                                 collDoc['_id'] = coll._id;
                                 collDoc['key'] = coll.key;
+                                collDoc['unique'] = coll.unique;
 
                                 var res = configDB.chunks.aggregate(
                                     { "$match": { ns: coll._id } },
