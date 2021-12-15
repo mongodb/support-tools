@@ -43,7 +43,7 @@ distribution across shards, include `var _printChunkDetails=true` in the
 against either a `mongod` or a `mongos`.
 
 Minimum required permissions (see [MongoDB Built-In Roles](https://docs.mongodb.com/manual/reference/built-in-roles)):
-* A database user with the `readAnyDatabase` and `clusterMonitor` roles. These are both read-only roles.
+* A database user with the `backup`, `readAnyDatabase`, and `clusterMonitor` roles. These are essentially read-only roles except the [backup](https://docs.mongodb.com/manual/reference/built-in-roles/#backup-and-restoration-roles) role allows writes to two MongoDB system collections - `admin.mms.backup` and `config.settings`. The `backup` role is necessary in order for the script to output the number of database users and user-defined roles configured.
 * A root/admin database user may be used as well.
 
 Example command for creating a database user with the minimum required permissions:
@@ -52,7 +52,7 @@ Example command for creating a database user with the minimum required permissio
 db.getSiblingDB("admin").createUser({
     user: "ADMIN_USER",
     pwd: "ADMIN_PASSWORD",
-    roles: [ "readAnyDatabase", "clusterMonitor" ]
+    roles: [ "backup", "readAnyDatabase", "clusterMonitor" ]
   })
 ```
 
@@ -70,6 +70,10 @@ The most notable methods, commands, and aggregations that this script runs are l
 * [rs.status()](https://docs.mongodb.com/manual/reference/method/rs.status/)
 * [db.getReplicationInfo()](https://docs.mongodb.com/manual/reference/method/db.getReplicationInfo)
 * [db.printSecondaryReplicationInfo()](https://docs.mongodb.com/manual/reference/method/db.printSecondaryReplicationInfo)
+
+**Database Users and User-Defined Roles (the count only)**
+* [db.system.users.count()](https://docs.mongodb.com/manual/reference/system-users-collection/) in the "admin" database
+* [db.system.roles.count()](https://docs.mongodb.com/manual/reference/system-roles-collection/) in the "admin" databases
 
 **Database, Collection, and Index Config & Stats**
 * [listDatabases](https://docs.mongodb.com/manual/reference/command/listDatabases/)
