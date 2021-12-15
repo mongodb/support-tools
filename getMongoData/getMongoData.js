@@ -263,6 +263,13 @@ function printReplicaSetInfo() {
     printInfo('Replica slave info', function(){return db.printSlaveReplicationInfo()}, section, true);
 }
 
+function printUserAuthInfo() {
+  section = "user_auth_info";
+  db = db.getSiblingDB('admin');
+  printInfo('Database user count', function(){return db.system.users.count()}, section);
+  printInfo('Custom role count', function(){return db.system.roles.count()}, section);
+}
+
 function printDataInfo(isMongoS) {
     section = "data_info";
     var dbs = printInfo('List of databases', function(){return db.getMongo().getDBs()}, section);
@@ -386,6 +393,7 @@ var _host = hostname();
 try {
     printServerInfo();
     var isMongoS = printShardOrReplicaSetInfo();
+    printUserAuthInfo();
     printDataInfo(isMongoS);
     if (_printJSON) print(JSON.stringify(_output, jsonStringifyReplacer, 4));
 } catch(e) {
