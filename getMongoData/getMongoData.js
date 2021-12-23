@@ -202,9 +202,9 @@ function printShardInfo(){
     }, section);
 }
 
-function printInfo(message, command, section, printCapture) {
+function printInfo(message, command, section, printCapture, commandParameters) {
     var result = false;
-    printCapture = (printCapture === undefined ? false: true);
+    if (typeof printCapture === "undefined") var printCapture = false;
     if (! _printJSON) print("\n** " + message + ":");
     startTime = new Date();
     try {
@@ -238,6 +238,9 @@ function printInfo(message, command, section, printCapture) {
     }
     doc['ts'] = {'start': startTime, 'end': endTime};
     doc['version'] = _version;
+    if (typeof commandParameters !== undefined) {
+      doc['commandParameters'] = commandParameters
+    }
     _output.push(doc);
     if (! _printJSON) printjson(result);
     return result;
@@ -290,8 +293,8 @@ function printDataInfo(isMongoS) {
             printInfo('Database stats (MB)',
                       function(){return db.getSiblingDB(mydb.name).stats(1024*1024)}, section);
             if (!isMongoS) {
-                printInfo('Database profiler',
-                          function(){return db.getSiblingDB(mydb.name).getProfilingStatus()}, section);
+                printInfo("Database profiler for database '"+ mydb.name + "'",
+                          function(){return db.getSiblingDB(mydb.name).getProfilingStatus()}, section, false, {"database": mydb.name})
             }
 
             if (collections) {
