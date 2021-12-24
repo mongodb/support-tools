@@ -200,6 +200,20 @@ function printShardInfo(){
         );
         return ret;
     }, section);
+
+    printInfo('Balancer status', function(){return db.adminCommand({balancerStatus: 1})}, section);
+
+    if (sh.getRecentMigrations) { // Function does not exist in older shell versions (2.6 and below)
+        printInfo('Recent chunk migrations', function(){return sh.getRecentMigrations()}, section);
+    } else {
+	if (! _printJSON) print("\n** Recent chunk migrations: n/a")
+    }
+
+    if (sh.getRecentFailedRounds) { // Function does not exist in older shell versions (2.6 and below)
+        printInfo('Recent failed balancer rounds', function(){return sh.getRecentFailedRounds()}, section);
+    } else {
+	if (! _printJSON) print("\n** Recent failed balancer rounds: n/a")
+    }
 }
 
 function printInfo(message, command, section, printCapture, commandParameters) {
