@@ -308,7 +308,7 @@ function printDataInfo(isMongoS) {
                       function(){return db.getSiblingDB(mydb.name).stats(1024*1024)}, section);
             if (!isMongoS) {
                 printInfo("Database profiler for database '"+ mydb.name + "'",
-                          function(){return db.getSiblingDB(mydb.name).getProfilingStatus()}, section, false, {"database": mydb.name})
+                          function(){return db.getSiblingDB(mydb.name).getProfilingStatus()}, section, false, {"db": mydb.name})
             }
 
             if (collections) {
@@ -324,7 +324,7 @@ function printDataInfo(isMongoS) {
                                   function(){return db.getSiblingDB(mydb.name).getCollection(col).getShardDistribution()}, section, true);
                     }
                     printInfo('Indexes',
-                              function(){return db.getSiblingDB(mydb.name).getCollection(col).getIndexes()}, section);
+                              function(){return db.getSiblingDB(mydb.name).getCollection(col).getIndexes()}, section, false, {"db": mydb.name, "collection": col});
                     printInfo('Index Stats',
                               function(){
                                 var res = db.getSiblingDB(mydb.name).runCommand( {
