@@ -200,11 +200,25 @@ function printShardInfo(){
         );
         return ret;
     }, section);
+
+    printInfo('Balancer status', function(){return db.adminCommand({balancerStatus: 1})}, section);
+
+    if (sh.getRecentMigrations) { // Function does not exist in older shell versions (2.6 and below)
+        printInfo('Recent chunk migrations', function(){return sh.getRecentMigrations()}, section);
+    } else {
+	if (! _printJSON) print("\n** Recent chunk migrations: n/a")
+    }
+
+    if (sh.getRecentFailedRounds) { // Function does not exist in older shell versions (2.6 and below)
+        printInfo('Recent failed balancer rounds', function(){return sh.getRecentFailedRounds()}, section);
+    } else {
+	if (! _printJSON) print("\n** Recent failed balancer rounds: n/a")
+    }
 }
 
-function printInfo(message, command, section, printCapture) {
+function printInfo(message, command, section, printCapture, commandParameters) {
     var result = false;
-    printCapture = (printCapture === undefined ? false: true);
+    if (typeof printCapture === "undefined") var printCapture = false;
     if (! _printJSON) print("\n** " + message + ":");
     startTime = new Date();
     try {
@@ -238,6 +252,9 @@ function printInfo(message, command, section, printCapture) {
     }
     doc['ts'] = {'start': startTime, 'end': endTime};
     doc['version'] = _version;
+    if (typeof commandParameters !== undefined) {
+      doc['commandParameters'] = commandParameters
+    }
     _output.push(doc);
     if (! _printJSON) printjson(result);
     return result;
@@ -290,8 +307,8 @@ function printDataInfo(isMongoS) {
             printInfo('Database stats (MB)',
                       function(){return db.getSiblingDB(mydb.name).stats(1024*1024)}, section);
             if (!isMongoS) {
-                printInfo('Database profiler',
-                          function(){return db.getSiblingDB(mydb.name).getProfilingStatus()}, section);
+                printInfo("Database profiler for database '"+ mydb.name + "'",
+                          function(){return db.getSiblingDB(mydb.name).getProfilingStatus()}, section, false, {"db": mydb.name})
             }
 
             if (collections) {
@@ -307,7 +324,7 @@ function printDataInfo(isMongoS) {
                                   function(){return db.getSiblingDB(mydb.name).getCollection(col).getShardDistribution()}, section, true);
                     }
                     printInfo('Indexes',
-                              function(){return db.getSiblingDB(mydb.name).getCollection(col).getIndexes()}, section);
+                              function(){return db.getSiblingDB(mydb.name).getCollection(col).getIndexes()}, section, false, {"db": mydb.name, "collection": col});
                     printInfo('Index Stats',
                               function(){
                                 var res = db.getSiblingDB(mydb.name).runCommand( {
