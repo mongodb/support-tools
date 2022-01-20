@@ -17,25 +17,26 @@ For sample output, see [getMongoData.log](sample/getMongoData.log).
 To execute on a locally-running `mongod` or `mongos` on the default port (27017)
 without authentication, run:
 
-    mongo --quiet --norc getMongoData.js > getMongoData.log
+    mongo --quiet --norc getMongoData.js > getMongoData-output.json
 
 To execute on a remote `mongod` or `mongos` with authentication (see the next
 section for the minimum required permissions), run:
 
-    mongo HOST:PORT/admin -u ADMIN_USER -p ADMIN_PASSWORD --quiet --norc getMongoData.js > getMongoData.log
+    mongo HOST:PORT/admin -u ADMIN_USER -p ADMIN_PASSWORD --quiet --norc getMongoData.js > getMongoData-output.json
 
 If `ADMIN_PASSWORD` is omitted, the shell will prompt for the password.
 
-To have the output be in JSON format, modify the above commands to include the
-following `--eval` option, as demonstrated for the local execution:
+To have the output be in a more human-readable (non-JSON format), modify the above
+commands to include the following `--eval` option, as demonstrated for the local
+execution:
 
-    mongo --quiet --norc --eval "var _printJSON=true; var _ref = 'Support Case NNNNN'" getMongoData.js > getMongoData-output.json
+    mongo --eval "var _printJSON=false;" getMongoData.js > getMongoData-output.log
 
 To have a `mongos` for a sharded cluster output full details of chunk
 distribution across shards, include `var _printChunkDetails=true` in the
 `--eval` option:
 
-    mongo --quiet --norc --eval "var _printJSON=true; var _printChunkDetails=true; var _ref = 'Support Case NNNNN'" getMongoData.js > getMongoData-output.json
+    mongo --quiet --norc --eval "var _printChunkDetails=true; var _ref = 'Support Case NNNNN'" getMongoData.js > getMongoData-output.json
 
 ### More Details
 
