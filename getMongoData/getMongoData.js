@@ -386,7 +386,7 @@ function printShardOrReplicaSetInfo() {
     return false;
 }
 
-if (typeof _printJSON === "undefined") var _printJSON = false;
+if (typeof _printJSON === "undefined") var _printJSON = true;
 if (typeof _printChunkDetails === "undefined") var _printChunkDetails = false;
 if (typeof _ref === "undefined") var _ref = null;
 
