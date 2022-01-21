@@ -1,10 +1,6 @@
 MongoDB Support Tools
 =====================
 
-![Use at your own risk](use-at-your-own-risk.jpg)
-
-[(image from flickr user alykat)](http://www.flickr.com/photos/80081757@N00/4271250480/)
-
 DISCLAIMER
 ----------
 Please note: all tools/ scripts in this repo are released for use "AS IS" **without any warranties of any kind**,
