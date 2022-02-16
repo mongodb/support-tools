@@ -296,11 +296,18 @@ function printDataInfo(isMongoS) {
         dbs.databases.forEach(function(mydb) {
             var collections = printInfo("List of collections for database '"+ mydb.name +"'",
                                         function(){
+					    var collectionNames = []
+
+					    // Filter out views
+					    db.getSiblingDB(mydb.name).getCollectionInfos({"type": "collection"}).forEach(function(collectionInfo) {
+						collectionNames.push(collectionInfo['name']);
+					    })
+
 					    // Filter out the collections with the "system." prefix in the system databases
 					    if (mydb.name == "config" || mydb.name == "local" || mydb.name == "admin") {
-						return db.getSiblingDB(mydb.name).getCollectionNames().filter(function (str) { return str.indexOf("system.") != 0; });
+						return collectionNames.filter(function (str) { return str.indexOf("system.") != 0; });
 					    } else {
-						return db.getSiblingDB(mydb.name).getCollectionNames();
+						return collectionNames;
 					    }
 					}, section);
 
@@ -379,7 +386,11 @@ function printShardOrReplicaSetInfo() {
         return true;
     } else if (state != "standalone" && state != "configsvr") {
         if (state == "SECONDARY" || state == 2) {
+	  if (rs.secondaryOk) {
+	    rs.secondaryOk();
+	  } else {
             rs.slaveOk();
+	  }
         }
         printReplicaSetInfo();
     }
