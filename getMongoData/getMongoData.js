@@ -190,7 +190,7 @@ function printShardInfo(){
                                         collDoc['tags'].push(tagDoc);
                                     }
                                 );
-			      doc['collections'].push(collDoc);
+			        doc['collections'].push(collDoc);
                             }
                         }
                     );
