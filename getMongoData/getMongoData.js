@@ -331,9 +331,18 @@ function printDataInfo(isMongoS) {
                               function(){return db.getSiblingDB(mydb.name).getCollection(col).stats(1024*1024)}, section);
                     collections_counter++;
                     if (collections_counter > _maxCollections) {
+			var err_msg = 'Already asked for stats on '+collections_counter+' collections ' +
+                          'which is above the max allowed for this script. No more database and ' +
+                          'collection-level stats will be gathered, so the overall data is ' +
+                          'incomplete. '
+                        if (_printJSON) {
+                          err_msg += 'The "subsection" fields have been prefixed with "INCOMPLETE_" ' +
+                          'to indicate that partial data has been outputted.'
+                        }
+
                         throw {
                           name: 'MaxCollectionsExceededException',
-                          message: 'Already asked for stats on '+collections_counter+' collections which is above the max allowed for this script.'
+                          message: err_msg
                         }
                     }
                     if (isMongoS) {
@@ -437,7 +446,7 @@ try {
 } catch(e) {
     // To ensure that the operator knows there was an error, print the error
     // even when outputting JSON to make it invalid JSON.
-    print('ERROR: '+e.message);
+    print('\nERROR: '+e.message);
 
     if (e.name === 'MaxCollectionsExceededException') {
       // Prefix the "subsection" fields with "INCOMPLETE_" to make
