@@ -147,7 +147,7 @@ function printShardInfo(){
                     configDB.collections.find( { _id : new RegExp( "^" +
                         RegExp.escape(db._id) + "\\." ) } ).
                         sort( { _id : 1 } ).forEach( function( coll ) {
-                            if ( coll.dropped === false ){
+                            if ( coll.dropped !== true ){
                                 collDoc = {};
                                 collDoc['_id'] = coll._id;
                                 collDoc['key'] = coll.key;
@@ -190,8 +190,8 @@ function printShardInfo(){
                                         collDoc['tags'].push(tagDoc);
                                     }
                                 );
+			        doc['collections'].push(collDoc);
                             }
-                            doc['collections'].push(collDoc);
                         }
                     );
                 }
