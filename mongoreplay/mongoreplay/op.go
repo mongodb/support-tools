@@ -130,3 +130,83 @@ func IsDriverOp(op Op) bool {
 		return false
 	}
 }
+
+// LaSpina - added function below
+// IsReadOp checks if an operation is a read operation for filtering
+func IsReadOp(op Op) bool {
+	var commandType string
+	var opType string
+
+	switch castOp := op.(type) {
+	case *QueryOp:
+		opType, commandType = extractOpType(castOp.QueryOp.Query)
+		switch opType {
+		case "find", "aggregate", "get_more":
+			return true
+		default:
+			return false
+		}
+	case *InsertOp:
+		return true
+	case *MsgOp:
+		commandType = castOp.CommandName
+		switch commandType {
+		case "find", "aggregate", "get_more":
+			return true
+		default:
+			return false
+		}
+	case *CommandOp:
+		commandType = castOp.CommandName
+	default:
+		return false
+	}
+
+	switch commandType {
+	case "find", "aggregate", "get_more":
+		return true
+	default:
+		return false
+	}
+}
+
+// LaSpina - added function below
+// IsWriteOp checks if an operation is a write operation for filtering
+// returns 'read', 'write', or 'none'
+func IsWriteOp(op Op) bool {
+	var commandType string
+	var opType string
+
+	switch castOp := op.(type) {
+	case *QueryOp:
+		opType, commandType = extractOpType(castOp.QueryOp.Query)
+		switch opType {
+		case "insert", "update", "modify", "delete":
+			return true
+		default:
+			return false
+		}
+	case *InsertOp:
+		return true
+	case *MsgOp:
+		commandType = castOp.CommandName
+		switch commandType {
+		case "insert", "update", "modify", "delete":
+			return true
+		default:
+			return false
+		}
+	case *CommandOp:
+		commandType = castOp.CommandName
+
+	default:
+		return false
+	}
+
+	switch commandType {
+	case "insert", "update", "modify", "delete":
+		return true
+	default:
+		return false
+	}
+}

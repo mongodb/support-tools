@@ -26,6 +26,8 @@ type FilterCommand struct {
 	Split           int      `description:"split the traffic into n files with roughly equal numbers of connecitons in each" default:"1" long:"split"`
 	RemoveDriverOps bool     `description:"remove driver issued operations from the playback" long:"removeDriverOps"`
 	Gzip            bool     `long:"gzip" description:"decompress gzipped input"`
+	ReadOpsOnly     bool     `description:"Only include read/aggregate operations in the playback - also removes driver issued operations per removeDriverOps" long:"readOpsOnly"`
+	WriteOpsOnly    bool     `description:"Only include Insert/Update/Delete operations in the playback - also removes driver issued operations per removeDriverOps" long:"writeOpsOnly"`
 
 	duration  time.Duration
 	startTime time.Time
@@ -35,11 +37,16 @@ type skipConfig struct {
 	firstOpTime, lastOpTime *time.Time
 	truncateDuration        *time.Duration
 	removeDriverOps         bool
+	readOpsOnly             bool
+	writeOpsOnly            bool
 }
 
-func newSkipConfig(removeDriverOps bool, startTime time.Time, truncateDuration time.Duration) *skipConfig {
+// LaSpina - modified for 2 read/write only options
+func newSkipConfig(removeDriverOps bool, startTime time.Time, truncateDuration time.Duration, writeOpsOnly bool, readOpsOnly bool) *skipConfig {
 	skipConf := &skipConfig{
-		removeDriverOps: removeDriverOps,
+		removeDriverOps: removeDriverOps || writeOpsOnly || readOpsOnly,
+		writeOpsOnly:    writeOpsOnly,
+		readOpsOnly:     readOpsOnly,
 	}
 	if !startTime.IsZero() {
 		skipConf.firstOpTime = &startTime
@@ -64,8 +71,8 @@ func (filter *FilterCommand) Execute(args []string) error {
 	}
 	opChan, errChan := playbackFileReader.OpChan(1)
 
-	driverOpsFiltered := filter.RemoveDriverOps || playbackFileReader.metadata.DriverOpsFiltered
-
+	// LaSpina - Added Read/Write Ops only to this condition
+	driverOpsFiltered := filter.RemoveDriverOps || playbackFileReader.metadata.DriverOpsFiltered || filter.ReadOpsOnly || filter.WriteOpsOnly
 	outfiles := make([]*PlaybackFileWriter, filter.Split)
 	if filter.Split == 1 {
 		playbackWriter, err := NewPlaybackFileWriter(filter.OutFile, driverOpsFiltered,
@@ -87,7 +94,8 @@ func (filter *FilterCommand) Execute(args []string) error {
 		}
 	}
 
-	skipConf := newSkipConfig(filter.RemoveDriverOps, filter.startTime, filter.duration)
+	// LaSpina - added 2 new params at end
+	skipConf := newSkipConfig(filter.RemoveDriverOps, filter.startTime, filter.duration, filter.WriteOpsOnly, filter.ReadOpsOnly)
 
 	if err := Filter(opChan, outfiles, skipConf); err != nil {
 		userInfoLogger.Logvf(Always, "Filter: %v\n", err)
@@ -182,6 +190,8 @@ func (filter *FilterCommand) ValidateParams(args []string) error {
 			"instead only specify a file name prefix")
 	case filter.Split == 1 && filter.OutFile == "":
 		return fmt.Errorf("must specify an output file")
+	case filter.WriteOpsOnly && filter.ReadOpsOnly:
+		return fmt.Errorf("can only specify writeOpsOnly OR readOpsOnly, not both")
 	}
 
 	if filter.StartTime != "" {
@@ -222,12 +232,38 @@ func (sc *skipConfig) shouldFilterOp(op *RecordedOp) (bool, error) {
 
 	// Check if driver op
 	if sc.removeDriverOps {
+		var dOp bool
 		parsedOp, err := op.RawOp.Parse()
 		if err != nil {
 			return true, err
 		}
-		return IsDriverOp(parsedOp), nil
+		dOp = IsDriverOp(parsedOp)
+		if dOp {
+			return true, nil
+		}
 	}
 
+	// LaSpina - Check for read/write ops
+	if sc.readOpsOnly {
+		parsedOp, err := op.RawOp.Parse()
+		if err != nil {
+			return true, err
+		}
+		if IsReadOp(parsedOp) {
+			return false, err
+		}
+		return true, err
+	}
+
+	if sc.writeOpsOnly {
+		parsedOp, err := op.RawOp.Parse()
+		if err != nil {
+			return true, err
+		}
+		if IsWriteOp(parsedOp) {
+			return false, err
+		}
+		return true, err
+	}
 	return false, nil
 }
