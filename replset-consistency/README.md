@@ -225,3 +225,7 @@ db.getSiblingDB("<dbName>").runCommand({dbCheck: "<collName>", minKey: <key_0>, 
 1. Run the scanning script again and verify there are no inconsistent ranges reported in `config.unhealthyRanges`.
 
 When remediation is complete, resume writes to the collection(s) being remediated. It is safe to drop the `<dbName>.dbcheck_backup.<collName>.<node_id>` collections, but we recommend taking a backup of them before doing so.
+
+## 5. Resolve any remaining index inconsistencies
+
+Now that document data is confirmed consistent, and if `validate{}` previously indicated index inconsistencies, perform an initial sync of all affected nodes in sequence, to ensure indexes are rebuilt.
