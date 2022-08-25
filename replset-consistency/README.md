@@ -2,7 +2,7 @@
 
 ## Warning
 
-The scripts provided here are best run by those experienced with MongoDB, ideally with guidance from MongoDB Technical Support. They are provided without warranty or guarantee of any kind. If you do not have access to MongoDB Technical Support, consider reaching out to our community at [community.mongodb.com](community.mongodb.com) to ask questions.
+The scripts provided here are best run by those experienced with MongoDB, ideally with guidance from MongoDB Technical Support. They are provided without warranty or guarantee of any kind (see disclaimer below). If you do not have access to MongoDB Technical Support, consider reaching out to our community at [community.mongodb.com](community.mongodb.com) to ask questions.
 
 Some adaptation of these scripts may be required for your use-case.
 
@@ -232,13 +232,12 @@ When remediation is complete, resume writes to the collection(s) being remediate
 
 Now that document data is confirmed consistent, and if `validate{}` previously indicated index inconsistencies, perform an initial sync of all affected nodes in sequence, to ensure indexes are rebuilt.
 
-
-## License
+# License
 
 [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
-DISCLAIMER
-----------
+# Disclaimer
+
 Please note: all tools/ scripts in this repo are released for use "AS IS" **without any warranties of any kind**,
 including, but not limited to their installation, use, or performance.  We disclaim any and all warranties, either
 express or implied, including but not limited to any warranty of noninfringement, merchantability, and/ or fitness
