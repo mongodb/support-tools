@@ -1,67 +1,104 @@
-// 2022-02-04
-// Usage:
-//   mongosh mongodb://127.0.0.1:27017/?replicaSet=replset dbcheck.js 2>&1 | tee
-//   dbcheckresults.json
-//  or
-//   mongo mongodb://127.0.0.1:27017/?replicaSet=replset dbcheck.js 2>&1 | tee
-//   dbcheckresults.json
-//
-//  Partial results can be found by passing --eval
-//    To run on a specific list of name spaces.
-//     --eval "ns = ['admin.system.version','config.system.sessions']"
-//    To run on a specific list of databases
-//     --eval "dbs = ['admin']"
-//    Combination of databases and namespaces
-//     --eval "dbs = ['admin']; ns =
-//     ['admin.system.version','config.system.sessions']"
-//
-//
-//  This must be run as a user with the following roles:
-//    - listDatabases: List all databases
-//    - listCollections: List all collections on all databases
-//    - applyOps: needed for dbCheck
-//    - serverStatus: Collect the node's uptime
-//    - dbCheck: run the dbcheck command
-//  Default roles that include these permissions are __system and root
-//  The following is a custom role that should allow this script to run.
-// db.adminCommand({
-//   createRole: "remediationAdmin",
-//   roles: [ "clusterManager", "clusterMonitor", "readWriteAnyDatabase"],
-//   privileges: [
-//     { resource: {cluster: true},
-//       actions: ["applyOps", "listDatabases", "serverStatus"] },
-//     { resource: {db: "local", collection: "system.healthlog"},
-//       actions: ["find"] },
-//     { resource: {db: "config", collection: "unhealthyRanges"},
-//       actions: ["find", "insert", "update", "remove", "createCollection",
-//       "dropCollection", "createIndex", "dropIndex"]
-//     },
-//     { resource: { anyResource: true }, actions: [
-//      "listCollections", "validate" ]},
-//   ]
-// });
-//
-//
-//
-// Last line examples:
-// Success:
-//  {"dbCheckOk":true,"rollOver":false,"healthlogRolloverPrimary":false,"healthlogRolloverSecondary":false,"primaryStartCount":7,"secondaryStartCount":35,"writeConcern":3,"timeout":1000,"partial":false,"host":"localhost:27017","setName":"replset","time":{"$date":"2022-01-27T23:28:39.920Z"},"runCount":7,"okCount":7,"notOkCount":0,"notOk":[],"lastStartup":{"$date":"2022-01-27T22:25:17.020Z"},"dbCheckDurationSecs":0.048}
-// Rollover:
-//  {"dbCheckOk":true,"rollOver":true,"healthlogRolloverPrimary":true,"healthlogRolloverSecondary":false,"primaryStartCount":4,"secondaryStartCount":42,"writeConcern":3,"timeout":1000,"partial":false,"host":"localhost:27017","setName":"replset","time":{"$date":"2022-01-27T23:29:23.496Z"},"runCount":7,"okCount":7,"notOkCount":0,"notOk":[],"lastStartup":{"$date":"2022-01-27T22:25:17.020Z"},"dbCheckDurationSecs":0.064}
-//
-// If collections are deleted the script may exit prematurely. Collections added
-// may not be checked. Running against a primary without the replica set
-// parameter may cause errant rollover results.
-//
-// Manually check if the healthlog has rolled over on each secondary. The
-// following shell example can be compared against runcount to determine
-// rollover status.
-//
-// db.getSiblingDB("local").system.healthlog.aggregate([
-//   { $match: { operation: "dbCheckStart" } },
-//   { $count: "dbCheckStartCount" }
-//  ]);
-//
+/*
+=================================================
+dbcheck.js: MongoDB guided dbCheck remediation
+=================================================
+
+Copyright MongoDB, Inc, 2022
+
+Use this script as part of the guidance in
+https://github.com/mongodb/support-tools/tree/replset-consistency/replset-consistency/README.md
+
+Usage:
+  mongosh mongodb://127.0.0.1:27017/?replicaSet=replset dbcheck.js 2>&1 | tee
+  dbcheckresults.json
+ or
+  mongo mongodb://127.0.0.1:27017/?replicaSet=replset dbcheck.js 2>&1 | tee
+  dbcheckresults.json
+
+ Partial results can be found by passing --eval
+   To run on a specific list of name spaces.
+    --eval "ns = ['admin.system.version','config.system.sessions']"
+   To run on a specific list of databases
+    --eval "dbs = ['admin']"
+   Combination of databases and namespaces
+    --eval "dbs = ['admin']; ns =
+    ['admin.system.version','config.system.sessions']"
+
+ This must be run as a user with the following roles:
+   - listDatabases: List all databases
+   - listCollections: List all collections on all databases
+   - applyOps: needed for dbCheck
+   - serverStatus: Collect the node's uptime
+   - dbCheck: run the dbcheck command
+ Default roles that include these permissions are __system and root
+ The following is a custom role that should allow this script to run.
+db.adminCommand({
+  createRole: "remediationAdmin",
+  roles: [ "clusterManager", "clusterMonitor", "readWriteAnyDatabase"],
+  privileges: [
+    { resource: {cluster: true},
+      actions: ["applyOps", "listDatabases", "serverStatus"] },
+    { resource: {db: "local", collection: "system.healthlog"},
+      actions: ["find"] },
+    { resource: {db: "config", collection: "unhealthyRanges"},
+      actions: ["find", "insert", "update", "remove", "createCollection",
+      "dropCollection", "createIndex", "dropIndex"]
+    },
+    { resource: { anyResource: true }, actions: [
+     "listCollections", "validate" ]},
+  ]
+});
+
+Last line examples:
+Success:
+ {"dbCheckOk":true,"rollOver":false,"healthlogRolloverPrimary":false,"healthlogRolloverSecondary":false,"primaryStartCount":7,"secondaryStartCount":35,"writeConcern":3,"timeout":1000,"partial":false,"host":"localhost:27017","setName":"replset","time":{"$date":"2022-01-27T23:28:39.920Z"},"runCount":7,"okCount":7,"notOkCount":0,"notOk":[],"lastStartup":{"$date":"2022-01-27T22:25:17.020Z"},"dbCheckDurationSecs":0.048}
+Rollover:
+ {"dbCheckOk":true,"rollOver":true,"healthlogRolloverPrimary":true,"healthlogRolloverSecondary":false,"primaryStartCount":4,"secondaryStartCount":42,"writeConcern":3,"timeout":1000,"partial":false,"host":"localhost:27017","setName":"replset","time":{"$date":"2022-01-27T23:29:23.496Z"},"runCount":7,"okCount":7,"notOkCount":0,"notOk":[],"lastStartup":{"$date":"2022-01-27T22:25:17.020Z"},"dbCheckDurationSecs":0.064}
+
+If collections are deleted the script may exit prematurely. Collections added
+may not be checked. Running against a primary without the replica set
+parameter may cause errant rollover results.
+
+Manually check if the healthlog has rolled over on each secondary. The
+following shell example can be compared against runcount to determine
+rollover status.
+
+db.getSiblingDB("local").system.healthlog.aggregate([
+  { $match: { operation: "dbCheckStart" } },
+  { $count: "dbCheckStartCount" }
+ ]);
+
+Please note: all tools/ scripts in this repo are released for use "AS
+IS" without any warranties of any kind, including, but not limited to
+their installation, use, or performance. We disclaim any and all
+warranties, either express or implied, including but not limited to
+any warranty of noninfringement, merchantability, and/ or fitness for
+a particular purpose. We do not warrant that the technology will
+meet your requirements, that the operation thereof will be
+uninterrupted or error-free, or that any errors will be corrected.
+
+Any use of these scripts and tools is at your own risk. There is no
+guarantee that they have been through thorough testing in a
+comparable environment and we are not responsible for any damage
+or data loss incurred with their use.
+
+You are responsible for reviewing and testing any scripts you run
+thoroughly before use in any non-testing environment.
+
+LICENSE
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. */
+
 
 const wtimeout = 1000;     // Recommended wtimeout
 const pollinterval = 1000; // 1 second

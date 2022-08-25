@@ -1,12 +1,55 @@
 #!/usr/bin/env python3
 #pylint: disable=too-many-locals, disable=too-many-branches, disable=too-many-statements
 #pylint: disable=too-many-return-statements, inconsistent-return-statements
-"""This script allowes the user to repair inconsistent replica set documents found using dbcheck
+
+"""
+=================================================
+repair_checked_documents.py: MongoDB guided dbCheck remediation
+=================================================
+
+Copyright MongoDB, Inc, 2022
+
+Use this script as part of the guidance in
+https://github.com/mongodb/support-tools/tree/replset-consistency/replset-consistency/README.md
+
+This script allowes the user to repair inconsistent replica set documents found using dbcheck
 and scan_checked_replset.  On 5.0 and later, the server parameter
 'oplogApplicationEnforcesSteadyStateConstraints' must be 'false' (the default) or this script
 is likely to trigger fatal errors on the secondaries.  The URI provided must contain authentication
 for a privileged use which can read and write any user collection as well as the
-"config.unhealthyRanges" metadata collection"""
+"config.unhealthyRanges" metadata collection
+
+Please note: all tools/ scripts in this repo are released for use "AS
+IS" without any warranties of any kind, including, but not limited to
+their installation, use, or performance. We disclaim any and all
+warranties, either express or implied, including but not limited to
+any warranty of noninfringement, merchantability, and/ or fitness for
+a particular purpose. We do not warrant that the technology will
+meet your requirements, that the operation thereof will be
+uninterrupted or error-free, or that any errors will be corrected.
+
+Any use of these scripts and tools is at your own risk. There is no
+guarantee that they have been through thorough testing in a
+comparable environment and we are not responsible for any damage
+or data loss incurred with their use.
+
+You are responsible for reviewing and testing any scripts you run
+thoroughly before use in any non-testing environment.
+
+LICENSE
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 
 import argparse
 import json
