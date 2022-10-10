@@ -40,7 +40,7 @@ db.adminCommand({
       actions: ["applyOps", "listDatabases", "serverStatus"] },
     { resource: {db: "local", collection: "system.healthlog"},
       actions: ["find"] },
-    { resource: {db: "config", collection: "unhealthyRanges"},
+    { resource: {db: "__corruption_repair", collection: "unhealthyRanges"},
       actions: ["find", "insert", "update", "remove", "createCollection",
       "dropCollection", "createIndex", "dropIndex"]
     },

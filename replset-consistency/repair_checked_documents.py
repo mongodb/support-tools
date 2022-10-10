@@ -17,7 +17,7 @@ and scan_checked_replset.  On 5.0 and later, the server parameter
 'oplogApplicationEnforcesSteadyStateConstraints' must be 'false' (the default) or this script
 is likely to trigger fatal errors on the secondaries.  The URI provided must contain authentication
 for a privileged use which can read and write any user collection as well as the
-"config.unhealthyRanges" metadata collection
+"__corruption_repair.unhealthyRanges" metadata collection
 
 Please note: all tools/ scripts in this repo are released for use "AS
 IS" without any warranties of any kind, including, but not limited to
@@ -57,7 +57,7 @@ import pprint
 import sys
 import pymongo
 
-METADATA_DB_NAME = "config"
+METADATA_DB_NAME = "__corruption_repair"
 RANGE_COLL_NAME = "unhealthyRanges"
 MISSING_DOC_MARKER = "dbcheck_docWasMissing"
 

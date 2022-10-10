@@ -24,7 +24,7 @@ mongo --host <primaryHostAndPort> --eval "authInfo={<auth object>}" \
 
 The user specified by authInfo needs to be extremely privileged: it needs to be able to read and
 write any database, have the applyOps privilege, read 'local.system.healthlog', and read and
-write 'config.unhealthyRanges' (which may be dropped when the repair is complete)
+write '__corruption_repair.unhealthyRanges' (which may be dropped when the repair is complete)
 
 For instance, this role works if only user collections are damaged:
 createRole(
@@ -32,7 +32,7 @@ createRole(
        privileges: [{resource: {cluster: true}, actions: ["applyOps"]},
                     {resource: {db: "local", collection: "system.healthlog"},
                      actions: ["find"]},
-                    {resource: {db: "config", collection: "unhealthyRanges"},
+                    {resource: {db: "__corruption_repair", collection: "unhealthyRanges"},
                      actions: ["find", "insert", "update", "remove", "createCollection",
                       "dropCollection", "createIndex", "dropIndex"]}]});
 
@@ -70,7 +70,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 const healthCollName = "system.healthlog";
-const metadataDbName = "config";
+const metadataDbName = "__corruption_repair";
 const rangeCollName = "unhealthyRanges";
 const saveCollPrefix = "dbcheck_";
 const backupCollPrefix = "dbcheck_backup_";
