@@ -53,7 +53,7 @@ To perform this process, you will need to:
 * Create on your cluster a database user that can:
   * read and write to any database
   * read the 'local.system.healthlog' collection
-  * read and write to the 'config.unhealthyRanges' collection
+  * read and write to the '__corruption_repair.unhealthyRanges' collection
   * issue the following commands:
     * applyOps
     * listDatabases
@@ -76,7 +76,7 @@ db.adminCommand({
       actions: ["applyOps", "listDatabases", "serverStatus"] },
     { resource: {db: "local", collection: "system.healthlog"}, 
       actions: ["find"] },
-    { resource: {db: "config", collection: "unhealthyRanges"}, 
+    { resource: {db: "__corruption_repair", collection: "unhealthyRanges"}, 
       actions: ["find", "insert", "update", "remove", "createCollection", "dropCollection", "createIndex", "dropIndex"]
     },
     { resource: { anyResource: true }, 
@@ -154,7 +154,7 @@ db.getSiblingDB(<dbName>).runCommand({
 ## 2. Run the scanning script
 `scan_checked_replset.js`
 
-This script uses the information output by dbCheck and uses it to identify specific inconsistencies. It records information in the `config.unhealthyRanges` collection and makes "backup collections" of inconsistent documents in your cluster.
+This script uses the information output by dbCheck and uses it to identify specific inconsistencies. It records information in the `__corruption_repair.unhealthyRanges` collection and makes "backup collections" of inconsistent documents in your cluster.
 
 Backup collections are named with a `<dbName>.dbcheck_backup.<collName>.<node_id>` convention, where `dbName`, `collName`, and `node_id` refer to the location of the document.
 
@@ -171,7 +171,7 @@ mongo --host <primaryHostAndPort> --eval "authInfo={\"user\":\"remediate\", \"pw
 Once the script is complete, the following query lists collections with inconsistencies:
 
 ```
-db.getSiblingDB("config").unhealthyRanges.aggregate([{$group: {"_id": { "db": "$_id.db", "col": "$_id.collection" }}}])
+db.getSiblingDB("__corruption_repair").unhealthyRanges.aggregate([{$group: {"_id": { "db": "$_id.db", "col": "$_id.collection" }}}])
 ```
 
 ## 3. Run the remediation script
@@ -211,10 +211,10 @@ For a full check, use the instructions above in `Remediation > Check and Remedia
 
 To perform a partial dbCheck on the ranges that were marked inconsistent by the scanning script, use the following steps:
 
-1. Query the `config.unhealthyRanges` collection to find ranges reported as inconsistent:
+1. Query the `__corruption_repair.unhealthyRanges` collection to find ranges reported as inconsistent:
 
 ```
-> db.getSiblingDB("config").unhealthyRanges.find({}, {_id:1}).limit(1)
+> db.getSiblingDB("__corruption_repair").unhealthyRanges.find({}, {_id:1}).limit(1)
 { "_id" : { "db" : "<dbName>", "collection" : "<collName>", "minKey" : <key_0>, "maxKey" : <key_1> } }
 ```
 
@@ -224,7 +224,7 @@ To perform a partial dbCheck on the ranges that were marked inconsistent by the 
 db.getSiblingDB("<dbName>").runCommand({dbCheck: "<collName>", minKey: <key_0>, maxKey: <key_1>})
 ```
 
-1. Run the scanning script again and verify there are no inconsistent ranges reported in `config.unhealthyRanges`.
+1. Run the scanning script again and verify there are no inconsistent ranges reported in `__corruption_repair.unhealthyRanges`.
 
 When remediation is complete, resume writes to the collection(s) being remediated. It is safe to drop the `<dbName>.dbcheck_backup.<collName>.<node_id>` collections, but we recommend taking a backup of them before doing so.
 
