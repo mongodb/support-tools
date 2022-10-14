@@ -346,19 +346,22 @@ function findBadRanges(dbToRepair, nodelist) {
 
 function _repairDatabases(dbToRepair, authInfo, options) {
     db = dbToRepair;
+    uriOptions = authInfo.uriOptions;
+    delete authInfo.uriOptions;
+
     if (authInfo) {
-        db.getSiblingDB("admin").auth(authInfo);
+        db.getMongo().auth(authInfo);
     }
     let config = rs.config();
     let nodelist = [];
     for (let member of config.members) {
-        let conn = new Mongo(member.host);
+        let conn = new Mongo("mongodb://" + member.host + "/?" + uriOptions);
         conn.setSecondaryOk(true);
         if (member.arbiterOnly) {
             conn.close();
         } else {
             if (authInfo) {
-                conn.getDB("admin").auth(authInfo);
+                conn.auth(authInfo);
             }
             nodelist.push({_id: member._id, connection: conn, host: member.host});
         }
@@ -414,6 +417,7 @@ function repairDatabases(dbToRepair, authInfo, options) {
 
 var majorVersion = db.serverBuildInfo().versionArray[0];
 var authInfo;
+authInfo.db = authInfo.db || 'admin';
 if (backup === undefined)
     backup = true;
 repairDatabases(db, authInfo);
