@@ -167,23 +167,54 @@ function getDBCheckCount(readPref) {
 // over again.
 //
 function checkRollOver() {
+  let config = rs.config();
+  let nodelist = [];
   try {
     primaryCount = getDBCheckCount("primary")
   } catch (error) {
     printFunction(error);
   }
-  for (let i = 0; i < ((getWriteConcern() - 1) * 2); i++) {
-    try {
-      let tcount = getDBCheckCount("secondary");
-      if (i == 0) {
-        secondaryCount = tcount;
+  // construct nodelist including every member
+  for (let member of config.members) {
+      let conn = new Mongo(member.host);
+      conn.setSecondaryOk(true);
+      if (member.arbiterOnly) {
+          conn.close();
       } else {
-        secondaryCount = Math.min(secondaryCount, tcount);
+          // how do we supply auth info for connecting to the other nodes to read the local db?
+          // same as scan_checked_replset in cli string
+          if (authInfo) {
+              conn.getDB("admin").auth(authInfo);
+          }
+          nodelist.push({_id: member._id, connection: conn, host: member.host});
+      }
+  }
+  for (let nodeInfo of nodelist) {
+    try {
+      let curr = nodeInfo.connection.getDB("local").getCollection("system.healthlog").aggregate([     
+        {$match : {operation : "dbCheckStart"}}, {$count : "dbCheckStartCount"}   
+      ])
+      if (curr.hasNext()) {
+        let my_count = curr.next().dbCheckStartCount;
+        nodeInfo.dbCheckStartCount = my_count
       }
     } catch (error) {
       printFunction(error);
     }
   }
+  printjson(nodelist)
+  // for (let i = 0; i < ((getWriteConcern() - 1) * 2); i++) {
+  //   try {
+  //     let tcount = getDBCheckCount("secondary");
+  //     if (i == 0) {
+  //       secondaryCount = tcount;
+  //     } else {
+  //       secondaryCount = Math.min(secondaryCount, tcount);
+  //     }
+  //   } catch (error) {
+  //     printFunction(error);
+  //   }
+  // }
 }
 
 function getLastDoc() {
