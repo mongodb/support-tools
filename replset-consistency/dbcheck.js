@@ -154,7 +154,7 @@ function getDBCheckCount(readPref) {
   db.getMongo().setReadPref(readPref);
 
   let curr = db.getSiblingDB("local").system.healthlog.aggregate([
-    {$match : {operation : "dbCheckStart"}}, {$count : "dbCheckStartCount"}
+    {$match : {operation : "dbCheckStart", timestamp : {$gte: new ISODate(timerStart.toISOString())}}}, {$count : "dbCheckStartCount"}
   ]);
   if (curr.hasNext()) {
     let my_count = curr.next().dbCheckStartCount;
@@ -166,7 +166,7 @@ function getDBCheckCount(readPref) {
 function getDBCheckCountByNode(node) {
   let conn = node.connection
   let curr = conn.getDB("local").getCollection("system.healthlog").aggregate([     
-    {$match : {operation : "dbCheckStart"}}, {$count : "dbCheckStartCount"}   
+    {$match : {operation : "dbCheckStart", timestamp : {$gte: new ISODate(timerStart.toISOString())}}}, {$count : "dbCheckStartCount"}   
   ])
   if (curr.hasNext()) {
     let my_count = curr.next().dbCheckStartCount;
