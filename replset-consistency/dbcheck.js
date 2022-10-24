@@ -191,7 +191,7 @@ function checkRollOver() {
   } catch (error) {
     printFunction(error);
   }
-  
+
   for (let member of config.members) {
       let conn = new Mongo("mongodb://" + member.host + "/?" + uriOptions);
       conn.setSecondaryOk(true);
@@ -206,6 +206,7 @@ function checkRollOver() {
   }
   
   for (let i = 0; i < nodelist.length; i++) {
+    let nodeInfo = nodelist[i];
     try {   
       let tcount = getDBCheckCountByNode(nodeInfo)
       if (i == 0) {
