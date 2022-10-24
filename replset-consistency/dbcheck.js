@@ -169,6 +169,10 @@ function getDBCheckCount(readPref) {
 function checkRollOver() {
   let config = rs.config();
   let nodelist = [];
+
+  uriOptions = authInfo.uriOptions;
+  delete authInfo.uriOptions;
+  
   try {
     primaryCount = getDBCheckCount("primary")
   } catch (error) {
@@ -176,7 +180,7 @@ function checkRollOver() {
   }
   // construct nodelist including every member
   for (let member of config.members) {
-      let conn = new Mongo(member.host);
+      let conn = new Mongo("mongodb://" + member.host + "/?" + uriOptions);
       conn.setSecondaryOk(true);
       if (member.arbiterOnly) {
           conn.close();
@@ -184,7 +188,7 @@ function checkRollOver() {
           // how do we supply auth info for connecting to the other nodes to read the local db?
           // same as scan_checked_replset in cli string
           if (authInfo) {
-              conn.getDB("admin").auth(authInfo);
+            conn.auth(authInfo);
           }
           nodelist.push({_id: member._id, connection: conn, host: member.host});
       }
@@ -382,6 +386,8 @@ var helloDoc = (typeof db.hello !== 'function') ? db.isMaster() : db.hello();
 var lastStartup = new Date(new Date() - db.serverStatus().uptimeMillis);
 sleep(1000); // Not sure this is necessary, but sometimes dbCheck results can
              // appear shortly after the command returns ok.
+
+authInfo.db = authInfo.db || 'local';
 checkRollOver();
 printFunction({
   dbCheckOk : failArray.length == 0,
