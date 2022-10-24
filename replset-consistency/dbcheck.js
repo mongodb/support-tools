@@ -163,6 +163,19 @@ function getDBCheckCount(readPref) {
   return 0;
 }
 
+function getDBCheckCountByNode(node) {
+  let conn = node.connection
+  let curr = conn.getDB("local").getCollection("system.healthlog").aggregate([     
+    {$match : {operation : "dbCheckStart"}}, {$count : "dbCheckStartCount"}   
+  ])
+  if (curr.hasNext()) {
+    let my_count = curr.next().dbCheckStartCount;
+    node.dbCheckStartCount = my_count
+    return my_count
+  }
+  return 0;
+}
+
 // Non-deterministic, we don't know if we'll select the same secondary over and
 // over again.
 //
@@ -178,47 +191,32 @@ function checkRollOver() {
   } catch (error) {
     printFunction(error);
   }
-  // construct nodelist including every member
+  
   for (let member of config.members) {
       let conn = new Mongo("mongodb://" + member.host + "/?" + uriOptions);
       conn.setSecondaryOk(true);
       if (member.arbiterOnly) {
           conn.close();
       } else {
-          // how do we supply auth info for connecting to the other nodes to read the local db?
-          // same as scan_checked_replset in cli string
           if (authInfo) {
             conn.auth(authInfo);
           }
           nodelist.push({_id: member._id, connection: conn, host: member.host});
       }
   }
-  for (let nodeInfo of nodelist) {
-    try {
-      let curr = nodeInfo.connection.getDB("local").getCollection("system.healthlog").aggregate([     
-        {$match : {operation : "dbCheckStart"}}, {$count : "dbCheckStartCount"}   
-      ])
-      if (curr.hasNext()) {
-        let my_count = curr.next().dbCheckStartCount;
-        nodeInfo.dbCheckStartCount = my_count
+  
+  for (let i = 0; i < nodelist.length; i++) {
+    try {   
+      let tcount = getDBCheckCountByNode(nodeInfo)
+      if (i == 0) {
+        secondaryCount = tcount;
+      } else {
+        secondaryCount = Math.min(secondaryCount, tcount);
       }
     } catch (error) {
       printFunction(error);
     }
   }
-  printjson(nodelist)
-  // for (let i = 0; i < ((getWriteConcern() - 1) * 2); i++) {
-  //   try {
-  //     let tcount = getDBCheckCount("secondary");
-  //     if (i == 0) {
-  //       secondaryCount = tcount;
-  //     } else {
-  //       secondaryCount = Math.min(secondaryCount, tcount);
-  //     }
-  //   } catch (error) {
-  //     printFunction(error);
-  //   }
-  // }
 }
 
 function getLastDoc() {
