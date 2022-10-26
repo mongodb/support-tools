@@ -180,9 +180,12 @@ function getDBCheckCountByNode(node) {
   return 0;
 }
 
-// Authenticates into every data-bearing secondary nodes to query 
-// healthlog dbCheckStart entries
-// If authInfo is not provided, defaults to old healthlog rollover check
+// Authenticates into every data-bearing secondary nodes to query healthlog 
+// dbCheckStart entries
+//
+// If authInfo is not provided, behavior defaults to old healthlog rollover check 
+// that is non-deterministic. We don't know if we'll select the same secondary 
+// over and over again.
 //
 function checkRollOver() {
   let config = rs.config();
