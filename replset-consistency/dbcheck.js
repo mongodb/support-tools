@@ -182,6 +182,7 @@ function getDBCheckCountByNode(node) {
 
 // Authenticates into every data-bearing secondary nodes to query 
 // healthlog dbCheckStart entries
+// If authInfo is not provided, defaults to old healthlog rollover check
 //
 function checkRollOver() {
   let config = rs.config();
@@ -194,7 +195,7 @@ function checkRollOver() {
     printFunction(error);
   }
 
-  if (authInfo) {
+  if (typeof authInfo !== "undefined") {
     uriOptions = authInfo.uriOptions;
     delete authInfo.uriOptions;
   
@@ -225,6 +226,7 @@ function checkRollOver() {
       }
     }
   } else {
+    printFunction("authInfo object is undefined; performing weak healthlog rollover check.")
     for (let i = 0; i < ((getWriteConcern() - 1) * 2); i++) {
       try {
         let tcount = getDBCheckCount("secondary");
@@ -406,7 +408,7 @@ var helloDoc = (typeof db.hello !== 'function') ? db.isMaster() : db.hello();
 var lastStartup = new Date(new Date() - db.serverStatus().uptimeMillis);
 sleep(1000); // Not sure this is necessary, but sometimes dbCheck results can
              // appear shortly after the command returns ok.
-if (authInfo) {
+if (typeof authInfo !== "undefined") {
   authInfo.db = authInfo.db || 'local';
 }
 checkRollOver();
