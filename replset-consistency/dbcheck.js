@@ -187,8 +187,6 @@ function checkRollOver() {
   let config = rs.config();
   let nodelist = [];
 
-  uriOptions = authInfo.uriOptions;
-  delete authInfo.uriOptions;
   
   try {
     primaryCount = getDBCheckCount("primary")
@@ -196,30 +194,48 @@ function checkRollOver() {
     printFunction(error);
   }
 
-  for (let member of config.members) {
-      let conn = new Mongo("mongodb://" + member.host + "/?" + uriOptions);
-      conn.setSecondaryOk(true);
-      if (member.arbiterOnly) {
-          conn.close();
-      } else {
-          if (authInfo) {
-            conn.auth(authInfo);
-          }
-          nodelist.push({_id: member._id, connection: conn, host: member.host});
-      }
-  }
+  if (authInfo) {
+    uriOptions = authInfo.uriOptions;
+    delete authInfo.uriOptions;
   
-  for (let i = 0; i < nodelist.length; i++) {
-    let nodeInfo = nodelist[i];
-    try {   
-      let tcount = getDBCheckCountByNode(nodeInfo)
-      if (i == 0) {
-        secondaryCount = tcount;
-      } else {
-        secondaryCount = Math.min(secondaryCount, tcount);
+    for (let member of config.members) {
+        let conn = new Mongo("mongodb://" + member.host + "/?" + uriOptions);
+        conn.setSecondaryOk(true);
+        if (member.arbiterOnly) {
+            conn.close();
+        } else {
+            if (authInfo) {
+              conn.auth(authInfo);
+            }
+            nodelist.push({_id: member._id, connection: conn, host: member.host});
+        }
+    }
+    
+    for (let i = 0; i < nodelist.length; i++) {
+      let nodeInfo = nodelist[i];
+      try {   
+        let tcount = getDBCheckCountByNode(nodeInfo)
+        if (i == 0) {
+          secondaryCount = tcount;
+        } else {
+          secondaryCount = Math.min(secondaryCount, tcount);
+        }
+      } catch (error) {
+        printFunction(error);
       }
-    } catch (error) {
-      printFunction(error);
+    }
+  } else {
+    for (let i = 0; i < ((getWriteConcern() - 1) * 2); i++) {
+      try {
+        let tcount = getDBCheckCount("secondary");
+        if (i == 0) {
+          secondaryCount = tcount;
+        } else {
+          secondaryCount = Math.min(secondaryCount, tcount);
+        }
+      } catch (error) {
+        printFunction(error);
+      }
     }
   }
 }
