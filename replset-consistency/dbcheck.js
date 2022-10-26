@@ -154,8 +154,10 @@ function getDBCheckCount(readPref) {
   db.getMongo().setReadPref(readPref);
 
   let curr = db.getSiblingDB("local").system.healthlog.aggregate([
-    {$match : {operation : "dbCheckStart", timestamp : {$gte: new ISODate(timerStart.toISOString())}}}, {$count : "dbCheckStartCount"}
+    { $match: { operation: "dbCheckStart", timestamp: { $gte: startDate } } },
+    { $count: "dbCheckStartCount" },
   ]);
+
   if (curr.hasNext()) {
     let my_count = curr.next().dbCheckStartCount;
     return my_count;
@@ -164,20 +166,22 @@ function getDBCheckCount(readPref) {
 }
 
 function getDBCheckCountByNode(node) {
-  let conn = node.connection
-  let curr = conn.getDB("local").getCollection("system.healthlog").aggregate([     
-    {$match : {operation : "dbCheckStart", timestamp : {$gte: new ISODate(timerStart.toISOString())}}}, {$count : "dbCheckStartCount"}   
-  ])
+  let conn = node.connection;
+  let curr = conn.getDB("local").getCollection("system.healthlog").aggregate([
+    { $match: { operation: "dbCheckStart", timestamp: { $gte: startDate } } },
+    { $count: "dbCheckStartCount" },
+  ]);
+
   if (curr.hasNext()) {
     let my_count = curr.next().dbCheckStartCount;
-    node.dbCheckStartCount = my_count
-    return my_count
+    node.dbCheckStartCount = my_count;
+    return my_count;
   }
   return 0;
 }
 
-// Non-deterministic, we don't know if we'll select the same secondary over and
-// over again.
+// Authenticates into every data-bearing secondary nodes to query 
+// healthlog dbCheckStart entries
 //
 function checkRollOver() {
   let config = rs.config();
@@ -355,6 +359,7 @@ function checkDatabase(d) {
 }
 
 var timerStart = new Date();
+var startDate = new ISODate(timerStart.toISOString())
 
 if (typeof dbs == 'object') {
   partial = true;
