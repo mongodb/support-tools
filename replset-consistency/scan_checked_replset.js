@@ -38,6 +38,12 @@ createRole(
 
 If system collections are damaged, additional privileges to read and write them are needed.
 
+Additional authentication and URI options may be specified in the authInfo object:
+
+mongo --host <primaryHostAndPort> --tls --tlsCAFile=path/to/ca.pem \
+      --eval 'authInfo={user:"remediate", pwd:"password", mechanism: "PLAIN", db: "$external" uriOptions: "tls=true&tlsCAFile=path/to/ca.pem"}' \
+      scan_checked_replset.js | tee scan.txt_{{date +"%Y-%m-%d_%H-%M-%S"}}
+
 Please note: all tools/ scripts in this repo are released for use "AS
 IS" without any warranties of any kind, including, but not limited to
 their installation, use, or performance. We disclaim any and all
