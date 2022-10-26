@@ -406,8 +406,9 @@ var helloDoc = (typeof db.hello !== 'function') ? db.isMaster() : db.hello();
 var lastStartup = new Date(new Date() - db.serverStatus().uptimeMillis);
 sleep(1000); // Not sure this is necessary, but sometimes dbCheck results can
              // appear shortly after the command returns ok.
-
-authInfo.db = authInfo.db || 'local';
+if (authInfo) {
+  authInfo.db = authInfo.db || 'local';
+}
 checkRollOver();
 printFunction({
   dbCheckOk : failArray.length == 0,
