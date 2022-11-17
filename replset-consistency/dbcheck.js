@@ -200,6 +200,7 @@ function checkRollOver() {
     printFunction(error);
   }
 
+  let weakCheck = false
   if (typeof authInfo !== "undefined") {
     uriOptions = authInfo.uriOptions || "";
     delete authInfo.uriOptions;
@@ -217,6 +218,7 @@ function checkRollOver() {
             nodelist.push({_id: member._id, connection: conn, host: member.host});
         }
       } catch (error) {
+        weakCheck = true
         printFunction({
           msg: "unable to connect to node in replset",
           error: error,
@@ -226,25 +228,29 @@ function checkRollOver() {
       }
     }
     
-    for (let i = 0; i < nodelist.length; i++) {
-      let nodeInfo = nodelist[i];
-      try {   
-        let tcount = getDBCheckCountByNode(nodeInfo)
-        if (i == 0) {
-          secondaryCount = tcount;
-        } else {
-          secondaryCount = Math.min(secondaryCount, tcount);
+    if (!weakCheck) {
+      for (let i = 0; i < nodelist.length; i++) {
+        let nodeInfo = nodelist[i];
+        try {   
+          let tcount = getDBCheckCountByNode(nodeInfo)
+          if (i == 0) {
+            secondaryCount = tcount;
+          } else {
+            secondaryCount = Math.min(secondaryCount, tcount);
+          }
+        } catch (error) {
+          printFunction({
+            msg: "failed to check node for dbCheck count",
+            error: error,
+            _id: nodelist[i]._id,
+            host: nodelist[i].host,
+          });
         }
-      } catch (error) {
-        printFunction({
-          msg: "failed to check node for dbCheck count",
-          error: error,
-          _id: nodelist[i]._id,
-          host: nodelist[i].host,
-        });
       }
     }
-  } else {
+  } 
+  
+  if (weakCheck || !authInfo) {
     printFunction({
       msg: "authInfo object is undefined; performing weak healthlog rollover check.",
     });
