@@ -227,11 +227,17 @@ function checkRollOver() {
           secondaryCount = Math.min(secondaryCount, tcount);
         }
       } catch (error) {
-        printFunction(error);
+        printFunction({
+          msg: error,
+          _id: nodelist[i]._id,
+          host: nodelist[i].host,
+        });
       }
     }
   } else {
-    printFunction("authInfo object is undefined; performing weak healthlog rollover check.")
+    printFunction({
+      msg: "authInfo object is undefined; performing weak healthlog rollover check.",
+    });
     for (let i = 0; i < ((getWriteConcern() - 1) * 2); i++) {
       try {
         let tcount = getDBCheckCount("secondary");
