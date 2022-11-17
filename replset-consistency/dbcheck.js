@@ -201,7 +201,7 @@ function checkRollOver() {
   }
 
   if (typeof authInfo !== "undefined") {
-    uriOptions = authInfo.uriOptions;
+    uriOptions = authInfo.uriOptions || "";
     delete authInfo.uriOptions;
   
     for (let member of config.members) {
