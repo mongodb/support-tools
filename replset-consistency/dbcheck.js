@@ -9,11 +9,11 @@ Use this script as part of the guidance in
 https://github.com/mongodb/support-tools/tree/replset-consistency/replset-consistency/README.md
 
 Usage:
-  mongosh mongodb://127.0.0.1:27017/?replicaSet=replset dbcheck.js 2>&1 | tee
-  dbcheckresults.json
+  mongosh mongodb://127.0.0.1:27017/?replicaSet=replset --eval "authInfo={<auth object>}" \ 
+   dbcheck.js 2>&1 | tee dbcheckresults.json
  or
-  mongo mongodb://127.0.0.1:27017/?replicaSet=replset dbcheck.js 2>&1 | tee
-  dbcheckresults.json
+  mongo mongodb://127.0.0.1:27017/?replicaSet=replset --eval "authInfo={<auth object>}" \ 
+   dbcheck.js 2>&1 | tee dbcheckresults.json
 
  Partial results can be found by passing --eval
    To run on a specific list of name spaces.
@@ -23,6 +23,8 @@ Usage:
    Combination of databases and namespaces
     --eval "dbs = ['admin']; ns =
     ['admin.system.version','config.system.sessions']"
+   To ensure a deterministic check for secondary healthlog roll over
+    --eval "authInfo={'user': '$user', 'pwd': '$password'}"
 
  This must be run as a user with the following roles:
    - listDatabases: List all databases
