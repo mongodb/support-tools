@@ -228,7 +228,8 @@ function checkRollOver() {
         }
       } catch (error) {
         printFunction({
-          msg: error,
+          msg: "failed to check node for dbCheck count",
+          error: error,
           _id: nodelist[i]._id,
           host: nodelist[i].host,
         });
