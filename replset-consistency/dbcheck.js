@@ -205,6 +205,7 @@ function checkRollOver() {
     delete authInfo.uriOptions;
   
     for (let member of config.members) {
+      try {
         let conn = new Mongo("mongodb://" + member.host + "/?" + uriOptions);
         conn.setSecondaryOk(true);
         if (member.arbiterOnly) {
@@ -215,6 +216,14 @@ function checkRollOver() {
             }
             nodelist.push({_id: member._id, connection: conn, host: member.host});
         }
+      } catch (error) {
+        printFunction({
+          msg: "unable to connect to node in replset",
+          error: error,
+          _id: member._id,
+          host: member.host,
+        })
+      }
     }
     
     for (let i = 0; i < nodelist.length; i++) {
