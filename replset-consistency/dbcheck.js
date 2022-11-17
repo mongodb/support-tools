@@ -253,7 +253,7 @@ function checkRollOver() {
   if (weakCheck || !authInfo) {
     printFunction({
       msg: `${
-        !authInfo && "authInfo object is undefined. "
+        !authInfo ? "authInfo object is undefined. " : ""
       }Unable to authenticate into secondary nodes. Performing weak healthlog rollover check.`,
     });
     for (let i = 0; i < ((getWriteConcern() - 1) * 2); i++) {
