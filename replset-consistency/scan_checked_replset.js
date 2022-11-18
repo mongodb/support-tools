@@ -428,7 +428,7 @@ if (backup === undefined)
     backup = true;
 
 if (typeof db.getMongo().auth === 'undefined' || typeof EJSON === 'undefined') {
-    printFunction({msg: "mongosh is not supported. Please use the legacy mongo shell."})
+    print("mongosh is not supported. Please use the legacy mongo shell.")
 } else {
     repairDatabases(db, authInfo);
 }
