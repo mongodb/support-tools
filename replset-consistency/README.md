@@ -142,7 +142,7 @@ It is important to check on all nodes as the contents on each node can vary, and
 
 If `local.system.healthlog` does not contain a "dbCheckStart" document for the collection you're running `dbCheck` on, `local.system.healthlog` has rolled over and subsequent scripts will not have complete information. 
 
-If `dbCheck` is run using `dbcheck.js`, you may optionally specify an `authInfo` object, with the user created above, to automatically check if the healthlog has rolled over. Omitting this object will not accurately check if the healthlog has rolled over on each secondary.
+The `dbcheck.js` script will automatically attempt to check if the healthlog has rolled over. You must specify an `authInfo` object with the user created above to guarantee an accurate check on the completeness of results from all replica set nodes. If you do not specify the `authInfo` object, the healthlog may not be checked on every replica set node, and the results may not be complete. Whether the healthlog has rolled over will be reported in the `rollover` field.
 
 When you are ready, run `dbCheck`, specifying a write concern equal to the number of data-bearing nodes (X) in the replica set, and our recommended `wtimeout` of `1000`.
 

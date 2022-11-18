@@ -23,7 +23,7 @@ Usage:
    Combination of databases and namespaces
     --eval "dbs = ['admin']; ns =
     ['admin.system.version','config.system.sessions']"
-   To ensure a deterministic check for secondary healthlog roll over
+   To guarantee completeness of results on all nodes
     --eval "authInfo={'user': '$user', 'pwd': '$password'}"
 
  This must be run as a user with the following roles:
