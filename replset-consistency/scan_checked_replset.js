@@ -82,6 +82,11 @@ const saveCollPrefix = "dbcheck_";
 const backupCollPrefix = "dbcheck_backup_";
 var backup;
 
+if (typeof db.getMongo().auth === 'undefined' || typeof EJSON === 'undefined') {
+    printFunction({msg: "mongosh is not supported. Please use the legacy mongo shell."})
+    return;
+}
+
 function getLeastId(docs) {
     let leastId = undefined;
     let leastIndices = [];
