@@ -9,11 +9,11 @@ Use this script as part of the guidance in
 https://github.com/mongodb/support-tools/tree/replset-consistency/replset-consistency/README.md
 
 Usage:
-  mongosh mongodb://127.0.0.1:27017/?replicaSet=replset dbcheck.js 2>&1 | tee
-  dbcheckresults.json
+  mongosh mongodb://127.0.0.1:27017/?replicaSet=replset --eval "authInfo={<auth object>}" \ 
+   dbcheck.js 2>&1 | tee dbcheckresults.json
  or
-  mongo mongodb://127.0.0.1:27017/?replicaSet=replset dbcheck.js 2>&1 | tee
-  dbcheckresults.json
+  mongo mongodb://127.0.0.1:27017/?replicaSet=replset --eval "authInfo={<auth object>}" \ 
+   dbcheck.js 2>&1 | tee dbcheckresults.json
 
  Partial results can be found by passing --eval
    To run on a specific list of name spaces.
@@ -23,6 +23,8 @@ Usage:
    Combination of databases and namespaces
     --eval "dbs = ['admin']; ns =
     ['admin.system.version','config.system.sessions']"
+   To guarantee completeness of results on all nodes
+    --eval "authInfo={'user': '$user', 'pwd': '$password'}"
 
  This must be run as a user with the following roles:
    - listDatabases: List all databases
@@ -154,8 +156,10 @@ function getDBCheckCount(readPref) {
   db.getMongo().setReadPref(readPref);
 
   let curr = db.getSiblingDB("local").system.healthlog.aggregate([
-    {$match : {operation : "dbCheckStart"}}, {$count : "dbCheckStartCount"}
+    { $match: { operation: "dbCheckStart", timestamp: { $gte: startDate } } },
+    { $count: "dbCheckStartCount" },
   ]);
+
   if (curr.hasNext()) {
     let my_count = curr.next().dbCheckStartCount;
     return my_count;
@@ -163,25 +167,106 @@ function getDBCheckCount(readPref) {
   return 0;
 }
 
-// Non-deterministic, we don't know if we'll select the same secondary over and
-// over again.
+function getDBCheckCountByNode(node) {
+  let conn = node.connection;
+  let curr = conn.getDB("local").getCollection("system.healthlog").aggregate([
+    { $match: { operation: "dbCheckStart", timestamp: { $gte: startDate } } },
+    { $count: "dbCheckStartCount" },
+  ]);
+
+  if (curr.hasNext()) {
+    let my_count = curr.next().dbCheckStartCount;
+    node.dbCheckStartCount = my_count;
+    return my_count;
+  }
+  return 0;
+}
+
+// Authenticates into every data-bearing secondary nodes to query healthlog 
+// dbCheckStart entries
+//
+// If authInfo is not provided, behavior defaults to old healthlog rollover check 
+// that is non-deterministic. We don't know if we'll select the same secondary 
+// over and over again.
 //
 function checkRollOver() {
+  let config = rs.config();
+  let nodelist = [];
+
+  
   try {
     primaryCount = getDBCheckCount("primary")
   } catch (error) {
     printFunction(error);
   }
-  for (let i = 0; i < ((getWriteConcern() - 1) * 2); i++) {
-    try {
-      let tcount = getDBCheckCount("secondary");
-      if (i == 0) {
-        secondaryCount = tcount;
-      } else {
-        secondaryCount = Math.min(secondaryCount, tcount);
+
+  let weakCheck = false
+  if (typeof authInfo !== "undefined") {
+    uriOptions = authInfo.uriOptions || "";
+    delete authInfo.uriOptions;
+  
+    for (let member of config.members) {
+      try {
+        let conn = new Mongo("mongodb://" + member.host + "/?" + uriOptions);
+        conn.setSecondaryOk(true);
+        if (member.arbiterOnly) {
+            conn.close();
+        } else {
+            if (authInfo) {
+              conn.auth(authInfo);
+            }
+            nodelist.push({_id: member._id, connection: conn, host: member.host});
+        }
+      } catch (error) {
+        weakCheck = true
+        printFunction({
+          msg: "unable to connect to node in replset",
+          error: error,
+          _id: member._id,
+          host: member.host,
+        })
       }
-    } catch (error) {
-      printFunction(error);
+    }
+    
+    if (!weakCheck) {
+      for (let i = 0; i < nodelist.length; i++) {
+        let nodeInfo = nodelist[i];
+        try {   
+          let tcount = getDBCheckCountByNode(nodeInfo)
+          if (i == 0) {
+            secondaryCount = tcount;
+          } else {
+            secondaryCount = Math.min(secondaryCount, tcount);
+          }
+        } catch (error) {
+          printFunction({
+            msg: "failed to check node for dbCheck count",
+            error: error,
+            _id: nodelist[i]._id,
+            host: nodelist[i].host,
+          });
+        }
+      }
+    }
+  } 
+  
+  if (weakCheck || !authInfo) {
+    printFunction({
+      msg: `${
+        !authInfo ? "authInfo object is undefined. " : ""
+      }Unable to authenticate into secondary nodes. Performing weak healthlog rollover check.`,
+    });
+    for (let i = 0; i < ((getWriteConcern() - 1) * 2); i++) {
+      try {
+        let tcount = getDBCheckCount("secondary");
+        if (i == 0) {
+          secondaryCount = tcount;
+        } else {
+          secondaryCount = Math.min(secondaryCount, tcount);
+        }
+      } catch (error) {
+        printFunction(error);
+      }
     }
   }
 }
@@ -321,6 +406,7 @@ function checkDatabase(d) {
 }
 
 var timerStart = new Date();
+var startDate = new ISODate(timerStart.toISOString())
 
 if (typeof dbs == 'object') {
   partial = true;
@@ -351,6 +437,9 @@ var helloDoc = (typeof db.hello !== 'function') ? db.isMaster() : db.hello();
 var lastStartup = new Date(new Date() - db.serverStatus().uptimeMillis);
 sleep(1000); // Not sure this is necessary, but sometimes dbCheck results can
              // appear shortly after the command returns ok.
+if (typeof authInfo !== "undefined") {
+  authInfo.db = authInfo.db || 'local';
+}
 checkRollOver();
 printFunction({
   dbCheckOk : failArray.length == 0,
