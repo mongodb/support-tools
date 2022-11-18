@@ -427,7 +427,7 @@ authInfo.db = authInfo.db || 'admin';
 if (backup === undefined)
     backup = true;
 
-if (typeof db.getMongo().auth === 'undefined' || typeof EJSON === 'undefined') {
+if (typeof db.getMongo().auth === 'undefined' || typeof EJSON !== 'undefined') {
     print("mongosh is not supported. Please use the legacy mongo shell.")
 } else {
     repairDatabases(db, authInfo);
