@@ -398,7 +398,7 @@ function getfiles {
 
 			_nextoutput
 			_graboutput
-			cat "$f"
+			cat "$f" | sed 's/\(.*password.*\):\(.*\)/\1: <REDACTED>/i'
 			_ungraboutput
 			output_fieldname="content"
 		else
