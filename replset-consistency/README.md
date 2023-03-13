@@ -1,4 +1,8 @@
-# Replica Set Consistency Validation
+# MongoDB Validation Support Tools
+* [Pre-requisites](#pre-requisites)
+* [Remediation Steps](#remediation-steps)
+   * [Checking for Local Inconsistencies](#checking-for-local-inconsistencies)
+   * [Checking for Replica Set Inconsistencies](#checking-for-replica-set-inconsistencies)
 
 ## Warning
 
@@ -20,6 +24,7 @@ This process provides for identifying and resolving data inconsistencies between
 
 The primary use-cases for this process are when:
 
+* a MongoDB replica set running on system architectures with weak memory ordering (ARM64 and POWER) is affected by [WT-10461](https://jira.mongodb.org/browse/WT-10461) which can cause affected nodes to store documents or index entries out of order, leading to inconsistencies and improperly sorted or incomplete query results on versions 4.2.0-4.2.23, 4.4.0-4.4.18, 5.0.0-5.0.14, 6.0.0-6.0.4 or rapid release versions 6.1.0-6.2.0..
 * a MongoDB replica set has undergone an unsafe upgrade path identified by [WT-8395](https://jira.mongodb.org/browse/WT-8395), a defect which can introduce data inconsistencies when upgrading from versions 4.4.3-4.4.4 directly to 4.4.8-4.4.10 or 5.0.2-5.0.5.
 * all nodes of a MongoDB replica set have been separately impacted by [WT-7995](https://jira.mongodb.org/browse/WT-7995), [WT-7984](https://jira.mongodb.org/browse/WT-7984) on versions 4.4.2-4.4.8 and 5.0.0-5.0.2, and validate() output alone is not sufficient to rule out document-level inconsistencies between nodes.
 
@@ -104,13 +109,20 @@ The overall high level process is:
     1. Optionally, re-run `dbCheck` to confirm consistency
     1. Resume writes to the collection.
 
-## Validate
+## Checking for Local Inconsistencies
 
-For each node, run `validate` on all collections on all nodes. `validate.js` runs validate on every collection of a given node.
+For each node, run `validate` on all collections on all nodes. [`validate.js`](https://github.com/mongodb/support-tools/blob/master/replset-consistency/validate.js) runs validate on every collection of a given node.
 
-On each node with validation issues, any “missing index entries” for the `_id` index must be fixed using [`reIndex`]|(https://docs.mongodb.com/manual/reference/method/db.collection.reIndex/) prior to running `dbCheck`. Other index inconsistencies, including extra entries in the `_id` index, do not need to be addressed prior to `dbCheck` (but will not necessarily be resolved by this remediation).
+On each node with validation issues, any “missing index entries” for the `_id` index must be fixed using [`reIndex`](https://docs.mongodb.com/manual/reference/method/db.collection.reIndex/) prior to running `dbCheck`. Other index inconsistencies, including extra entries in the `_id` index, do not need to be addressed prior to `dbCheck` (but will not necessarily be resolved by this remediation).
 
-## Check and Remediate
+If you are completing this process to check for possible replica set inconsistency that requires running dbcheck if validation fails (such as WT-10461), proceed with the steps in [Checking for Replica Set Inconsistencies](#Checking-for-Replica-Set-Inconsistencies)**.
+
+If you are not checking for possible replica set inconsistency, any nodes that fail validation should be initial-synced from a node that passes validation. No further steps are required.
+
+
+## Checking for Replica Set Inconsistencies
+
+Before proceeding, make sure you have completed [Checking for Local Inconsistencies](#Checking-for-Local-Inconsistencies) on every node in your replica set cluster.
 
 For each collection on your replica set cluster:
 
@@ -232,7 +244,7 @@ When remediation is complete, resume writes to the collection(s) being remediate
 
 ## 5. Resolve any remaining index inconsistencies
 
-Now that document data is confirmed consistent, and if `validate{}` previously indicated index inconsistencies, perform an initial sync of all affected nodes in sequence, to ensure indexes are rebuilt.
+Now that document data is confirmed consistent, and if `validate{}` previously indicated index inconsistencies, perform an [initial sync](https://www.mongodb.com/docs/manual/core/replica-set-sync/) of all affected nodes in sequence, to ensure indexes are rebuilt.
 
 # License
 
@@ -252,3 +264,5 @@ their use.
 
 You are responsible for reviewing and testing any scripts you run *thoroughly* before use in any non-testing
 environment.
+
+
