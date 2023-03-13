@@ -244,7 +244,7 @@ When remediation is complete, resume writes to the collection(s) being remediate
 
 ## 5. Resolve any remaining index inconsistencies
 
-Now that document data is confirmed consistent, and if `validate{}` previously indicated index inconsistencies, perform an [initial sync](https://www.mongodb.com/docs/manual/core/replica-set-sync/) of all affected nodes in sequence, to ensure indexes are rebuilt.
+Now that document data is confirmed consistent, and if `validate()` previously indicated index inconsistencies, perform an [initial sync](https://www.mongodb.com/docs/manual/core/replica-set-sync/) of all affected nodes in sequence, to ensure indexes are rebuilt.
 
 # License
 
@@ -264,5 +264,4 @@ their use.
 
 You are responsible for reviewing and testing any scripts you run *thoroughly* before use in any non-testing
 environment.
-
 
