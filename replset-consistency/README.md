@@ -245,15 +245,15 @@ db.getSiblingDB("<dbName>").runCommand({dbCheck: "<collName>", minKey: <key_0>, 
 When remediation is complete, resume writes to the collection(s) being remediated. It is safe to drop the `<dbName>.dbcheck_backup.<collName>.<node_id>` collections, but we recommend taking a backup of them before doing so.
 
 ## 5. Resolve any remaining index inconsistencies
+Performing [initial sync](https://www.mongodb.com/docs/manual/core/replica-set-sync/) on a node will rebuild all indexes as the documents are copied for each collection.
+The necessity of performing initial sync to rebuild indexes partly depends on whether you are remediating for local inconsistencies, or replica set inconsistencies.
 
-If you are remediating for local inconsistencies only (only ran validate):
+If you are [remediating for local inconsistencies](#checking-for-local-inconsistencies):
 * Any nodes that fail validation should be initial-synced from a node that passes validation.
 
-If you are remediating for replica set inconsistencies (ran dbcheck):
-* All nodes should have initial sync performed on them.
-* Any node can be used as an initial sync source, as long as the original sync source you use is also initially synced at the end. This process rebuilds indexes on each node.
-
-Now that document data is confirmed consistent, and if `validate()` previously indicated index inconsistencies, perform an [initial sync](https://www.mongodb.com/docs/manual/core/replica-set-sync/) of all affected nodes in sequence, to ensure indexes are rebuilt.
+If you are [remediating for replica set inconsistencies](#checking-for-replica-set-inconsistencies):
+* All nodes should have initial sync performed on them, regardless of validation status.
+* Any node can be used as an initial sync source, as long as the original sync source you use is also initially synced at the end.
 
 # License
 
