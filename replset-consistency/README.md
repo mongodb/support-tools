@@ -246,6 +246,13 @@ When remediation is complete, resume writes to the collection(s) being remediate
 
 ## 5. Resolve any remaining index inconsistencies
 
+If you are remediating for local inconsistencies only (only ran validate):
+* Any nodes that fail validation should be initial-synced from a node that passes validation.
+
+If you are remediating for replica set inconsistencies (ran dbcheck):
+* All nodes should have initial sync performed on them.
+* Any node can be used as an initial sync source, as long as the original sync source you use is also initially synced at the end. This process rebuilds indexes on each node.
+
 Now that document data is confirmed consistent, and if `validate()` previously indicated index inconsistencies, perform an [initial sync](https://www.mongodb.com/docs/manual/core/replica-set-sync/) of all affected nodes in sequence, to ensure indexes are rebuilt.
 
 # License
