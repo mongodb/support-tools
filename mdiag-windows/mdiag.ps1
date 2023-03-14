@@ -2,7 +2,7 @@
 # mdiag.ps1: MongoDB Diagnostic Report
 # ====================================
 #
-# Copyright MongoDB, Inc, 2014, 2015, 2016, 2017, 2018
+# Copyright MongoDB, Inc, 2014-2023
 #
 #
 # DISCLAIMER
@@ -44,8 +44,8 @@ Param(
 # VERSION
 # =======
 
-$script:ScriptVersion = "1.9.6"
-$script:RevisionDate  = "2019-05-17"
+$script:ScriptVersion = "2.0.6"
+$script:RevisionDate  = "2023-03-08"
 
 <#
    .SYNOPSIS
@@ -371,7 +371,11 @@ function Redact-ConfigFile($FilePath)
    $optionsToRedact = @('\bqueryPassword:[\s]*([^\s]*)',
                         '\bqueryUser:[\s]*([^\s]*)[\s]*$',
                         '\bqueryUser:[\s]*(CN=.+?)(?<!\\)\,',
-                        '\bservers:[\s]*([^\s]*)')
+                        '\bservers:[\s]*([^\s]*)',
+                        '\bcertificateKeyFilePassword:[\s]*([^\s]*)',
+                        '\bPEMKeyPassword:[\s]*([^\s]*)',
+                        '\bclientCertificatePassword:[\s]*([^\s]*)',
+                        '\bclusterPassword:[\s]*([^\s]*)')
 
    Get-Content $FilePath -ErrorAction Stop | % {
       if (-not ($currentLine = $_))

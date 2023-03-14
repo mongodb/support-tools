@@ -4,7 +4,7 @@
 # mdiag.sh: MongoDB Diagnostic Report
 # ===================================
 #
-# Copyright MongoDB, Inc, 2014, 2015, 2016, 2017, 2018, 2019
+# Copyright MongoDB, Inc, 2014-2023
 #
 # Gather a wide variety of system and hardware diagnostic information.
 #
@@ -44,8 +44,8 @@
 # limitations under the License.
 
 
-version="2.0.5"
-revdate="2019-08-26"
+version="2.0.6"
+revdate="2023-02-20"
 
 PATH="$PATH${PATH+:}/usr/sbin:/sbin:/usr/bin:/bin"
 
@@ -204,11 +204,14 @@ function _main {
 	COLUMNS=512 top -b -d 1 -n 30 -c | sed -e 's/ *$//g'
 	endruncommands
 	endsection
-	section top_threads
-	runcommands
-	COLUMNS=512 top -b -d 1 -n 30 -c -H | sed -e 's/ *$//g'
-	endruncommands
-	endsection
+	for i in {0..30}; do
+		section top_threads
+		runcommands
+		COLUMNS=512 top -b -n 1 -c -H | sed -e 's/ *$//g'
+		endruncommands
+		endsection
+		sleep 1
+	done
 	section iostat runcommand iostat -xtm 1 120
 
 	# Mongo process info
@@ -398,7 +401,7 @@ function getfiles {
 
 			_nextoutput
 			_graboutput
-			cat "$f"
+			_redactfile "$(< "$f")"
 			_ungraboutput
 			output_fieldname="content"
 		else
@@ -482,7 +485,7 @@ EOF
 
 function _showversion {
 	echo "mdiag.sh: MongoDB System Diagnostic Information Gathering Tool"
-	echo "version $version, copyright (c) 2014-2019, MongoDB, Inc."
+	echo "version $version, copyright (c) 2014-2023, MongoDB, Inc."
 }
 
 function _showhelp {
@@ -820,6 +823,31 @@ function _graboutput {
 
 function _ungraboutput {
 	exec 1>&3 2>&4
+}
+
+function _redactfile {
+	blockedwords=(
+		"queryPassword"
+		"certificateKeyFilePassword"
+		"PEMKeyPassword"
+		"clientCertificatePassword"
+		"clusterPassword"
+		"mmsGroupId"
+		"mmsApiKey"
+		"mmsBaseUrl"
+	)
+	local IFS=
+	blockedwords="($(echo ${blockedwords[@]} | tr ' ' '|'))"
+	while read -r line; do
+		if [[ $line =~ (([a-zA-Z -_.]*\.|^ *)${blockedwords} *[:=] *)([^ ]+)( +#.*)? ]]; then
+			sha="$(printf "%s" "${BASH_REMATCH[4]}" | sha256sum | tr -d '\n *-')";
+			if [[ ! -z $sha ]]; then
+				sha=" sha256 ${sha}";
+			fi
+			line="${BASH_REMATCH[1]}<redacted$sha>${BASH_REMATCH[5]}"
+		fi
+		echo "$line"
+	done <<< "$*"
 }
 
 function _striptraceoutput {
