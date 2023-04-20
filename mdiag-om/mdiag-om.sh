@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ===================================
-# mdiag.sh: MongoDB Diagnostic Report
+# mdiag-om.sh: MongoDB Ops Manager Diagnostic Report
 # ===================================
 #
 # Copyright MongoDB, Inc, 2014, 2015, 2016, 2017, 2018, 2019
@@ -44,15 +44,15 @@
 # limitations under the License.
 
 
-version="2.0.5"
-revdate="2019-08-26"
+version="1.0.1"
+revdate="2023-04-20"
 
 PATH="$PATH${PATH+:}/usr/sbin:/sbin:/usr/bin:/bin"
 
 _os="`uname -o`"
 if test "$_os" != "GNU/Linux"; then
-	echo "mdiag.sh: ERROR: Unsupported Operating System: $_os"
-	echo "mdiag.sh: Supported Operating Systems are: Linux"
+	echo "mdiag-om.sh: ERROR: Unsupported Operating System: $_os"
+	echo "mdiag-om.sh: Supported Operating Systems are: Linux"
 	exit 1
 fi
 
@@ -329,7 +329,7 @@ function printeach0file {
 
 function fingerprint {
 	ts="$(_now)"
-	_addfield string "script" "mdiag.sh"
+	_addfield string "script" "mdiag-om.sh"
 	_addfield string "revdate" "$revdate"
 	_addfield string "os" "$_os"
 	_addfield string "shell" "$SHELL"
@@ -398,7 +398,7 @@ function getfiles {
 
 			_nextoutput
 			_graboutput
-			cat "$f"
+			_redactfile "$(< "$f")"
 			_ungraboutput
 			output_fieldname="content"
 		else
@@ -481,8 +481,8 @@ read -r -d '' _stat_format <<EOF
 EOF
 
 function _showversion {
-	echo "mdiag.sh: MongoDB System Diagnostic Information Gathering Tool"
-	echo "version $version, copyright (c) 2014-2019, MongoDB, Inc."
+	echo "mdiag-om.sh: MongoDB System Diagnostic Information Gathering Tool"
+	echo "version $version, copyright (c) 2014-2023, MongoDB, Inc."
 }
 
 function _showhelp {
@@ -490,7 +490,7 @@ function _showhelp {
 	_showversion
 	echo ""
 	echo "Usage:"
-	echo "    sudo bash mdiag.sh [options] [reference]"
+	echo "    sudo bash mdiag-om.sh [options] [reference]"
 	echo ""
 	echo "Parameters:"
 	echo "    [reference]      Reference to ticket, e.g. 00523198"
@@ -499,14 +499,14 @@ function _showhelp {
 	echo "    --json           Output in JSON format"
 	echo "    --answer [ynqd]  At prompts, answer \"yes\", \"no\", \"quit\" or the default"
 	echo "    --help, -h       Show this help"
-	echo "    --version, -v    Show the mdiag.sh version"
+	echo "    --version, -v    Show the mdiag-om.sh version"
 	echo ""
 }
 
 function _user_error_fatal {
 	echo ""
-	echo "mdiag.sh: ERROR: $*"
-	echo "Run \"bash mdiag.sh --help\" for help."
+	echo "mdiag-om.sh: ERROR: $*"
+	echo "Run \"bash mdiag-om.sh --help\" for help."
 	echo ""
 	exit 1
 }
@@ -522,7 +522,7 @@ function _set_defaults {
 	tag="$(_now)"
 
 	# FIXME: put everything into a subdir (using mktemp)
-	outputbase="${TMPDIR:-/tmp}/mdiag-$host"
+	outputbase="${TMPDIR:-/tmp}/mdiag-om-$host"
 }
 
 function _parse_cmdline {
@@ -590,8 +590,8 @@ function _parse_cmdline {
 
 function _print_header {
 	echo "========================="
-	echo "MongoDB Diagnostic Report"
-	echo "mdiag.sh version $version"
+	echo "MongoDB Ops Manager Diagnostic Report"
+	echo "mdiag-om.sh version $version"
 	echo "========================="
 	echo
 }
@@ -599,8 +599,8 @@ function _print_header {
 function _check_for_ref {
 	if [ "$ref" = "" ]; then
 		echo "WARNING: No reference has been supplied.  If you have a ticket number or other"
-		echo "reference, you should re-run mdiag.sh and pass it on the command line."
-		echo "Run \"bash mdiag.sh --help\" for help."
+		echo "reference, you should re-run mdiag-om.sh and pass it on the command line."
+		echo "Run \"bash mdiag-om.sh --help\" for help."
 		echo
 	fi
 }
@@ -668,7 +668,7 @@ function _read_ynq {
 			REPLY="$default"
 			;;
 		[Qq])
-			echo "mdiag.sh: Aborting at user request"
+			echo "mdiag-om.sh: Aborting at user request"
 			exit 0
 			;;
 	esac
@@ -702,11 +702,11 @@ function _get_with_curl {
 
 function _check_for_new_version {
 	if [ "$inhibit_new_version_check" != y -a "$updated_from" = "" -a "$relaunched_from" = "" ]; then
-		download_url='https://raw.githubusercontent.com/mongodb/support-tools/master/mdiag/mdiag.sh'
+		download_url='https://raw.githubusercontent.com/mongodb/support-tools/master/mdiag/mdiag-om.sh'
 		# FIXME: put this (and everything) into an $outputbase-based subdir
-		download_target="$outputbase-$$-mdiag.sh"
+		download_target="$outputbase-$$-mdiag-om.sh"
 		trap _clean_download_target EXIT   # don't leak downloaded script on shell exit
-		echo "Checking for a newer version of mdiag.sh..."
+		echo "Checking for a newer version of mdiag-om.sh..."
 		# first try wget, then try curl, then give up
 		if ! _get_with_wget; then
 			if ! _get_with_curl; then
@@ -742,7 +742,7 @@ function _check_for_new_version {
 								_clean_download_target   # trap EXIT doesn't fire on exec
 								exec bash "$0" --internal-updated-from "$version" "$@"
 							else
-								echo "mdiag.sh: ERROR: failed to update $0 to new version..."
+								echo "mdiag-om.sh: ERROR: failed to update $0 to new version..."
 								exit 1
 							fi
 							;;
@@ -754,7 +754,7 @@ function _check_for_new_version {
 				fi
 				# If we get here, either user said not to replace $0, or no write permission.
 				# Offer to run the new version anyway.
-				_read_ynq "Use new version of mdiag.sh without updating"
+				_read_ynq "Use new version of mdiag-om.sh without updating"
 				case "$REPLY" in
 					[Yy]|"")
 						echo "Running new version without updating $0..."
@@ -821,6 +821,32 @@ function _graboutput {
 function _ungraboutput {
 	exec 1>&3 2>&4
 }
+
+function _redactfile {
+	blockedwords=(
+		"queryPassword"
+		"certificateKeyFilePassword"
+		"PEMKeyPassword"
+		"clientCertificatePassword"
+		"clusterPassword"
+		"mmsGroupId"
+		"mmsApiKey"
+		"mmsBaseUrl"
+	)
+	local IFS=
+	blockedwords="($(echo ${blockedwords[@]} | tr ' ' '|'))"
+	while read -r line; do
+		if [[ $line =~ (([a-zA-Z -_.]*\.|^ *)${blockedwords} *[:=] *)([^ ]+)( +#.*)? ]]; then
+			sha="$(printf "%s" "${BASH_REMATCH[4]}" | sha256sum | tr -d '\n *-')";
+			if [[ ! -z $sha ]]; then
+				sha=" sha256 ${sha}";
+			fi
+			line="${BASH_REMATCH[1]}<redacted$sha>${BASH_REMATCH[5]}"
+		fi
+		echo "$line"
+	done <<< "$*"
+}
+
 
 function _striptraceoutput {
 	while read -r line; do
@@ -998,7 +1024,7 @@ function _output_preamble_txt {
 	{
 		echo "========================="
 		echo "MongoDB Diagnostic Report"
-		echo "mdiag.sh version $version"
+		echo "mdiag-om.sh version $version"
 		echo "========================="
 	} >> "$1"
 }
@@ -1118,4 +1144,3 @@ function _finish {
 if [ "${__MDIAG_UNIT_TEST:-unset}" = "unset" ]; then
 	_main "$@"
 fi
-
