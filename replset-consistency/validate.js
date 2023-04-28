@@ -22,6 +22,9 @@ Usage:
     --eval "dbs = ['admin']; ns =
     ['admin.system.version','config.system.sessions']"
 
+ To run with { full: true } 
+    --eval "validateFull=true"
+
  This must be run as a user with the following roles:
    - listDatabases: List all databases
    - listCollections: List all collections on all databases
@@ -103,14 +106,14 @@ var failArray = [];
 var seen = [];
 var partial = false;
 
-function validateCollection(d, coll) {
+function validateCollection(d, coll, validateFull) {
     var validate_results = {"valid": false};
     if (partial) {
         if (seen.includes("db:" + d + ", coll: " + coll)) {
             return;
         }
     }
-    validate_results = db.getSiblingDB(d).runCommand({validate: coll});
+    validate_results = db.getSiblingDB(d).runCommand({validate: coll, full: validateFull});
     if (validate_results.valid == undefined) {
         printFunction({"msg": "missing valid field in validate output", "db": d, "coll": coll});
     }
@@ -145,23 +148,26 @@ function getCollectionNames(d) {
     });
 }
 
-function validateDatabase(d) {
+function validateDatabase(d, validateFull) {
     getCollectionNames(d).forEach(function(coll) {
         if (d == "local") {
             if (db.getSiblingDB(d).getCollection(coll).getFullName() == "local.oplog.rs") {
                 return;
             }
         }
-        validateCollection(d, coll);
+        validateCollection(d, coll, validateFull);
     });
 }
 
 var timerStart = new Date();
 
+if (typeof validateFull == 'undefined' || validateFull != true) {
+    validateFull = false;
+}
 if (typeof dbs == 'object') {
     partial = true;
     dbs.forEach(function(d) {
-        validateDatabase(d);
+        validateDatabase(d, validateFull);
     });
 }
 if (typeof ns == 'object') {
@@ -173,14 +179,14 @@ if (typeof ns == 'object') {
         var d = n.substring(0, n.indexOf("."));
         var coll = n.substring(n.indexOf(".") + 1, n.length);
         if (getCollectionNames(d).includes(coll)) {
-            validateCollection(d, coll);
+            validateCollection(d, coll, validateFull);
         }
     });
 }
 
 if (!partial) {
     db.getMongo().getDBNames({readPreference: 'primaryPreferred'}).forEach(function(d) {
-        validateDatabase(d);
+        validateDatabase(d, validateFull);
     });
 }
 
@@ -189,6 +195,7 @@ var helloDoc = (typeof db.hello !== 'function') ? db.isMaster() : db.hello();
 printFunction({
     validation: (allClean ? "passed" : "failed"),
     valid: allClean,
+    full: validateFull,
     passing: passedCount,
     failing: failedCount,
     failingNS: failArray,

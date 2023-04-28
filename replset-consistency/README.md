@@ -115,6 +115,9 @@ Note: The [db.collection.validate()](https://www.mongodb.com/docs/manual/referen
 
 For each node, run `validate` on all collections on all nodes. [`validate.js`](https://github.com/mongodb/support-tools/blob/master/replset-consistency/validate.js) runs validate on every collection of a given node.
 
+To run `validate` with `{ full: true }` using [`validate.js`](https://github.com/mongodb/support-tools/blob/master/replset-consistency/validate.js)
+  mongo validate.js --eval "validateFull=true " 2>&1 | tee results.json
+
 On each node with validation issues, any “missing index entries” for the `_id` index must be fixed using [`reIndex`](https://docs.mongodb.com/manual/reference/method/db.collection.reIndex/) prior to running `dbCheck`. Other index inconsistencies, including extra entries in the `_id` index, do not need to be addressed prior to `dbCheck` (but will not necessarily be resolved by this remediation).
 
 If you are completing this process to check for possible replica set inconsistency that requires running dbcheck if validation fails (such as WT-10461), proceed with the steps in [Checking for Replica Set Inconsistencies](#Checking-for-Replica-Set-Inconsistencies).
