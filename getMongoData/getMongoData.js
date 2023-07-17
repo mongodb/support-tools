@@ -166,19 +166,19 @@ function printShardInfo(){
                                     collDoc['distribution'].push(chunkDistDoc);
                                 } );
 
-				if (_printChunkDetails) {
+                                if (_printChunkDetails) {
                                     collDoc['chunks'] = [];
                                     configDB.chunks.find( { "ns" : coll._id } ).sort( { min : 1 } ).forEach(
-					function(chunk) {
+                                        function(chunk) {
                                             chunkDoc = {}
                                             chunkDoc['min'] = chunk.min;
                                             chunkDoc['max'] = chunk.max;
                                             chunkDoc['shard'] = chunk.shard;
                                             chunkDoc['jumbo'] = chunk.jumbo ? true : false;
                                             collDoc['chunks'].push(chunkDoc);
-					}
+                                        }
                                     );
-				}
+                                }
 
                                 collDoc['tags'] = [];
                                 configDB.tags.find( { ns : coll._id } ).sort( { min : 1 } ).forEach(
@@ -190,7 +190,7 @@ function printShardInfo(){
                                         collDoc['tags'].push(tagDoc);
                                     }
                                 );
-			        doc['collections'].push(collDoc);
+                                doc['collections'].push(collDoc);
                             }
                         }
                     );
@@ -206,13 +206,13 @@ function printShardInfo(){
     if (sh.getRecentMigrations) { // Function does not exist in older shell versions (2.6 and below)
         printInfo('Recent chunk migrations', function(){return sh.getRecentMigrations()}, section);
     } else {
-	if (! _printJSON) print("\n** Recent chunk migrations: n/a")
+        if (! _printJSON) print("\n** Recent chunk migrations: n/a")
     }
 
     if (sh.getRecentFailedRounds) { // Function does not exist in older shell versions (2.6 and below)
         printInfo('Recent failed balancer rounds', function(){return sh.getRecentFailedRounds()}, section);
     } else {
-	if (! _printJSON) print("\n** Recent failed balancer rounds: n/a")
+        if (! _printJSON) print("\n** Recent failed balancer rounds: n/a")
     }
 }
 
@@ -233,7 +233,7 @@ function printInfo(message, command, section, printCapture, commandParameters) {
             print("Error running '" + command + "':");
             print(err);
         } else {
-	    throw("Error running '" + command + "': " + err);
+            throw("Error running '" + command + "': " + err);
         }
     }
     endTime = new Date();
@@ -287,6 +287,147 @@ function printUserAuthInfo() {
   printInfo('Custom role count', function(){return db.system.roles.count()}, section);
 }
 
+// find all QE collections
+// Outputs the following JSON:
+/*
+[
+    {
+        namespace: "qe_db.qe_coll",
+        escCollectionInfo: {
+            namespace: "qe_db.enxcol_.qe_coll.esc",
+            exists: true/false,
+            isClusteredCollection: true/false,
+            documentCount: 1078,
+            anchorCount: 78,
+            nonAnchorCount: 1000,
+        },
+        ecocCollectionInfo: {
+            namespace: "qe_db.enxcol_.qe_coll.ecoc",
+            exists: true/false,
+            documentCount: 10780,
+            isClusteredCollection: true/false,
+            compactTempCollectionExists: true/false,
+        },
+        safeContentInfo: {
+            safeContentIndexed: true/false,
+            indexedEncryptedDocumentsWithMissingSafeContentTags: 778,
+        },
+        shardingInfo: {
+            isSharded: true/false,
+            shardingStatus: {}
+        },
+        fields: {...},
+    },
+    {
+        ...
+    },
+    ...
+]
+*/
+function collectQueryableEncryptionInfo(isMongoS) {
+    const output = [];
+    const dbs = db.getMongo().getDBs();
+    if (!dbs.databases) {
+        return output;
+    }
+    const getAuxiliaryCollectionInfo = function(db, collName) {
+        let collInfos = db.getCollectionInfos({name: collName});
+        let exists = (collInfos.length > 0);
+        let isClusteredCollection = exists && collInfos[0].hasOwnProperty("options") &&
+            collInfos[0].options.hasOwnProperty("clusteredIndex");
+        return {exists, isClusteredCollection};
+    };
+
+    dbs.databases.forEach(function(someDbInfo) {
+        const someDb = db.getSiblingDB(someDbInfo.name);
+        const qeCollInfos = someDb.getCollectionInfos(
+            {"type": "collection", "options.encryptedFields": {$exists: true}});
+
+        qeCollInfos.forEach(function(someCollInfo) {
+            const edcColl = someDb.getCollection(someCollInfo.name);
+            const qeEntry = {};
+
+            qeEntry["namespace"] = edcColl.getFullName();
+            qeEntry["escCollectionInfo"] = (() => {
+                const escColl =
+                    someDb.getCollection(someCollInfo.options.encryptedFields.escCollection);
+                const {exists, isClusteredCollection} =
+                    getAuxiliaryCollectionInfo(someDb, escColl.getName());
+                if (!exists) {
+                    return {namespace: escColl.getFullName(), exists};
+                }
+                const documentCount = escColl.countDocuments({});
+                const anchorCount = escColl.countDocuments({"value": {"$exists": true}});
+                const nonAnchorCount = escColl.countDocuments({"value": {"$exists": false}});
+                return {
+                    namespace: escColl.getFullName(),
+                    exists,
+                    isClusteredCollection,
+                    documentCount,
+                    anchorCount,
+                    nonAnchorCount,
+                };
+            })();
+            qeEntry["ecocCollectionInfo"] = (() => {
+                const ecocColl =
+                    someDb.getCollection(someCollInfo.options.encryptedFields.ecocCollection);
+                const {exists, isClusteredCollection} =
+                    getAuxiliaryCollectionInfo(someDb, ecocColl.getName());
+                if (!exists) {
+                    return {namespace: ecocColl.getFullName(), exists};
+                }
+                const documentCount = ecocColl.countDocuments({});
+                const compactTempCollectionExists =
+                    someDb.getCollectionInfos({name: ecocColl.getName() + ".compact"}).length > 0;
+                return {
+                    namespace: ecocColl.getFullName(),
+                    exists,
+                    isClusteredCollection,
+                    documentCount,
+                    compactTempCollectionExists
+                };
+            })();
+            qeEntry["safeContentInfo"] = (() => {
+                const safeContentIndexed = (edcColl.getIndexes().find(
+                    doc => doc.key.hasOwnProperty("__safeContent__")) !== undefined);
+                const encryptedFieldPaths = someCollInfo.options.encryptedFields.fields.filter(
+                    field => field.hasOwnProperty("queries")).map(field => field.path);
+                const missingTags = edcColl.aggregate([
+                    {$match: {$and: [
+                        {$or: encryptedFieldPaths.map((field) => {return {[field]: {$exists: true}};})},
+                        {$or: [{__safeContent__: {$exists: false}}, {__safeContent__: {$size: 0}} ]}
+                    ]}},
+                    {$count: "count"}
+                ]).toArray();
+                const indexedEncryptedDocumentsWithMissingSafeContentTags =
+                    (missingTags.length > 0) ? missingTags[0].count : 0;
+                return {
+                    safeContentIndexed,
+                    indexedEncryptedDocumentsWithMissingSafeContentTags
+                };
+            })();
+            if (isMongoS) {
+                qeEntry["shardingInfo"] = (() => {
+                    const configDB = someDb.getSiblingDB("config");
+                    let shardDoc = configDB.collections.findOne({_id: edcColl.getFullName()});
+                    if (!shardDoc) {
+                        return {isSharded: false};
+                    }
+                    return {
+                        isSharded: true,
+                        shardKey: shardDoc.key,
+                        unique: shardDoc.unique,
+                        balancing: !shardDoc.noBalance,
+                    };
+                })();
+            }
+            qeEntry["fields"] = someCollInfo.options.encryptedFields.fields;
+            output.push(qeEntry);
+        });
+    });
+    return output;
+}
+
 function updateDataInfoAsIncomplete(isMongoS) {
   for (i = 0; i < _output.length; i++) {
     if(_output[i].section != "data_info") { continue; }
@@ -303,20 +444,20 @@ function printDataInfo(isMongoS) {
         dbs.databases.forEach(function(mydb) {
             var collections = printInfo("List of collections for database '"+ mydb.name +"'",
                                         function(){
-					    var collectionNames = []
+                                            var collectionNames = []
 
-					    // Filter out views
-					    db.getSiblingDB(mydb.name).getCollectionInfos({"type": "collection"}).forEach(function(collectionInfo) {
-						collectionNames.push(collectionInfo['name']);
-					    })
+                                            // Filter out views
+                                            db.getSiblingDB(mydb.name).getCollectionInfos({"type": "collection"}).forEach(function(collectionInfo) {
+                                                collectionNames.push(collectionInfo['name']);
+                                            })
 
-					    // Filter out the collections with the "system." prefix in the system databases
-					    if (mydb.name == "config" || mydb.name == "local" || mydb.name == "admin") {
-						return collectionNames.filter(function (str) { return str.indexOf("system.") != 0; });
-					    } else {
-						return collectionNames;
-					    }
-					}, section);
+                                            // Filter out the collections with the "system." prefix in the system databases
+                                            if (mydb.name == "config" || mydb.name == "local" || mydb.name == "admin") {
+                                                return collectionNames.filter(function (str) { return str.indexOf("system.") != 0; });
+                                            } else {
+                                                return collectionNames;
+                                            }
+                                        }, section);
 
             printInfo('Database stats (MB)',
                       function(){return db.getSiblingDB(mydb.name).stats(1024*1024)}, section);
@@ -331,7 +472,7 @@ function printDataInfo(isMongoS) {
                               function(){return db.getSiblingDB(mydb.name).getCollection(col).stats(1024*1024)}, section);
                     collections_counter++;
                     if (collections_counter > _maxCollections) {
-			var err_msg = 'Already asked for stats on '+collections_counter+' collections ' +
+                        var err_msg = 'Already asked for stats on '+collections_counter+' collections ' +
                           'which is above the max allowed for this script. No more database and ' +
                           'collection-level stats will be gathered, so the overall data is ' +
                           'incomplete. '
@@ -382,6 +523,9 @@ function printDataInfo(isMongoS) {
             }
         });
     }
+
+    printInfo("Queryable Encryption Info", function(){
+        return collectQueryableEncryptionInfo(isMongoS);}, section, false);
 }
 
 function printShardOrReplicaSetInfo() {
@@ -405,11 +549,11 @@ function printShardOrReplicaSetInfo() {
         return true;
     } else if (state != "standalone" && state != "configsvr") {
         if (state == "SECONDARY" || state == 2) {
-	  if (rs.secondaryOk) {
-	    rs.secondaryOk();
-	  } else {
-            rs.slaveOk();
-	  }
+            if (rs.secondaryOk) {
+                rs.secondaryOk();
+            } else {
+                rs.slaveOk();
+            }
         }
         printReplicaSetInfo();
     }
