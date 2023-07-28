@@ -2906,3 +2906,42 @@ getMongoData.js version 3.0.0
 	},
 	"ok" : 1
 }
+
+** Queryable Encryption Info:
+[
+	{
+		"namespace" : "qe_db.qe_coll",
+		"escCollectionInfo" : {
+			"namespace" : "qe_db.enxcol_.qe_coll.esc",
+			"exists" : true,
+			"isClusteredCollection" : true,
+			"documentCount" : 1,
+			"anchorCount" : 1,
+			"nonAnchorCount" : 0
+		},
+		"ecocCollectionInfo" : {
+			"namespace" : "qe_db.enxcol_.qe_coll.ecoc",
+			"exists" : true,
+			"isClusteredCollection" : true,
+			"documentCount" : 0,
+			"compactTempCollectionExists" : false
+		},
+		"safeContentInfo" : {
+			"safeContentIndexed" : true,
+			"indexedEncryptedDocumentsWithMissingSafeContentTags" : 0
+		},
+		"fields" : [
+			{
+				"keyId" : UUID("c2e3becb-43c6-4b82-a380-8c47710f4476"),
+				"path" : "foobar",
+				"bsonType" : "string",
+				"queries" : [
+					{
+						"queryType" : "equality",
+						"contention" : NumberLong(8)
+					}
+				]
+			}
+		]
+	}
+]
