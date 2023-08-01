@@ -89,6 +89,11 @@ The most notable methods, commands, and aggregations that this script runs are l
 **Sharding Config & Stats**
 * Queries and aggregations on various collections in the MongoDB [config database](https://docs.mongodb.com/manual/reference/config-database/), including the "version", "settings", "routers", "shards", "databases", "chunks", and "tags" collections.
 
+**Queryable Encryption (QE) Config**
+* [db.getCollectionInfos()](https://docs.mongodb.com/manual/reference/method/db.getCollectionInfos/)
+* Performs queries and aggregations on QE collections and auxiliary collections in all databases. The output is an
+array of objects, each containing information about a queryable encrypted collection.
+
 ### Additional Notes
 * This script should take on the order of seconds to run.
 * If your deployment has more than 2500 collections, this script will by default fail.
