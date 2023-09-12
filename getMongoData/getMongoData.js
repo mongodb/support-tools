@@ -263,7 +263,7 @@ function printInfo(message, command, section, printCapture, commandParameters) {
 function printServerInfo() {
     section = "server_info";
     printInfo('Shell version',      version, section);
-    printInfo('Shell hostname',     hostname, section);
+    printInfo('Shell hostname',     typeof hostname !== "undefined" ? hostname : function(){return "N/A"}, section);
     printInfo('db',                 function(){return db.getName()}, section);
     printInfo('Server status info', function(){return db.serverStatus()}, section);
     printInfo('Host info',          function(){return db.hostInfo()}, section);
@@ -580,7 +580,7 @@ if (! _printJSON) {
     print("getMongoData.js version " + _version);
     print("================================");
 }
-var _host = hostname();
+var _host = typeof hostname !== "undefined" ? hostname() : "N/A";
 
 try {
     printServerInfo();
