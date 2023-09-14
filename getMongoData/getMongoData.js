@@ -263,7 +263,7 @@ function printInfo(message, command, section, printCapture, commandParameters) {
 function printServerInfo() {
     section = "server_info";
     printInfo('Shell version',      version, section);
-    printInfo('Shell hostname',     typeof hostname !== "undefined" ? hostname : function(){return "N/A"}, section);
+    printInfo('Shell hostname',     typeof hostname !== "undefined" ? hostname : os.hostname, section);
     printInfo('db',                 function(){return db.getName()}, section);
     printInfo('Server status info', function(){return db.serverStatus()}, section);
     printInfo('Host info',          function(){return db.hostInfo()}, section);
@@ -277,7 +277,7 @@ function printReplicaSetInfo() {
     printInfo('Replica set config', function(){return rs.conf()}, section);
     printInfo('Replica status',     function(){return rs.status()}, section);
     printInfo('Replica info',       function(){return db.getReplicationInfo()}, section);
-    printInfo('Replica slave info', function(){return db.printSlaveReplicationInfo()}, section, true);
+    printInfo('Replica slave info', db.printSlaveReplicationInfo.deprecated ? function(){return db.printSecondaryReplicationInfo()} : function(){return db.printSlaveReplicationInfo()}, section, true);
 }
 
 function printUserAuthInfo() {
@@ -580,7 +580,7 @@ if (! _printJSON) {
     print("getMongoData.js version " + _version);
     print("================================");
 }
-var _host = typeof hostname !== "undefined" ? hostname() : "N/A";
+var _host = typeof hostname !== "undefined" ? hostname() : os.hostname();
 
 try {
     printServerInfo();
