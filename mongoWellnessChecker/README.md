@@ -19,10 +19,10 @@ without authentication, run:
 
     mongosh --quiet --norc mongoWellnessChecker.js > mongoWellnessChecker-output.json
 
-To execute on a remote `mongod` or `mongos` with authentication (see the next
+To execute on a remote `mongod` or `mongos` with authentication and SSL/TLS (see the next
 section for the minimum required permissions), run:
 
-    mongosh HOST:PORT/admin -u ADMIN_USER -p ADMIN_PASSWORD --quiet --norc mongoWellnessChecker.js > mongoWellnessChecker-output.json
+    mongosh HOST:PORT/admin -u ADMIN_USER -p ADMIN_PASSWORD --quiet --norc --tls mongoWellnessChecker.js > mongoWellnessChecker-output.json
 
 If `ADMIN_PASSWORD` is omitted, the shell will prompt for the password.
 
@@ -31,12 +31,6 @@ commands to include the following `--eval` option, as demonstrated for the local
 execution:
 
     mongosh --eval "var _printJSON=false;" mongoWellnessChecker.js > mongoWellnessChecker-output.log
-
-To have a `mongos` for a sharded cluster output full details of chunk
-distribution across shards, include `var _printChunkDetails=true` in the
-`--eval` option:
-
-    mongosh --quiet --norc --eval "var _printChunkDetails=true; var _ref = 'Support Case NNNNN'" mongoWellnessChecker.js > mongoWellnessChecker-output.json
 
 ### More Details
 
