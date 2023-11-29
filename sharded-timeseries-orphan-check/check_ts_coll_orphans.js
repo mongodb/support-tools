@@ -325,6 +325,37 @@ function stageOrphanedTimeSeriesDocumentsForRecovery(orphanedDocsResults, namesp
         return
     }
 
+    // Also - verify that it is time series 
+    // Any record in the results collection _should_ already be verified as time-series - but let's be extra cautious
+    existing_coll_info = getCollectionInfosFromNamespace(staging_ns)
+    if(existing_coll_info.length > 0) {
+        if(!existing_coll_info[0].options.timeseries) {
+            log('ERROR', `Existing namespace ${namespace} already exists but is not a time series collection`)
+            return
+        }    
+    }
+
+    // 3.0 Check that the staging collection, if it exists, has the same time series option as the original collection 
+    results = getCollectionInfosFromNamespace(staging_ns)
+    
+    // If collection exists - collection must be time series and have same options as the original namespace
+    if(results.length > 0) {
+        staging_ts_options = results[0].options.timeseries 
+        existing_ts_options = getCollectionInfosFromNamespace(existing_ns)[0].options.timeseries
+
+        // One or both of existing and staging collections are not time series
+        if(!staging_ts_options) {
+            log('ERROR', `Staging namespace ${staging_namespace} already exists but is not a time series collection`)
+            return
+        }
+
+        // Options on staging don't match options on existing collection
+        if(JSON.stringify(staging_ts_options) != JSON.stringify(existing_ts_options)) {
+            log('ERROR', `Staging namespace does not have the same collection options as the existing namespace - staging options: ${JSON.stringify(staging_ts_options)}, existing: ${JSON.stringify(existing_ts_options)}`)
+            return 
+        }
+    }
+
     // 3.1 - Create the unsharded staging collection with the same timeseries options as the original collection 
     // We only grab ts_options in the event that any other setting may be defined 
     ts_options = getCollectionInfosFromNamespace(existing_ns)[0].options.timeseries
