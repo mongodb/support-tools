@@ -106,6 +106,23 @@ var failArray = [];
 var seen = [];
 var partial = false;
 
+// Overloads db.getSiblingDB() which overwrites the runCommand
+// to take readPreference into consideration 
+// This is needed since mongosh2.0+ no longer allows db.runCommand() to
+// run on secondaries
+const realGetSiblingDB = db.getSiblingDB.bind(db);
+db.getSiblingDB = (dbName) => {
+  const dbToRet = realGetSiblingDB(dbName);
+ 
+  const realRunCommand = dbToRet.runCommand.bind(dbToRet);
+  dbToRet.runCommand = (cmd) => {
+    return realRunCommand(cmd, {
+      readPreference: dbToRet.getMongo().getReadPref().mode,
+    });
+  };
+  return dbToRet;
+};
+
 function validateCollection(d, coll, validateFull) {
     var validate_results = {"valid": false};
     if (partial) {
