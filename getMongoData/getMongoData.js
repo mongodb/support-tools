@@ -277,7 +277,7 @@ function printReplicaSetInfo() {
     printInfo('Replica set config', function(){return rs.conf()}, section);
     printInfo('Replica status',     function(){return rs.status()}, section);
     printInfo('Replica info',       function(){return db.getReplicationInfo()}, section);
-    printInfo('Replica slave info', function(){return db.printSlaveReplicationInfo()}, section, true);
+    printInfo('Replica slave info', function(){return db.printSecondaryReplicationInfo()}, section, true);
 }
 
 function printUserAuthInfo() {
@@ -580,6 +580,10 @@ if (! _printJSON) {
     print("getMongoData.js version " + _version);
     print("================================");
 }
+if (typeof hostname !== 'function') {
+  hostname = require('os').hostname;
+}
+
 var _host = hostname();
 
 try {
@@ -588,6 +592,7 @@ try {
     printUserAuthInfo();
     printDataInfo(isMongoS);
 } catch(e) {
+  print(e);
     // To ensure that the operator knows there was an error, print the error
     // even when outputting JSON to make it invalid JSON.
     print('\nERROR: '+e.message);
