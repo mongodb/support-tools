@@ -1,4 +1,4 @@
-/* global db, tojson, tojsononeline, rs, print, printjson */
+/* global db, rs, print, printjson */
 
 /* =================================================
  * mongoWellnessChecker.js: MongoDB Config and Schema Report using mongosh
