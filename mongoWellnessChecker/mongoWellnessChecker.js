@@ -20,6 +20,7 @@
  *     mongosh HOST:PORT/admin -u ADMIN_USER -p ADMIN_PASSWORD getMongoWellnessChecker.js > getMongoWellnessChecker.log
  *
  *
+ *
  * DISCLAIMER
  *
  * Please note: all tools/ scripts in this repo are released for use "AS
@@ -143,22 +144,22 @@ function printInfo(message, command, section="notdefined", printCapture=false, c
 	try {
 
 		if (typeof message !== 'string') {
-			throw("printInfo message argument is not a string");
+			throw new Error("printInfo message argument is not a string");
 		} 
 		//command is mandatory arg
 		if (typeof command !== 'function') {
-			throw("printInfo command argument is not a function");
+			throw new Error("printInfo command argument is not a function");
 		}
 		err=null;
 	} catch(err) {
-		throw("printInfo error handing message or command: " + err);
+		throw new Error("printInfo error handing message or command: " + err);
 	}
 
 	const testFunction = function () { return false; };
 	const allowedCommandFunctionNames = [testFunction.name,"printServerInfoShellVersion","printServerInfoShellHostname","printServerInfoCurrentDBname","printServerInfoCurrentDBname","printServerInfoServerStatus","printServerInfoHostInfo","printServerInfoCmdLineInfo","printServerInfoServerBuildInfo","printServerInfoServerParams","printReplicaSetInfoRSConfig","printReplicaSetInfoRSStatus","printReplicaSetInfoGetReplicationInfo","printReplicaSetInfoPrintSecondaryReplicationInfo","printShardOrReplicaSetInfoIsMaster","printUserAuthInfoDBUserCount","printUserAuthInfoCustomRoleCount","printShardInfoGetShardingVersion","printShardInfoGetShardingSettings","printShardInfoGetMongoses","printShardInfoGetShards","printShardInfoGetShardedDatabases","printShardInfoGetBalancerStatus","printDataInfoListDatabases","printDataInfoListCollectionsForDatabases","printDataInfoDBStats","printDataInfoGetProfilingStatusForDB","printDataInfoGetCollStats","printDataInfoListIndexesForColl","printDataInfoIndexStats","printDataInfoShardDistribution"];
 
 	if (!allowedCommandFunctionNames.includes(command.name)) {
-		throw("printInfo Not in the approved list of functions: " + command.name);
+		throw new Error("printInfo Not in the approved list of functions: " + command.name);
 	}
 
 	var result = false; 
@@ -166,7 +167,7 @@ function printInfo(message, command, section="notdefined", printCapture=false, c
 	//printCapture default value of false of type boolean is declared in the function signature
 	//if printCapture is defined it must be boolean
 	if (typeof printCapture !== 'boolean') {
-		throw("printInfo printCapture argument is not a boolean");
+		throw new Error("printInfo printCapture argument is not a boolean");
 	} 
 
 	if (! _printJSON) print("\n** " + message + ":");
@@ -186,7 +187,7 @@ function printInfo(message, command, section="notdefined", printCapture=false, c
 			print("printInfo Error running '" + command + "':");
 			print(err);
 		} else {
-			throw("printInfo Error running '" + command + "': " + err);
+			throw new Error("printInfo Error running '" + command + "': " + err);
 		}
 	}
 
@@ -212,7 +213,7 @@ function printInfo(message, command, section="notdefined", printCapture=false, c
 		}
 		err = null;
 	} catch(err) {
-		throw("printInfo Error handling section parameter: " + err);
+		throw new Error("printInfo Error handling section parameter: " + err);
 	}
 
 	doc['ts'] = {'start': startTime, 'end': endTime};
@@ -224,7 +225,7 @@ function printInfo(message, command, section="notdefined", printCapture=false, c
 		//commandParameters parameter default value set to {} 
 		if (commandParameters !== {} ) { doc['commandParameters'] = commandParameters; }
 	} catch(err) {
-		throw("printInfo Error handling commandParameters");
+		throw new Error("printInfo Error handling commandParameters");
 	}
 	_output.push(doc);
 	if (! _printJSON) printjson(result);
@@ -564,7 +565,12 @@ if (! _printJSON) {
     print("getMongoData.js version " + _version);
     print("================================");
 }
-var _host = db.hostInfo().system.hostname;
+
+try {
+  var _host = db.hostInfo().system.hostname;
+} catch(e) {
+  throw new Error(`Unable to set _host global variable ${e}`);
+}
 
 try { 
 
