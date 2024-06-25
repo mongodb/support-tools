@@ -283,8 +283,13 @@ function printReplicaSetInfo() {
 function printUserAuthInfo() {
   section = "user_auth_info";
   db = db.getSiblingDB('admin');
-  printInfo('Database user count', function(){return db.system.users.count()}, section);
-  printInfo('Custom role count', function(){return db.system.roles.count()}, section);
+  if (typeof db.system.users.countDocuments === 'function') {
+    printInfo('Database user count', function(){return db.system.users.countDocuments({})}, section);
+    printInfo('Custom role count', function(){return db.system.roles.countDocuments({})}, section);
+  } else {
+    printInfo('Database user count', function(){return db.system.users.count()}, section);
+    printInfo('Custom role count', function(){return db.system.roles.count()}, section);
+  }
 }
 
 // find all QE collections
@@ -443,21 +448,21 @@ function printDataInfo(isMongoS) {
     if (dbs.databases) {
         dbs.databases.forEach(function(mydb) {
             var collections = printInfo("List of collections for database '"+ mydb.name +"'",
-                                        function(){
-                                            var collectionNames = []
+                function() {
+                    var collectionNames = []
 
-                                            // Filter out views
-                                            db.getSiblingDB(mydb.name).getCollectionInfos({"type": "collection"}).forEach(function(collectionInfo) {
-                                                collectionNames.push(collectionInfo['name']);
-                                            })
+                    // Filter out views
+                    db.getSiblingDB(mydb.name).getCollectionInfos({"type": "collection"}).forEach(function(collectionInfo) {
+                        collectionNames.push(collectionInfo['name']);
+                    })
 
-                                            // Filter out the collections with the "system." prefix in the system databases
-                                            if (mydb.name == "config" || mydb.name == "local" || mydb.name == "admin") {
-                                                return collectionNames.filter(function (str) { return str.indexOf("system.") != 0; });
-                                            } else {
-                                                return collectionNames;
-                                            }
-                                        }, section);
+                    // Filter out the collections with the "system." prefix in the system databases
+                    if (mydb.name == "config" || mydb.name == "local" || mydb.name == "admin") {
+                        return collectionNames.filter(function (str) { return str.indexOf("system.") != 0; });
+                    } else {
+                        return collectionNames;
+                    }
+                }, section);
 
             printInfo('Database stats (MB)',
                       function(){return db.getSiblingDB(mydb.name).stats(1024*1024)}, section);
@@ -487,8 +492,14 @@ function printDataInfo(isMongoS) {
                         }
                     }
                     if (isMongoS) {
-                        printInfo('Shard distribution',
-                                  function(){return db.getSiblingDB(mydb.name).getCollection(col).getShardDistribution()}, section, true);
+                        printInfo('Shard distribution', function() {
+                            try {
+                                var result = db.getSiblingDB(mydb.name).getCollection(col).getShardDistribution();
+                            } catch(e) {
+                                var result = '';
+                            }
+                            return result;
+                        }, section, true);
                     }
                     printInfo('Indexes',
                               function(){return db.getSiblingDB(mydb.name).getCollection(col).getIndexes()}, section, false, {"db": mydb.name, "collection": col});
@@ -532,7 +543,13 @@ function printShardOrReplicaSetInfo() {
     section = "shard_or_replicaset_info";
     printInfo('isMaster', function(){return db.isMaster()}, section);
     var state;
-    var stateInfo = rs.status();
+
+    // Compatible with mongosh
+    try {
+        var stateInfo = rs.status();
+    } catch (e) {
+        var stateInfo = e.errorResponse;
+    }
     if (stateInfo.ok) {
         stateInfo.members.forEach( function( member ) { if ( member.self ) { state = member.stateStr; } } );
         if ( !state ) state = stateInfo.myState;
@@ -571,6 +588,17 @@ if (typeof _ref === "undefined") var _ref = null;
 // script.
 if (typeof _maxCollections === "undefined") var _maxCollections = 2500;
 
+// Compatibility issues between mongo and mongosh
+if (typeof hostname === 'undefined') hostname = function() {return os.hostname();}
+if (typeof RegExp.escape === 'undefined') {
+    RegExp.escape = function (string) {
+        return string.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
+    }
+}
+if (typeof db.printSecondaryReplicationInfo === 'function') {
+    db.printSlaveReplicationInfo = db.printSecondaryReplicationInfo;
+}
+
 var _total_collection_ct = 0;
 var _output = [];
 var _tag = ObjectId();
@@ -580,6 +608,7 @@ if (! _printJSON) {
     print("getMongoData.js version " + _version);
     print("================================");
 }
+
 var _host = hostname();
 
 try {
