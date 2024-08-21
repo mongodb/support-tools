@@ -503,6 +503,8 @@ function printDataInfo(isMongoS) {
                     }
                     printInfo('Indexes',
                               function(){return db.getSiblingDB(mydb.name).getCollection(col).getIndexes()}, section, false, {"db": mydb.name, "collection": col});
+                    if (mydb.name == 'local')
+                        return;
                     printInfo('Index Stats',
                               function(){
                                 var res = db.getSiblingDB(mydb.name).runCommand( {
