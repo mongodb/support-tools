@@ -229,7 +229,7 @@ function printInfo(message, command, section, printCapture, commandParameters) {
         }
         err = null
     } catch(err) {
-        if (! _printJSON) {
+        if (! _printJSON || ! _abort_on_error) {
             print("Error running '" + command + "':");
             print(err);
         } else {
@@ -580,6 +580,7 @@ function printShardOrReplicaSetInfo() {
 }
 
 if (typeof _printJSON === "undefined") var _printJSON = true;
+if (typeof _abort_on_error === "undefined") var _abort_on_error = false;
 if (typeof _printChunkDetails === "undefined") var _printChunkDetails = false;
 if (typeof _ref === "undefined") var _ref = null;
 
