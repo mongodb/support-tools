@@ -233,7 +233,7 @@ function printInfo(message, command, section, printCapture, commandParameters) {
             print("Error running '" + command + "':");
             print(err);
         } else {
-            throw("Error running '" + command + "': " + err);
+            throw new Error("Error running '" + command + "': " + err);
         }
     }
     endTime = new Date();
