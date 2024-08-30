@@ -4,7 +4,9 @@ The `detection.py` script leverages PyMongo and has been tested against 4.2.25, 
 
 This information can then be used to remediate the issue. It is recommended that you leverage the script as an example and make it applicable to your environment.
 
-> python3 detection.py
+```
+$ python3 detection.py
 Document with _id 66d161042719006a01c1b10f in myProject.documents needs fixing
+```
 
 Note that this will scan all documents in all databases and collections and should only be done as a scheduled maintenance activity. If you require assistance with the proposed processes for detecting incorrectly encoded documents please contact MongoDB Support.
