@@ -7,4 +7,4 @@ This information can then be used to remediate the issue. It is recommended that
 > python3 detection.py
 Document with _id 66d161042719006a01c1b10f in myProject.documents needs fixing
 
-If you require assistance with the proposed processes for detecting incorrectly encoded documents please contact MongoDB Support.
+Note that this will scan all documents in all databases and collections and should only be done as a scheduled maintenance activity. If you require assistance with the proposed processes for detecting incorrectly encoded documents please contact MongoDB Support.
