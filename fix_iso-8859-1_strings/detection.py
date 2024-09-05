@@ -1,17 +1,32 @@
-# Find accidentally iso-8859-1 encoded strings in the db
+#! /usr/bin/env python3
+
+# Find iso-8859-1 encoded strings
 
 from pymongo import MongoClient
 from bson.raw_bson import RawBSONDocument
 from bson.codec_options import CodecOptions
-import os
+from bson.json_util import dumps
+import csv
 import re
-import codecs
 import bson
 
-def find_docs_to_fix(collection, raw_bson_doc, needs_fixing=None, _id=None):
-    if not isinstance(raw_bson_doc, RawBSONDocument):
-        return raw_bson_doc
+csv_file = open('to_fix.csv', 'w', newline='')
+writer = csv.writer(csv_file, delimiter=',')
 
+# Header
+writer.writerow(['collection', '_id'])
+
+def compare_and_fix(collection, backs, repls, needs_fixing, _id):
+    if isinstance(repls, RawBSONDocument):
+        return find_docs_to_fix(collection, repls, needs_fixing=needs_fixing, _id=_id)
+    elif isinstance(repls, list):
+        assert len(backs) == len(repls)
+        return [compare_and_fix(collection, backs[i], repls[i], needs_fixing, _id) for i in range(len(backs))]
+    elif backs != repls:
+        needs_fixing[0] = True
+
+
+def find_docs_to_fix(collection, raw_bson_doc, needs_fixing=None, _id=None):
     if needs_fixing is None: needs_fixing = [False]
     doc_with_backslash_escape = bson.decode(
         raw_bson_doc.raw,
@@ -27,7 +42,6 @@ def find_docs_to_fix(collection, raw_bson_doc, needs_fixing=None, _id=None):
                 _id = value
                 break
 
-    # needs_fixing[0] = False
     new_items = {}
 
     for item_bs, item_repl in zip(doc_with_backslash_escape.items(), doc_with_replace.items()):
@@ -38,18 +52,10 @@ def find_docs_to_fix(collection, raw_bson_doc, needs_fixing=None, _id=None):
         if key_bs != key_repl:
             needs_fixing[0] = True
 
-        if isinstance(value_repl, RawBSONDocument):
-            fixed_value = find_docs_to_fix(collection, value_repl.raw, needs_fixing=needs_fixing, _id=_id)
-        elif isinstance(value_repl, list):
-            fixed_value = [find_docs_to_fix(collection, doc, needs_fixing=needs_fixing, _id=_id) for doc in value_repl]
-        elif value_bs != value_repl:
-            assert not is_toplevel or key_bs != '_id'
-            needs_fixing[0] = True
-        else:
-            fixed_value = value_repl
+        compare_and_fix(collection, value_bs, value_repl, needs_fixing, _id)
 
-
-    if needs_fixing[0]:
+    if needs_fixing[0] and is_toplevel:
+        writer.writerow([collection, dumps(_id)])
         print ('Document with _id ' + str(_id) + ' in ' + collection + ' needs fixing')
     return raw_bson_doc
 
@@ -65,3 +71,5 @@ for db_name in dbs:
 
         for doc in collection.find():
             find_docs_to_fix(db_name + '.' + coll_name, doc)
+
+csv_file.close()
