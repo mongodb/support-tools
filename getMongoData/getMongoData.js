@@ -491,6 +491,10 @@ function printDataInfo(isMongoS) {
                           message: err_msg
                         }
                     }
+                    if (mydb.name == "config" || mydb.name == "local" || mydb.name == "admin") {
+                        // The following command doesn't make any sense to config, local and admin
+                        return
+                    }
                     if (isMongoS) {
                         printInfo('Shard distribution', function() {
                             try {
