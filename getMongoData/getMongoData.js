@@ -229,11 +229,11 @@ function printInfo(message, command, section, printCapture, commandParameters) {
         }
         err = null
     } catch(err) {
-        if (! _printJSON) {
+        if (! _printJSON || ! _abort_on_error) {
             print("Error running '" + command + "':");
             print(err);
         } else {
-            throw("Error running '" + command + "': " + err);
+            throw new Error("Error running '" + command + "': " + err);
         }
     }
     endTime = new Date();
@@ -452,8 +452,10 @@ function printDataInfo(isMongoS) {
                     var collectionNames = []
 
                     // Filter out views
-                    db.getSiblingDB(mydb.name).getCollectionInfos({"type": "collection"}).forEach(function(collectionInfo) {
-                        collectionNames.push(collectionInfo['name']);
+                    db.getSiblingDB(mydb.name).getCollectionInfos().forEach(function(collectionInfo) {
+                        if (collectionInfo.type === "collection") {
+                            collectionNames.push(collectionInfo['name']);
+                        }
                     })
 
                     // Filter out the collections with the "system." prefix in the system databases
@@ -507,6 +509,8 @@ function printDataInfo(isMongoS) {
                     }
                     printInfo('Indexes',
                               function(){return db.getSiblingDB(mydb.name).getCollection(col).getIndexes()}, section, false, {"db": mydb.name, "collection": col});
+                    if (mydb.name == 'local')
+                        return;
                     printInfo('Index Stats',
                               function(){
                                 var res = db.getSiblingDB(mydb.name).runCommand( {
@@ -582,6 +586,7 @@ function printShardOrReplicaSetInfo() {
 }
 
 if (typeof _printJSON === "undefined") var _printJSON = true;
+if (typeof _abort_on_error === "undefined") var _abort_on_error = false;
 if (typeof _printChunkDetails === "undefined") var _printChunkDetails = false;
 if (typeof _ref === "undefined") var _ref = null;
 
