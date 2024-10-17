@@ -17,7 +17,7 @@ If you are using these scripts on your own, we strongly recommend:
 
 # Summary
 
-This script can be used to optionally remediate performance after fixing the internal `timeseriesBucketsMayHaveMixedSchemaData` flag that was incorrectly set as a result of [SERVER-91194](https://jira.mongodb.org/browse/SERVER-91194). 
+This script can be used to *optionally* remediate performance after fixing the internal `timeseriesBucketsMayHaveMixedSchemaData` flag that was incorrectly set as a result of [SERVER-91194](https://jira.mongodb.org/browse/SERVER-91194). **Before running the remediation script on a Time Series collection, make sure that you have run `validate` and `collMod` as specified by the pre-requisites section.**
 
 At a high level, the script remediates performance by rewriting buckets from the mixed-schema format to the older schema.
 
