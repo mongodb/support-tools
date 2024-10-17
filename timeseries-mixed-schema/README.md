@@ -1,4 +1,4 @@
-# Rewrite Mixed-Schema Buckets in Time Series Collections
+# Troubleshoot Mixed-Schema Buckets in Time Series Collections
 
 
 ## Warning
@@ -15,33 +15,17 @@ If you are using these scripts on your own, we strongly recommend:
 * testing this process and all scripts on a copy of the environment it is to be run.
 * for sharded clusters, disabling the balancer.
 
-# Summary
+# Prerequisites 
+- This script should be run with a user that has [dbAdmin](https://www.mongodb.com/docs/v6.0/reference/built-in-roles/#mongodb-authrole-dbAdmin) permissions on the database(s) for the affected time-series collection(s).
+-  If running on Atlas - we recommend using the [Atlas Admin](https://www.mongodb.com/docs/atlas/security-add-mongodb-users/#built-in-roles) role. 
 
-This script can be used to *optionally* remediate performance after fixing the internal `timeseriesBucketsMayHaveMixedSchemaData` flag that was incorrectly set as a result of [SERVER-91194](https://jira.mongodb.org/browse/SERVER-91194). **Before running the remediation script on a Time Series collection, make sure that you have run `validate` and `collMod` as specified by the pre-requisites section.**
+# Determine if You're Impacted
 
-At a high level, the script remediates performance by rewriting buckets from the mixed-schema format to the older schema.
+Users in v6.0+ versions can determine if they have been impacted by running [`validate`](https://www.mongodb.com/docs/v7.0/reference/command/validate/) on their Time Series collections and checking the `validate.warnings` field to determine if there are mixed-schema buckets detected.
 
-The rewrite is done by unpacking the measurements of the problematic mixed-schema buckets and inserting those measurements back into the collection.
+The validation command [can be very impactful](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance). To minimize the performance impact of running validate, issue validate to a secondary and follow [these steps](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance:~:text=Validation%20has%20exclusive,the%20hidden%20node). 
 
-The full steps are as follows. For each bucket in the time series collection:
-- Detect if the bucket has mixed-schema data.
-- Re-insert the measurements of the mixed-schema bucket transactionally.
-  - Unpack the measurements.
-  - Insert the measurements back into the collection. These will go into new buckets.
-  - Delete the mixed-schema bucket from the collection.
-
-**Warning**: This script directly modifies `<database>.system.buckets` collection —the underlying buckets of the Time Series collection—in order to remediate performance issues. Under normal circumstances, users should not modify this collection. 
-
-Please contact [MongoDB Support](https://support.mongodb.com/welcome) with any questions or concerns regarding running this script. 
-
-# Pre-requisites 
-1. Users should first follow the diagnosis and remediation sections as specified in as specified in [SERVER-91194](https://jira.mongodb.org/browse/SERVER-91194)'s User Summary Box. These steps are also described below.
-
-Users in v6.0+ versions can first determine if they have been impacted by running [`validate()`](https://www.mongodb.com/docs/v7.0/reference/command/validate/) on their Time Series collections and checking the `validate.warnings` field to determine if there are mixed-schema buckets detected.
-
- The validation command [can be very impactful](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance). To minimize the performance impact of running validate, issue validate to a secondary and follow [these steps](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance:~:text=Validation%20has%20exclusive,the%20hidden%20node). 
-
-Example validate run on a standalone/replica set:
+Example `validate` run on a standalone/replica set:
 ```
 // Call validate on a mongod process for replica sets. 
 coll.validate();
@@ -57,7 +41,7 @@ coll.validate();
 }
 ```
 
-Example validate run on a sharded cluster:
+Example `validate` run on a sharded cluster:
 
 ```
 // Call validate on mongos for sharded clusters.
@@ -87,15 +71,39 @@ coll.validate();
 }
 ```
 
+For more context on the issue, see [SERVER-91194](https://jira.mongodb.org/browse/SERVER-91194).
+
+# Remediation
+
+## Properly Set the Internal Time Series Flag
+
 For each impacted collection, users should set the `timeseriesBucketsMayHaveMixedSchemaData` flag to `true` via `collMod`. This will ensure that future queries on the collection return correct results. 
 
 ```
 db.runCommand({ collMod: coll, timeseriesBucketsMayHaveMixedSchemaData: true });
 ```
-2. This script should be run with a user that has [dbAdmin](https://www.mongodb.com/docs/v6.0/reference/built-in-roles/#mongodb-authrole-dbAdmin) permissions on the database(s) for the affected time-series collection(s).
-3. If running on Atlas - we recommend using the [Atlas Admin](https://www.mongodb.com/docs/atlas/security-add-mongodb-users/#built-in-roles) role. 
 
-# Usage
+
+## Rewrite Mixed-Schema Buckets in Time Series Collections (optional)
+
+After setting the flag on these collections, users may observe a performance regression that they deem unacceptable. They can then run the `rewrite_timeseries_mixed_schema_buckets.js` to regain performance. 
+
+While the script is running, the performance of operations on the time-series collection may be impacted. The script does a scan of the whole collection and performs multiple reads and writes per mixed-schema bucket, which may result in a large load if many buckets are affected.  
+
+At a high level, the script remediates performance by rewriting buckets from the mixed-schema format to the older schema.  The rewrite is done by unpacking the measurements of the problematic mixed-schema buckets and inserting those measurements back into the collection.
+
+The full steps are as follows. For each bucket in the time series collection:
+- Detect if the bucket has mixed-schema data.
+- Re-insert the measurements of the mixed-schema bucket transactionally.
+  - Unpack the measurements.
+  - Insert the measurements back into the collection. These will go into new buckets.
+  - Delete the mixed-schema bucket from the collection.
+
+**Warning**: This script directly modifies `<database>.system.buckets` collection —the underlying buckets of the Time Series collection—in order to remediate performance issues. Under normal circumstances, users should not modify this collection. 
+
+Please contact [MongoDB Support](https://support.mongodb.com/welcome) with any questions or concerns regarding running this script. 
+
+### Running the remediation script
 
 #### 1. Modify the script by populating `collName` with the name of your collection
 
