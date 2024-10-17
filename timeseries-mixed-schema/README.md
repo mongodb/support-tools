@@ -83,10 +83,9 @@ For each impacted collection, users should set the `timeseriesBucketsMayHaveMixe
 db.runCommand({ collMod: coll, timeseriesBucketsMayHaveMixedSchemaData: true });
 ```
 
+After setting the flag on these collections, users may observe a performance regression that they deem unacceptable. They can then follow the next optional step of running `rewrite_timeseries_mixed_schema_buckets.js` to regain performance. 
 
 ## Rewrite Mixed-Schema Buckets in Time Series Collections (optional)
-
-After setting the flag on these collections, users may observe a performance regression that they deem unacceptable. They can then run the `rewrite_timeseries_mixed_schema_buckets.js` to regain performance. 
 
 While the script is running, the performance of operations on the time-series collection may be impacted. The script does a scan of the whole collection and performs multiple reads and writes per mixed-schema bucket, which may result in a large load if many buckets are affected.  
 
