@@ -35,9 +35,65 @@ The full steps are as follows. For each bucket in the time series collection:
 Please contact [MongoDB Support](https://support.mongodb.com/welcome) with any questions or concerns regarding running this script. 
 
 # Pre-requisites 
-* Users should first follow the diagnosis and remediation sections as specified in as specified in [SERVER-91194](https://jira.mongodb.org/browse/SERVER-91194)'s User Summary Box. This includes first determining if they have been impacted by running `validate()` on their time series collections and setting the  `timeseriesBucketsMayHaveMixedSchemaData` flag to `true` for impacted collections.
-* This script should be run with a user that has [dbAdmin](https://www.mongodb.com/docs/v6.0/reference/built-in-roles/#mongodb-authrole-dbAdmin) permissions on the database(s) for the affected time-series collection(s).
-* If running on Atlas - we recommend using the [Atlas Admin](https://www.mongodb.com/docs/atlas/security-add-mongodb-users/#built-in-roles) role. 
+1. Users should first follow the diagnosis and remediation sections as specified in as specified in [SERVER-91194](https://jira.mongodb.org/browse/SERVER-91194)'s User Summary Box. These steps are also described below.
+
+Users in v6.0+ versions can first determine if they have been impacted by running [`validate()`](https://www.mongodb.com/docs/v7.0/reference/command/validate/) on their Time Series collections and checking the `validate.warnings` field to determine if there are mixed-schema buckets detected.
+
+ The validation command [can be very impactful](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance). To minimize the performance impact of running validate, issue validate to a secondary and follow [these steps](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance:~:text=Validation%20has%20exclusive,the%20hidden%20node). 
+
+Example validate run on a standalone/replica set:
+```
+// Call validate on a mongod process for replica sets. 
+coll.validate();
+
+// The warnings field detects mixed-schema buckets. 
+{
+"ns" : "db.system.buckets.coll",
+...
+"warnings" : [
+"Detected a Time Series bucket with mixed schema data"
+],
+...
+}
+```
+
+Example validate run on a sharded cluster:
+
+```
+// Call validate on mongos for sharded clusters.
+coll.validate();
+
+// The warnings field detects mixed-schema buckets.
+// For sharded clusters, this output is an object with a result for every shard in 
+// the "raw" field.
+{
+	"ns" : "db.system.buckets.coll",
+	...
+"warnings" : [
+"Detected a Time Series bucket with mixed schema data"
+],
+...
+"raw" : {
+	"shard-0-name" : {
+		"ns" : "db.system.buckets.coll"
+		...
+"warnings" : [
+"Detected a Time Series bucket with mixed schema data"
+],
+...
+},
+"shard-1-name" : { ... }, ...
+}
+}
+```
+
+For each impacted collection, users should set the `timeseriesBucketsMayHaveMixedSchemaData` flag to `true` via `collMod`. This will ensure that future queries on the collection return correct results. 
+
+```
+db.runCommand({ collMod: coll, timeseriesBucketsMayHaveMixedSchemaData: true });
+```
+2. This script should be run with a user that has [dbAdmin](https://www.mongodb.com/docs/v6.0/reference/built-in-roles/#mongodb-authrole-dbAdmin) permissions on the database(s) for the affected time-series collection(s).
+3. If running on Atlas - we recommend using the [Atlas Admin](https://www.mongodb.com/docs/atlas/security-add-mongodb-users/#built-in-roles) role. 
 
 # Usage
 
