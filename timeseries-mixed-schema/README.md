@@ -1,5 +1,6 @@
 # Troubleshoot Mixed-Schema Buckets in Time Series Collections
 
+For more context on this issue, see [SERVER-91194](https://jira.mongodb.org/browse/SERVER-91194).
 
 ## Warning
 
