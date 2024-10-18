@@ -18,11 +18,13 @@ If you are using these scripts on your own, we strongly recommend:
 
 # Prerequisites 
 - This script should be run with a user that has [dbAdmin](https://www.mongodb.com/docs/v6.0/reference/built-in-roles/#mongodb-authrole-dbAdmin) permissions on the database(s) for the affected time-series collection(s).
--  If running on Atlas - we recommend using the [Atlas Admin](https://www.mongodb.com/docs/atlas/security-add-mongodb-users/#built-in-roles) role. 
+-  If running on Atlas:
+   - We have already reached out to impacted customers. If we have reached out, you can skip the [Determine if You're Impacted section](#Determine-if-You're-Impacted) and start taking the steps under the [Remediation section](#remediation).
+   - Additionally, we recommend using the [Atlas Admin](https://www.mongodb.com/docs/atlas/security-add-mongodb-users/#built-in-roles) role.
 
 # Determine if You're Impacted
 
-Users in v6.0+ versions can determine if they have been impacted by running [`validate`](https://www.mongodb.com/docs/v7.0/reference/command/validate/) on their Time Series collections and checking the `validate.warnings` field to determine if there are mixed-schema buckets detected.
+Please see [SERVER-91194](https://jira.mongodb.org/browse/SERVER-91194) for the affected versions. Users can determine if they have been impacted by running [`validate`](https://www.mongodb.com/docs/v7.0/reference/command/validate/) on their Time Series collections and checking the `validate.warnings` field to determine if there are mixed-schema buckets detected.
 
 The validation command [can be very impactful](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance). To minimize the performance impact of running validate, issue validate to a secondary and follow [these steps](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance:~:text=Validation%20has%20exclusive,the%20hidden%20node). 
 
@@ -71,8 +73,6 @@ coll.validate();
 }
 }
 ```
-
-For more context on the issue, see [SERVER-91194](https://jira.mongodb.org/browse/SERVER-91194).
 
 # Remediation
 
