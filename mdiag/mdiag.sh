@@ -170,6 +170,7 @@ function _main {
 	section networks getfiles /etc/networks
 	section rpcinfo runcommand rpcinfo -p
 	section netstat runcommand netstat -anpoe
+	section netstat_stats runcommand netstat -s
 
 	# Network time info
 	section ntp getfiles /etc/ntp.conf
