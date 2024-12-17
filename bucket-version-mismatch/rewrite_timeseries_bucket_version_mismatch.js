@@ -89,4 +89,23 @@ function runFixBucketVersionMismatchProcedure(collName) {
   }
 }
 
+//
+// Steps 1 & 2: Fix the bucket version by updating unsorted v2 buckets to v3
+// buckets and sorted v3 buckets to v2 buckets.
+//
 runFixBucketVersionMismatchProcedure(collName);
+
+//
+// Step 3: Validate that there are no more mismatched bucket versions
+//
+print('Validating that there are no mismatched bucket versions ...\n');
+db.getMongo().setReadPref('secondaryPreferred');
+const validateRes = collName.validate({full: true});
+if (validateRes.errors.length != 0) {
+  print(
+      '\nThere is still a time-series bucket with a bucket version mismatch, or there is another error during validation.');
+  exit(1);
+}
+
+print('\nScript successfully fixed mismatched bucket versions!');
+exit(0);
