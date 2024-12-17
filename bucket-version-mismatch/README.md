@@ -83,7 +83,7 @@ or
 # Remediation
 ## Rewrite Bucket Version in a Time Series Collections
 While the script is running, the performance of operations on the time-series collection may be impacted. The script does a scan of the whole collection and performs updates on impacted buckets, which may result in a large load if many buckets are affected.  
-At a high level, the script remediates errors during collection validation by updating the bucket's version from v2 to v3 and vice versa if a v2 bucket has unsorted data, and if a from the mixed-schema format to the older schema. The rewrite is done by unpacking the measurements of the problematic mixed-schema buckets and inserting those measurements back into the collection.
+At a high level, the script remediates errors during collection validation by updating the bucket's version from v2 to v3 and vice versa if a v2 bucket has unsorted data, or if a v3 bucket has sorted data. 
 The full steps are as follows. For each bucket in the time series collection:
 - Detect if the bucket has bucket version mismatch.
 - Change the buckets with bucket version mismatch to the correct version.
