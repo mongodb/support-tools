@@ -67,7 +67,7 @@ function runFixBucketVersionMismatchProcedure(collName) {
   // Range through all the bucketDocs and change the control version of the
   // bucket from 2 -> 3 if the data is not sorted or from 3 -> 2 if the data is
   // sorted.
-  const bucketsColl = db.getCollection('system.buckets.' + collName.getName());
+  const bucketsColl = db.getCollection('system.buckets.' + collName);
   var cursor = bucketsColl.find({});
 
   while (cursor.hasNext()) {
