@@ -90,13 +90,13 @@ function runFixBucketVersionMismatchProcedure(collName) {
 }
 
 //
-// Steps 1 & 2: Fix the bucket version by updating unsorted v2 buckets to v3
-// buckets and sorted v3 buckets to v2 buckets.
+// Steps 1 & 2: Detect if the bucket has bucket version mismatch and change the
+// buckets with bucket version mismatch to the correct version.
 //
 runFixBucketVersionMismatchProcedure(collName);
 
 //
-// Step 3: Validate that there are no more mismatched bucket versions
+// Step 3: Validate that there are no bucket version mismatches.
 //
 print('Validating that there are no mismatched bucket versions ...\n');
 db.getMongo().setReadPref('secondaryPreferred');
