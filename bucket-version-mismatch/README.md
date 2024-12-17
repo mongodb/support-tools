@@ -35,11 +35,11 @@ coll.validate();
 ```
 with the logs:
 ```
-..."c":"STORAGE",  "id":6698300, "ctx":"conn9","msg":"Document is not compliant with time-series specifications","attr":{"namespace":"[...]","recordId":[...],"reason":{"code":2,"codeName":"BadValue","errmsg":"Time-series bucket 't' field is not in ascending order"}}...
+..."c":"STORAGE",  "id":6698300, "ctx":"conn9","msg":"Document is not compliant with time-series specifications","attr":{..."reason":{"code":2,"codeName":"BadValue","errmsg":"Time-series bucket [...] field is not in ascending order"}}...
 ```
 or 
 ```
-..."c":"STORAGE",  "id":6698300, "ctx":"conn9","msg":"Document is not compliant with time-series specifications","attr":{"namespace":"[...]","recordId":[...],"reason":{"code":2,"codeName":"BadValue","errmsg":"Time-series bucket is v3 but has its measurements in-order on time"}}...
+..."c":"STORAGE",  "id":6698300, "ctx":"conn9","msg":"Document is not compliant with time-series specifications","attr":{..."reason":{"code":2,"codeName":"BadValue","errmsg":"Time-series bucket is v3 but has its measurements in-order on time"}}...
 ```
 Example `validate` run on a sharded cluster:
 ```
@@ -74,11 +74,11 @@ coll.validate();
 ```
 with the logs:
 ```
-..."c":"STORAGE",  "id":6698300, "ctx":"conn9","msg":"Document is not compliant with time-series specifications","attr":{"namespace":"[...]","recordId":[...],"reason":{"code":2,"codeName":"BadValue","errmsg":"Time-series bucket 't' field is not in ascending order"}}...
+..."c":"STORAGE",  "id":6698300, "ctx":"conn9","msg":"Document is not compliant with time-series specifications","attr":{..."reason":{"code":2,"codeName":"BadValue","errmsg":"Time-series bucket [...] field is not in ascending order"}}...
 ```
 or 
 ```
-..."c":"STORAGE",  "id":6698300, "ctx":"conn9","msg":"Document is not compliant with time-series specifications","attr":{"namespace":"[...]","recordId":[...],"reason":{"code":2,"codeName":"BadValue","errmsg":"Time-series bucket is v3 but has its measurements in-order on time"}}...
+..."c":"STORAGE",  "id":6698300, "ctx":"conn9","msg":"Document is not compliant with time-series specifications","attr":{..."reason":{"code":2,"codeName":"BadValue","errmsg":"Time-series bucket is v3 but has its measurements in-order on time"}}...
 ```
 # Remediation
 ## Rewrite Bucket Version in a Time Series Collections
