@@ -24,11 +24,14 @@ If you are using these scripts on your own, we strongly recommend:
 
 Please see [SERVER-94471](https://jira.mongodb.org/browse/SERVER-94471) for the affected versions. Users can determine if they have been impacted by running [`validate`](https://www.mongodb.com/docs/v7.0/reference/command/validate/) on their Time Series collections and checking the `validate.errors` field to determine if there are buckets with mismatched versions. 
 The validation command [can be very impactful](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance). To minimize the performance impact of running validate, issue validate to a secondary and follow [these steps](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance:~:text=Validation%20has%20exclusive,the%20hidden%20node). 
+
+## Validation Results for v8.1+
+
 Example `validate` run on a standalone/replica set:
 ```
 // Call validate on a mongod process for replica sets. 
 coll.validate();
-// The warnings field detects mixed-schema buckets. 
+// The errors field detects bucket version mismatch.
 {
 "ns" : "db.system.buckets.coll",
 ...
@@ -52,7 +55,73 @@ Example `validate` run on a sharded cluster:
 ```
 // Call validate on mongos for sharded clusters.
 coll.validate();
-// The warnings field detects mixed-schema buckets.
+// The errors field detects bucket version mismatch.
+// For sharded clusters, this output is an object with a result for every shard in 
+// the "raw" field.
+{
+	"ns" : "db.system.buckets.coll",
+	...
+"errors" : [
+    Detected one or more documents in this collection incompatible with time-series
+    specifications. For more info, see logs with log id 6698300.,
+    ...
+],
+...
+"raw" : {
+	"shard-0-name" : {
+		"ns" : "db.system.buckets.coll"
+		...
+"errors" : [
+    Detected one or more documents in this collection incompatible with time-series
+    specifications. For more info, see logs with log id 6698300.,
+    ...
+],
+...
+},
+"shard-1-name" : { ... }, ...
+}
+}
+```
+with the logs:
+```
+..."c":"STORAGE",  "id":6698300, "ctx":"conn9","msg":"Document is not compliant with time-series specifications","attr":{..."reason":{"code":2,"codeName":"BadValue","errmsg":"Time-series bucket [...] field is not in ascending order"}}...
+```
+or 
+```
+..."c":"STORAGE",  "id":6698300, "ctx":"conn9","msg":"Document is not compliant with time-series specifications","attr":{..."reason":{"code":2,"codeName":"BadValue","errmsg":"Time-series bucket is v3 but has its measurements in-order on time"}}...
+```
+
+## Validation Results Before v8.1
+
+Example `validate` run on a standalone/replica set:
+```
+// Call validate on a mongod process for replica sets. 
+coll.validate();
+// The warnings field detects bucket version mismatch.
+{
+"ns" : "db.system.buckets.coll",
+...
+"errors" : [
+    Detected one or more documents in this collection incompatible with time-series
+    specifications. For more info, see logs with log id 6698300.,
+    ...
+],
+...
+}
+```
+with the logs:
+```
+..."c":"STORAGE",  "id":6698300, "ctx":"conn9","msg":"Document is not compliant with time-series specifications","attr":{..."reason":{"code":2,"codeName":"BadValue","errmsg":"Time-series bucket [...] field is not in ascending order"}}...
+```
+or 
+```
+..."c":"STORAGE",  "id":6698300, "ctx":"conn9","msg":"Document is not compliant with time-series specifications","attr":{..."reason":{"code":2,"codeName":"BadValue","errmsg":"Time-series bucket is v3 but has its measurements in-order on time"}}...
+```
+Example `validate` run on a sharded cluster:
+```
+// Call validate on mongos for sharded clusters.
+coll.validate();
+// The warnings field detects bucket version mismatch.
 // For sharded clusters, this output is an object with a result for every shard in 
 // the "raw" field.
 {
