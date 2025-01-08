@@ -1,6 +1,6 @@
 // ------------------------------------------------------------------------------------
 // Populate collName with the time-series collection with a bucket(s) that has
-// mismatched embedded bucked id timestamp and control.min timestamp.
+// mismatched embedded bucket id timestamp and control.min timestamp.
 // ------------------------------------------------------------------------------------
 const collName = 'your_collection_name';
 
@@ -10,7 +10,7 @@ let listCollectionsRes = db.runCommand({
                            }).cursor.firstBatch;
 if (listCollectionsRes.length == 0) {
   print(
-      'Collection not found. Populate collName with the time-series collection with a bucket(s) that has mismatched embedded bucked id timestamp and control.min timestamp.');
+      'Collection not found. Populate collName with the time-series collection with a bucket(s) that has mismatched embedded bucket id timestamp and control.min timestamp.');
   exit(1);
 }
 const coll = db.getCollection(collName);
@@ -22,7 +22,7 @@ const bucketsColl = db.getCollection('system.buckets.' + collName);
 // ------------------------------------------------------------------------------------
 // The "temp" collection should not exist prior to running the script. This will
 // be used for storing the measurements of the buckets with mismatched embedded
-// bucked id timestamp and control.min timestamp.
+// bucket id timestamp and control.min timestamp.
 // ------------------------------------------------------------------------------------
 listCollectionsRes = db.runCommand({
                          listCollections: 1.0,
@@ -43,7 +43,7 @@ if (listCollectionsRes.length != 0) {
 //    a) Unpack the measurements
 //    b) Insert the measurements back into the collection. These will go into
 //    new buckets.
-//    c) Delete the mismatched embedded bucked id timestamp and
+//    c) Delete the mismatched embedded bucket id timestamp and
 //    control.min timestamp bucket from the collection.
 // 3) Validate that there are no buckets with a mismatch between the embedded
 // bucket id timestamp and the control min timestamp.
@@ -57,7 +57,7 @@ function setUp() {
   bucketColl = db.getCollection('system.buckets.' + collName);
 
   // Create a temp collection to store measurements from the buckets with
-  // mismatched embedded bucked id timestamp and control.min timestamp.
+  // mismatched embedded bucket id timestamp and control.min timestamp.
   tsOptions =
       db.runCommand({listCollections: 1.0, filter: {name: coll.getName()}})
           .cursor.firstBatch[0]
@@ -184,37 +184,37 @@ function shouldRetryTxnOnTransientError(e) {
 }
 
 //
-// Steps 1 & 2: Detect if a bucket has mismatched embedded bucked id timestamps
+// Steps 1 & 2: Detect if a bucket has mismatched embedded bucket id timestamps
 // and control.min timestamps in the collection and re-inserts buckets with
 // these mismatches.
 //
 print(
-    'Re-inserting buckets that have a mismatched embedded bucked id timestamps and control.min timestamps in the collection ...\n');
+    'Re-inserting buckets that have a mismatched embedded bucket id timestamps and control.min timestamps in the collection ...\n');
 runFixEmbeddedBucketIdControlMinMismatchProcedure();
 tempTimeseriesBucketsColl.drop();
 
 //
-// Step 3: Validate that there are no buckets with mismatched embedded bucked id
+// Step 3: Validate that there are no buckets with mismatched embedded bucket id
 // timestamps and control.min timestamps in the collection.
 //
 print(
-    'Validating that there are no buckets that have a mismatched embedded bucked id timestamp and control.min timestamp ...\n');
+    'Validating that there are no buckets that have a mismatched embedded bucket id timestamp and control.min timestamp ...\n');
 db.getMongo().setReadPref('secondaryPreferred');
 const validateRes = coll.validate();
 
 //
-// For v8.1.0+, buckets that have a mismatched embedded bucked id timestamp and
+// For v8.1.0+, buckets that have a mismatched embedded bucket id timestamp and
 // control.min timestamp will lead to an error during validation.
 //
-// Prior to v8.1.0, buckets that have a mismatched embedded bucked id timestamp
+// Prior to v8.1.0, buckets that have a mismatched embedded bucket id timestamp
 // and control.min timestamp will lead to an warning during validation.
 //
 if (validateRes.errors.length != 0 || validateRes.warnings.length != 0) {
   print(
-      '\nThere is still a bucket that has a mismatched embedded bucked id timestamps and control.min timestamps, or there is another error during validation.');
+      '\nThere is still a bucket that has a mismatched embedded bucket id timestamps and control.min timestamps, or there is another error during validation.');
   exit(1);
 }
 
 print(
-    '\nScript successfully fixed have a mismatched embedded bucked id timestamp and control.min timestamp!');
+    '\nScript successfully fixed have a mismatched embedded bucket id timestamp and control.min timestamp!');
 exit(0);

@@ -45,7 +45,6 @@ coll.validate();
 ```
 
 Example `validate` run on a sharded cluster:
-
 ```
 // Call validate on mongos for sharded clusters.
 coll.validate();

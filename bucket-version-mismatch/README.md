@@ -161,15 +161,20 @@ or
 
 ## Rewrite Bucket Version in a Time Series Collections
 
-While the script is running, the performance of operations on the time-series collection may be impacted. The script does a scan of the whole collection and performs updates on impacted buckets, which may result in a large load if many buckets are affected.  
-At a high level, the script remediates errors during collection validation by updating the bucket's version from v2 to v3 and vice versa if a v2 bucket has unsorted data, or if a v3 bucket has sorted data. 
-The full steps are as follows. For each bucket in the time series collection:
-- Detect if the bucket has bucket version mismatch.
-- Change the buckets with bucket version mismatch to the correct version.
-- Validate that there are no bucket version mismatches.
-**Warning**: This script directly modifies `<database>.system.buckets` collection —the underlying buckets of the Time Series collection—in order to remediate performance issues. Under normal circumstances, users should not modify this collection. 
-Please contact [MongoDB Support](https://support.mongodb.com/welcome) with any questions or concerns regarding running this script. 
+While the script is running, the performance of operations on the time-series collection may be impacted. The script does a scan of the whole collection and performs multiple reads and writes per mixed-schema bucket, which may result in a large load if many buckets are affected.  
 
+At a high level, the script remediates performance by rewriting buckets from the mixed-schema format to the older schema.  The rewrite is done by unpacking the measurements of the problematic mixed-schema buckets and inserting those measurements back into the collection.
+
+The full steps are as follows. For each bucket in the time series collection:
+- Detect if the bucket has mixed-schema data.
+- Re-insert the measurements of the mixed-schema bucket transactionally.
+  - Unpack the measurements.
+  - Insert the measurements back into the collection. These will go into new buckets.
+  - Delete the mixed-schema bucket from the collection.
+
+**Warning**: This script directly modifies `<database>.system.buckets` collection —the underlying buckets of the Time Series collection—in order to remediate performance issues. Under normal circumstances, users should not modify this collection. 
+
+Please contact [MongoDB Support](https://support.mongodb.com/welcome) with any questions or concerns regarding running this script. 
 ### Running the remediation script
 
 #### 1. Modify the script by populating `collName` with the name of your collection
