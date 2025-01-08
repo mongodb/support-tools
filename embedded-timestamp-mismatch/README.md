@@ -23,7 +23,7 @@ If you are using these scripts on your own, we strongly recommend:
 
 # Determine if You're Impacted
 
-Please see [SERVER-94559](https://jira.mongodb.org/browse/SERVER-94559) for the affected versions. Users can determine if they have been impacted by running [`validate`](https://www.mongodb.com/docs/v7.0/reference/command/validate/) on their Time Series collections and checking the `validate.errors` field (for v8.1+) or the `validate.warnings` field otherwise to determine if there are buckets with mismatched versions. 
+Please see [SERVER-94559](https://jira.mongodb.org/browse/SERVER-94559) for the affected versions. Users can determine if they have been impacted by running [`validate`](https://www.mongodb.com/docs/v7.0/reference/command/validate/) on their Time Series collections and checking the `validate.errors` field (for v8.1+) or the `validate.warnings` field (for below v8.1) otherwise to determine if there are buckets with mismatched versions. 
 
 The validation command [can be very impactful](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance). To minimize the performance impact of running validate, issue validate to a secondary and follow [these steps](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance:~:text=Validation%20has%20exclusive,the%20hidden%20node). 
 
