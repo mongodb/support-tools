@@ -1,4 +1,4 @@
-# Troubleshoot timestamp embedded in the bucket's ID does not match the control.min timestamp
+# Troubleshoot Timestamp Embedded in the Bucket's ID does not match the control.min Timestamp
 For more context on this issue, see [SERVER-94559](https://jira.mongodb.org/browse/SERVER-94559).
 
 ## Warning
@@ -168,7 +168,8 @@ Please contact [MongoDB Support](https://support.mongodb.com/welcome) with any q
 
 ```
 // ------------------------------------------------------------------------------------
-// Populate collName with the time-series collection with mixed-schema buckets.
+// Populate collName with the time-series collection with a bucket(s) that has
+// mismatched embedded bucked id timestamp and control.min timestamp.
 // ------------------------------------------------------------------------------------
 const collName = "your_collection_name";
 ```

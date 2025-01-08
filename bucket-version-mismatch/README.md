@@ -107,9 +107,10 @@ Please contact [MongoDB Support](https://support.mongodb.com/welcome) with any q
 
 ```
 // ------------------------------------------------------------------------------------
-// Populate collName with the time-series collection with mixed-schema buckets.
+// Populate collName with the time-series collection that failed validation due
+// to v2/v3 timeseries buckets not in correct sorted/unsorted order
+// respectively.
 // ------------------------------------------------------------------------------------
-const collName = "your_collection_name";
 ```
 
 #### 2. Connect to your sharded cluster using [mongosh](https://www.mongodb.com/docs/mongodb-shell/):
