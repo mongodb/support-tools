@@ -103,11 +103,11 @@ db.getMongo().setReadPref('secondaryPreferred');
 const validateRes = collName.validate({full: true});
 
 //
-// For v8.1.0+, buckets that have a mismatched embedded bucket id timestamp and
-// control.min timestamp will lead to an error during validation.
+// For v8.1+, buckets that have a bucket version mismatch will lead to a error
+// during validation.
 //
-// Prior to v8.1.0, buckets that have a mismatched embedded bucket id timestamp
-// and control.min timestamp will lead to an warning during validation.
+// Prior to v8.1, buckets that have a bucket version mismatch will lead to a
+// warning during validation.
 //
 if (validateRes.errors.length != 0 || validateRes.warnings.length != 0) {
   print(
