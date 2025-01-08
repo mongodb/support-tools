@@ -161,7 +161,7 @@ or
 
 ## Rewrite Bucket Version in a Time Series Collections
 
-While the script is running, the performance of operations on the time-series collection may be impacted. The script does a scan of the whole collection and performs updates on impacted buckets, which may result in a large load if many buckets are affected. 	
+While the script is running, the performance of operations on the time-series collection may be impacted. The script does a scan of the whole collection and performs updates on impacted buckets, which may result in a large load if many buckets are affected.
 
 At a high level, the script remediates errors during collection validation by updating the bucket's version from v2 to v3 and vice versa if a v2 bucket has unsorted data, or if a v3 bucket has sorted data. 
 
