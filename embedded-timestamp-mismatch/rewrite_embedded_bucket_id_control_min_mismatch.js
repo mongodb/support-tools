@@ -1,3 +1,38 @@
+// ------------------------------------------------------------------------------------
+// Populate collName with the time-series collection with a bucket(s) that has
+// mismatched embedded bucked id timestamp and control.min timestamp.
+// ------------------------------------------------------------------------------------
+const collName = 'your_collection_name';
+
+let listCollectionsRes = db.runCommand({
+                             listCollections: 1.0,
+                             filter: {name: collName}
+                           }).cursor.firstBatch;
+if (listCollectionsRes.length == 0) {
+  print(
+      'Collection not found. Populate collName with the time-series collection with a bucket(s) that has mismatched embedded bucked id timestamp and control.min timestamp.');
+  exit(1);
+}
+const coll = db.getCollection(collName);
+const bucketsColl = db.getCollection('system.buckets.' + collName);
+
+//
+// NON-MODIFIABLE CODE BELOW
+//
+// ------------------------------------------------------------------------------------
+// The "temp" collection should not exist prior to running the script. This will
+// be used for storing the measurements of the buckets with mismatched embedded
+// bucked id timestamp and control.min timestamp.
+// ------------------------------------------------------------------------------------
+listCollectionsRes = db.runCommand({
+                         listCollections: 1.0,
+                         filter: {name: 'temp'}
+                       }).cursor.firstBatch;
+if (listCollectionsRes.length != 0) {
+  print(
+      'Collection `temp` should not exist prior to running the script. Rename or drop the collection before running this script');
+  exit(1);
+}
 
 // ---------------------------------------------------------------------------------------
 // The script will, for each bucket in the affected time-series collection:
@@ -8,10 +43,9 @@
 //    a) Unpack the measurements
 //    b) Insert the measurements back into the collection. These will go into
 //    new buckets.
-//    c) Delete the mixed-schema bucket from the collection.
+//    c) Delete the mismatched embedded bucked id timestamp and
+//    control.min timestamp bucket from the collection.
 // 3) Validate that there are no buckets with a mismatch between the embedded
-// bucket id timestamp and the control min timestamp.
-// 4) Tell the server there aren't buckets with a mismatch between the embedded
 // bucket id timestamp and the control min timestamp.
 // ----------------------------------------------------------------------------------------
 let bucketColl;
@@ -22,8 +56,8 @@ let tempTimeseriesBucketsColl;
 function setUp() {
   bucketColl = db.getCollection('system.buckets.' + collName);
 
-  // Create a temp collection to store measurements from the mixed-schema
-  // buckets.
+  // Create a temp collection to store measurements from the buckets with
+  // mismatched embedded bucked id timestamp and control.min timestamp.
   tsOptions =
       db.runCommand({listCollections: 1.0, filter: {name: coll.getName()}})
           .cursor.firstBatch[0]
@@ -38,7 +72,7 @@ function setUp() {
 function runFixEmbeddedBucketIdControlMinMismatchProcedure() {
   setUp();
   print(
-      'Finding when embedded bucket ID timestamps don\'t match the control min timestamps in  ' +
+      'Finding when embedded bucket ID timestamps don\'t match the control min timestamps in ' +
       collName + ' ...\n');
   let cursor = bucketsColl.find({}, {_id: true, control: true});
 
@@ -48,31 +82,13 @@ function runFixEmbeddedBucketIdControlMinMismatchProcedure() {
   // types match. If they do not match, re-insert the bucket.
   while (cursor.hasNext()) {
     const bucket = cursor.next();
-    const bucketId = bucket._id;
-    const controlMinTimestamp = bucket.control.min
+    const oidTimestamp = bucket._id.getTimestamp();
+    const controlMinTimestamp = bucket.control.min.t
 
-    if (bucketHasMismatchedEmbeddedBucketIdAndControlMin(
-            bucketId, controlMinTimestamp)) {
+    if (oidTimestamp != controlMinTimestamp) {
       reinsertMeasurementsFromBucket(bucket._id);
     }
   }
-}
-
-function getDateFromObjectId(objectId) {
-  return new Date(parseInt(objectId.substring(0, 8), 16) * 1000);
-}
-
-//
-// Helpers to detect whether a given bucket contains a mismatch between the
-// embedded bucket id timestamp and the control min timestamp.
-//
-// We parse each timestamp to a date and use .getTime() to compare them.
-//
-function bucketHasMismatchedEmbeddedBucketIdAndControlMin(
-    bucketId, controlMinTime) {
-  const oidTimestamp = getDateFromObjectId(bucketId)
-  const controlMinTimestamp = new Date(Date.parse(controlMinTime));
-  return oidTimestamp.getTime() == controlMinTimestamp.getTime()
 }
 
 //
@@ -84,8 +100,10 @@ function reinsertMeasurementsFromBucket(bucketId) {
   // Prevent concurrent changes on this bucket by setting control.closed.
   bucketColl.updateOne({_id: bucketId}, {$set: {'control.closed': true}});
 
-  // Get the measurements from the mixed-schema bucket.
-  print('Getting the measurements from the mixed-schema bucket...\n');
+  // Get the measurements from the bucket that has a mismatched embedded bucket
+  // id timestamp and control.min timestamp.
+  print(
+      'Getting the measurements from the bucket that has a mismatched embedded bucket id timestamp and control.min timestamp...\n');
   let measurements;
   if (tsOptions.metaField) {
     measurements = bucketColl
@@ -164,3 +182,39 @@ function shouldRetryTxnOnTransientError(e) {
   }
   return false;
 }
+
+//
+// Steps 1 & 2: Detect if a bucket has mismatched embedded bucked id timestamps
+// and control.min timestamps in the collection and re-inserts buckets with
+// these mismatches.
+//
+print(
+    'Re-inserting buckets that have a mismatched embedded bucked id timestamps and control.min timestamps in the collection ...\n');
+runFixEmbeddedBucketIdControlMinMismatchProcedure();
+tempTimeseriesBucketsColl.drop();
+
+//
+// Step 3: Validate that there are no buckets with mismatched embedded bucked id
+// timestamps and control.min timestamps in the collection.
+//
+print(
+    'Validating that there are no buckets that have a mismatched embedded bucked id timestamp and control.min timestamp ...\n');
+db.getMongo().setReadPref('secondaryPreferred');
+const validateRes = coll.validate();
+
+//
+// For v8.1.0+, buckets that have a mismatched embedded bucked id timestamp and
+// control.min timestamp will lead to an error during validation.
+//
+// Prior to v8.1.0, buckets that have a mismatched embedded bucked id timestamp
+// and control.min timestamp will lead to an warning during validation.
+//
+if (validateRes.errors.length != 0 || validateRes.warnings.length != 0) {
+  print(
+      '\nThere is still a bucket that has a mismatched embedded bucked id timestamps and control.min timestamps, or there is another error during validation.');
+  exit(1);
+}
+
+print(
+    '\nScript successfully fixed have a mismatched embedded bucked id timestamp and control.min timestamp!');
+exit(0);
