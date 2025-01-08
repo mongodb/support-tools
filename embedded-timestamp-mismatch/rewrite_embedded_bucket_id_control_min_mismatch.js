@@ -211,7 +211,7 @@ const validateRes = coll.validate();
 //
 if (validateRes.errors.length != 0 || validateRes.warnings.length != 0) {
   print(
-      '\nThere is still a bucket that has a mismatched embedded bucket id timestamps and control.min timestamps, or there is another error during validation.');
+      '\nThere is still a bucket that has a mismatched embedded bucket id timestamps and control.min timestamps, or there is another error or warning during validation.');
   exit(1);
 }
 
