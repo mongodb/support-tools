@@ -31,7 +31,7 @@ Example `validate` run on a standalone/replica set:
 ```
 // Call validate on a mongod process for replica sets. 
 coll.validate();
-// The errors field detects bucket version mismatch.
+// For v8.1+, the errors field detects bucket version mismatch.
 {
 "ns" : "db.system.buckets.coll",
 ...
@@ -55,7 +55,7 @@ Example `validate` run on a sharded cluster:
 ```
 // Call validate on mongos for sharded clusters.
 coll.validate();
-// The errors field detects bucket version mismatch.
+// For v8.1+, the errors field detects bucket version mismatch.
 // For sharded clusters, this output is an object with a result for every shard in 
 // the "raw" field.
 {
@@ -97,7 +97,7 @@ Example `validate` run on a standalone/replica set:
 ```
 // Call validate on a mongod process for replica sets. 
 coll.validate();
-// The warnings field detects bucket version mismatch.
+// For versions below v8.1, the warnings field detects bucket version mismatch.
 {
 "ns" : "db.system.buckets.coll",
 ...
@@ -121,7 +121,7 @@ Example `validate` run on a sharded cluster:
 ```
 // Call validate on mongos for sharded clusters.
 coll.validate();
-// The warnings field detects bucket version mismatch.
+// For versions below v8.1, the warnings field detects bucket version mismatch.
 // For sharded clusters, this output is an object with a result for every shard in 
 // the "raw" field.
 {

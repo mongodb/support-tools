@@ -1,4 +1,4 @@
-# Troubleshoot Timestamp Embedded in the Bucket's ID does not match the control.min Timestamp
+# Troubleshoot Timestamp Embedded in the Bucket's ID Does Not Match the control.min Timestamp
 For more context on this issue, see [SERVER-94559](https://jira.mongodb.org/browse/SERVER-94559).
 
 ## Warning
@@ -30,7 +30,7 @@ Example `validate` run on a standalone/replica set:
 ```
 // Call validate on a mongod process for replica sets. 
 coll.validate();
-// For v8.1+, errors field detects a bucket(s) that has mismatched embedded bucked id
+// For v8.1+, the errors field detects a bucket(s) that has mismatched embedded bucked id
 // timestamp and control.min timestamp.
 {
 "ns" : "db.system.buckets.coll",
@@ -53,7 +53,7 @@ Example `validate` run on a sharded cluster:
 ```
 // Call validate on mongos for sharded clusters.
 coll.validate();
-// For v8.1+, errors field detects a bucket(s) that has mismatched embedded bucked id
+// For v8.1+, the errors field detects a bucket(s) that has mismatched embedded bucked id
 // timestamp and control.min timestamp.
 // For sharded clusters, this output is an object with a result for every shard in 
 // the "raw" field.
@@ -116,7 +116,8 @@ Example `validate` run on a sharded cluster:
 ```
 // Call validate on mongos for sharded clusters.
 coll.validate();
-// The warnings field detects mixed-schema buckets.
+// For versions below v8.1, the warnings field detects a bucket(s) that has mismatched 
+// embedded bucked id timestamp and control.min timestamp.
 // For sharded clusters, this output is an object with a result for every shard in 
 // the "raw" field.
 {
