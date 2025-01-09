@@ -41,10 +41,8 @@ if (listCollectionsRes.length != 0) {
 // 2) Re-insert the measurements of the timestamp-mismatched bucket
 // transactionally.
 //    a) Unpack the measurements
-//    b) Insert the measurements back into the collection. These will go into
-//    new buckets.
-//    c) Delete the mismatched embedded bucket id timestamp and
-//    control.min timestamp bucket from the collection.
+//    b) Repack the measurements into new buckets.
+//    c) Delete the original, problematic bucket from the collection.
 // 3) Validate that there are no buckets with a mismatch between the embedded
 // bucket id timestamp and the control min timestamp.
 // ----------------------------------------------------------------------------------------
@@ -211,10 +209,10 @@ const validateRes = coll.validate();
 //
 if (validateRes.errors.length != 0 || validateRes.warnings.length != 0) {
   print(
-      '\nThere is still a bucket that has a mismatched embedded bucket id timestamps and control.min timestamps, or there is another error or warning during validation.');
+      '\nThere is still a bucket(s) that has a mismatched embedded bucket id timestamps and control.min timestamps, or there is another error or warning during validation.');
   exit(1);
 }
 
 print(
-    '\nScript successfully fixed have a mismatched embedded bucket id timestamp and control.min timestamp!');
+    '\nScript successfully fixed buckets with mismatched embedded bucket id timestamp and control.min timestamp!');
 exit(0);
