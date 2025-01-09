@@ -165,8 +165,8 @@ The full steps are as follows. For each bucket in the time series collection:
 - Detect if the bucket has mismatched embedded bucket ID timestamp and control.min timestamp
 - Re-insert the measurements of the problematic bucket transactionally.
   - Unpack the measurements.
-  - Insert the measurements back into the collection. These will go into a new buckets.
-  - Delete the problematic bucket from the collection.
+  - Repack the measurements into new buckets.
+  - Delete the original, problematic bucket from the collection.
 
 **Warning**: This script directly modifies `<database>.system.buckets` collection —the underlying buckets of the Time Series collection—in order to remediate performance issues. Under normal circumstances, users should not modify this collection. 
 
