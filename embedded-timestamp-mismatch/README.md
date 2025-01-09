@@ -21,19 +21,23 @@ If you are using these scripts on your own, we strongly recommend:
    - We have already reached out to impacted customers. If we have reached out, you can skip the [Determine if You're Impacted section](#Determine-if-You're-Impacted) and start taking the steps under the [Remediation section](#remediation).
    - Additionally, we recommend using the [Atlas Admin](https://www.mongodb.com/docs/atlas/security-add-mongodb-users/#built-in-roles) role.
 
+## Validation Version Warning
+
+This script should be run with clusters that have have been validated with validation on the versions listed [here](https://jira.mongodb.org/browse/SERVER-97441) and [here](https://jira.mongodb.org/browse/SERVER-87065). Running this script when validation fails on other versions will not remediate the validation error/warning associated with this issue, as described in [Determine if You're Impacted](#determine-if-youre-impacted)
+
 # Determine if You're Impacted
 
-Please see [SERVER-94559](https://jira.mongodb.org/browse/SERVER-94559) for the affected versions. Users can determine if they have been impacted by running [`validate`](https://www.mongodb.com/docs/v7.0/reference/command/validate/) on their Time Series collections and checking the `validate.errors` field (for v8.1+) or the `validate.warnings` field (for below v8.1) otherwise to determine if there are buckets with mismatched versions. 
+Please see [SERVER-94559](https://jira.mongodb.org/browse/SERVER-94559) for the affected versions. Users can determine if they have been impacted by running [`validate`](https://www.mongodb.com/docs/v7.0/reference/command/validate/) on their Time Series collections and checking the `validate.errors` field (for v8.1.0+) or the `validate.warnings` field (for below v8.1.0) otherwise to determine if there are buckets with mismatched versions. 
 
 The validation command [can be very impactful](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance). To minimize the performance impact of running validate, issue validate to a secondary and follow [these steps](https://www.mongodb.com/docs/v7.0/reference/method/db.collection.validate/#performance:~:text=Validation%20has%20exclusive,the%20hidden%20node). 
 
-## Validation Results for v8.1+
+## Validation Results for v8.1.0+
 
 Example `validate` run on a standalone/replica set:
 ```
 // Call validate on a mongod process for replica sets. 
 coll.validate();
-// For v8.1+, the errors field detects a bucket(s) that has mismatched embedded bucket id
+// For v8.1.0+, the errors field detects a bucket(s) that has mismatched embedded bucket id
 // timestamp and control.min timestamp.
 {
 "ns" : "db.system.buckets.coll",
@@ -56,7 +60,7 @@ Example `validate` run on a sharded cluster:
 ```
 // Call validate on mongos for sharded clusters.
 coll.validate();
-// For v8.1+, the errors field detects a bucket(s) that has mismatched embedded bucket id
+// For v8.1.0+, the errors field detects a bucket(s) that has mismatched embedded bucket id
 // timestamp and control.min timestamp.
 // For sharded clusters, this output is an object with a result for every shard in 
 // the "raw" field.
@@ -90,12 +94,12 @@ with the logs:
                                   "bucket '_id' field and the timestamp [...] in 'control.min' field."}}...
 ```
 
-## Validation Results Before v8.1 
+## Validation Results Before v8.1.0 
 
 Example `validate` run on a standalone/replica set:
 ```
 // Call validate on a mongod process for replica sets. 
-// For versions below v8.1, the warnings field detects a bucket(s) that has mismatched 
+// For versions below v8.1.0, the warnings field detects a bucket(s) that has mismatched 
 // embedded bucket id timestamp and control.min timestamp.
 coll.validate();
 {
@@ -119,7 +123,7 @@ Example `validate` run on a sharded cluster:
 ```
 // Call validate on mongos for sharded clusters.
 coll.validate();
-// For versions below v8.1, the warnings field detects a bucket(s) that has mismatched 
+// For versions below v8.1.0, the warnings field detects a bucket(s) that has mismatched 
 // embedded bucket id timestamp and control.min timestamp.
 // For sharded clusters, this output is an object with a result for every shard in 
 // the "raw" field.

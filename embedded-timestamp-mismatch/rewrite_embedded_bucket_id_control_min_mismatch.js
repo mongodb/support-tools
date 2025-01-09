@@ -66,6 +66,12 @@ function setUp() {
   tempTimeseriesBucketsColl = db.getCollection('system.buckets.temp');
 }
 
+// Helper function to determine if timestamp is in extended range.
+function timestampInExtendedRange(timestamp) {
+  return timestamp < ISODate('1970-01-01T00:00:00.000Z') ||
+      timestamp > ISODate('2038-01-19T03:14:07.000Z')
+}
+
 // Main function.
 function runFixEmbeddedBucketIdControlMinMismatchProcedure() {
   setUp();
@@ -80,7 +86,10 @@ function runFixEmbeddedBucketIdControlMinMismatchProcedure() {
     const oidTimestamp = bucket._id.getTimestamp();
     const controlMinTimestamp = bucket.control.min.t
 
-    if (oidTimestamp != controlMinTimestamp) {
+    // If this collection has extended-range measurements, we cannot assert that
+    // the minTimestamp matches the embedded timestamp.
+    if (!timestampInExtendedRange(controlMinTimestamp) &&
+        oidTimestamp != controlMinTimestamp) {
       reinsertMeasurementsFromBucket(bucket._id);
     }
   }
@@ -196,10 +205,10 @@ db.getMongo().setReadPref('secondaryPreferred');
 const validateRes = coll.validate({background: true});
 
 //
-// For v8.1+, buckets that have a mismatched embedded bucket id timestamp and
+// For v8.1.0+, buckets that have a mismatched embedded bucket id timestamp and
 // control.min timestamp will lead to a error during validation.
 //
-// Prior to v8.1, buckets that have a mismatched embedded bucket id timestamp
+// Prior to v8.1.0, buckets that have a mismatched embedded bucket id timestamp
 // and control.min timestamp will lead to a warning during validation.
 //
 if (validateRes.errors.length != 0 || validateRes.warnings.length != 0) {
