@@ -68,8 +68,8 @@ function setUp() {
 
 // Helper function to determine if timestamp is in extended range.
 function timestampInExtendedRange(timestamp) {
-  return timestamp < ISODate('1970-01-01T00:00:00.000Z') ||
-      timestamp > ISODate('2038-01-19T03:14:07.000Z')
+  return timestamp < new Date(ISODate('1970-01-01T00:00:00.000Z')).getTime() ||
+      timestamp > new Date(ISODate('2038-01-19T03:14:07.000Z')).getTime()
 }
 
 // Main function.
@@ -83,11 +83,12 @@ function runFixEmbeddedBucketIdControlMinMismatchProcedure() {
   // types match. If they do not match, re-insert the bucket.
   while (cursor.hasNext()) {
     const bucket = cursor.next();
-    const oidTimestamp = bucket._id.getTimestamp();
-    const controlMinTimestamp = bucket.control.min.t
+    const oidTimestamp = new Date(bucket._id.getTimestamp()).getTime();
+    const controlMinTimestamp = new Date(bucket.control.min.t).getTime();
 
     // If this collection has extended-range measurements, we cannot assert that
     // the minTimestamp matches the embedded timestamp.
+    print(controlMinTimestamp == oidTimestamp)
     if (!timestampInExtendedRange(controlMinTimestamp) &&
         oidTimestamp != controlMinTimestamp) {
       reinsertMeasurementsFromBucket(bucket._id);
