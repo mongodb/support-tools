@@ -69,9 +69,6 @@ function setUp() {
 // Main function.
 function runFixEmbeddedBucketIdControlMinMismatchProcedure() {
   setUp();
-  print(
-      'Finding when embedded bucket ID timestamps don\'t match the control min timestamps in ' +
-      collName + ' ...\n');
   let cursor = bucketsColl.find({}, {_id: true, control: true});
 
   // Mismatched timestamp buckets will have different types for their
@@ -100,8 +97,6 @@ function reinsertMeasurementsFromBucket(bucketId) {
 
   // Get the measurements from the bucket that has a mismatched embedded bucket
   // id timestamp and control.min timestamp.
-  print(
-      'Getting the measurements from the bucket that has a mismatched embedded bucket id timestamp and control.min timestamp...\n');
   let measurements;
   if (tsOptions.metaField) {
     measurements = bucketColl
