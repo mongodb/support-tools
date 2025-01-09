@@ -193,7 +193,7 @@ tempTimeseriesBucketsColl.drop();
 print(
     'Validating that there are no buckets that have a mismatched embedded bucket id timestamp and control.min timestamp ...\n');
 db.getMongo().setReadPref('secondaryPreferred');
-const validateRes = coll.validate();
+const validateRes = coll.validate({background: true});
 
 //
 // For v8.1+, buckets that have a mismatched embedded bucket id timestamp and
