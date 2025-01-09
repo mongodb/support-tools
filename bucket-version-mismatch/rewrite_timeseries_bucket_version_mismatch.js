@@ -100,7 +100,7 @@ runFixBucketVersionMismatchProcedure(collName);
 //
 print('Validating that there are no mismatched bucket versions ...\n');
 db.getMongo().setReadPref('secondaryPreferred');
-const validateRes = collName.validate({full: true});
+const validateRes = collName.validate({background: true});
 
 //
 // For v8.1+, buckets that have a bucket version mismatch will lead to a error
