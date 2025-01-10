@@ -88,7 +88,6 @@ function runFixEmbeddedBucketIdControlMinMismatchProcedure() {
 
     // If this collection has extended-range measurements, we cannot assert that
     // the minTimestamp matches the embedded timestamp.
-    print(controlMinTimestamp == oidTimestamp)
     if (!timestampInExtendedRange(controlMinTimestamp) &&
         oidTimestamp != controlMinTimestamp) {
       reinsertMeasurementsFromBucket(bucket._id);
@@ -212,9 +211,12 @@ const validateRes = coll.validate({background: true});
 // Prior to v8.1.0, buckets that have a mismatched embedded bucket id timestamp
 // and control.min timestamp will lead to a warning during validation.
 //
-if (validateRes.errors.length != 0 || validateRes.warnings.length != 0) {
+if ((validateRes.errors.length != 0 &&
+     validateRes.errors.some(x => x.includes('6698300'))) ||
+    (validateRes.warnings.length != 0 &&
+     validateRes.warnings.some(x => x.includes('6698300')))) {
   print(
-      '\nThere is still a bucket(s) that has a mismatched embedded bucket id timestamps and control.min timestamps, or there is another error or warning during validation.');
+      '\nThere is still a time-series bucket(s) that has a mismatched embedded bucket id timestamps and control.min timestamps. Try re-running the script to re-insert missed buckets, or check logs with id 6698300 to see if there is another error or warning during validation regarding incompatible time-series documents.');
   exit(1);
 }
 
