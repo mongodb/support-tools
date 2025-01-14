@@ -100,10 +100,21 @@ runFixBucketVersionMismatchProcedure(collName);
 //
 print('Validating that there are no mismatched bucket versions ...\n');
 db.getMongo().setReadPref('secondaryPreferred');
-const validateRes = collName.validate({full: true});
-if (validateRes.errors.length != 0) {
+const validateRes = collName.validate({background: true});
+
+//
+// For v8.1.0+, buckets that have a bucket version mismatch will lead to a error
+// during validation.
+//
+// Prior to v8.1.0, buckets that have a bucket version mismatch will lead to a
+// warning during validation.
+//
+if ((validateRes.errors.length != 0 &&
+     validateRes.errors.some(x => x.includes('6698300'))) ||
+    (validateRes.warnings.length != 0 &&
+     validateRes.warnings.some(x => x.includes('6698300')))) {
   print(
-      '\nThere is still a time-series bucket with a bucket version mismatch, or there is another error during validation.');
+      '\nThere is still a time-series bucket(s) that has a bucket version mismatch, or there is another error or warning during validation regarding incompatible time-series documents. Check logs with id 6698300.');
   exit(1);
 }
 

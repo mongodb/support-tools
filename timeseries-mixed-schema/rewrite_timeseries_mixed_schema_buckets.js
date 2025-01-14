@@ -235,7 +235,7 @@ tempTimeseriesBucketsColl.drop();
 //
 print("Validating that there are no mixed-schema buckets left ...\n");
 db.getMongo().setReadPref("secondaryPreferred");
-const validateRes = coll.validate();
+const validateRes = coll.validate({background: true});
 if (validateRes.warnings.length != 0) {
     print("\nThere is still a time-series bucket with mixed-schema data. Try re-running the script to re-insert the buckets missed.");
     exit(1);
