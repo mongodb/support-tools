@@ -17,7 +17,7 @@ If you are using these scripts on your own, we strongly recommend:
 
 # Summary
 
-This script can be used to identify and recover any documents within a sharded time series collection which were orphaned as a result of [SERVER-80203](https://jira.mongodb.org/browse/SERVER-80203). 
+This script can be used to identify and recover any documents within a sharded time series collection which were orphaned as a result of [SERVER-80203](https://jira.mongodb.org/browse/SERVER-80203) or of [SERVER-94559](https://jira.mongodb.org/browse/SERVER-94559).
 
 The `checkTimeseriesOrphansOnCluster()` function will query each shard of the sharded cluster to identify orphaned documents within [internal time series bucket collections](https://www.mongodb.com/docs/manual/core/timeseries-collections/#behavior) which are not a byproduct of a Sharded Cluster [range migration](https://www.mongodb.com/docs/manual/core/sharding-balancer-administration/#range-migration-procedure). The results of this function will be written to a collection of users choosing. 
 
