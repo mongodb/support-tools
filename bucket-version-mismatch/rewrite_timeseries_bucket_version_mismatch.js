@@ -25,6 +25,11 @@ const coll = db.getCollection(collName);
 // 2) Change the buckets with bucket version mismatch to the correct version.
 // 3) Validate that there are no bucket version mismatches.
 // ----------------------------------------------------------------------------------------
+// We can't pattern match with the entire v2 error message because we include
+// the fieldName of the unsorted v2 bucket.
+const v2ErrorMsg = 'field is not in ascending order';
+const v3ErrorMsg =
+    'Time-series bucket is v3 but has its measurements in-order on time';
 
 BucketVersion = {
   kCompressedSorted: 2,
@@ -89,9 +94,29 @@ function runFixBucketVersionMismatchProcedure(collName) {
   }
 }
 
+function checkValidateResForBucketVersionMismatch(validateRes) {
+  return (validateRes.errors.length != 0 &&
+          validateRes.errors.some(x => x.includes('6698300'))) ||
+      (validateRes.warnings.length != 0 &&
+       validateRes.warnings.some(x => x.includes('6698300')));
+}
+
+function checkLogsForBucketVersionMismatch() {
+  const getLogRes = db.adminCommand({getLog: 'global'});
+  if (getLogRes.ok) {
+    return getLogRes.log.filter(
+        line =>
+            (line.includes('6698300') &&
+             (line.includes(v2ErrorMsg) || line.includes(v3ErrorMsg))));
+  }
+  print(
+      '\ngetLog failed. Re-run checkLogsForBucketVersionMismatch() or manually check mongodb logs for validation results.');
+  exit(1);
+}
+
 //
-// Steps 1 & 2: Detect if the bucket has bucket version mismatch and change the
-// buckets with bucket version mismatch to the correct version.
+// Steps 1 & 2: Detect if the bucket has bucket version mismatch and change
+// the buckets with bucket version mismatch to the correct version.
 //
 runFixBucketVersionMismatchProcedure(collName);
 
@@ -103,19 +128,23 @@ db.getMongo().setReadPref('secondaryPreferred');
 const validateRes = collName.validate({background: true});
 
 //
-// For v8.1.0+, buckets that have a bucket version mismatch will lead to a error
-// during validation.
+// For v8.1.0+, buckets that have a bucket version mismatch will lead to a
+// error during validation.
 //
 // Prior to v8.1.0, buckets that have a bucket version mismatch will lead to a
 // warning during validation.
 //
-if ((validateRes.errors.length != 0 &&
-     validateRes.errors.some(x => x.includes('6698300'))) ||
-    (validateRes.warnings.length != 0 &&
-     validateRes.warnings.some(x => x.includes('6698300')))) {
+const validateResCheck = checkValidateResForBucketVersionMismatch(validateRes);
+const logsCheck = checkLogsForBucketVersionMismatch();
+
+if (validateResCheck && logsCheck) {
   print(
-      '\nThere is still a time-series bucket(s) that has a bucket version mismatch, or there is another error or warning during validation regarding incompatible time-series documents. Check logs with id 6698300.');
+      '\nThere is still a time-series bucket(s) that has a bucket version mismatch. Check logs with id 6698300.');
   exit(1);
+} else if (validateResCheck) {
+  print(
+      '\nThere is another error or warning during validation regarding incompatible time-series documents. Check logs with id 6698300.');
+  exit(0);
 }
 
 print('\nScript successfully fixed mismatched bucket versions!');

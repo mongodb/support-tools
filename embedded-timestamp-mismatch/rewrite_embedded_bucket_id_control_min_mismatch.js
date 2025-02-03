@@ -46,6 +46,9 @@ if (listCollectionsRes.length != 0) {
 // 3) Validate that there are no buckets with a mismatch between the embedded
 // bucket id timestamp and the control min timestamp.
 // ----------------------------------------------------------------------------------------
+const mismatchEmbeddedIdTimestampMsg =
+    'Mismatch between the embedded timestamp';
+
 let bucketColl;
 let tsOptions;
 let tempTimeseriesColl;
@@ -185,6 +188,26 @@ function shouldRetryTxnOnTransientError(e) {
   return false;
 }
 
+function checkValidateResForEmbeddedBucketIdControlMinMismatch(validateRes) {
+  return (validateRes.errors.length != 0 &&
+          validateRes.errors.some(x => x.includes('6698300'))) ||
+      (validateRes.warnings.length != 0 &&
+       validateRes.warnings.some(x => x.includes('6698300')));
+}
+
+function checkLogsForEmbeddedBucketIdControlMinMismatch() {
+  const getLogRes = db.adminCommand({getLog: 'global'});
+  if (getLogRes.ok) {
+    return getLogRes.log.filter(
+        line =>
+            (line.includes('6698300') &&
+             line.includes(mismatchEmbeddedIdTimestampMsg)));
+  }
+  print(
+      '\ngetLog failed. Re-run checkLogsForEmbeddedBucketIdControlMinMismatch() or manually check mongodb logs for validation results.');
+  exit(1);
+}
+
 //
 // Steps 1 & 2: Detect if a bucket has mismatched embedded bucket id timestamps
 // and control.min timestamps in the collection and re-inserts buckets with
@@ -211,13 +234,18 @@ const validateRes = coll.validate({background: true});
 // Prior to v8.1.0, buckets that have a mismatched embedded bucket id timestamp
 // and control.min timestamp will lead to a warning during validation.
 //
-if ((validateRes.errors.length != 0 &&
-     validateRes.errors.some(x => x.includes('6698300'))) ||
-    (validateRes.warnings.length != 0 &&
-     validateRes.warnings.some(x => x.includes('6698300')))) {
+const validateResCheck =
+    checkValidateResForEmbeddedBucketIdControlMinMismatch(validateRes);
+const logsCheck = checkLogsForEmbeddedBucketIdControlMinMismatch();
+
+if (validateResCheck && logsCheck) {
   print(
       '\nThere is still a time-series bucket(s) that has a mismatched embedded bucket id timestamps and control.min timestamps. Try re-running the script to re-insert missed buckets.');
   exit(1);
+} else if (validateResCheck) {
+  print(
+      '\nScript successfully fixed buckets with mismatched embedded bucket id timestamp and control.min timestamp. There is another error or warning during validation regarding incompatible time-series documents. Check logs with id 6698300.');
+  exit(0);
 }
 
 print(
