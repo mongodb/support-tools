@@ -146,7 +146,7 @@ if (validateResCheck && logsCheck) {
   exit(1);
 } else if (validateResCheck) {
   print(
-      '\nThere is another error or warning during validation regarding incompatible time-series documents. Check logs with id 6698300.');
+      '\nScript successfully fixed mismatched bucket versions. There is another error or warning during validation regarding incompatible time-series documents. Check logs with id 6698300.');
   exit(0);
 }
 
