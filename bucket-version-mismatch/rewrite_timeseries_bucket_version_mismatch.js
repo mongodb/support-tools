@@ -113,7 +113,7 @@ function checkLogsForBucketVersionMismatch() {
                .length > 0;
   }
   print(
-      '\ngetLog failed. Re-run checkLogsForBucketVersionMismatch() or manually check mongodb logs for validation results.');
+      '\ngetLog failed. Re-run checkLogsForBucketVersionMismatch() or  check mongodb logs for validation results.');
   exit(1);
 }
 
@@ -146,7 +146,7 @@ if (validateResCheck && logsCheck) {
   exit(1);
 } else if (validateResCheck) {
   print(
-      '\nScript successfully fixed mismatched bucket versions. There is another error or warning during validation regarding incompatible time-series documents. Check logs with id 6698300.');
+      '\nScript successfully fixed mismatched bucket versions. There is another error or warning during validation. Check mongodb logs for more details.');
   exit(0);
 }
 

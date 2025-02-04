@@ -246,7 +246,7 @@ if (validateResCheck && logsCheck) {
   exit(1);
 } else if (validateResCheck) {
   print(
-      '\nScript successfully fixed buckets with mismatched embedded bucket id timestamp and control.min timestamp. There is another error or warning during validation regarding incompatible time-series documents. Check logs with id 6698300.');
+      '\nScript successfully fixed buckets with mismatched embedded bucket id timestamp and control.min timestamp. There is another error or warning during validation. Check mongodb logs for more details.');
   exit(0);
 }
 
