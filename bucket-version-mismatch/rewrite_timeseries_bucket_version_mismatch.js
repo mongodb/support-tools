@@ -104,10 +104,13 @@ function checkValidateResForBucketVersionMismatch(validateRes) {
 function checkLogsForBucketVersionMismatch() {
   const getLogRes = db.adminCommand({getLog: 'global'});
   if (getLogRes.ok) {
-    return getLogRes.log.filter(
-        line =>
-            (line.includes('6698300') &&
-             (line.includes(v2ErrorMsg) || line.includes(v3ErrorMsg))));
+    return getLogRes.log
+               .filter(
+                   line =>
+                       (line.includes('6698300') &&
+                        (line.includes(v2ErrorMsg) ||
+                         line.includes(v3ErrorMsg))))
+               .length > 0;
   }
   print(
       '\ngetLog failed. Re-run checkLogsForBucketVersionMismatch() or manually check mongodb logs for validation results.');

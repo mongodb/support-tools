@@ -198,10 +198,12 @@ function checkValidateResForEmbeddedBucketIdControlMinMismatch(validateRes) {
 function checkLogsForEmbeddedBucketIdControlMinMismatch() {
   const getLogRes = db.adminCommand({getLog: 'global'});
   if (getLogRes.ok) {
-    return getLogRes.log.filter(
-        line =>
-            (line.includes('6698300') &&
-             line.includes(mismatchEmbeddedIdTimestampMsg)));
+    return getLogRes.log
+               .filter(
+                   line =>
+                       (line.includes('6698300') &&
+                        line.includes(mismatchEmbeddedIdTimestampMsg)))
+               .length > 0;
   }
   print(
       '\ngetLog failed. Re-run checkLogsForEmbeddedBucketIdControlMinMismatch() or manually check mongodb logs for validation results.');
