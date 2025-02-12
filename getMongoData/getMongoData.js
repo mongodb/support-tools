@@ -56,7 +56,12 @@
  * limitations under the License.
  */
 
-var _version = "3.1.0";
+// Potentially breaking changes in "4.0.0" with respect to "3.1.0":
+//  -   _printJSON with _maxCollections no longer renames sections with "INCOMPLETE_" prefix when 
+//      _maxCollections is reached. Instead, the last element of the output JSON array contains an 
+//      error message.
+//  -   _printJSON outputs error messages after the JSON array is printed, instead of before. 
+var _version = "4.0.0";
 
 (function () {
    "use strict";
@@ -170,7 +175,7 @@ function printShardInfo(){
                                     collDoc['chunks'] = [];
                                     configDB.chunks.find( { "ns" : coll._id } ).sort( { min : 1 } ).forEach(
                                         function(chunk) {
-                                            chunkDoc = {}
+                                            chunkDoc = {};
                                             chunkDoc['min'] = chunk.min;
                                             chunkDoc['max'] = chunk.max;
                                             chunkDoc['shard'] = chunk.shard;
@@ -183,7 +188,7 @@ function printShardInfo(){
                                 collDoc['tags'] = [];
                                 configDB.tags.find( { ns : coll._id } ).sort( { min : 1 } ).forEach(
                                     function(tag) {
-                                        tagDoc = {}
+                                        tagDoc = {};
                                         tagDoc['tag'] = tag.tag;
                                         tagDoc['min'] = tag.min;
                                         tagDoc['max'] = tag.max;
@@ -216,6 +221,14 @@ function printShardInfo(){
     }
 }
 
+function removeUnnecessaryCommandFields(object) {
+    const commandFieldsToFilter = ["ok", "operationTime", "$clusterTime", "$gleStats", "lastCommittedOpTime", "$configServerState"];
+    commandFieldsToFilter.forEach((fieldToRemove) => {
+        delete object[fieldToRemove];
+    });
+}
+
+var _jsonOutBuffer = ""; 
 function printInfo(message, command, section, printCapture, commandParameters) {
     var result = false;
     if (typeof printCapture === "undefined") var printCapture = false;
@@ -238,24 +251,44 @@ function printInfo(message, command, section, printCapture, commandParameters) {
     }
     endTime = new Date();
     doc = {};
-    doc['command'] = command.toString();
-    doc['error'] = err;
-    doc['host'] = _host;
-    doc['ref'] = _ref;
-    doc['tag'] = _tag;
-    doc['output'] = result;
     if (typeof(section) !== "undefined") {
         doc['section'] = section;
         doc['subsection'] = message.toLowerCase().replace(/ /g, "_");
     } else {
         doc['section'] = message.toLowerCase().replace(/ /g, "_");
     }
-    doc['ts'] = {'start': startTime, 'end': endTime};
-    doc['version'] = _version;
-    if (typeof commandParameters !== undefined) {
-      doc['commandParameters'] = commandParameters
+
+    if (_verbose) {
+        doc['command'] = command.toString();
+        doc['error'] = err;
+        doc['host'] = _host;
+        doc['ref'] = _ref;
+        doc['tag'] = _tag;
+        doc['ts'] = {'start': startTime, 'end': endTime};
+        doc['version'] = _version;
+        if (typeof commandParameters !== undefined) {
+            doc['commandParameters'] = commandParameters
+        }
+    } else {
+        if(err) {
+            doc['error'] = err;
+        }
+        removeUnnecessaryCommandFields(result);
     }
-    _output.push(doc);
+
+    doc['output'] = result;
+
+    // Stream JSON array element.
+    if (_printJSON) {
+        if (!_jsonOutBuffer) {
+            _jsonOutBuffer = JSON.stringify(doc, jsonStringifyReplacer, 4);
+        }
+        else {
+            print(_jsonOutBuffer, ",");
+            _jsonOutBuffer = JSON.stringify(doc, jsonStringifyReplacer, 4);
+        }
+    }
+
     if (! _printJSON) printjson(result);
     return result;
 }
@@ -433,11 +466,32 @@ function collectQueryableEncryptionInfo(isMongoS) {
     return output;
 }
 
-function updateDataInfoAsIncomplete(isMongoS) {
-  for (i = 0; i < _output.length; i++) {
-    if(_output[i].section != "data_info") { continue; }
-    _output[i].subsection = "INCOMPLETE_"+ _output[i].subsection;
-  }
+function filterStatsOutput(stats) {
+    function filterWiredTigerDetails(wiredTiger) {
+        if(_printWiredTigerDetails)
+            return wiredTiger;
+
+        const { metadata, creationString, type, uri } = wiredTiger;
+        return { metadata, creationString, type, uri };
+    }
+
+    stats.wiredTiger = filterWiredTigerDetails(stats.wiredTiger);
+
+    for (var shard in (stats.shards || {})) {
+        var shardStats = stats.shards[shard];
+
+        if(!_verbose) {
+            removeUnnecessaryCommandFields(shardStats);
+        }
+
+        shardStats.wiredTiger = filterWiredTigerDetails(shardStats.wiredTiger);
+
+        for (var index in (shardStats.indexDetails || {})) {
+            shardStats.indexDetails[index] = filterWiredTigerDetails(shardStats.indexDetails[index]);
+        }
+    }
+    
+    return stats;
 }
 
 function printDataInfo(isMongoS) {
@@ -474,17 +528,13 @@ function printDataInfo(isMongoS) {
             if (collections) {
                 collections.forEach(function(col) {
                     printInfo('Collection stats (MB)',
-                              function(){return db.getSiblingDB(mydb.name).getCollection(col).stats(1024*1024)}, section);
+                              function(){return filterStatsOutput(db.getSiblingDB(mydb.name).getCollection(col).stats(1024*1024));}, section);
                     collections_counter++;
                     if (collections_counter > _maxCollections) {
                         var err_msg = 'Already asked for stats on '+collections_counter+' collections ' +
                           'which is above the max allowed for this script. No more database and ' +
                           'collection-level stats will be gathered, so the overall data is ' +
                           'incomplete. '
-                        if (_printJSON) {
-                          err_msg += 'The "subsection" fields have been prefixed with "INCOMPLETE_" ' +
-                          'to indicate that partial data has been outputted.'
-                        }
 
                         throw {
                           name: 'MaxCollectionsExceededException',
@@ -581,9 +631,15 @@ function printShardOrReplicaSetInfo() {
     return false;
 }
 
+// Define _suppressError=true to prevent printing and error message, in case we still want the 
+// output to be parsable JSON even in the event of an error. The JSON will contain the error in the 
+// last entry of the output array.
+if (typeof _suppressError === "undefined") var _suppressError = false;
+if (typeof _printWiredTigerDetails === "undefined") var _printWiredTigerDetails = true;
 if (typeof _printJSON === "undefined") var _printJSON = true;
 if (typeof _printChunkDetails === "undefined") var _printChunkDetails = false;
 if (typeof _ref === "undefined") var _ref = null;
+if (typeof _verbose === "undefined") var _verbose = true;
 
 // Limit the number of collections this script gathers stats on in order
 // to avoid the possibility of running out of file descriptors. This has
@@ -604,36 +660,45 @@ if (typeof db.printSecondaryReplicationInfo === 'function') {
 }
 
 var _total_collection_ct = 0;
-var _output = [];
 var _tag = ObjectId();
 if (! _printJSON) {
     print("================================");
     print("MongoDB Config and Schema Report");
     print("getMongoData.js version " + _version);
     print("================================");
+} else {
+    // Start the JSON array.
+    print("[\n");
 }
 
 var _host = hostname();
-
+var _error = null;
 try {
     printServerInfo();
     var isMongoS = printShardOrReplicaSetInfo();
     printUserAuthInfo();
     printDataInfo(isMongoS);
 } catch(e) {
-    // To ensure that the operator knows there was an error, print the error
-    // even when outputting JSON to make it invalid JSON.
-    print('\nERROR: '+e.message);
-
+    _error = e.message;
     if (e.name === 'MaxCollectionsExceededException') {
-      // Prefix the "subsection" fields with "INCOMPLETE_" to make
-      // it clear that the database and collection info are likely to be
-      // incomplete.
-      updateDataInfoAsIncomplete(isMongoS);
+        printInfo("incomplete_databases_and_collections_info", function(){ return e.message; });
     } else {
-      quit(1);
-   }
+        printInfo("generic_error", function(){ return e.message; });
+    }
 }
 
-// Print JSON output
-if (_printJSON) print(JSON.stringify(_output, jsonStringifyReplacer, 4));
+if (_printJSON) {
+    if (_jsonOutBuffer) {
+        print(_jsonOutBuffer);
+    }
+    print("]");
+}
+
+if(_error) {
+    if (!_suppressError) {
+        // To ensure that the operator knows there was an error, print the error
+        // even when outputting JSON to make it invalid JSON.
+        print('\nERROR: '+ _error);
+    }
+    quit(1);
+}
