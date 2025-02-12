@@ -19,7 +19,7 @@ If you are using these scripts on your own, we strongly recommend:
 -  If running on Atlas:
    - We have already reached out to impacted customers. If we have reached out, you can skip the [Determine if You're Impacted section](#Determine-if-You're-Impacted) and start taking the steps under the [Remediation section](#remediation).
    - Additionally, we recommend using the [Atlas Admin](https://www.mongodb.com/docs/atlas/security-add-mongodb-users/#built-in-roles) role.
-- This script should be run when there are > 1024 events (log lines) since the last call to `validate`.
+- This script uses the `validate` command output to determine if the script has successfully remediated the issue, and false positives can be reported if recent `validate` commands have been executed.
 
 # Determine if You're Impacted
 
