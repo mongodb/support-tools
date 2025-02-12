@@ -440,6 +440,29 @@ function collectQueryableEncryptionInfo(isMongoS) {
     return output;
 }
 
+function filterStatsOutput(stats) {
+    if(_printWiredTigerDetails) 
+        return stats;
+
+    function filterWiredTigerDetails(wiredTiger) {
+        const { metadata, creationString, type, uri } = wiredTiger;
+        return { metadata, creationString, type, uri };
+    }
+
+    stats.wiredTiger = filterWiredTigerDetails(stats.wiredTiger);
+
+    for (var shard in (stats.shards || {})) {
+        var shardStats = stats.shards[shard];
+        shardStats.wiredTiger = filterWiredTigerDetails(shardStats.wiredTiger);
+
+        for (var index in (shardStats.indexDetails || {})) {
+            shardStats.indexDetails[index] = filterWiredTigerDetails(shardStats.indexDetails[index]);
+        }
+    }
+    
+    return stats;
+}
+
 function printDataInfo(isMongoS) {
     section = "data_info";
     var dbs = printInfo('List of databases', function(){return db.getMongo().getDBs()}, section);
@@ -474,7 +497,7 @@ function printDataInfo(isMongoS) {
             if (collections) {
                 collections.forEach(function(col) {
                     printInfo('Collection stats (MB)',
-                              function(){return db.getSiblingDB(mydb.name).getCollection(col).stats(1024*1024)}, section);
+                              function(){return filterStatsOutput(db.getSiblingDB(mydb.name).getCollection(col).stats(1024*1024));}, section);
                     collections_counter++;
                     if (collections_counter > _maxCollections) {
                         var err_msg = 'Already asked for stats on '+collections_counter+' collections ' +
@@ -581,6 +604,7 @@ function printShardOrReplicaSetInfo() {
 // output to be parsable JSON even in the event of an error. The JSON will contain the error in the 
 // last entry of the output array.
 if (typeof _suppressError === "undefined") var _suppressError = false;
+if (typeof _printWiredTigerDetails === "undefined") var _printWiredTigerDetails = true;
 if (typeof _printJSON === "undefined") var _printJSON = true;
 if (typeof _printChunkDetails === "undefined") var _printChunkDetails = false;
 if (typeof _ref === "undefined") var _ref = null;
