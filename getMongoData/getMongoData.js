@@ -56,7 +56,7 @@
  * limitations under the License.
  */
 
-var _version = "3.1.0";
+var _version = "3.2.0";
 
 (function () {
    "use strict";
