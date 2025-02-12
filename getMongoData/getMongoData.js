@@ -216,6 +216,13 @@ function printShardInfo(){
     }
 }
 
+function removeUnnecessaryCommandFields(object) {
+    const commandFieldsToFilter = ["ok", "operationTime", "$clusterTime", "$gleStats", "lastCommittedOpTime", "$configServerState"];
+    commandFieldsToFilter.forEach((fieldToRemove) => {
+        delete object[fieldToRemove];
+    });
+}
+
 var _JSONPrefix = "";
 function printInfo(message, command, section, printCapture, commandParameters) {
     var result = false;
@@ -239,23 +246,32 @@ function printInfo(message, command, section, printCapture, commandParameters) {
     }
     endTime = new Date();
     doc = {};
-    doc['command'] = command.toString();
-    doc['error'] = err;
-    doc['host'] = _host;
-    doc['ref'] = _ref;
-    doc['tag'] = _tag;
-    doc['output'] = result;
     if (typeof(section) !== "undefined") {
         doc['section'] = section;
         doc['subsection'] = message.toLowerCase().replace(/ /g, "_");
     } else {
         doc['section'] = message.toLowerCase().replace(/ /g, "_");
     }
-    doc['ts'] = {'start': startTime, 'end': endTime};
-    doc['version'] = _version;
-    if (typeof commandParameters !== undefined) {
-      doc['commandParameters'] = commandParameters
+
+    if (_verbose) {
+        doc['command'] = command.toString();
+        doc['error'] = err;
+        doc['host'] = _host;
+        doc['ref'] = _ref;
+        doc['tag'] = _tag;
+        doc['ts'] = {'start': startTime, 'end': endTime};
+        doc['version'] = _version;
+        if (typeof commandParameters !== undefined) {
+            doc['commandParameters'] = commandParameters
+        }
+    } else {
+        if(err) {
+            doc['error'] = err;
+        }
+        removeUnnecessaryCommandFields(result);
     }
+
+    doc['output'] = result;
 
     // Stream JSON array element.
     if (_printJSON) {
@@ -441,10 +457,10 @@ function collectQueryableEncryptionInfo(isMongoS) {
 }
 
 function filterStatsOutput(stats) {
-    if(_printWiredTigerDetails) 
-        return stats;
-
     function filterWiredTigerDetails(wiredTiger) {
+        if(_printWiredTigerDetails)
+            return wiredTiger;
+
         const { metadata, creationString, type, uri } = wiredTiger;
         return { metadata, creationString, type, uri };
     }
@@ -453,6 +469,11 @@ function filterStatsOutput(stats) {
 
     for (var shard in (stats.shards || {})) {
         var shardStats = stats.shards[shard];
+
+        if(!_verbose) {
+            removeUnnecessaryCommandFields(shardStats);
+        }
+
         shardStats.wiredTiger = filterWiredTigerDetails(shardStats.wiredTiger);
 
         for (var index in (shardStats.indexDetails || {})) {
@@ -608,6 +629,7 @@ if (typeof _printWiredTigerDetails === "undefined") var _printWiredTigerDetails 
 if (typeof _printJSON === "undefined") var _printJSON = true;
 if (typeof _printChunkDetails === "undefined") var _printChunkDetails = false;
 if (typeof _ref === "undefined") var _ref = null;
+if (typeof _verbose === "undefined") var _verbose = true;
 
 // Limit the number of collections this script gathers stats on in order
 // to avoid the possibility of running out of file descriptors. This has
