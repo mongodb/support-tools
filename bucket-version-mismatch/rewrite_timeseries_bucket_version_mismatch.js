@@ -110,13 +110,13 @@ function checkValidateResForBucketVersionMismatch(validateRes) {
 function checkLogsForBucketVersionMismatch() {
   const getLogRes = db.adminCommand({getLog: 'global'});
   if (getLogRes.ok) {
-    result =
-        (getLogRes.log
-             .filter(
-                 line =>
-                     (line.includes('6698300') &&
-                      (line.includes(v2ErrorMsg) || line.includes(v3ErrorMsg))))
-             .length > 0) ?
+    return (getLogRes.log
+                .filter(
+                    line =>
+                        (line.includes('6698300') &&
+                         (line.includes(v2ErrorMsg) ||
+                          line.includes(v3ErrorMsg))))
+                .length > 0) ?
         GetLogResult.successTrue :
         GetLogResult.successFalse;
   }
