@@ -31,10 +31,16 @@ const v2ErrorMsg = 'field is not in ascending order';
 const v3ErrorMsg =
     'Time-series bucket is v3 but has its measurements in-order on time';
 
-BucketVersion = {
+const BucketVersion = {
   kCompressedSorted: 2,
   kCompressedUnsorted: 3
 };
+
+const GetLogResult = Object.freeze({
+  successTrue: 'successTrue',
+  successFalse: 'successFalse',
+  fail: 'fail',
+});
 
 function bucketHasMismatchedBucketVersion(
     bucketsColl, bucketId, bucketControlVersion) {
@@ -104,17 +110,17 @@ function checkValidateResForBucketVersionMismatch(validateRes) {
 function checkLogsForBucketVersionMismatch() {
   const getLogRes = db.adminCommand({getLog: 'global'});
   if (getLogRes.ok) {
-    return getLogRes.log
-               .filter(
-                   line =>
-                       (line.includes('6698300') &&
-                        (line.includes(v2ErrorMsg) ||
-                         line.includes(v3ErrorMsg))))
-               .length > 0;
+    result =
+        (getLogRes.log
+             .filter(
+                 line =>
+                     (line.includes('6698300') &&
+                      (line.includes(v2ErrorMsg) || line.includes(v3ErrorMsg))))
+             .length > 0) ?
+        GetLogResult.successTrue :
+        GetLogResult.successFalse;
   }
-  print(
-      '\ngetLog failed. Re-run checkLogsForBucketVersionMismatch() or  check mongodb logs for validation results.');
-  exit(1);
+  return GetLogResult.fail;
 }
 
 //
@@ -140,13 +146,21 @@ const validateRes = collName.validate({background: true});
 const validateResCheck = checkValidateResForBucketVersionMismatch(validateRes);
 const logsCheck = checkLogsForBucketVersionMismatch();
 
-if (validateResCheck && logsCheck) {
+if (validateResCheck && logsCheck == GetLogResult.successTrue) {
   print(
       '\nThere is still a time-series bucket(s) that has a bucket version mismatch. Check logs with id 6698300.');
   exit(1);
-} else if (validateResCheck) {
+} else if (validateResCheck && logsCheck == GetLogResult.successFalse) {
   print(
       '\nScript successfully fixed mismatched bucket versions. There is another error or warning during validation. Check mongodb logs for more details.');
+  exit(0);
+} else if (validateResCheck && logsCheck == GetLogResult.fail) {
+  print(
+      '\nWe detected a validation error with log id 6698300 and getLog() failed. We cannot programmatically determine if the issue was remediated.');
+  print(
+      '\nCheck that there aren\'t logs with id 6698300 and the error messages\n' +
+      v2ErrorMsg + ' or \n' + v3ErrorMsg +
+      '\nto ensure the remediation was successful.');
   exit(0);
 }
 

@@ -49,6 +49,12 @@ if (listCollectionsRes.length != 0) {
 const mismatchEmbeddedIdTimestampMsg =
     'Mismatch between the embedded timestamp';
 
+const GetLogResult = Object.freeze({
+  successTrue: 'successTrue',
+  successFalse: 'successFalse',
+  fail: 'fail',
+});
+
 let bucketColl;
 let tsOptions;
 let tempTimeseriesColl;
@@ -198,16 +204,16 @@ function checkValidateResForEmbeddedBucketIdControlMinMismatch(validateRes) {
 function checkLogsForEmbeddedBucketIdControlMinMismatch() {
   const getLogRes = db.adminCommand({getLog: 'global'});
   if (getLogRes.ok) {
-    return getLogRes.log
-               .filter(
-                   line =>
-                       (line.includes('6698300') &&
-                        line.includes(mismatchEmbeddedIdTimestampMsg)))
-               .length > 0;
+    return (getLogRes.log
+                .filter(
+                    line =>
+                        (line.includes('6698300') &&
+                         line.includes(mismatchEmbeddedIdTimestampMsg)))
+                .length > 0) ?
+        GetLogResult.successTrue :
+        GetLogResult.successFalse;
   }
-  print(
-      '\ngetLog failed. Re-run checkLogsForEmbeddedBucketIdControlMinMismatch() or manually check mongodb logs for validation results.');
-  exit(1);
+  return GetLogResult.fail;
 }
 
 //
@@ -247,6 +253,14 @@ if (validateResCheck && logsCheck) {
 } else if (validateResCheck) {
   print(
       '\nScript successfully fixed buckets with mismatched embedded bucket id timestamp and control.min timestamp. There is another error or warning during validation. Check mongodb logs for more details.');
+  exit(0);
+} else if (validateResCheck && logsCheck == GetLogResult.fail) {
+  print(
+      '\nWe detected a validation error with log id 6698300 and getLog() failed. We cannot programmatically determine if the issue was remediated.');
+  print(
+      '\nCheck that there aren\'t logs with id 6698300 and the error messages\n' +
+      mismatchEmbeddedIdTimestampMsg +
+      '\nto ensure the remediation was successful.');
   exit(0);
 }
 
