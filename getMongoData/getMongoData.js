@@ -223,7 +223,8 @@ function removeUnnecessaryCommandFields(object) {
     });
 }
 
-var _JSONPrefix = "";
+var _firstJSONArrayElement = true;
+var _jsonOutBuffer = ""; 
 function printInfo(message, command, section, printCapture, commandParameters) {
     var result = false;
     if (typeof printCapture === "undefined") var printCapture = false;
@@ -275,8 +276,14 @@ function printInfo(message, command, section, printCapture, commandParameters) {
 
     // Stream JSON array element.
     if (_printJSON) {
-        print(_JSONPrefix, JSON.stringify(doc, jsonStringifyReplacer, 4));
-        _JSONPrefix = ",";
+        if (_firstJSONArrayElement) {
+            _jsonOutBuffer = JSON.stringify(doc, jsonStringifyReplacer, 4);
+            _firstJSONArrayElement = false;
+        }
+        else {
+            print(_jsonOutBuffer, ",");
+            _jsonOutBuffer = JSON.stringify(doc, jsonStringifyReplacer, 4);
+        }
     }
 
     if (! _printJSON) printjson(result);
@@ -678,6 +685,9 @@ try {
 }
 
 if (_printJSON) {
+    if (_jsonOutBuffer) {
+        print(_jsonOutBuffer);
+    }
     print("]");
 }
 
