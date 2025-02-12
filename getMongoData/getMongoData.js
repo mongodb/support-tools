@@ -61,7 +61,7 @@
 //      _maxCollections is reached. Instead, the last element of the output JSON array contains an 
 //      error message.
 //  -   _printJSON outputs error messages after the JSON array is printed, instead of before. 
-var _version = "4.0.0";
+var _version = "4.1.0";
 
 (function () {
    "use strict";
@@ -323,6 +323,37 @@ function printUserAuthInfo() {
     printInfo('Database user count', function(){return db.system.users.count()}, section);
     printInfo('Custom role count', function(){return db.system.roles.count()}, section);
   }
+}
+
+function printDriverVersions() {
+  section = 'driverVersions';
+  printInfo('Driver Versions', function() {
+    return db.getSiblingDB('admin')
+        .aggregate([
+          {
+            $currentOp: {
+              allUsers: true,
+              idleConnections: true,
+              idleSessions: true,
+              localOps: true
+            },
+          },
+          {$match: {clientMetadata: {$exists: true}}},
+          {
+            $group: {
+              _id: {
+                application: '$clientMetadata.application',
+                driver: '$clientMetadata.driver',
+                platform: '$clientMetadata.platform',
+                os: '$clientMetadata.os',
+              },
+              count: {$sum: 1},
+              last: {$max: '$currentOpTime'},
+            },
+          },
+        ])
+        .toArray();
+  }, section);
 }
 
 // find all QE collections
@@ -678,6 +709,7 @@ try {
     var isMongoS = printShardOrReplicaSetInfo();
     printUserAuthInfo();
     printDataInfo(isMongoS);
+    printDriverVersions();
 } catch(e) {
     _error = e.message;
     if (e.name === 'MaxCollectionsExceededException') {
