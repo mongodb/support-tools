@@ -15,7 +15,7 @@ require (
 	github.com/spacemonkeygo/spacelog v0.0.0-20180420211403-2296661a0572 // indirect
 	github.com/xdg/stringprep v1.0.0
 	golang.org/x/crypto v0.35.0
-	golang.org/x/text v0.3.2 // indirect
+        golang.org/x/text v0.3.8 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637
