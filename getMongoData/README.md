@@ -32,6 +32,11 @@ execution:
 
     mongo --eval "var _printJSON=false;" getMongoData.js > getMongoData-output.log
 
+To run the tool against a database that imitates (but doesn't fully implement) the MongoDB API, it can
+help to ignore some errors with the following `eval` option:
+
+    mongo --eval "var _abort_on_error=false;" getMongoData.js > getMongoData-output.log
+
 To have a `mongos` for a sharded cluster output full details of chunk
 distribution across shards, include `var _printChunkDetails=true` in the
 `--eval` option:
