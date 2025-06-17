@@ -1,18 +1,6 @@
-# mongosync_metrics_python
+# Mongosync Metrics
 
-This project contains Python scripts, which process the `mongosync` data and generate various plots using Plotly on port **3030**. The script also includes a `requirements.txt` file listing the Python dependencies.
-
-## Mongosync Logs
-
-This script processes the Mongosync logs and generates various plots using Plotly. The plots include scatter plots and tables, and they visualize different aspects of the data, such as `Total and Copied bytes`, `CEA Reads and Writes`, `Collection Copy Reads and Writes`, `Events applied`, and `Lag Time`.
-
-![Mongosync logs analyzer](static/mongosync_log_analyzer.png)
-
-## Mongosync Metadata
-
-This script processes Mongosync metadata and generates various plots using Plotly. The plots include scatter plots, and they visualize different aspects of the data, such as `Partitions Completed`, `Data Copied`, `Phases`, and `Collection Progress`.
-
-![Mongosync metadata plots](static/mongosync_metadata.png)
+This project parses **mongosync** logs and metadata, generating a variety of plots to assist with monitoring and troubleshooting ongoing mongosync migrations.
 
 ## requirements.txt
 
@@ -41,11 +29,11 @@ Once the application is running, you can access it by opening a web browser and 
 
 ![Mongosync Logs Analyzer](static/mongosync_metrics_home.png)
 
-## Uploading the mongosync Log File
+### Uploading the mongosync Log File
 
 The application provides a user interface for uploading the `mongosync` log file. Clicking a "Browse" or "Choose File" button, select the file from your file system, and then click an "Open" or "Upload" button.
 
-## Reading the Metadata
+### Reading the Metadata
 
 Before running the script, change the variable `TARGET_MONGO_URI` in `mongosync_plot_metadata.py`, to use the target's connection string. 
 Once the script is running, click the "Read Metadata" button and wait for the page to refresh.
@@ -55,3 +43,34 @@ Once the script is running, click the "Read Metadata" button and wait for the pa
 Once the `mongosync` data is loaded, the application processes the data and generates the plots. 
 
 If the plots aren't immediately visible after uploading the file, you may need to refresh the page. If the plots still aren't visible, check for any error messages or notifications from the application.
+
+### Mongosync Logs
+
+This script processes the Mongosync logs and generates various plots using Plotly. The plots include scatter plots and tables, and they visualize different aspects of the data, such as `Total and Copied bytes`, `CEA Reads and Writes`, `Collection Copy Reads and Writes`, `Events applied`, and `Lag Time`.
+
+![Mongosync logs analyzer](static/mongosync_log_analyzer.png)
+
+### Mongosync Metadata
+
+This script processes Mongosync metadata and generates various plots using Plotly. The plots include scatter plots, and they visualize different aspects of the data, such as `Partitions Completed`, `Data Copied`, `Phases`, and `Collection Progress`.
+
+![Mongosync metadata plots](static/mongosync_metadata.png)
+
+
+DISCLAIMER
+----------
+Please note: all tools/ scripts in this repo are released for use "AS IS" **without any warranties of any kind**,
+including, but not limited to their installation, use, or performance.  We disclaim any and all warranties, either 
+express or implied, including but not limited to any warranty of noninfringement, merchantability, and/ or fitness 
+for a particular purpose.  We do not warrant that the technology will meet your requirements, that the operation 
+thereof will be uninterrupted or error-free, or that any errors will be corrected.
+
+Any use of these scripts and tools is **at your own risk**.  There is no guarantee that they have been through 
+thorough testing in a comparable environment and we are not responsible for any damage or data loss incurred with 
+their use.
+
+You are responsible for reviewing and testing any scripts you run *thoroughly* before use in any non-testing 
+environment.
+
+Thanks,  
+The MongoDB Support Team
