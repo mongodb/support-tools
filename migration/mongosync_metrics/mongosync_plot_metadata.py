@@ -11,10 +11,17 @@ from mongosync_plot_utils import format_byte_size, convert_bytes
 def gatherMetrics():
     logging.basicConfig(filename='mongosync_monitor.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
-    #TARGET_MONGO_URI = "mongodb+srv://poc:poc@syncmonitor.qteeb.mongodb.net/?retryWrites=true&w=majority&appName=syncMonitor&timeoutMS=10900000&connectTimeoutMS=10800000"
+    
+    ## Connection strings
+    ## https://www.mongodb.com/docs/manual/reference/connection-string/
+
+    #TARGET_MONGO_URI = "mongodb+srv://[username:password@]host[:port][/[defaultauthdb][?options]]"
+    #TARGET_MONGO_URI = "mongodb://[username:password@]host[:port][/[defaultauthdb][?options]]"
+
     #TARGET_MONGO_URI = "mongodb://127.0.0.1:27020,127.0.0.1:27021,127.0.0.1:27022/"
     TARGET_MONGO_URI = "mongodb://127.0.0.1:27023,127.0.0.1:27024,127.0.0.1:27025/"
     #TARGET_MONGO_URI = "mongodb://127.0.0.1:27026,127.0.0.1:27027,127.0.0.1:27028/"
+    
     internalDb = "mongosync_reserved_for_internal_use"
     colors = ['red', 'blue', 'green', 'orange', 'yellow']
     # Connect to MongoDB cluster
