@@ -4,7 +4,7 @@ This project parses **mongosync** logs and metadata, generating a variety of plo
 
 ## requirements.txt
 
-The `requirements.txt` file lists the Python packages that the scripts depend on. The packages are specified with their version numbers to ensure compatibility.          
+The `requirements.txt` file lists the Python packages on which the scripts depend. The packages are specified with their version numbers to ensure compatibility.          
 
 To install the dependencies, use the following command:
 
@@ -12,7 +12,7 @@ To install the dependencies, use the following command:
 pip install -r requirements.txt
 ```
 
-This command should be run in the Python environment where you want to run the script. If you're using a virtual environment, make sure to activate it first.
+Run the script in the Python environment where you want to run it. If you're using a virtual environment, activate it first.
 
 ## Getting Started
 
@@ -21,11 +21,11 @@ This command should be run in the Python environment where you want to run the s
 3. Install the dependencies with `pip install -r requirements.txt`.
 4. Run the script `python3 mongosync_plot.py`.
 
-Please note that you need to have Python and pip installed on your machine to run the script and install the dependencies.
+Please note that you need Python and pip installed on your machine to run the script and install the dependencies.
 
 ## Accessing the Application and Viewing Plots
 
-Once the application is running, you can access it by opening a web browser and navigating to `http://localhost:3030`. This assumes that the application is running on the same machine where you're opening the browser, and that it's configured to listen on port 3030.
+Once the application runs, you can access it by opening a web browser and navigating to `http://localhost:3030`. It assumes the application runs on the same machine where you're opening the browser and is configured to listen on port 3030.
 
 ![Mongosync Logs Analyzer](static/mongosync_metrics_home.png)
 
@@ -35,7 +35,7 @@ The application provides a user interface for uploading the `mongosync` log file
 
 ### Reading the Metadata
 
-Before running the script, change the variable `TARGET_MONGO_URI` in `mongosync_plot_metadata.py`, to use the target's connection string. 
+Before running the script, change the variable `TARGET_MONGO_URI` in `mongosync_plot_metadata.py` to use the target's connection string. 
 Once the script is running, click the "Read Metadata" button and wait for the page to refresh.
 
 ## Viewing the Plot Information
@@ -59,18 +59,11 @@ This script processes Mongosync metadata and generates various plots using Plotl
 
 DISCLAIMER
 ----------
-Please note: all tools/ scripts in this repo are released for use "AS IS" **without any warranties of any kind**,
-including, but not limited to their installation, use, or performance.  We disclaim any and all warranties, either 
-express or implied, including but not limited to any warranty of noninfringement, merchantability, and/ or fitness 
-for a particular purpose.  We do not warrant that the technology will meet your requirements, that the operation 
-thereof will be uninterrupted or error-free, or that any errors will be corrected.
+Please note: all tools/ scripts in this repo are released for use "AS IS" **without any warranties of any kind**, including, but not limited to their installation, use, or performance.  We disclaim any and all warranties, either express or implied, including but not limited to any warranty of noninfringement, merchantability, and/ or fitness for a particular purpose.  We do not warrant that the technology will meet your requirements, that the operation thereof will be uninterrupted or error-free, or that any errors will be corrected.
 
-Any use of these scripts and tools is **at your own risk**.  There is no guarantee that they have been through 
-thorough testing in a comparable environment and we are not responsible for any damage or data loss incurred with 
-their use.
+Any use of these scripts and tools is **at your own risk**.  There is no guarantee that they have been through thorough testing in a comparable environment and we are not responsible for any damage or data loss incurred with their use.
 
-You are responsible for reviewing and testing any scripts you run *thoroughly* before use in any non-testing 
-environment.
+You are responsible for reviewing and testing any scripts you run *thoroughly* before use in any non-testing environment.
 
-Thanks,  
+Thanks,  
 The MongoDB Support Team
