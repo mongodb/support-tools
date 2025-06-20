@@ -101,7 +101,6 @@ function repairBucketByReinsertMeasurements(bucketId, collName, tempColl, tsOpti
     // since we are touching potentially lots of data, which would cause
     // excessive cache dirtying.
     let hasTransientError;
-    let res;
     do {
         hasTransientError = false;
         try {
