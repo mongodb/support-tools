@@ -45,7 +45,11 @@ function repairBucketByReinsertMeasurements(bucketId, collName, tempColl, tsOpti
     tempTimeseriesBucketsColl = db.getCollection('system.buckets.' + tempColl);
 
     // Prevent concurrent changes on this bucket by setting control.closed.
-    bucketColl.updateOne({_id: bucketId}, {$set: {'control.closed': true}});
+    updateRes = bucketColl.updateOne({_id: bucketId}, {$set: {'control.closed': true}});
+    if (updateRes.matchedCount == 1) {
+        print('Bucket ' + bucketId + ' not found, aborting.');
+        return;
+    }
 
     // Get the measurements from the bucket that we want to repair
     let measurements;
