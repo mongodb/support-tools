@@ -16,7 +16,7 @@ function verifyAndSetupCollsAndGetTSOptions(collName, tempColl) {
         throw ('Collection "' + collName + '" is not a timeseries collection.');
     }
 
-    // Verify that if the temp collection has the same options if it exists
+    // Verify that the temp collection has the same options if it exists
     tempRes = db.runCommand({listCollections: 1.0, filter: {name: tempColl}}).cursor.firstBatch;
     if (tempRes && tempRes.length > 0) {
         tempOptions = tempRes[0].options.timeseries;
