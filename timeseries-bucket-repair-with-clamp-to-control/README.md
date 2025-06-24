@@ -75,7 +75,7 @@ Inspect log lines with id `6698300` and ensure the reason contains the following
 {"t":{"$date":"2025-06-24T15:32:34.190-04:00"},"s":"W",  "c":"STORAGE",  "id":6698300, "ctx":"conn71","msg":"Document is not compliant with time-series specifications","attr":{"namespace":"db.system.buckets.coll","recordId":"6464130bc80b3647a84cc41e5d","reason":{"code":2,"codeName":"BadValue","errmsg":"Mismatch between time-series control and observed min or max for field doubleType. Control had min doubleType: 3.1 and max doubleType: 3.14159265359, but observed data had min { doubleType: 3.14159265359 } and max { doubleType: 3.14159265359 }."}}}
 ```
 
-The `_id` of the affected bucket can be derived from the recordId field by removing the `64` prefix: `"recordId":"6464130bc80b3647a84cc41e5d"` corresponds to `_id` of `ObjectId('64130bc80b3647a84cc41e5d')` which is the input to the validation script.
+The `_id` of the affected bucket can be derived from the `recordId` field by removing the `64` prefix: `"recordId":"6464130bc80b3647a84cc41e5d"` corresponds to `_id` of `ObjectId('64130bc80b3647a84cc41e5d')` which is the input to the validation script.
 
 # Repair Time Teries Bucket with Clamp to Min/Max
 
@@ -96,7 +96,7 @@ The full steps are as follows for each bucket in the time series collection to r
 
 **Warning**: This script directly modifies `<database>.system.buckets` collection —the underlying bucket store of the Time Series collection—in order to remediate any problems. Under normal circumstances, users should not modify this collection. 
 
-**Warning**: This script directly the content of the user data stored inside a Time Series bucket. It is very important to perform a backup of the bucket before using this script. 
+**Warning**: This script directly modifies the content of the user data stored inside a Time Series bucket. It is very important to perform a backup of the bucket before using this script. 
 
 Please contact [MongoDB Support](https://support.mongodb.com/welcome) with any questions or concerns regarding running this script. 
 
