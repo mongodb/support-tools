@@ -1,5 +1,5 @@
 // ------------------------------------------------------------------------------------
-// This script functionality to unconditionally re-write an internal time-series bucket
+// This script provides functionality to unconditionally re-write an internal time-series bucket.
 // It can be used for most types of logical bucket corruption detected by validate.
 // ------------------------------------------------------------------------------------
 
