@@ -51,7 +51,7 @@ function repairBucketByReinsertMeasurements(bucketId, collName, tempColl,
   // Prevent concurrent changes on this bucket by setting control.closed.
   updateRes = bucketColl.updateOne({_id : bucketId},
                                    {$set : {'control.closed' : true}});
-  if (updateRes.matchedCount == 1) {
+  if (updateRes.matchedCount != 1) {
     print('Bucket ' + bucketId + ' not found, aborting.');
     return;
   }
