@@ -59,7 +59,7 @@ function repairBucketByReinsertMeasurements(bucketId, collName, tempColl, tsOpti
                                        metaField: tsOptions.metaField,
                                    }
                                }
-                           ])
+                           ], { promoteValues: false})
                            .toArray();
     } else {
         measurements = bucketColl
@@ -70,7 +70,7 @@ function repairBucketByReinsertMeasurements(bucketId, collName, tempColl, tsOpti
                                        timeField: tsOptions.timeField,
                                    }
                                }
-                           ])
+                           ], { promoteValues: false})
                            .toArray();
     }
 
