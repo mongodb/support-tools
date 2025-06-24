@@ -1,4 +1,4 @@
-git s# Repair internal Buckets in Time Series Collections
+Repair Internal Buckets in Time Series Collections
 
 ## Warning
 
