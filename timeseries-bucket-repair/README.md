@@ -15,7 +15,7 @@ If you are using these scripts on your own, we strongly recommend:
 * for sharded clusters, disabling the balancer.
 
 # Prerequisites 
-- This script should be run with a user that has [dbAdmin](https://www.mongodb.com/docs/v6.0/reference/built-in-roles/#mongodb-authrole-dbAdmin) permissions on the database(s) for the affected time-series collection(s).
+- This script should be run with a user that has [dbAdmin](https://www.mongodb.com/docs/manual/reference/built-in-roles/#mongodb-authrole-dbAdmin) permissions on the database(s) for the affected time-series collection(s).
 
 # Determine if You're Impacted
 
