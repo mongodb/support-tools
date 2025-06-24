@@ -1,4 +1,4 @@
-# Repair internal Buckets in Time Series Collections
+git s# Repair internal Buckets in Time Series Collections
 
 ## Warning
 
@@ -82,6 +82,8 @@ The full steps are as follows for each bucket in the time series collection to r
 - Cleanup the temporary collection.
 
 **Warning**: The temporary collection provided should not exist prior to running this script. As part of the script all existing data in the temporary collection will be deleted. 
+
+**Warning**: This script should not be used to attempt fixing any issues with bucket unpacking itself. This scripts accepts the logical data from unpacking and ensures that the bucket metadata matches this data. In the case of issues with bucket unpacking the bucket metadata is useful for detection and remediation.
 
 **Warning**: This script directly modifies `<database>.system.buckets` collection —the underlying bucket store of the Time Series collection—in order to remediate any problems. Under normal circumstances, users should not modify this collection. 
 
