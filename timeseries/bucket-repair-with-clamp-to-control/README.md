@@ -108,10 +108,10 @@ Please contact [MongoDB Support](https://support.mongodb.com/welcome) with any q
 mongosh --uri <URI>
 ```
 
-### 2. Load the script `timeseries_bucket_repair_clamp_to_control.js`
+### 2. Load the script `bucket_repair_clamp_to_control.js`
 
 ```
-load("timeseries_bucket_repair_clamp_to_control.js")
+load("bucket_repair_clamp_to_control.js")
 ```
 
 ### 3. Repair bucket by bucket _id
