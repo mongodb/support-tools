@@ -175,15 +175,36 @@ def upload_file():
         estimated_copied_bytes = convert_bytes(estimated_copied_bytes, estimated_total_bytes_unit)
 
         # Create a subplot for the scatter plots and a separate subplot for the table
-        fig = make_subplots(rows=8, cols=1, subplot_titles=("Estimated Total and Copied " + estimated_total_bytes_unit,
-                                                            "Events Applied x Lag Time",
-                                                            "Collection Copy Source Read",
-                                                            "Collection Copy Destination Write",
+        fig = make_subplots(rows=8, cols=2, subplot_titles=("Estimated Total and Copied " + estimated_total_bytes_unit,
+                                                            "Lag Time (seconds)", "Change Events Applied",
+                                                            "Collection Copy Read Avg and Max time", "Collection Copy Source Reads",
+                                                            "Collection Copy Write Avg and Max time", "Collection Copy Destination Writes",
                                                             "CEA Source Read",
                                                             "CEA Destination Write",
                                                             "MongoSync Options", 
                                                             "MongoSync Hidden Options",),
-                            specs=[ [{}], [{"secondary_y": True}], [{"secondary_y": True}], [{"secondary_y": True}], [{"secondary_y": True}], [{"secondary_y": True}], [{"type": "table"}], [{"type": "table"}] ])
+                            #specs=[ [{}], #Estimated Total and Copied 
+                            #        [{}], #Lag Time
+                            #        [{}], #Events Applied
+                            #        [{"secondary_y": True}], 
+                            #        [{"secondary_y": True}], 
+                            #        [{"secondary_y": True}], 
+                            #        [{"secondary_y": True}], 
+                            #        [{"type": "table"}], 
+                            #        [{"type": "table"}] ])
+                            specs=[ [{"colspan": 2}, None], #Estimated Total and Copied 
+                                    [{}, {}], #Lag Time and Events Applied
+                                    [{}, {}], #Collection Copy Source Read
+                                    [{}, {}], #Collection Copy Destination
+                                    [{"secondary_y": True}, None], 
+                                    [{"secondary_y": True}, None], 
+                                    [{"colspan": 2, "type": "table"}, None], 
+                                    [{"colspan": 2, "type": "table"}, None] ])
+        
+
+                            #specs=[[{}, {}, None, {}, {}],
+                            #   [{"colspan": 2}, None, None, {"colspan": 2}, None],
+                            #   [{"colspan": 2}, None, None, {"colspan": 2}, None]]     
 
         # Add traces
 
@@ -192,23 +213,29 @@ def upload_file():
         fig.add_trace( go.Bar( name='Estimated ' + estimated_total_bytes_unit + ' to be Copied',  x=[estimated_total_bytes_unit],  y=[estimated_total_bytes], legendgroup="groupTotalCopied" ), row=1, col=1)
         fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=1, col=1)
 
+        # Lag Time
+        fig.add_trace(go.Scatter(x=times, y=lagTimeSeconds, mode='lines', name='Seconds', legendgroup="groupEventsAndLags"), row=2, col=1)
+        #fig.update_yaxes(title_text="Lag Time (seconds)", row=2, col=1)
+
         # Total Events Applied
-        fig.add_trace(go.Scatter(x=times, y=totalEventsApplied, mode='lines', name='Change Events Applied', legendgroup="groupEventsAndLags"), row=2, col=1)
-        fig.add_trace(go.Scatter(x=times, y=lagTimeSeconds, mode='lines', name='Lag Time (seconds)', legendgroup="groupEventsAndLags"), row=2, col=1, secondary_y=True)
-        fig.update_yaxes(title_text="Change Events Applied", secondary_y=False, row=2, col=1)
-        fig.update_yaxes(title_text="Lag Time (seconds)", secondary_y=True, row=2, col=1)
+        fig.add_trace(go.Scatter(x=times, y=totalEventsApplied, mode='lines', name='Events', legendgroup="groupEventsAndLags"), row=2, col=2)
+        #fig.update_yaxes(title_text="Change Events Applied", row=2, col=2)
 
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead, mode='lines', name='Average read time (ms) during Collection Copy', legendgroup="groupCCSourceRead"), row=3, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead_maximum, mode='lines', name='Maximum read time (ms) during Collection Copy', legendgroup="groupCCSourceRead"), row=3, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead_numOperations, mode='lines', name='Reads during Collection Copy', legendgroup="groupCCSourceRead"), row=3, col=1, secondary_y=True)
-        fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=3, col=1)
-        fig.update_yaxes(title_text="Number of Reads", secondary_y=True, row=3, col=1)
+        # Collection Copy Source Read
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCCSourceRead"), row=3, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCSourceRead"), row=3, col=1)
+        #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=3, col=1)
 
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite, mode='lines', name='Average write time (ms) during Collection Copy', legendgroup="groupCCDestinationWrite"), row=4, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite_maximum, mode='lines', name='Maximum (ms) during Collection Copy', legendgroup="groupCCDestinationWrite"), row=4, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite_numOperations, mode='lines', name='Writes during Collection Copy', legendgroup="groupCCDestinationWrite"), row=4, col=1, secondary_y=True)
-        fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=4, col=1)
-        fig.update_yaxes(title_text="Number of Writes", secondary_y=True, row=4, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCCSourceRead"), row=3, col=2)
+        #fig.update_yaxes(title_text="Number of Reads", secondary_y=True, row=3, col=2)
+
+        #Collection Copy Destination
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCCDestinationWrite"), row=4, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCDestinationWrite"), row=4, col=1)
+        #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=4, col=1)
+
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite_numOperations, mode='lines', name='Writes', legendgroup="groupCCDestinationWrite"), row=4, col=2,)
+        #fig.update_yaxes(title_text="Number of Writes", secondary_y=True, row=4, col=2)
 
         fig.add_trace(go.Scatter(x=times, y=CEASourceRead, mode='lines', name='Average read time (ms) during CEA', legendgroup="groupCEASourceRead"), row=5, col=1)
         fig.add_trace(go.Scatter(x=times, y=CEASourceRead_maximum, mode='lines', name='Maximum read time (ms) during CEA', legendgroup="groupCEASourceRead"), row=5, col=1)
@@ -229,7 +256,9 @@ def upload_file():
         fig.add_trace(table_hiddenflags, row=8, col=1)
 
         # Update layout
-        fig.update_layout(height=1800, width=1250, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=170)
+        # 225 per plot
+        fig.update_layout(height=1800, width=1250, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=170, showlegend=False)
+
 
         fig.update_layout(
             legend=dict(
