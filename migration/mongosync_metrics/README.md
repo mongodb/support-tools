@@ -9,7 +9,7 @@ The `requirements.txt` file lists the Python packages on which the scripts depen
 To install the dependencies, use the following command:
 
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 Run the script in the Python environment where you want to run it. If you're using a virtual environment, activate it first.
@@ -18,7 +18,7 @@ Run the script in the Python environment where you want to run it. If you're usi
 
 1. Clone the repository to your local machine.
 2. Navigate to the directory containing the Python script and the `requirements.txt` file.
-3. Install the dependencies with `pip install -r requirements.txt`.
+3. Install the dependencies with `pip3 install -r requirements.txt`.
 4. Run the script `python3 mongosync_plot.py`.
 
 Please note that you need Python and pip installed on your machine to run the script and install the dependencies.
@@ -31,7 +31,7 @@ Once the application runs, you can access it by opening a web browser and naviga
 
 ### Uploading the mongosync Log File
 
-The application provides a user interface for uploading the `mongosync` log file. Clicking a "Browse" or "Choose File" button, select the file from your file system, and then click an "Open" or "Upload" button.
+The application provides a user interface for uploading the `mongosync` log file. Clicking a "Browse" or "Choose File" button, select the file from your file system, and then click on "Open" or "Upload" button.
 
 ### Reading the Metadata
 
@@ -42,7 +42,7 @@ Once the script is running, click the "Read Metadata" button and wait for the pa
 
 Once the `mongosync` data is loaded, the application processes the data and generates the plots. 
 
-If the plots aren't immediately visible after uploading the file, you may need to refresh the page. If the plots still aren't visible, check for any error messages or notifications from the application.
+If the plots aren't visible after uploading the file, you may need to refresh the page. If the plots still aren't visible, check for any error messages or notifications from the application.
 
 ### Mongosync Logs
 
