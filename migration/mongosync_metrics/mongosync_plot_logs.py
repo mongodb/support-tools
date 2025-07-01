@@ -179,8 +179,8 @@ def upload_file():
                                                             "Lag Time (seconds)", "Change Events Applied",
                                                             "Collection Copy Read Avg and Max time", "Collection Copy Source Reads",
                                                             "Collection Copy Write Avg and Max time", "Collection Copy Destination Writes",
-                                                            "CEA Source Read",
-                                                            "CEA Destination Write",
+                                                            "CEA Source Read Avg and Max time", "CEA Source Reads",
+                                                            "CEA Destination Write Avg and Max time", "CEA Destination Writes",
                                                             "MongoSync Options", 
                                                             "MongoSync Hidden Options",),
                             #specs=[ [{}], #Estimated Total and Copied 
@@ -194,17 +194,12 @@ def upload_file():
                             #        [{"type": "table"}] ])
                             specs=[ [{"colspan": 2}, None], #Estimated Total and Copied 
                                     [{}, {}], #Lag Time and Events Applied
-                                    [{}, {}], #Collection Copy Source Read
+                                    [{}, {}], #Collection Copy Source
                                     [{}, {}], #Collection Copy Destination
-                                    [{"secondary_y": True}, None], 
-                                    [{"secondary_y": True}, None], 
+                                    [{}, {}], #CEA Source
+                                    [{}, {}], #CEA Destination 
                                     [{"colspan": 2, "type": "table"}, None], 
                                     [{"colspan": 2, "type": "table"}, None] ])
-        
-
-                            #specs=[[{}, {}, None, {}, {}],
-                            #   [{"colspan": 2}, None, None, {"colspan": 2}, None],
-                            #   [{"colspan": 2}, None, None, {"colspan": 2}, None]]     
 
         # Add traces
 
@@ -237,17 +232,21 @@ def upload_file():
         fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite_numOperations, mode='lines', name='Writes', legendgroup="groupCCDestinationWrite"), row=4, col=2,)
         #fig.update_yaxes(title_text="Number of Writes", secondary_y=True, row=4, col=2)
 
-        fig.add_trace(go.Scatter(x=times, y=CEASourceRead, mode='lines', name='Average read time (ms) during CEA', legendgroup="groupCEASourceRead"), row=5, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CEASourceRead_maximum, mode='lines', name='Maximum read time (ms) during CEA', legendgroup="groupCEASourceRead"), row=5, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CEASourceRead_numOperations, mode='lines', name='Reads during CEA', legendgroup="groupCEASourceRead"), row=5, col=1, secondary_y=True)
-        fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=5, col=1)
-        fig.update_yaxes(title_text="Number of Reads", secondary_y=True, row=5, col=1)
+        #CEA Source
+        fig.add_trace(go.Scatter(x=times, y=CEASourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCEASourceRead"), row=5, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CEASourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEASourceRead"), row=5, col=1)
+        #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=5, col=1)
 
-        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite, mode='lines', name='Average write time (ms) during CEA', legendgroup="groupCEADestinationWrite"), row=6, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_maximum, mode='lines', name='Maximum write time (ms) during CEA', legendgroup="groupCEADestinationWrite"), row=6, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='Writes during CEA', legendgroup="groupCEADestinationWrite"), row=6, col=1, secondary_y=True)
-        fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=6, col=1)
-        fig.update_yaxes(title_text="Number of Writes", secondary_y=True, row=6, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CEASourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCEASourceRead"), row=5, col=2)
+        #fig.update_yaxes(title_text="Number of Reads", secondary_y=True, row=5, col=2)
+
+        #CEA Destination
+        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCEADestinationWrite"), row=6, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEADestinationWrite"), row=6, col=1)
+        #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=6, col=1)
+
+        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='Writes during CEA', legendgroup="groupCEADestinationWrite"), row=6, col=2)
+        #fig.update_yaxes(title_text="Number of Writes", secondary_y=True, row=6, col=2)
 
         #Add the Mongosync options
         fig.add_trace(table_trace, row=7, col=1)
