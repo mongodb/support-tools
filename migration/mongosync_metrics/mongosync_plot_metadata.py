@@ -43,7 +43,9 @@ def gatherMetrics():
                                         "Total X Copied Data",
                                         "Mongosync Phases",
                                         "Collections Progress"),
-                        specs=[[{}, {}, None, {}, {}],[{"colspan": 2}, None, None, {"colspan": 2}, None],[{"colspan": 2}, None, None, {"colspan": 2}, None]]                           
+                        specs=[[{}, {}, None, {}, {}],
+                               [{"colspan": 2}, None, None, {"colspan": 2}, None],
+                               [{"colspan": 2}, None, None, {"colspan": 2}, None]]                           
                         )
 
     #Plot mongosync State
