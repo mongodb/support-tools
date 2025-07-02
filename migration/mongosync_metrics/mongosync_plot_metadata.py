@@ -1,7 +1,8 @@
+import configparser
 import plotly.graph_objects as go
 from plotly.utils import PlotlyJSONEncoder
 from plotly.subplots import make_subplots
-from flask import render_template_string
+from flask import request, render_template_string
 import json
 import logging
 from pymongo import MongoClient
@@ -12,16 +13,11 @@ def gatherMetrics():
     logging.basicConfig(filename='mongosync_monitor.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
     
-    ## Connection strings
-    ## https://www.mongodb.com/docs/manual/reference/connection-string/
-
-    #TARGET_MONGO_URI = "mongodb+srv://[username:password@]host[:port][/[defaultauthdb][?options]]"
-    #TARGET_MONGO_URI = "mongodb://[username:password@]host[:port][/[defaultauthdb][?options]]"
-
-    #TARGET_MONGO_URI = "mongodb://127.0.0.1:27020,127.0.0.1:27021,127.0.0.1:27022/"
-    TARGET_MONGO_URI = "mongodb://127.0.0.1:27023,127.0.0.1:27024,127.0.0.1:27025/"
-    #TARGET_MONGO_URI = "mongodb://127.0.0.1:27026,127.0.0.1:27027,127.0.0.1:27028/"
+    # Reading config file
+    config = configparser.ConfigParser()  
+    config.read('config.ini')
     
+    TARGET_MONGO_URI = config['database']['connectionString']
     internalDb = "mongosync_reserved_for_internal_use"
     colors = ['red', 'blue', 'green', 'orange', 'yellow']
     # Connect to MongoDB cluster

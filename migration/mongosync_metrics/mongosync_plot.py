@@ -1,6 +1,19 @@
-from flask import Flask, render_template_string
+import configparser
+from flask import Flask, render_template_string, request
 from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics
+
+# Reading config file
+config = configparser.ConfigParser()  
+config.read('config.ini')
+connectionStringForm = ""
+if not config['database']['connectionString']:
+    connectionStringForm =  ''' <label for="connectionString">Atlas MongoDB Connection String:</label>  
+                                <input type="text" id="connectionString" name="connectionString" size="47"   
+                                    placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>
+                            '''
+#else:
+    #print ("Not Empty")
 
 # Create a Flask app
 app = Flask(__name__)
@@ -64,12 +77,27 @@ def upload_form():
                     </form>  
         
                     <!-- Second form: Metrics rendering -->  
-                    <form method="post" action="/renderMetrics" enctype="multipart/form-data">  
-                        <h2>Render Metada Metrics</h2>  
+                    <form id="metadataForm" method="post" action="/renderMetrics" enctype="multipart/form-data" onsubmit="return checkAtlasConnection();">   
+                        <h2>Render Metadata Metrics</h2>''' + 
+                        
+                        connectionStringForm +
+
+                    '''    
                         <input type="submit" value="Read Metadata">  
-                        <p>Click this button to generate the plost using mongosync metadata.</p>
+                        <p>Click this button to generate the plots using mongosync metadata.</p>
                         <img src="static/mongosync_metadata.png" width="300" alt="Mongosync Log Analyzer">
-                    </form>  
+                    </form>
+
+                            <script>  
+                            function checkAtlasConnection() {  
+                                var conn = document.getElementById('connectionString').value.trim();  
+                                if (!conn) {  
+                                    alert("Please enter the Atlas MongoDB Connection String.");  
+                                    return false; // Prevent form submission  
+                                }  
+                                return true; // Proceed with submission  
+                            }  
+                            </script>  
                 </div>  
             </body>  
         </html>  
@@ -82,6 +110,16 @@ def uploadLogs():
 
 @app.route('/renderMetrics', methods=['POST'])
 def renderMetrics():
+
+    # If the connectionString is empty in the config.ini, get it from the form and save in the file.
+    if config['database']['connectionString']:
+        TARGET_MONGO_URI = config['database']['connectionString']
+    else:
+        TARGET_MONGO_URI = request.form.get('connectionString')
+        config['database']['connectionString'] = TARGET_MONGO_URI
+        with open('config.ini', 'w') as configfile:  
+            config.write(configfile) 
+
     return plotMetrics()
 
 @app.route('/get_metrics_data', methods=['POST'])
