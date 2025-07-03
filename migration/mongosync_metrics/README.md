@@ -35,8 +35,8 @@ The application provides a user interface for uploading the `mongosync` log file
 
 ### Reading the Metadata
 
-Before running the script, change the variable `TARGET_MONGO_URI` in `mongosync_plot_metadata.py` to use the target's connection string. 
-Once the script is running, click the "Read Metadata" button and wait for the page to refresh.
+When running for the first time, the application will provide a form requesting the target's connection string. 
+Clicking the "Read Metadata" it will save the connection string in the `config.ini` and the page will refresh with the plots.
 
 ## Viewing the Plot Information
 
