@@ -35,8 +35,10 @@ def gatherMetrics():
                                         "Current Phase",
                                         "Start",
                                         "Finish",
+
                                         "Partitions Completed %",
                                         "Total X Copied Data",
+
                                         "Mongosync Phases",
                                         "Collections Progress"),
                         specs=[[{}, {}, None, {}, {}],
@@ -44,8 +46,10 @@ def gatherMetrics():
                                [{"colspan": 2}, None, None, {"colspan": 2}, None]]                           
                         )
 
-    #Plot mongosync State
+    #Get State and Phase from resumeData collection
     vResumeData = internalDbDst.resumeData.find_one({"_id": "coordinator"})
+
+    #Plot mongosync State
     vState = vResumeData["state"]
     match vState:
         case 'RUNNING':
@@ -164,20 +168,9 @@ def gatherMetrics():
 
     #Plot phase transitions
     vMatch = {"$match": {"_id": "coordinator"}}
-    vAddFields = {"$addFields":{"phaseTransitions": {"$filter": {"input": "$phaseTransitions", "as": "phaseTransitions", 
-                  "cond":{"$or": [{"$eq": ["$$phaseTransitions.phase", "initializing collections and indexes"]},
-                                  {"$eq": ["$$phaseTransitions.phase", "initializing partitions"]},
-                                  {"$eq": ["$$phaseTransitions.phase", "collection copy"]},
-                                  {"$eq": ["$$phaseTransitions.phase", "waiting to start change event application"]},
-                                  {"$eq": ["$$phaseTransitions.phase", "change event application"]},
-                                  {"$eq": ["$$phaseTransitions.phase", "waiting for commit to complete"]},
-                                  {"$eq": ["$$phaseTransitions.phase", "commit completed"]}
-                                  ]
-                        }
-                }}}}
     vUnwind = {"$unwind": "$phaseTransitions"}
     vProject = {"$project":{"_id": 0, "phase": "$phaseTransitions.phase", "ts": {"$toDate": "$phaseTransitions.ts" }}}
-    vTransitionData = internalDbDst.resumeData.aggregate([vMatch, vAddFields, vUnwind, vProject])
+    vTransitionData = internalDbDst.resumeData.aggregate([vMatch, vUnwind, vProject])
     vTransitionData=list(vTransitionData)
     vPhase=[]
     vTs=[]
