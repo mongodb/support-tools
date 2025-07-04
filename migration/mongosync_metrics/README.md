@@ -4,6 +4,8 @@ This project parses **mongosync** logs and metadata, generating a variety of plo
 
 ## requirements.txt
 
+Mongosync Metrics requires Python version 3.10+.
+
 The `requirements.txt` file lists the Python packages on which the scripts depend. The packages are specified with their version numbers to ensure compatibility.          
 
 To install the dependencies, use the following command:
