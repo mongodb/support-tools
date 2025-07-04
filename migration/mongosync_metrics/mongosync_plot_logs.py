@@ -141,7 +141,7 @@ def upload_file():
 
         #Getting the Timezone
         #print (data[0]['time'])
-        datetime_with_timezone = datetime.fromisoformat(data[0]['time'])  
+        datetime_with_timezone = datetime.fromisoformat(data[0]['time'].replace('Z', '+00:00'))  
         timeZoneInfo = datetime_with_timezone.strftime("%Z")
 
         # Extract the data you want to plot
