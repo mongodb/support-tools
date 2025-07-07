@@ -1,25 +1,42 @@
 import configparser
+import logging
 from flask import Flask, render_template_string, request
 from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics
+from pymongo.uri_parser import parse_uri  
+from pymongo.errors import InvalidURI 
 
 # Reading config file
 config = configparser.ConfigParser()  
 config.read('config.ini')
-connectionStringForm = ""
-if not config['database']['connectionString']:
-    connectionStringForm =  ''' <label for="connectionString">Atlas MongoDB Connection String:</label>  
-                                <input type="text" id="connectionString" name="connectionString" size="47"   
-                                    placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>
-                            '''
-#else:
-    #print ("Not Empty")
+
+# Setting the script log file
+logging.basicConfig(filename='mongosync_monitor.log', level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Create a Flask app
 app = Flask(__name__)
 
 @app.route('/')
-def upload_form():
+def home_page(message = ""):
+
+    if message == "invalid connection string":
+        connectionStringForm = ''' <label for="connectionString"><b>The connection string provided is invalid, please provide a valid connection string.</b></label>  
+                                    <input type="text" id="connectionString" name="connectionString" size="47"   
+                                        placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>
+                                '''
+    elif not config['database']['connectionString']:
+        connectionStringForm =  ''' <label for="connectionString">Atlas MongoDB Connection String:</label>  
+                                    <input type="text" id="connectionString" name="connectionString" size="47"   
+                                        placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>
+                                '''
+    else:
+        parsed = parse_uri(config['database']['connectionString'])  
+        hosts = parsed['nodelist']
+        hosts_str = ", ".join([f"{host}:{port}" for host, port in hosts])  
+        connectionStringForm = "<p><b>Connecting to Destination Cluster at: </b>"+hosts_str+"</p>"
+
+
     # Return a simple file upload form
     return render_template_string ('''
         <!DOCTYPE html>  
@@ -120,7 +137,22 @@ def renderMetrics():
         with open('config.ini', 'w') as configfile:  
             config.write(configfile) 
 
-    return plotMetrics()
+    # Validate the connection string 
+    # If valid proceed to plot
+    # If not, return to home 
+    try:  
+        parse_uri(TARGET_MONGO_URI)  
+        return plotMetrics()
+    except InvalidURI as e:  
+        logging.error(f"{e}. Invalid MongoDB connection string: "+ TARGET_MONGO_URI)
+        
+        config['database']['connectionString'] = ""
+        with open('config.ini', 'w') as configfile:  
+            config.write(configfile)   
+        
+        return home_page("invalid connection string")
+
+    #return plotMetrics()
 
 @app.route('/get_metrics_data', methods=['POST'])
 def getMetrics():
