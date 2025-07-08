@@ -18,7 +18,7 @@ The [dbstats.js](dbstats.js) script (and [mdblib.js](mdblib.js) dependency) prov
 Retrieve fresh versions of both the _dbstats.js_ and _mdblib.js_ scripts:
 
 ```bash
-curl --remote-name-all -fsSL https://raw.githubusercontent.com/mongodb/support-tools/master/{dbstats.js,mdblib.js}
+curl --remote-name-all -fsSL https://raw.githubusercontent.com/mongodb/support-tools/master/dbStats/{dbstats.js,mdblib.js}
 ```
 
 ### Using _dbstats.js_
