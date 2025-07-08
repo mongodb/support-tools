@@ -97,10 +97,10 @@ Please contact [MongoDB Support](https://support.mongodb.com/welcome) with any q
 mongosh --uri <URI>
 ```
 
-### 2. Load the script `timeseries_bucket_repair.js`
+### 2. Load the script `bucket_repair.js`
 
 ```
-load("timeseries_bucket_repair.js")
+load("bucket_repair.js")
 ```
 
 ### 3. Repair bucket by bucket _id
