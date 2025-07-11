@@ -54,7 +54,7 @@ This script processes the Mongosync logs and generates various plots. The plots 
 
 ### Mongosync Metadata
 
-This script processes Mongosync metadata and generates various plots. The plots include scatter plots, and they visualize different aspects of the data, such as `Partitions Completed`, `Data Copied`, `Phases`, and `Collection Progress`.
+This script processes Mongosync metadata and generates various plots refreshing every 10 seconds by default. The plots visualize different aspects of the data, such as `Partitions Completed`, `Data Copied`, `Phases`, and `Collection Progress`.
 
 ![Mongosync metadata plots](static/mongosync_metadata.png)
 
