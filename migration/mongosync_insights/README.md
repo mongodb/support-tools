@@ -1,10 +1,10 @@
-# Mongosync Metrics
+# Mongosync Insights
 
 This project parses **mongosync** logs and metadata, generating a variety of plots to assist with monitoring and troubleshooting ongoing mongosync migrations.
 
 ## requirements.txt
 
-Mongosync Metrics requires Python version 3.10+.
+Mongosync Insights requires Python version 3.10+.
 
 The `requirements.txt` file lists the Python packages on which the scripts depend. The packages are specified with their version numbers to ensure compatibility.          
 
@@ -18,10 +18,10 @@ Run the script in the Python environment where you want to run it. If you're usi
 
 ## Getting Started
 
-1. Clone the repository to your local machine.
+1. Download the Mongosync Insigths folder.
 2. Navigate to the directory containing the Python script and the `requirements.txt` file.
 3. Install the dependencies with `pip3 install -r requirements.txt`.
-4. Run the script `python3 mongosync_plot.py`.
+4. Run the script `python3 mongosync_insights.py`.
 
 Please note that you need Python and pip installed on your machine to run the script and install the dependencies.
 
@@ -29,7 +29,7 @@ Please note that you need Python and pip installed on your machine to run the sc
 
 Once the application runs, you can access it by opening a web browser and navigating to `http://localhost:3030`. It assumes the application runs on the same machine where you're opening the browser and is configured to listen on port 3030.
 
-![Mongosync Logs Analyzer](static/mongosync_metrics_home.png)
+![Mongosync Logs Analyzer](static/mongosync_insights_home.png)
 
 ### Uploading the mongosync Log File
 

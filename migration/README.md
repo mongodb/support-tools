@@ -1,7 +1,7 @@
 # Migration
 This section contains scripts to help before, during, and after migrations.
 
-## [Mongosync Metrics](mongosync_metrics)
+## [Mongosync Insights](mongosync_insights)
 This project parses **mongosync** logs and metadata, generating a variety of plots to assist with monitoring and troubleshooting ongoing mongosync migrations.
 
 

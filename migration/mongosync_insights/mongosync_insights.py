@@ -11,7 +11,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 # Setting the script log file
-logging.basicConfig(filename='mongosync_monitor.log', level=logging.INFO,
+logging.basicConfig(filename='mongosync_insights.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Create a Flask app
@@ -42,7 +42,7 @@ def home_page(message = ""):
         <!DOCTYPE html>  
         <html>  
             <head>  
-                <title>Mongosync Metrics</title>  
+                <title>Mongosync Insights</title>  
                 <style>  
                     /* Create a container for the forms */  
                     .form-container {  
@@ -95,7 +95,7 @@ def home_page(message = ""):
         
                     <!-- Second form: Metrics rendering -->  
                     <form id="metadataForm" method="post" action="/renderMetrics" enctype="multipart/form-data" onsubmit="return checkAtlasConnection();">   
-                        <h2>Render Metadata Metrics</h2>''' + 
+                        <h2>Render Metadata</h2>''' + 
                         
                         connectionStringForm +
 

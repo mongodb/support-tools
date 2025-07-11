@@ -274,7 +274,7 @@ def upload_file():
             <html lang="en">  
             <head>  
                 <meta charset="UTF-8">  
-                <title>Mongosync Metrics Visualization</title>  
+                <title>Mongosync Insights</title>  
                 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>  
                 <style>  
                     body {  
@@ -286,7 +286,7 @@ def upload_file():
                     }  
             
                     header {  
-                        background-color: #005d95;  
+                        background-color: #00684A;  
                         color: #fff;  
                         padding: 10px 20px;  
                         text-align: center;  
@@ -309,7 +309,7 @@ def upload_file():
                         text-align: center;  
                         padding: 10px;  
                         margin-top: 20px;  
-                        background-color: #005d95;  
+                        background-color: #00684A;  
                         color: #fff;  
                     }  
             
@@ -322,7 +322,7 @@ def upload_file():
             </head>  
             <body>  
                 <header>  
-                    <h1>Mongosync Metrics - Logs</h1>  
+                    <h1>Mongosync Insights - Logs</h1>  
                 </header>  
                 <main>  
                     <div id="plot"></div>  
