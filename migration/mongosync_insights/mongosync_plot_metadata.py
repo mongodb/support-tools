@@ -10,7 +10,7 @@ from pymongo.errors import PyMongoError
 from mongosync_plot_utils import format_byte_size, convert_bytes
 
 def gatherMetrics():
-    logging.basicConfig(filename='mongosync_monitor.log', level=logging.INFO,
+    logging.basicConfig(filename='mongosync_insights.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
     
     # Reading config file
@@ -241,7 +241,7 @@ def plotMetrics():
             <html lang="en">  
             <head>  
                 <meta charset="UTF-8">  
-                <title>Mongosync Metrics Visualization</title>  
+                <title>Mongosync Insights</title>  
                 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>  
 
                 <style>  
@@ -254,7 +254,7 @@ def plotMetrics():
                     }  
             
                     header {  
-                        background-color: #005d95;  
+                        background-color: #00684A;  
                         color: #fff;  
                         padding: 10px 20px;  
                         text-align: center;  
@@ -277,7 +277,7 @@ def plotMetrics():
                         text-align: center;  
                         padding: 10px;  
                         margin-top: 20px;  
-                        background-color: #005d95;  
+                        background-color: #00684A;  
                         color: #fff;  
                     }  
             
@@ -291,7 +291,7 @@ def plotMetrics():
                                   
             <body>  
                 <header>  
-                    <h1>Mongosync Metrics - Metadata</h1>  
+                    <h1>Mongosync Insights - Metadata</h1>  
                 </header>  
                 <main>  
                     <div id="loading">Loading metrics...</div>
