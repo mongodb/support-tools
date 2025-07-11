@@ -48,13 +48,13 @@ If the plots aren't visible after uploading the file, you may need to refresh th
 
 ### Mongosync Logs
 
-This script processes the Mongosync logs and generates various plots using Plotly. The plots include scatter plots and tables, and they visualize different aspects of the data, such as `Total and Copied bytes`, `CEA Reads and Writes`, `Collection Copy Reads and Writes`, `Events applied`, and `Lag Time`.
+This script processes the Mongosync logs and generates various plots. The plots include scatter plots and tables, and they visualize different aspects of the data, such as `Total and Copied bytes`, `CEA Reads and Writes`, `Collection Copy Reads and Writes`, `Events applied`, and `Lag Time`.
 
 ![Mongosync logs analyzer](static/mongosync_log_analyzer.png)
 
 ### Mongosync Metadata
 
-This script processes Mongosync metadata and generates various plots using Plotly. The plots include scatter plots, and they visualize different aspects of the data, such as `Partitions Completed`, `Data Copied`, `Phases`, and `Collection Progress`.
+This script processes Mongosync metadata and generates various plots. The plots include scatter plots, and they visualize different aspects of the data, such as `Partitions Completed`, `Data Copied`, `Phases`, and `Collection Progress`.
 
 ![Mongosync metadata plots](static/mongosync_metadata.png)
 
