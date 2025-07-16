@@ -58,6 +58,9 @@ This script processes Mongosync metadata and generates various plots refreshing 
 
 ![Mongosync metadata plots](static/mongosync_metadata.png)
 
+### License
+
+[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 DISCLAIMER
 ----------
