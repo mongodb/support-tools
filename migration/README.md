@@ -4,6 +4,10 @@ This section contains scripts to help before, during, and after migrations.
 ## [Mongosync Insights](mongosync_insights)
 This project parses **mongosync** logs and metadata, generating a variety of plots to assist with monitoring and troubleshooting ongoing mongosync migrations.
 
+### License
+
+[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
 DISCLAIMER
 ----------
 Please note: all tools/ scripts in this repo are released for use "AS IS" **without any warranties of any kind**,
