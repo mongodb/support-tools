@@ -177,21 +177,12 @@ def upload_file():
         # Create a subplot for the scatter plots and a separate subplot for the table
         fig = make_subplots(rows=8, cols=2, subplot_titles=("Estimated Total and Copied " + estimated_total_bytes_unit,
                                                             "Lag Time (seconds)", "Change Events Applied",
-                                                            "Collection Copy Read Avg and Max time", "Collection Copy Source Reads",
-                                                            "Collection Copy Write Avg and Max time", "Collection Copy Destination Writes",
-                                                            "CEA Source Read Avg and Max time", "CEA Source Reads",
-                                                            "CEA Destination Write Avg and Max time", "CEA Destination Writes",
+                                                            "Collection Copy - Avg and Max Read time (ms)", "Collection Copy Source Reads",
+                                                            "Collection Copy - Avg and Max Write time (ms)", "Collection Copy Destination Writes",
+                                                            "CEA Source - Avg and Max Read time (ms)", "CEA Source Reads",
+                                                            "CEA Destination - Avg and Max Write time (ms)", "CEA Destination Writes",
                                                             "MongoSync Options", 
                                                             "MongoSync Hidden Options",),
-                            #specs=[ [{}], #Estimated Total and Copied 
-                            #        [{}], #Lag Time
-                            #        [{}], #Events Applied
-                            #        [{"secondary_y": True}], 
-                            #        [{"secondary_y": True}], 
-                            #        [{"secondary_y": True}], 
-                            #        [{"secondary_y": True}], 
-                            #        [{"type": "table"}], 
-                            #        [{"type": "table"}] ])
                             specs=[ [{"colspan": 2}, None], #Estimated Total and Copied 
                                     [{}, {}], #Lag Time and Events Applied
                                     [{}, {}], #Collection Copy Source
@@ -333,6 +324,7 @@ def upload_file():
                 </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
+                    <p>Version 0.5.7</p>
                 </footer>  
             </body>  
             </html>  
