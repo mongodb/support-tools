@@ -318,6 +318,7 @@ def plotMetrics():
             </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
+                    <p>Version 0.5.7</p>
                 </footer>  
             </body>  
             </html>  
