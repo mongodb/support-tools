@@ -6,11 +6,16 @@ from flask import request, redirect, render_template_string
 import json
 from datetime import datetime
 import re
+import logging
 from mongosync_plot_utils import format_byte_size, convert_bytes
 
 def upload_file():
+    logging.basicConfig(filename='mongosync_insights.log', level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s')
+    
     # Check if a file was uploaded
     if 'file' not in request.files:
+        logging.error(f"File was not uploaded")
         return redirect(request.url)
 
     file = request.files['file']
@@ -18,6 +23,7 @@ def upload_file():
     # If the user does not select a file, the browser submits an
     # empty file without a filename.
     if file.filename == '':
+        logging.error(f"Empty file without a filename")
         return redirect(request.url)
 
     if file:
@@ -28,12 +34,14 @@ def upload_file():
         for line in tqdm(lines, desc="Reading lines"):
             try:
                 json.loads(line)
-            except json.JSONDecodeError:
-                print(f"Invalid JSON: {line}")
+            except json.JSONDecodeError as e:
+                logging.error(f"Invalid JSON file: {e}")
+                #print(f"Invalid JSON: {line}")
                 return redirect(request.url)  # or handle the error in another appropriate way
 
         # Load lines with 'message' == "Replication progress."
         #data = [json.loads(line) for line in lines if json.loads(line).get('message') == "Replication progress."]
+        logging.info(f"Loading Replication progress")
         regex_pattern = re.compile(r"Replication progress", re.IGNORECASE)
         data = [
             json.loads(line) 
@@ -43,6 +51,7 @@ def upload_file():
 
         # Load lines with 'message' == "Version info"
         #version_info_list = [json.loads(line) for line in lines if json.loads(line).get('message') == "Version info"]
+        logging.info(f"Loading Version info")
         regex_pattern = re.compile(r"Version info", re.IGNORECASE)
         version_info_list = [
             json.loads(line) 
@@ -52,6 +61,7 @@ def upload_file():
 
         # Load lines with 'message' == "Mongosync Options"
         #mongosync_opts_list = [json.loads(line) for line in lines if json.loads(line).get('message') == "Mongosync Options"]
+        logging.info(f"Loading Mongosync Options")
         regex_pattern = re.compile(r"Mongosync Options", re.IGNORECASE)
         mongosync_opts_list = [
             json.loads(line) 
@@ -61,6 +71,7 @@ def upload_file():
 
         # Load lines with 'message' == "Operation duration stats."
         #mongosync_ops_stats = [json.loads(line) for line in lines if json.loads(line).get('message') == "Operation duration stats."]
+        logging.info(f"Loading Operation duration stats")
         regex_pattern = re.compile(r"Operation duration stats", re.IGNORECASE)
         mongosync_ops_stats = [
             json.loads(line) 
@@ -70,6 +81,7 @@ def upload_file():
 
         # Load lines with 'message' == "sent response"
         #mongosync_sent_response = [json.loads(line) for line in lines if json.loads(line).get('message') == "Sent response."]
+        logging.info(f"Loading sent response")
         regex_pattern = re.compile(r"sent response", re.IGNORECASE)
         mongosync_sent_response = [
             json.loads(line) 
@@ -78,6 +90,7 @@ def upload_file():
         ]
 
         # Load lines with 'message' == "Mongosync HiddenFlags"
+        logging.info(f"Loading HiddenFlags")
         regex_pattern = re.compile(r"Mongosync HiddenFlags", re.IGNORECASE)
         mongosync_hiddenflags = [
             json.loads(line) 
@@ -91,11 +104,15 @@ def upload_file():
             mongosync_sent_response_body  = json.loads(response['body'])
             # Now you can work with the 'body' data
 
+        ### COMMENTING AS IT DOESN'T SEEM TO BE USED.
+        ### IT WILL BE REMOVED LATER
         # Create a string with all the Mongosync Options information
-        mongosync_opts_text = "\n".join([json.dumps(item, indent=4) for item in mongosync_opts_list])
+        #mongosync_opts_text = "\n".join([json.dumps(item, indent=4) for item in mongosync_opts_list])
 
         # Create a string with all the version information
         version_text = "\n".join([f"MongoSync Version: {item.get('version')}, OS: {item.get('os')}, Arch: {item.get('arch')}" for item in version_info_list])
+
+        logging.info(f"Extracting data")
 
         # Extract the keys from the mongosync_hiddenflags
         # For each key, extract the corresponding values from mongosync_hiddenflags
@@ -169,10 +186,13 @@ def upload_file():
             estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
             estimated_copied_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedCopiedBytes']
         else:
-            print("Key 'progress' not found in mongosync_sent_response_body")
+            logging.warning(f"Key 'progress' not found in mongosync_sent_response_body")
+            #print("Key 'progress' not found in mongosync_sent_response_body")
 
         estimated_total_bytes, estimated_total_bytes_unit = format_byte_size(estimated_total_bytes)
         estimated_copied_bytes = convert_bytes(estimated_copied_bytes, estimated_total_bytes_unit)
+
+        logging.info(f"Plotting")
 
         # Create a subplot for the scatter plots and a separate subplot for the table
         fig = make_subplots(rows=8, cols=2, subplot_titles=("Estimated Total and Copied " + estimated_total_bytes_unit,
@@ -259,6 +279,8 @@ def upload_file():
         # Convert the figure to JSON
         plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
 
+        logging.info(f"Render the plot in the browse")
+
         # Render the plot in the browser
         return render_template_string('''
             <!DOCTYPE html>  
@@ -324,7 +346,7 @@ def upload_file():
                 </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Version 0.5.7</p>
+                    <p>Version 0.5.8</p>
                 </footer>  
             </body>  
             </html>  
