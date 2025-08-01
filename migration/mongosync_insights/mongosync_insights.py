@@ -25,13 +25,13 @@ def home_page(message = ""):
                                     <input type="text" id="connectionString" name="connectionString" size="47"   
                                         placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>
                                 '''
-    elif not config['database']['connectionString']:
+    elif not config['LiveMonitor']['connectionString']:
         connectionStringForm =  ''' <label for="connectionString">Atlas MongoDB Connection String:</label>  
                                     <input type="text" id="connectionString" name="connectionString" size="47"   
                                         placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>
                                 '''
     else:
-        parsed = parse_uri(config['database']['connectionString'])  
+        parsed = parse_uri(config['LiveMonitor']['connectionString'])  
         hosts = parsed['nodelist']
         hosts_str = ", ".join([f"{host}:{port}" for host, port in hosts])  
         connectionStringForm = "<p><b>Connecting to Destination Cluster at: </b>"+hosts_str+"</p>"
@@ -84,7 +84,7 @@ def home_page(message = ""):
             </head>  
             <body>
                 <div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); text-align: center;">  
-                    <h1 style="margin-bottom: 0;">Mongosync Insights <span style="font-size:0.6em;color:#777;">v0.5.8</span></h1>  
+                    <h1 style="margin-bottom: 0;">Mongosync Insights <span style="font-size:0.6em;color:#777;">v0.5.9</span></h1>  
                 </div>    
                 <div class="form-container">  
                     <!-- First form: File upload -->  
@@ -136,12 +136,15 @@ def uploadLogs():
 @app.route('/renderMetrics', methods=['POST'])
 def renderMetrics():
 
+    refreshTime = config['LiveMonitor']['refreshTime']
+
     # If the connectionString is empty in the config.ini, get it from the form and save in the file.
-    if config['database']['connectionString']:
-        TARGET_MONGO_URI = config['database']['connectionString']
+    if config['LiveMonitor']['connectionString']:
+        TARGET_MONGO_URI = config['LiveMonitor']['connectionString']
     else:
         TARGET_MONGO_URI = request.form.get('connectionString')
-        config['database']['connectionString'] = TARGET_MONGO_URI
+        config['LiveMonitor']['connectionString'] = TARGET_MONGO_URI
+        config['LiveMonitor']['refreshTime'] = refreshTime
         with open('config.ini', 'w') as configfile:  
             config.write(configfile) 
 
@@ -154,7 +157,8 @@ def renderMetrics():
     except InvalidURI as e:  
         logging.error(f"{e}. Invalid MongoDB connection string: "+ TARGET_MONGO_URI)
         
-        config['database']['connectionString'] = ""
+        config['LiveMonitor']['connectionString'] = ""
+        config['LiveMonitor']['refreshTime'] = refreshTime
         with open('config.ini', 'w') as configfile:  
             config.write(configfile)   
         

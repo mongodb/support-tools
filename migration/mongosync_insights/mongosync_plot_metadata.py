@@ -17,7 +17,7 @@ def gatherMetrics():
     config = configparser.ConfigParser()  
     config.read('config.ini')
     
-    TARGET_MONGO_URI = config['database']['connectionString']
+    TARGET_MONGO_URI = config['LiveMonitor']['connectionString']
     internalDb = "mongosync_reserved_for_internal_use"
     colors = ['red', 'blue', 'green', 'orange', 'yellow']
     # Connect to MongoDB cluster
@@ -236,6 +236,13 @@ def gatherMetrics():
 
 
 def plotMetrics():
+    # Reading config file
+    config = configparser.ConfigParser()  
+    config.read('config.ini')
+
+    refreshTime = config['LiveMonitor']['refreshTime']
+    refreshTimeMs = str(int(refreshTime) * 1000)
+    
     return render_template_string('''
             <!DOCTYPE html>  
             <html lang="en">  
@@ -312,13 +319,13 @@ def plotMetrics():
                 }
 
                 fetchPlotData(); // initial load
-                setInterval(fetchPlotData, 10000); // update every 10 seconds
+                setInterval(fetchPlotData, ''' + refreshTimeMs + '''); // update every ''' + refreshTime + ''' seconds
             </script>
 
             </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Version 0.5.8</p>
+                    <p>Refresing every '''+ refreshTime +''' seconds - Version 0.5.9</p>
                 </footer>  
             </body>  
             </html>  

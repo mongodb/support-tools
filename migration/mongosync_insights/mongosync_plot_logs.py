@@ -346,7 +346,7 @@ def upload_file():
                 </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Version 0.5.8</p>
+                    <p>Version 0.5.9</p>
                 </footer>  
             </body>  
             </html>  
