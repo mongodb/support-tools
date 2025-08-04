@@ -84,7 +84,7 @@ def home_page(message = ""):
             </head>  
             <body>
                 <div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); text-align: center;">  
-                    <h1 style="margin-bottom: 0;">Mongosync Insights <span style="font-size:0.6em;color:#777;">v0.5.9</span></h1>  
+                    <h1 style="margin-bottom: 0;">Mongosync Insights <span style="font-size:0.6em;color:#777;">v0.6.0</span></h1>  
                 </div>    
                 <div class="form-container">  
                     <!-- First form: File upload -->  
