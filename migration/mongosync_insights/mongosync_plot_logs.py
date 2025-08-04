@@ -189,22 +189,9 @@ def upload_file():
             
             #Getting the Phase Transisitons
             phase_transitions = mongosync_sent_response_body['progress']['atlasLiveMigrateMetrics']['PhaseTransitions']  
-            
             phase_list = [item['Phase'] for item in phase_transitions]  
             ts_t_list = [item['Ts']['T'] for item in phase_transitions]  
-            
-            # Convert T (UNIX timestamp seconds) to the desired formatted string  
-            #formatted_ts = [datetime.utcfromtimestamp(t).strftime("%Y-%m-%dT%H:%M:%S.%f") for t in ts_t_list]  
-
-            # Use fromtimestamp with tz=timezone.utc (not deprecated)  
-            ts_t_list_formatted = [  
-                datetime.fromtimestamp(t).strftime("%Y-%m-%dT%H:%M:%S.%f")  #, tz=timezone.utc
-                for t in ts_t_list  
-            ]
-            
-            #print("Phases:", phase_list)  
-            #print("Formatted Timestamps:", ts_t_list_formatted)  
-
+            ts_t_list_formatted = [ datetime.fromtimestamp(t).strftime("%Y-%m-%dT%H:%M:%S.%f") for t in ts_t_list ]
         else:
             logging.warning(f"Key 'progress' not found in mongosync_sent_response_body")
             #print("Key 'progress' not found in mongosync_sent_response_body")
@@ -291,7 +278,7 @@ def upload_file():
 
         # Update layout
         # 225 per plot
-        fig.update_layout(height=1800, width=1250, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=170, showlegend=False)
+        fig.update_layout(height=1800, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=170, showlegend=False)
 
 
         fig.update_layout(
@@ -335,7 +322,7 @@ def upload_file():
             
                     #plot {  
                         margin: 0 auto;  
-                        max-width: 1250px;  
+                        max-width: 1450px;  
                         border: 1px solid #ccc; /* Add border for distinction */  
                         border-radius: 8px; /* Rounded corners */  
                         background-color: #fff;  
@@ -370,7 +357,7 @@ def upload_file():
                 </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Version 0.6.0</p>
+                    <p>Version 0.6.1</p>
                 </footer>  
             </body>  
             </html>  

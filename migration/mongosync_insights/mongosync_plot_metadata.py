@@ -119,18 +119,31 @@ def gatherMetrics():
     vProject1 = {"$project": {  "_id": 0,"namespace": 1,"totalDocumentCount": 1,  "partitionPhaseCounts":{"$arrayToObject": "$partitionPhaseCounts" }}  }
     vProject2 = {"$project": {  "_id": 0,"namespace": 1,"totalDocumentCount": 1,  "partitionPhaseCounts": {  "$mergeObjects": [  { "not started": 0, "in progress": 0, "done": 0 },  "$partitionPhaseCounts"  ]  }}  }
     vAddFields2 = {"$addFields": {"PercCompleted": {"$divide": [{ "$multiply": ["$partitionPhaseCounts.done", 100] }, "$totalDocumentCount"]}}}
-    vSort1 = {"$sort": {"namespace": 1}}
+    vSort1 = {"$sort": {"PercCompleted": 1, "namespace": 1}}  
     vPartitionData = internalDbDst.partitions.aggregate([vGroup1, vGroup2, vAddFields1, vProject1, vProject2, vAddFields2, vSort1])
 
     vPartitionData = list(vPartitionData)
 
-    vNamespace = []
-    vPercComplete = []
+    #Limits the total of namespaces to 10 in the partitions completed
+    if len(vPartitionData) > 10:  
+        # Remove PercCompleted == 100  
+        filtered = [doc for doc in vPartitionData if doc.get('PercCompleted') != 100]  
+        # If we still have more than 10, trim to 10  
+        if len(filtered) >= 10:  
+            vPartitionData = filtered[:9]  
+        else:  
+            # If after removal less than 10, fill up with remaining PercCompleted==100  
+            needed = 10 - len(filtered)  
+            completed_100 = [doc for doc in vPartitionData if doc.get('PercCompleted') == 100]  
+            vPartitionData = filtered + completed_100[:needed]  
+
     if len(vPartitionData) == 0:
         fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Mongosync Finish',textfont=dict(size=30, color="black")), row=2, col=1)
         fig.update_layout(xaxis5=dict(showgrid=False, zeroline=False, showticklabels=False), 
                           yaxis5=dict(showgrid=False, zeroline=False, showticklabels=False))
-    else:        
+    else:
+        vNamespace = []
+        vPercComplete = []        
         for partition in vPartitionData:
             vNamespace.append(partition["namespace"])
             vPercComplete.append(partition["PercCompleted"])
@@ -228,7 +241,7 @@ def gatherMetrics():
         fig.update_layout(xaxis8=dict(range=[0, xMax])) 
     
     # Update layout
-    fig.update_layout(height=800, width=1450, autosize=True, title_text="Mongosync Replication Progress - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
+    fig.update_layout(height=850, width=1450, autosize=True, title_text="Mongosync Replication Progress - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
     
     # Convert the figure to JSON
     plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
@@ -325,7 +338,7 @@ def plotMetrics():
             </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Refresing every '''+ refreshTime +''' seconds - Version 0.6.0</p>
+                    <p>Refresing every '''+ refreshTime +''' seconds - Version 0.6.1</p>
                 </footer>  
             </body>  
             </html>  
