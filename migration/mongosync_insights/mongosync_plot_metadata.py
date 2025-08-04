@@ -67,7 +67,7 @@ def gatherMetrics():
     fig.update_layout(xaxis1=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis1=dict(showgrid=False, zeroline=False, showticklabels=False))
 
-    #Plot Mongosync Phase
+    #Plot Mongosync State
     vPhase = vResumeData["syncPhase"].capitalize()
     fig.add_trace(go.Scatter(x=[0], y=[0], text=[str(vPhase)], mode='text', name='Mongosync State',textfont=dict(size=17, color="black")), row=1, col=2)
     fig.update_layout(xaxis2=dict(showgrid=False, zeroline=False, showticklabels=False), 
@@ -166,7 +166,7 @@ def gatherMetrics():
         fig.update_yaxes(title_text="Copied / Total Data", row=2, col=4)
         fig.update_layout(xaxis6=dict(range=[0, vTotalBytes]))
 
-    #Plot phase transitions
+    #Plot Phases transitions
     vMatch = {"$match": {"_id": "coordinator"}}
     vUnwind = {"$unwind": "$phaseTransitions"}
     vProject = {"$project":{"_id": 0, "phase": "$phaseTransitions.phase", "ts": {"$toDate": "$phaseTransitions.ts" }}}
@@ -325,7 +325,7 @@ def plotMetrics():
             </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Refresing every '''+ refreshTime +''' seconds - Version 0.5.9</p>
+                    <p>Refresing every '''+ refreshTime +''' seconds - Version 0.6.0</p>
                 </footer>  
             </body>  
             </html>  

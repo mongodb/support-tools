@@ -140,7 +140,7 @@ def upload_file():
             # Create a table trace with the keys as the first column and the corresponding values as the second column
             table_trace = go.Table(
                 header=dict(values=['Key', 'Value'], font=dict(size=12, color='black')),
-                cells=dict(values=[keys, values], font=dict(size=10, color='darkblue')),
+                cells=dict(values=[keys, values], align=['left'], font=dict(size=10, color='darkblue')),
                 columnwidth=[0.75, 2.5]  # Adjust the column widths as needed
             )
 
@@ -183,8 +183,28 @@ def upload_file():
         estimated_copied_bytes = 0
 
         if 'progress' in mongosync_sent_response_body:
+            #getting the estimated total and copied
             estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
             estimated_copied_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedCopiedBytes']
+            
+            #Getting the Phase Transisitons
+            phase_transitions = mongosync_sent_response_body['progress']['atlasLiveMigrateMetrics']['PhaseTransitions']  
+            
+            phase_list = [item['Phase'] for item in phase_transitions]  
+            ts_t_list = [item['Ts']['T'] for item in phase_transitions]  
+            
+            # Convert T (UNIX timestamp seconds) to the desired formatted string  
+            #formatted_ts = [datetime.utcfromtimestamp(t).strftime("%Y-%m-%dT%H:%M:%S.%f") for t in ts_t_list]  
+
+            # Use fromtimestamp with tz=timezone.utc (not deprecated)  
+            ts_t_list_formatted = [  
+                datetime.fromtimestamp(t).strftime("%Y-%m-%dT%H:%M:%S.%f")  #, tz=timezone.utc
+                for t in ts_t_list  
+            ]
+            
+            #print("Phases:", phase_list)  
+            #print("Formatted Timestamps:", ts_t_list_formatted)  
+
         else:
             logging.warning(f"Key 'progress' not found in mongosync_sent_response_body")
             #print("Key 'progress' not found in mongosync_sent_response_body")
@@ -195,7 +215,7 @@ def upload_file():
         logging.info(f"Plotting")
 
         # Create a subplot for the scatter plots and a separate subplot for the table
-        fig = make_subplots(rows=8, cols=2, subplot_titles=("Estimated Total and Copied " + estimated_total_bytes_unit,
+        fig = make_subplots(rows=8, cols=2, subplot_titles=("Mongosync Phases", "Estimated Total and Copied " + estimated_total_bytes_unit,
                                                             "Lag Time (seconds)", "Change Events Applied",
                                                             "Collection Copy - Avg and Max Read time (ms)", "Collection Copy Source Reads",
                                                             "Collection Copy - Avg and Max Write time (ms)", "Collection Copy Destination Writes",
@@ -203,7 +223,7 @@ def upload_file():
                                                             "CEA Destination - Avg and Max Write time (ms)", "CEA Destination Writes",
                                                             "MongoSync Options", 
                                                             "MongoSync Hidden Options",),
-                            specs=[ [{"colspan": 2}, None], #Estimated Total and Copied 
+                            specs=[ [{}, {}], #Mongosync Phases and Estimated Total and Copied 
                                     [{}, {}], #Lag Time and Events Applied
                                     [{}, {}], #Collection Copy Source
                                     [{}, {}], #Collection Copy Destination
@@ -214,10 +234,14 @@ def upload_file():
 
         # Add traces
 
-        # Create a bar chart
+        # Mongosync Phases
+        fig.add_trace(go.Scatter(x=ts_t_list_formatted, y=phase_list, mode='markers+text',marker=dict(color='green')), row=1, col=1)
+        fig.update_yaxes(showticklabels=False, row=1, col=1)  
+
+        # Estimated Total and Copied
         #fig = go.Figure(data=[go.Bar(name='Estimated Total Bytes', x=['Bytes'], y=[estimated_total_bytes], row=1, col=1), go.Bar(name='Estimated Copied Bytes', x=['Bytes'], y=[estimated_copied_bytes])], row=1, col=1)
-        fig.add_trace( go.Bar( name='Estimated ' + estimated_total_bytes_unit + ' to be Copied',  x=[estimated_total_bytes_unit],  y=[estimated_total_bytes], legendgroup="groupTotalCopied" ), row=1, col=1)
-        fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=1, col=1)
+        fig.add_trace( go.Bar( name='Estimated ' + estimated_total_bytes_unit + ' to be Copied',  x=[estimated_total_bytes_unit],  y=[estimated_total_bytes], legendgroup="groupTotalCopied" ), row=1, col=2)
+        fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=1, col=2)
 
         # Lag Time
         fig.add_trace(go.Scatter(x=times, y=lagTimeSeconds, mode='lines', name='Seconds', legendgroup="groupEventsAndLags"), row=2, col=1)
@@ -346,7 +370,7 @@ def upload_file():
                 </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Version 0.5.9</p>
+                    <p>Version 0.6.0</p>
                 </footer>  
             </body>  
             </html>  
