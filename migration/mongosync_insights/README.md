@@ -1,6 +1,6 @@
 # Mongosync Insights
 
-This project parses **mongosync** logs and metadata, generating a variety of plots to assist with monitoring and troubleshooting ongoing mongosync migrations.
+This project parses **mongosync** logs and reads the internal database (metadata), generating a variety of plots to assist with monitoring and troubleshooting ongoing mongosync migrations.
 
 ## requirements.txt
 
@@ -31,14 +31,14 @@ Once the application runs, you can access it by opening a web browser and naviga
 
 ![Mongosync Logs Analyzer](static/mongosync_insights_home.png)
 
-### Uploading the mongosync Log File
+### Parsing the `mongosync` Log File
 
 The application provides a user interface for uploading the `mongosync` log file. Clicking a "Browse" or "Choose File" button, select the file from your file system, and then click on "Open" or "Upload" button.
 
-### Reading the Metadata
+### Live monitoring the migration
 
 When running for the first time, the application will provide a form requesting the target's connection string. 
-Clicking the "Read Metadata" it will save the connection string in the `config.ini` and the page will refresh with the plots.
+Clicking the "Live Monitor" it will save the connection string in the `config.ini` and the page will refresh with the migration progress.
 
 ## Viewing the Plot Information
 
