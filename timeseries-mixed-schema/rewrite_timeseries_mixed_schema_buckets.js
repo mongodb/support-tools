@@ -18,10 +18,31 @@ const bucketsColl = db.getCollection('system.buckets.' + collName);
 // The "temp" collection should not exist prior to running the script. This will be used 
 // for storing the measurements of the mixed-schema buckets.
 // ------------------------------------------------------------------------------------
-listCollectionsRes = db.runCommand({ listCollections: 1.0, filter: { name: "temp" } }).cursor.firstBatch;
-if (listCollectionsRes.length != 0) {
-    print("Collection `temp` should not exist prior to running the script. Rename or drop the collection before running this script");
+
+//
+// Helper function to validate namespaces, create temporary collection and
+// return our timeseries options.
+//
+function verifyAndSetupCollsAndGetTSOptions(collName, tempColl) {
+  tsOptions = db.runCommand({listCollections : 1.0, filter : {name : collName}})
+                  .cursor.firstBatch[0]
+                  .options.timeseries;
+
+  if (tsOptions === undefined) {
+    print('Collection "' + collName + '" is not a timeseries collection.');
     exit(1);
+  }
+  listCollectionsRes = db.runCommand({
+                         listCollections: 1.0,
+                         filter: {name: tempColl}
+                       }).cursor.firstBatch;
+  if (listCollectionsRes.length != 0) {
+    print(
+        'Collection ' + tempColl + ' should not exist prior to running the script. Rename or drop the collection before running this script');
+    exit(1);
+  }
+  db.createCollection(tempColl, {timeseries : tsOptions});
+  return tsOptions;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -38,18 +59,16 @@ let bucketColl;
 let tsOptions;
 let tempTimeseriesColl;
 let tempTimeseriesBucketsColl;
+let tempTimeseriesCollName = 'temp';
 
 function setUp() {
     bucketColl = db.getCollection("system.buckets." + collName);
 
     // Create a temp collection to store measurements from the mixed-schema buckets.
-    tsOptions = db.runCommand({ listCollections: 1.0, filter: { name: coll.getName() } })
-        .cursor.firstBatch[0]
-        .options.timeseries;
+    tsOptions =verifyAndSetupCollsAndGetTSOptions(coll.getName(), tempTimeseriesCollName)
 
-    db.createCollection("temp", { timeseries: tsOptions });
-    tempTimeseriesColl = db.getCollection("temp");
-    tempTimeseriesBucketsColl = db.getCollection("system.buckets.temp");
+    tempTimeseriesColl = db.getCollection(tempTimeseriesCollName);
+    tempTimeseriesBucketsColl = db.getCollection("system.buckets." + tempTimeseriesCollName);
 }
 
 function runMixedSchemaBucketsReinsertionProcedure() {
