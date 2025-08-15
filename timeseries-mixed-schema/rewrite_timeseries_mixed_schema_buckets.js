@@ -65,7 +65,7 @@ function setUp() {
     bucketColl = db.getCollection("system.buckets." + collName);
 
     // Create a temp collection to store measurements from the mixed-schema buckets.
-    tsOptions =verifyAndSetupCollsAndGetTSOptions(coll.getName(), tempTimeseriesCollName)
+    tsOptions = verifyAndSetupCollsAndGetTSOptions(coll.getName(), tempTimeseriesCollName)
 
     tempTimeseriesColl = db.getCollection(tempTimeseriesCollName);
     tempTimeseriesBucketsColl = db.getCollection("system.buckets." + tempTimeseriesCollName);

@@ -426,7 +426,7 @@ function verifyAndSetupCollsAndGetTSOptions(existing_ns, staging_ns) {
         throw new Error(`Existing namespace: ${existing_ns} is not a time series collections.`);
     }
     if(staging_coll_info.length > 0) {
-        throw new Error(`Staging namespace: ${namespace} already exists. Please re-run with a different staging_ns or drop and recreate the staging_ns.`)
+        throw new Error(`Staging namespace: ${namespace} already exists. Please re-run with a different staging_ns or drop the staging_ns.`)
     }
     db.getSiblingDB(staging_ns.dbname).createCollection(staging_ns.collname, { "timeseries": ts_options })
 }
