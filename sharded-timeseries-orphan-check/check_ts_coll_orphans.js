@@ -419,14 +419,14 @@ function getCollectionInfosFromNamespace(namespace_ns) {
 
 function verifyAndSetupCollsAndGetTSOptions(existing_ns, staging_ns) {
     existing_coll_info = getCollectionInfosFromNamespace(existing_ns);
-    staging_coll_info = getCollectionInfosFromNamespace(staging_ns);
     ts_options = existing_coll_info[0].options.timeseries;
 
     if(!existing_ts_options) {
         throw new Error(`Existing namespace: ${existing_ns} is not a time series collections.`);
     }
+    staging_coll_info = getCollectionInfosFromNamespace(staging_ns);
     if(staging_coll_info.length > 0) {
-        throw new Error(`Staging namespace: ${namespace} already exists. Please re-run with a different staging_ns or drop the staging_ns.`)
+        throw new Error(`Staging namespace: ${namespace} already exists. Please re-run with a different staging_ns or drop the staging_ns coll.`)
     }
     db.getSiblingDB(staging_ns.dbname).createCollection(staging_ns.collname, { "timeseries": ts_options })
 }
