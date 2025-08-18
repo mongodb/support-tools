@@ -25,13 +25,13 @@ def home_page(message = ""):
                                     <input type="text" id="connectionString" name="connectionString" size="47"   
                                         placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>
                                 '''
-    elif not config['database']['connectionString']:
+    elif not config['LiveMonitor']['connectionString']:
         connectionStringForm =  ''' <label for="connectionString">Atlas MongoDB Connection String:</label>  
                                     <input type="text" id="connectionString" name="connectionString" size="47"   
                                         placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>
                                 '''
     else:
-        parsed = parse_uri(config['database']['connectionString'])  
+        parsed = parse_uri(config['LiveMonitor']['connectionString'])  
         hosts = parsed['nodelist']
         hosts_str = ", ".join([f"{host}:{port}" for host, port in hosts])  
         connectionStringForm = "<p><b>Connecting to Destination Cluster at: </b>"+hosts_str+"</p>"
@@ -82,26 +82,29 @@ def home_page(message = ""):
                     }  
                 </style>  
             </head>  
-            <body>  
+            <body>
+                <div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); text-align: center;">  
+                    <h1 style="margin-bottom: 0;">Mongosync Insights <span style="font-size:0.6em;color:#777;">v0.6.1</span></h1>  
+                </div>    
                 <div class="form-container">  
                     <!-- First form: File upload -->  
                     <form method="post" action="/upload" enctype="multipart/form-data">  
-                        <h2>Upload Mongosync Log File</h2>  
+                        <h2>Parse Mongosync Log File</h2>  
                         <input type="file" name="file"><br><br>  
                         <input type="submit" value="Upload">  
-                        <p>This form allows you to upload a mongosync log file. Once the file is uploaded, the application will process the data and generate plots.</p>  
+                        <p>Click the "Upload" button after selecting your Mongosync log file to generate migration progress plots.</p>  
                         <img src="static/mongosync_log_analyzer.png" width="300" alt="Mongosync Log Analyzer">  
                     </form>  
         
                     <!-- Second form: Metrics rendering -->  
                     <form id="metadataForm" method="post" action="/renderMetrics" enctype="multipart/form-data" onsubmit="return checkAtlasConnection();">   
-                        <h2>Render Metadata</h2>''' + 
+                        <h2>Live Migration Monitoring</h2>''' + 
                         
                         connectionStringForm +
 
                     '''    
-                        <input type="submit" value="Read Metadata">  
-                        <p>Click this button to generate the plots using mongosync metadata.</p>
+                        <input type="submit" value="Live Monitor">  
+                        <p>Click the “Live Monitor” button to start monitoring the migration progress in real time.</p>
                         <img src="static/mongosync_metadata.png" width="300" alt="Mongosync Log Analyzer">
                     </form>
 
@@ -115,7 +118,12 @@ def home_page(message = ""):
                                 return true; // Proceed with submission  
                             }  
                             </script>  
-                </div>  
+                </div>
+                <!--
+                    <div style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); color:#888; font-size:0.9em;">  
+                        Mongosync Insights v1.2.0  
+                    </div>   
+                -->
             </body>  
         </html>  
                                    ''')
@@ -128,12 +136,15 @@ def uploadLogs():
 @app.route('/renderMetrics', methods=['POST'])
 def renderMetrics():
 
+    refreshTime = config['LiveMonitor']['refreshTime']
+
     # If the connectionString is empty in the config.ini, get it from the form and save in the file.
-    if config['database']['connectionString']:
-        TARGET_MONGO_URI = config['database']['connectionString']
+    if config['LiveMonitor']['connectionString']:
+        TARGET_MONGO_URI = config['LiveMonitor']['connectionString']
     else:
         TARGET_MONGO_URI = request.form.get('connectionString')
-        config['database']['connectionString'] = TARGET_MONGO_URI
+        config['LiveMonitor']['connectionString'] = TARGET_MONGO_URI
+        config['LiveMonitor']['refreshTime'] = refreshTime
         with open('config.ini', 'w') as configfile:  
             config.write(configfile) 
 
@@ -146,7 +157,8 @@ def renderMetrics():
     except InvalidURI as e:  
         logging.error(f"{e}. Invalid MongoDB connection string: "+ TARGET_MONGO_URI)
         
-        config['database']['connectionString'] = ""
+        config['LiveMonitor']['connectionString'] = ""
+        config['LiveMonitor']['refreshTime'] = refreshTime
         with open('config.ini', 'w') as configfile:  
             config.write(configfile)   
         
