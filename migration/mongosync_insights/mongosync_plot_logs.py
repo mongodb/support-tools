@@ -36,7 +36,6 @@ def upload_file():
                 json.loads(line)
             except json.JSONDecodeError as e:
                 logging.error(f"Invalid JSON file: {e}")
-                #print(f"Invalid JSON: {line}")
                 return redirect(request.url)  # or handle the error in another appropriate way
 
         # Load lines with 'message' == "Replication progress."
@@ -54,16 +53,6 @@ def upload_file():
         logging.info(f"Loading Version info")
         regex_pattern = re.compile(r"Version info", re.IGNORECASE)
         version_info_list = [
-            json.loads(line) 
-            for line in lines 
-            if regex_pattern.search(json.loads(line).get('message', ''))
-        ]
-
-        # Load lines with 'message' == "Mongosync Options"
-        #mongosync_opts_list = [json.loads(line) for line in lines if json.loads(line).get('message') == "Mongosync Options"]
-        logging.info(f"Loading Mongosync Options")
-        regex_pattern = re.compile(r"Mongosync Options", re.IGNORECASE)
-        mongosync_opts_list = [
             json.loads(line) 
             for line in lines 
             if regex_pattern.search(json.loads(line).get('message', ''))
@@ -89,28 +78,50 @@ def upload_file():
             if regex_pattern.search(json.loads(line).get('message', ''))
         ]
 
+        # Load lines with 'message' == "Mongosync Options"
+        #mongosync_opts_list = [json.loads(line) for line in lines if json.loads(line).get('message') == "Mongosync Options"]
+        logging.info(f"Loading Mongosync Options")
+        regex_pattern = re.compile(r"Mongosync Options", re.IGNORECASE)
+        #mongosync_opts_list = [
+        #    json.loads(line) 
+        #    for line in lines 
+        #    if regex_pattern.search(json.loads(line).get('message', ''))
+        #]
+        mongosync_opts_list = [  
+            {k: v for k, v in json.loads(line).items() if k not in ('time', 'level')}  
+            for line in lines  
+            if regex_pattern.search(json.loads(line).get('message', ''))  
+        ]  
+
         # Load lines with 'message' == "Mongosync HiddenFlags"
         logging.info(f"Loading HiddenFlags")
         regex_pattern = re.compile(r"Mongosync HiddenFlags", re.IGNORECASE)
-        mongosync_hiddenflags = [
-            json.loads(line) 
-            for line in lines 
-            if regex_pattern.search(json.loads(line).get('message', ''))
-        ]
+        #mongosync_hiddenflags = [
+        #    json.loads(line) 
+        #    for line in lines 
+        #    if regex_pattern.search(json.loads(line).get('message', ''))
+        #]
+        mongosync_hiddenflags = [  
+            {k: v for k, v in json.loads(line).items() if k not in ('time', 'level')}  
+            for line in lines  
+            if regex_pattern.search(json.loads(line).get('message', ''))  
+        ]  
 
         # The 'body' field is also a JSON string, so parse that as well
         #mongosync_sent_response_body = json.loads(mongosync_sent_response.get('body'))
         for response in mongosync_sent_response:
             mongosync_sent_response_body  = json.loads(response['body'])
-            # Now you can work with the 'body' data
-
-        ### COMMENTING AS IT DOESN'T SEEM TO BE USED.
-        ### IT WILL BE REMOVED LATER
-        # Create a string with all the Mongosync Options information
-        #mongosync_opts_text = "\n".join([json.dumps(item, indent=4) for item in mongosync_opts_list])
 
         # Create a string with all the version information
-        version_text = "\n".join([f"MongoSync Version: {item.get('version')}, OS: {item.get('os')}, Arch: {item.get('arch')}" for item in version_info_list])
+        if version_info_list and isinstance(version_info_list[0], dict):  
+            version = version_info_list[0].get('version', 'Unknown')  
+            os = version_info_list[0].get('os', 'Unknown')  
+            arch = version_info_list[0].get('arch', 'Unknown')  
+            version_text = f"MongoSync Version: {version}, OS: {os}, Arch: {arch}"   
+        else:  
+            version_text = f"MongoSync Version is not available"  
+            logging.error(version_text)  
+            
 
         logging.info(f"Extracting data")
 
@@ -118,7 +129,10 @@ def upload_file():
         # For each key, extract the corresponding values from mongosync_hiddenflags
         if mongosync_hiddenflags:
             keys = list(mongosync_hiddenflags[0].keys())
-            values = [[str(item[key]).replace('{', '').replace('}', '')  for item in mongosync_hiddenflags] for key in keys]
+            #It takes the first hidden options listed
+            values = [str(v) for v in mongosync_hiddenflags[0].values()]  
+            #If wanted to taken all hidden options listed, replace with it
+            #values = [[str(item[key]).replace('{', '').replace('}', '')  for item in mongosync_hiddenflags] for key in keys]
 
             # Create a table trace with the keys as the first column and the corresponding values as the second column
             table_hiddenflags = go.Table(
@@ -127,7 +141,7 @@ def upload_file():
                 columnwidth=[0.75, 2.5]  # Adjust the column widths as needed
             )
         else:
-            #print("mongosync_hiddenflags is empty")
+            logging.info("mongosync_hiddenflags is empty")
             table_hiddenflags = go.Table(
                 header=dict(values=['Mongosync Hidden Flags']),
                 cells=dict(values=[["No Mongosync Hidden Flags found in the log file"]])
@@ -135,7 +149,10 @@ def upload_file():
         
         if mongosync_opts_list:
             keys = list(mongosync_opts_list[0].keys())
-            values = [[item[key] for item in mongosync_opts_list] for key in keys]
+            #It takes the first options listed
+            values = list(mongosync_opts_list[0].values()) 
+            #If wanted to taken all option listed, replace with it
+            #values = [[item[key] for item in mongosync_opts_list[0]] for key in keys]
 
             # Create a table trace with the keys as the first column and the corresponding values as the second column
             table_trace = go.Table(
@@ -152,12 +169,11 @@ def upload_file():
                     keys = keys[:i] + hidden_keys + keys[i+1:]
                     values = values[:i] + hidden_values + values[i+1:]
         else:
-            #print("mongosync_opts_list is empty")
+            logging.info("mongosync_opts_list is empty")
             table_trace = go.Table(header=dict(values=['Mongosync Options']),
             cells=dict(values=[["No Mongosync Options found in the log file"]]))
 
         #Getting the Timezone
-        #print (data[0]['time'])
         datetime_with_timezone = datetime.fromisoformat(data[0]['time'].replace('Z', '+00:00'))  
         timeZoneInfo = datetime_with_timezone.strftime("%Z")
 
@@ -181,20 +197,27 @@ def upload_file():
         # Initialize estimated_total_bytes and estimated_copied_bytes with a default value
         estimated_total_bytes = 0
         estimated_copied_bytes = 0
-
+        
+        phase_transitions = ""
         if 'progress' in mongosync_sent_response_body:
             #getting the estimated total and copied
             estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
             estimated_copied_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedCopiedBytes']
             
             #Getting the Phase Transisitons
-            phase_transitions = mongosync_sent_response_body['progress']['atlasLiveMigrateMetrics']['PhaseTransitions']  
-            phase_list = [item['Phase'] for item in phase_transitions]  
-            ts_t_list = [item['Ts']['T'] for item in phase_transitions]  
-            ts_t_list_formatted = [ datetime.fromtimestamp(t).strftime("%Y-%m-%dT%H:%M:%S.%f") for t in ts_t_list ]
+            try:  
+                # Try to access deeply nested key  
+                phase_transitions = mongosync_sent_response_body['progress']['atlasLiveMigrateMetrics']['PhaseTransitions']  
+            except KeyError as e:  
+                logging.error(f"Key not found: {e}")  
+                phase_transitions = []
+            
+            if phase_transitions:
+                phase_list = [item['Phase'] for item in phase_transitions]  
+                ts_t_list = [item['Ts']['T'] for item in phase_transitions]  
+                ts_t_list_formatted = [ datetime.fromtimestamp(t).strftime("%Y-%m-%dT%H:%M:%S.%f") for t in ts_t_list ]
         else:
             logging.warning(f"Key 'progress' not found in mongosync_sent_response_body")
-            #print("Key 'progress' not found in mongosync_sent_response_body")
 
         estimated_total_bytes, estimated_total_bytes_unit = format_byte_size(estimated_total_bytes)
         estimated_copied_bytes = convert_bytes(estimated_copied_bytes, estimated_total_bytes_unit)
@@ -222,8 +245,13 @@ def upload_file():
         # Add traces
 
         # Mongosync Phases
-        fig.add_trace(go.Scatter(x=ts_t_list_formatted, y=phase_list, mode='markers+text',marker=dict(color='green')), row=1, col=1)
-        fig.update_yaxes(showticklabels=False, row=1, col=1)  
+        if phase_transitions:
+            fig.add_trace(go.Scatter(x=ts_t_list_formatted, y=phase_list, mode='markers+text',marker=dict(color='green')), row=1, col=1)
+            fig.update_yaxes(showticklabels=False, row=1, col=1)  
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Mongosync Finish',textfont=dict(size=30, color="black")), row=1, col=1)
+#            fig.update_layout(xaxis5=dict(showgrid=False, zeroline=False, showticklabels=False), 
+#                            yaxis5=dict(showgrid=False, zeroline=False, showticklabels=False))
 
         # Estimated Total and Copied
         #fig = go.Figure(data=[go.Bar(name='Estimated Total Bytes', x=['Bytes'], y=[estimated_total_bytes], row=1, col=1), go.Bar(name='Estimated Copied Bytes', x=['Bytes'], y=[estimated_copied_bytes])], row=1, col=1)
@@ -357,7 +385,7 @@ def upload_file():
                 </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Version 0.6.1</p>
+                    <p>Version 0.6.5</p>
                 </footer>  
             </body>  
             </html>  
