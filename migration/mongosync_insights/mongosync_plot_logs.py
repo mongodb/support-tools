@@ -4,7 +4,7 @@ from plotly.subplots import make_subplots
 from tqdm import tqdm
 from flask import request, redirect, render_template_string
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 import logging
 from mongosync_plot_utils import format_byte_size, convert_bytes
@@ -78,6 +78,16 @@ def upload_file():
             if regex_pattern.search(json.loads(line).get('message', ''))
         ]
 
+        # Load lines with 'message' == "<Phase Name>"
+        logging.info(f"Phase Transitions for Mongosync Standalone")
+        regex_pattern = re.compile(r"Start handler called|Starting Mongosync|Starting initializing collections and indexes phase|Starting initializing partitions phase|Starting collection copy phase|Starting change event application phase|Commit handler called", 
+                                   re.IGNORECASE) 
+        phase_transitions_json = [
+            json.loads(line) 
+            for line in lines 
+            if regex_pattern.search(json.loads(line).get('message', ''))
+        ]
+
         # Load lines with 'message' == "Mongosync Options"
         #mongosync_opts_list = [json.loads(line) for line in lines if json.loads(line).get('message') == "Mongosync Options"]
         logging.info(f"Loading Mongosync Options")
@@ -106,6 +116,7 @@ def upload_file():
             for line in lines  
             if regex_pattern.search(json.loads(line).get('message', ''))  
         ]  
+        
 
         # The 'body' field is also a JSON string, so parse that as well
         #mongosync_sent_response_body = json.loads(mongosync_sent_response.get('body'))
@@ -215,7 +226,20 @@ def upload_file():
             if phase_transitions:
                 phase_list = [item['Phase'] for item in phase_transitions]  
                 ts_t_list = [item['Ts']['T'] for item in phase_transitions]  
-                ts_t_list_formatted = [ datetime.fromtimestamp(t).strftime("%Y-%m-%dT%H:%M:%S.%f") for t in ts_t_list ]
+                ts_t_list_formatted = [ 
+                    datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"  for t in ts_t_list 
+                ]
+            else:
+                if phase_transitions_json:
+                    print (phase_transitions_json)
+                    phase_transitions = phase_transitions_json
+                    
+                    phase_list = [item.get('message') for item in phase_transitions]  
+                    ts_t_list = [item['time'] for item in phase_transitions]  
+                    ts_t_list_formatted = [  
+                        datetime.fromisoformat(t).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"  
+                        for t in ts_t_list  
+                    ]  
         else:
             logging.warning(f"Key 'progress' not found in mongosync_sent_response_body")
 
@@ -385,7 +409,7 @@ def upload_file():
                 </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Version 0.6.5</p>
+                    <p>Version 0.6.6</p>
                 </footer>  
             </body>  
             </html>  
