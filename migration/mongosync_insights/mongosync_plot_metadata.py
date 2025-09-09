@@ -338,7 +338,7 @@ def plotMetrics():
             </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Refresing every '''+ refreshTime +''' seconds - Version 0.6.1</p>
+                    <p>Refresing every '''+ refreshTime +''' seconds - Version 0.6.5</p>
                 </footer>  
             </body>  
             </html>  
