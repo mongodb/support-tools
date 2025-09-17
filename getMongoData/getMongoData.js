@@ -61,7 +61,7 @@
 //      _maxCollections is reached. Instead, the last element of the output JSON array contains an 
 //      error message.
 //  -   _printJSON outputs error messages after the JSON array is printed, instead of before. 
-var _version = "4.1.0";
+var _version = "4.1.1";
 
 (function () {
    "use strict";
@@ -538,15 +538,14 @@ function printDataInfo(isMongoS) {
 
                     // Filter out views
                     db.getSiblingDB(mydb.name).getCollectionInfos({"type": "collection"}).forEach(function(collectionInfo) {
-                        collectionNames.push(collectionInfo['name']);
+                        var name = collectionInfo['name'];
+                        if (!name.startsWith("system.")) {
+                            // Filter out the collections with the "system." prefix in all databases
+                            collectionNames.push(name);
+                        }
                     })
-
-                    // Filter out the collections with the "system." prefix in the system databases
-                    if (mydb.name == "config" || mydb.name == "local" || mydb.name == "admin") {
-                        return collectionNames.filter(function (str) { return str.indexOf("system.") != 0; });
-                    } else {
-                        return collectionNames;
-                    }
+                    
+                    return collectionNames;
                 }, section);
 
             printInfo('Database stats (MB)',
@@ -571,10 +570,6 @@ function printDataInfo(isMongoS) {
                           name: 'MaxCollectionsExceededException',
                           message: err_msg
                         }
-                    }
-                    if (mydb.name == "config" || mydb.name == "local" || mydb.name == "admin") {
-                        // The following command doesn't make any sense to config, local and admin
-                        return
                     }
                     if (isMongoS) {
                         printInfo('Shard distribution', function() {
