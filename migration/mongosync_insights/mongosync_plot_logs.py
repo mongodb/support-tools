@@ -81,7 +81,9 @@ def upload_file():
 
         # Load lines with 'message' == "<Phase Name>"
         logging.info(f"Phase Transitions for Mongosync Standalone")
-        regex_pattern = re.compile(r"Start handler called|Starting Mongosync|Starting initializing collections and indexes phase|Starting initializing partitions phase|Starting collection copy phase|Starting change event application phase|Commit handler called", 
+        #regex_pattern = re.compile(r"Start handler called|Starting Mongosync|Starting initializing collections and indexes phase|Starting initializing partitions phase|Starting collection copy phase|Starting change event application phase|Commit handler called", 
+        #                           re.IGNORECASE) 
+        regex_pattern = re.compile(r"Starting initializing collections and indexes phase|Starting initializing partitions phase|Starting collection copy phase|Starting change event application phase|Commit handler called", 
                                    re.IGNORECASE) 
         phase_transitions_json = [
             json.loads(line) 
@@ -181,15 +183,23 @@ def upload_file():
             cells=dict(values=[["No Mongosync Options found in the log file"]]))
 
         #Getting the Timezone
-        #datetime_with_timezone = datetime.fromisoformat(data[0]['time'].replace('Z', '+00:00'))  
-        #timeZoneInfo = datetime_with_timezone.strftime("%Z")
         try:  
-            datetime_with_timezone = parser.isoparse(data[0]['time'])  
-            timeZoneInfo = datetime_with_timezone.strftime("%Z")
+            dt = parser.isoparse(data[0]['time'])  
+            tz_name = dt.strftime('%Z')  
+            tz_offset = dt.strftime('%z')  
+            if tz_name:  
+                timeZoneInfo = tz_name  
+            elif tz_offset:  
+                # Format offset as +HH:MM  
+                tz_sign = tz_offset[0]  
+                tz_hour = tz_offset[1:3]  
+                tz_min = tz_offset[3:5]  
+                timeZoneInfo = f"{tz_sign}{tz_hour}:{tz_min}"  
+            else:  
+                timeZoneInfo = ""  
         except Exception:  
-            datetime_with_timezone = None  
             timeZoneInfo = ""  
-
+                
 
         # Extract the data you want to plot
         times = [datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f") for item in data if 'time' in item]
@@ -236,7 +246,7 @@ def upload_file():
                 ]
             else:
                 if phase_transitions_json:
-                    print (phase_transitions_json)
+                    #print (phase_transitions_json)
                     phase_transitions = phase_transitions_json
                     
                     phase_list = [item.get('message') for item in phase_transitions]  
@@ -414,7 +424,7 @@ def upload_file():
                 </main>  
                 <footer>  
                     <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Version 0.6.7</p>
+                    <p>Version 0.6.8</p>
                 </footer>  
             </body>  
             </html>  
