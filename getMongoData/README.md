@@ -49,12 +49,50 @@ Minimum required permissions (see [MongoDB Built-In Roles](https://docs.mongodb.
 
 Example command for creating a database user with the minimum required permissions:
 
-```
+```javascript
 db.getSiblingDB("admin").createUser({
     user: "ADMIN_USER",
     pwd: "ADMIN_PASSWORD",
     roles: [ "backup", "readAnyDatabase", "clusterMonitor" ]
   })
+```
+
+If you would like to have truely read-only permissions, a custom role needs be created.
+```javascript
+// getMongoData.js <=4.1.0
+db.getSiblingDB("admin").createRole({
+  role: "gmd",
+  privileges: [
+    {resource: {db: "", collection: "system.users"}, actions: ["collStats", "listIndexes", "find"]},
+    {resource: {db: "", collection: "system.roles"}, actions: ["collStats", "listIndexes", "find"]},
+    {resource: {db: "", collection: "system.version"}, actions: ["collStats", "listIndexes", "find"]},
+    {resource: {db: "", collection: "system.profile"}, actions: ["collStats", "listIndexes"]},
+    {resource: {db: "", collection: "system.js"}, actions: ["collStats", "listIndexes"]},
+    {resource: {db: "", collection: "system.views"}, actions: ["collStats", "listIndexes"]},
+    {resource: {db: "", collection: "system.indexBuilds"}, actions: ["collStats", "listIndexes"]},
+    {resource: {db: "", collection: "system.preimages"}, actions: ["collStats", "listIndexes"]},
+    {resource: {db: "", collection: "system.buckets"}, actions: ["collStats", "listIndexes"]},
+    {resource: {db: "local", collection: ""}, actions: ["collStats", "listCollections", "listIndexes"]},
+    {resource: {db: "config", collection: ""}, actions: ["collStats", "listCollections", "listIndexes"]},
+  ],
+  roles: ["readAnyDatabase", "clusterMonitor"]
+});
+
+// getMongoData.js >=4.1.1
+db.getSiblingDB("admin").createRole({
+  role: "gmd",
+  privileges: [
+    {resource: {db: "", collection: "system.users"}, actions: ["find"]},
+    {resource: {db: "", collection: "system.roles"}, actions: ["find"]}
+  ],
+  roles: ["readAnyDatabase", "clusterMonitor"]
+});
+
+db.getSiblingDB("admin").createUser({
+  user: "ADMIN_USER",
+  pwd: "ADMIN_PASSWORD",
+  roles: [ "gmd" ]
+})
 ```
 
 The most notable methods, commands, and aggregations that this script runs are listed below.
