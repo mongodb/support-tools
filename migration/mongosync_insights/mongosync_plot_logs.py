@@ -2,7 +2,7 @@ import plotly.graph_objects as go
 from plotly.utils import PlotlyJSONEncoder
 from plotly.subplots import make_subplots
 from tqdm import tqdm
-from flask import request, redirect, render_template_string
+from flask import request, redirect, render_template
 import json
 from datetime import datetime, timezone
 from dateutil import parser
@@ -360,72 +360,4 @@ def upload_file():
         logging.info(f"Render the plot in the browse")
 
         # Render the plot in the browser
-        return render_template_string('''
-            <!DOCTYPE html>  
-            <html lang="en">  
-            <head>  
-                <meta charset="UTF-8">  
-                <title>Mongosync Insights</title>  
-                <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>  
-                <style>  
-                    body {  
-                        font-family: Arial, sans-serif;  
-                        margin: 0;  
-                        padding: 0;  
-                        background-color: #f4f4f9; /* Light background for good contrast */  
-                        color: #333; /* Dark text for readability */  
-                    }  
-            
-                    header {  
-                        background-color: #00684A;  
-                        color: #fff;  
-                        padding: 10px 20px;  
-                        text-align: center;  
-                    }  
-            
-                    main {  
-                        padding: 20px;  
-                    }  
-            
-                    #plot {  
-                        margin: 0 auto;  
-                        max-width: 1450px;  
-                        border: 1px solid #ccc; /* Add border for distinction */  
-                        border-radius: 8px; /* Rounded corners */  
-                        background-color: #fff;  
-                        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */  
-                    }  
-            
-                    footer {  
-                        text-align: center;  
-                        padding: 10px;  
-                        margin-top: 20px;  
-                        background-color: #00684A;  
-                        color: #fff;  
-                    }  
-            
-                    @media (max-width: 768px) {  
-                        #plot {  
-                            width: 95%; /* Make responsive for smaller screens */  
-                        }  
-                    }  
-                </style>  
-            </head>  
-            <body>  
-                <header>  
-                    <h1>Mongosync Insights - Logs</h1>  
-                </header>  
-                <main>  
-                    <div id="plot"></div>  
-                    <script>
-                    var plot = {{ plot_json | safe }};
-                    Plotly.newPlot('plot', plot.data, plot.layout);
-                    </script>
-                </main>  
-                <footer>  
-                    <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Version 0.6.8</p>
-                </footer>  
-            </body>  
-            </html>  
-        ''', plot_json=plot_json)
+        return render_template('upload_results.html', plot_json=plot_json)

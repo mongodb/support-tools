@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Mongosync Insights - Live Monitoring{% endblock %}
+
+{% block header_title %}Mongosync Insights - Metadata{% endblock %}
+
+{% block styles %}
+    #plot {
+        margin: 0 auto;
+        max-width: 1450px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background-color: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    #loading {
+        text-align: center;
+        font-size: 18px;
+        color: #666;
+        margin: 50px 0;
+    }
+
+    @media (max-width: 768px) {
+        #plot {
+            width: 95%;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+<div id="loading">Loading metrics...</div>
+<div id="plot" style="display:none;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function fetchPlotData() {
+    try {
+        const response = await fetch("/get_metrics_data", { method: 'POST' });
+        const plotData = await response.json();
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("plot").style.display = "block";
+        Plotly.react('plot', plotData.data, plotData.layout);
+    } catch (err) {
+        console.error("Error fetching data:", err);
+        document.getElementById("loading").innerText = "Error loading data.";
+    }
+}
+
+fetchPlotData(); // initial load
+setInterval(fetchPlotData, {{ refresh_time_ms }}); // update every {{ refresh_time }} seconds
+</script>
+{% endblock %}
+
+{% block footer %}
+<p>Refreshing every {{ refresh_time }} seconds - Version 0.6.9</p>
+{% endblock %}

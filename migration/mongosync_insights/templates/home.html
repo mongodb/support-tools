@@ -1,0 +1,90 @@
+{% extends "base_home.html" %}
+
+{% block title %}Mongosync Insights - Home{% endblock %}
+
+{% block header_title %}Mongosync Insights - Logs{% endblock %}
+
+{% block styles %}
+    /* Create a container for the forms */
+    .form-container {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    /* Style individual forms */
+    form {
+        width: 350px;
+        border: 1px solid #ccc;
+        padding: 20px;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Style the body of the page */
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #ffffff;
+    }
+
+    /* Optional: Style images */
+    img {
+        max-width: 100%;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+    }
+
+    .version-info {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+    }
+{% endblock %}
+
+{% block content %}
+<div class="version-info">
+    <h1 style="margin-bottom: 0;">Mongosync Insights <span style="font-size:0.6em;color:#777;">v0.6.9</span></h1>
+</div>
+<div class="form-container">
+    <!-- First form: File upload -->
+    <form method="post" action="/upload" enctype="multipart/form-data">
+        <h2>Parse Mongosync Log File</h2>
+        <input type="file" name="file"><br><br>
+        <input type="submit" value="Upload">
+        <p>Click the "Upload" button after selecting your Mongosync log file to generate migration progress plots.</p>
+        <img src="{{ url_for('static', filename='mongosync_log_analyzer.png') }}" width="300" alt="Mongosync Log Analyzer">
+    </form>
+
+    <!-- Second form: Metrics rendering -->
+    <form id="metadataForm" method="post" action="/renderMetrics" enctype="multipart/form-data" onsubmit="return checkAtlasConnection();">
+        <h2>Live Migration Monitoring</h2>
+        {{ connection_string_form | safe }}
+        <input type="submit" value="Live Monitor">
+        <p>Click the "Live Monitor" button to start monitoring the migration progress in real time.</p>
+        <img src="{{ url_for('static', filename='mongosync_metadata.png') }}" width="300" alt="Mongosync Log Analyzer">
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function checkAtlasConnection() {
+    var conn = document.getElementById('connectionString').value.trim();
+    if (!conn) {
+        alert("Please enter the Atlas MongoDB Connection String.");
+        return false;
+    }
+    return true;
+}
+</script>
+{% endblock %}
