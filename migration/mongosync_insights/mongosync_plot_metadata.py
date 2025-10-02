@@ -13,11 +13,11 @@ def gatherMetrics():
     logger = logging.getLogger(__name__)
     
     # Import and use the centralized configuration
-    from app_config import load_config
+    from app_config import load_config, INTERNAL_DB_NAME, MAX_PARTITIONS_DISPLAY
     config = load_config()
     
     TARGET_MONGO_URI = config['LiveMonitor']['connectionString']
-    internalDb = "mongosync_reserved_for_internal_use"
+    internalDb = INTERNAL_DB_NAME
     colors = ['red', 'blue', 'green', 'orange', 'yellow']
     # Connect to MongoDB cluster
     try:
@@ -123,16 +123,16 @@ def gatherMetrics():
 
     vPartitionData = list(vPartitionData)
 
-    #Limits the total of namespaces to 10 in the partitions completed
-    if len(vPartitionData) > 10:  
+    #Limits the total of namespaces to MAX_PARTITIONS_DISPLAY in the partitions completed
+    if len(vPartitionData) > MAX_PARTITIONS_DISPLAY:  
         # Remove PercCompleted == 100  
         filtered = [doc for doc in vPartitionData if doc.get('PercCompleted') != 100]  
-        # If we still have more than 10, trim to 10  
-        if len(filtered) >= 10:  
-            vPartitionData = filtered[:9]  
+        # If we still have more than MAX_PARTITIONS_DISPLAY, trim to MAX_PARTITIONS_DISPLAY  
+        if len(filtered) >= MAX_PARTITIONS_DISPLAY:  
+            vPartitionData = filtered[:MAX_PARTITIONS_DISPLAY-1]  
         else:  
-            # If after removal less than 10, fill up with remaining PercCompleted==100  
-            needed = 10 - len(filtered)  
+            # If after removal less than MAX_PARTITIONS_DISPLAY, fill up with remaining PercCompleted==100  
+            needed = MAX_PARTITIONS_DISPLAY - len(filtered)  
             completed_100 = [doc for doc in vPartitionData if doc.get('PercCompleted') == 100]  
             vPartitionData = filtered + completed_100[:needed]  
 

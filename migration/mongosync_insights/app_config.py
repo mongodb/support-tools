@@ -10,25 +10,25 @@ import configparser
 # Environment variable configuration
 CONFIG_PATH = os.getenv('MONGOSYNC_CONFIG', 'config.ini')
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
-LOG_FILE = os.getenv('MONGOSYNC_LOG_FILE', 'mongosync_insights.log')
+LOG_FILE = os.getenv('MONGOSYNC_LOG_FILE', 'insights.log')
 HOST = os.getenv('MONGOSYNC_HOST', '0.0.0.0')
 PORT = int(os.getenv('MONGOSYNC_PORT', '3030'))
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.6.9"
+APP_VERSION = "0.6.9.2"
 
 # File upload settings
 MAX_FILE_SIZE = int(os.getenv('MONGOSYNC_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
 ALLOWED_EXTENSIONS = {'.log', '.json', '.out'}
 
 # MongoDB settings
-INTERNAL_DB_NAME = "mongosync_reserved_for_internal_use"
+INTERNAL_DB_NAME = os.getenv('MONGOSYNC_INTERNAL_DB_NAME', "mongosync_reserved_for_internal_use")
 
 # UI settings
-PLOT_WIDTH = 1450
-PLOT_HEIGHT = 1800
-MAX_PARTITIONS_DISPLAY = 10
+PLOT_WIDTH = int(os.getenv('MONGOSYNC_PLOT_WIDTH', '1450'))
+PLOT_HEIGHT = int(os.getenv('MONGOSYNC_PLOT_HEIGHT', '1800'))
+MAX_PARTITIONS_DISPLAY = int(os.getenv('MONGOSYNC_MAX_PARTITIONS_DISPLAY', '10'))
 
 def setup_logging():
     """Configure logging based on environment variables."""

@@ -59,9 +59,11 @@
     <!-- First form: File upload -->
     <form method="post" action="/upload" enctype="multipart/form-data">
         <h2>Parse Mongosync Log File</h2>
-        <input type="file" name="file"><br><br>
+        <input type="file" name="file" accept=".log,.json,.out"><br><br>
         <input type="submit" value="Upload">
         <p>Click the "Upload" button after selecting your Mongosync log file to generate migration progress plots.</p>
+        <p><small><strong>Supported formats:</strong> .log, .json, .out files<br>
+        <strong>Maximum size:</strong> 10 GB</small></p>
         <img src="{{ url_for('static', filename='mongosync_log_analyzer.png') }}" width="300" alt="Mongosync Log Analyzer">
     </form>
 

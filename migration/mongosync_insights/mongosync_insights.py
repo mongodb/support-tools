@@ -4,7 +4,7 @@ from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics
 from pymongo.uri_parser import parse_uri  
 from pymongo.errors import InvalidURI 
-from app_config import load_config, setup_logging, validate_config, get_app_info, HOST, PORT
+from app_config import load_config, setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE
 
 # Validate configuration on startup
 try:
@@ -21,6 +21,17 @@ config = load_config()
 
 # Create a Flask app
 app = Flask(__name__)
+
+# Configure Flask for file uploads
+app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+# Handle file too large error
+@app.errorhandler(413)
+def too_large(e):
+    max_size_mb = MAX_FILE_SIZE / (1024 * 1024)
+    return render_template('error.html',
+                         error_title="File Too Large",
+                         error_message=f"File size exceeds maximum allowed size ({max_size_mb:.1f} MB)."), 413
 
 @app.route('/')
 def home_page(message=""):

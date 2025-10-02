@@ -2,13 +2,16 @@ import plotly.graph_objects as go
 from plotly.utils import PlotlyJSONEncoder
 from plotly.subplots import make_subplots
 from tqdm import tqdm
-from flask import request, redirect, render_template
+from flask import request, redirect, render_template, flash
 import json
 from datetime import datetime, timezone
 from dateutil import parser
 import re
 import logging
+import os
+from werkzeug.utils import secure_filename
 from mongosync_plot_utils import format_byte_size, convert_bytes
+from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS
 
 def upload_file():
     # Use the centralized logging configuration
@@ -16,18 +19,52 @@ def upload_file():
     
     # Check if a file was uploaded
     if 'file' not in request.files:
-        logging.error(f"File was not uploaded")
-        return redirect(request.url)
+        logger.error("No file was uploaded")
+        return render_template('error.html', 
+                             error_title="Upload Error",
+                             error_message="No file was selected for upload.")
 
     file = request.files['file']
 
     # If the user does not select a file, the browser submits an
     # empty file without a filename.
     if file.filename == '':
-        logging.error(f"Empty file without a filename")
-        return redirect(request.url)
+        logger.error("Empty file without a filename")
+        return render_template('error.html',
+                             error_title="Upload Error", 
+                             error_message="Please select a file to upload.")
 
     if file:
+        # Validate filename and extension
+        filename = secure_filename(file.filename)
+        if not filename:
+            logger.error("Invalid filename")
+            return render_template('error.html',
+                                 error_title="Upload Error",
+                                 error_message="Invalid filename. Please use a valid file name.")
+        
+        # Check file extension
+        file_ext = os.path.splitext(filename)[1].lower()
+        if file_ext not in ALLOWED_EXTENSIONS:
+            logger.error(f"Invalid file extension: {file_ext}. Allowed: {ALLOWED_EXTENSIONS}")
+            return render_template('error.html',
+                                 error_title="Invalid File Type",
+                                 error_message=f"File type '{file_ext}' is not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}")
+        
+        # Check file size (Flask's request.files doesn't have content_length, so we need to read and check)
+        file.seek(0, 2)  # Seek to end of file
+        file_size = file.tell()  # Get current position (file size)
+        file.seek(0)  # Reset to beginning
+        
+        if file_size > MAX_FILE_SIZE:
+            logger.error(f"File too large: {file_size} bytes (max: {MAX_FILE_SIZE} bytes)")
+            max_size_mb = MAX_FILE_SIZE / (1024 * 1024)
+            actual_size_mb = file_size / (1024 * 1024)
+            return render_template('error.html',
+                                 error_title="File Too Large",
+                                 error_message=f"File size ({actual_size_mb:.1f} MB) exceeds maximum allowed size ({max_size_mb:.1f} MB).")
+        
+        logger.info(f"File validation passed: {filename} ({file_size} bytes, {file_ext})")
         # Read the file and convert it to a list of lines
         lines = list(file)
 
@@ -124,9 +161,9 @@ def upload_file():
         # Create a string with all the version information
         if version_info_list and isinstance(version_info_list[0], dict):  
             version = version_info_list[0].get('version', 'Unknown')  
-            os = version_info_list[0].get('os', 'Unknown')  
+            operating_system = version_info_list[0].get('os', 'Unknown')  
             arch = version_info_list[0].get('arch', 'Unknown')  
-            version_text = f"MongoSync Version: {version}, OS: {os}, Arch: {arch}"   
+            version_text = f"MongoSync Version: {version}, OS: {operating_system}, Arch: {arch}"   
         else:  
             version_text = f"MongoSync Version is not available"  
             logging.error(version_text)  
