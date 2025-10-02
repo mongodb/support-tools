@@ -4,7 +4,7 @@ from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics
 from pymongo.uri_parser import parse_uri  
 from pymongo.errors import InvalidURI 
-from app_config import load_config, setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE
+from app_config import load_config, setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, REFRESH_TIME
 
 # Validate configuration on startup
 try:
@@ -59,7 +59,7 @@ def uploadLogs():
 @app.route('/renderMetrics', methods=['POST'])
 def renderMetrics():
 
-    refreshTime = config['LiveMonitor']['refreshTime']
+    refreshTime = str(REFRESH_TIME)
 
     # If the connectionString is empty in the config, get it from the form and save it
     if config['LiveMonitor']['connectionString']:

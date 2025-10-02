@@ -22,6 +22,9 @@ APP_VERSION = "0.6.9.2"
 MAX_FILE_SIZE = int(os.getenv('MONGOSYNC_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
 ALLOWED_EXTENSIONS = {'.log', '.json', '.out'}
 
+# Live monitoring settings
+REFRESH_TIME = int(os.getenv('MONGOSYNC_REFRESH_TIME', '10'))
+
 # MongoDB settings
 INTERNAL_DB_NAME = os.getenv('MONGOSYNC_INTERNAL_DB_NAME', "mongosync_reserved_for_internal_use")
 

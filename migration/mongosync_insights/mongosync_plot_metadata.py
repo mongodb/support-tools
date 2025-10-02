@@ -249,10 +249,10 @@ def gatherMetrics():
 
 def plotMetrics():
     # Use the centralized configuration
-    from app_config import load_config
+    from app_config import load_config, REFRESH_TIME
     config = load_config()
 
-    refreshTime = config['LiveMonitor']['refreshTime']
+    refreshTime = REFRESH_TIME
     refreshTimeMs = str(int(refreshTime) * 1000)
     
     return render_template('metrics.html', 
