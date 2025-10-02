@@ -1,18 +1,23 @@
-import configparser
 import logging
 from flask import Flask, render_template, request
 from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics
 from pymongo.uri_parser import parse_uri  
 from pymongo.errors import InvalidURI 
+from app_config import load_config, setup_logging, validate_config, get_app_info, HOST, PORT
 
-# Reading config file
-config = configparser.ConfigParser()  
-config.read('config.ini')
+# Validate configuration on startup
+try:
+    validate_config()
+except (PermissionError, ValueError) as e:
+    print(f"Configuration error: {e}")
+    exit(1)
 
-# Setting the script log file
-logging.basicConfig(filename='mongosync_insights.log', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+# Setup logging
+logger = setup_logging()
+
+# Load configuration
+config = load_config()
 
 # Create a Flask app
 app = Flask(__name__)
@@ -45,15 +50,15 @@ def renderMetrics():
 
     refreshTime = config['LiveMonitor']['refreshTime']
 
-    # If the connectionString is empty in the config.ini, get it from the form and save in the file.
+    # If the connectionString is empty in the config, get it from the form and save it
     if config['LiveMonitor']['connectionString']:
         TARGET_MONGO_URI = config['LiveMonitor']['connectionString']
     else:
         TARGET_MONGO_URI = request.form.get('connectionString')
         config['LiveMonitor']['connectionString'] = TARGET_MONGO_URI
         config['LiveMonitor']['refreshTime'] = refreshTime
-        with open('config.ini', 'w') as configfile:  
-            config.write(configfile) 
+        from app_config import save_config
+        save_config(config) 
 
     # Validate the connection string 
     # If valid proceed to plot
@@ -66,8 +71,8 @@ def renderMetrics():
         
         config['LiveMonitor']['connectionString'] = ""
         config['LiveMonitor']['refreshTime'] = refreshTime
-        with open('config.ini', 'w') as configfile:  
-            config.write(configfile)   
+        from app_config import save_config
+        save_config(config)   
         
         return home_page("invalid connection string")
 
@@ -78,5 +83,12 @@ def getMetrics():
     return gatherMetrics()
 
 if __name__ == '__main__':
+    # Log startup information
+    app_info = get_app_info()
+    logger.info(f"Starting {app_info['name']} v{app_info['version']}")
+    logger.info(f"Configuration file: {app_info['config_path']}")
+    logger.info(f"Log file: {app_info['log_file']}")
+    logger.info(f"Server: {app_info['host']}:{app_info['port']}")
+    
     # Run the Flask app
-    app.run(host='0.0.0.0', port=3030)
+    app.run(host=HOST, port=PORT)

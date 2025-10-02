@@ -11,8 +11,8 @@ import logging
 from mongosync_plot_utils import format_byte_size, convert_bytes
 
 def upload_file():
-    logging.basicConfig(filename='mongosync_insights.log', level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s')
+    # Use the centralized logging configuration
+    logger = logging.getLogger(__name__)
     
     # Check if a file was uploaded
     if 'file' not in request.files:

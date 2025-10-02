@@ -1,4 +1,3 @@
-import configparser
 import plotly.graph_objects as go
 from plotly.utils import PlotlyJSONEncoder
 from plotly.subplots import make_subplots
@@ -10,12 +9,12 @@ from pymongo.errors import PyMongoError
 from mongosync_plot_utils import format_byte_size, convert_bytes
 
 def gatherMetrics():
-    logging.basicConfig(filename='mongosync_insights.log', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+    # Use the centralized logging and configuration
+    logger = logging.getLogger(__name__)
     
-    # Reading config file
-    config = configparser.ConfigParser()  
-    config.read('config.ini')
+    # Import and use the centralized configuration
+    from app_config import load_config
+    config = load_config()
     
     TARGET_MONGO_URI = config['LiveMonitor']['connectionString']
     internalDb = "mongosync_reserved_for_internal_use"
@@ -51,17 +50,17 @@ def gatherMetrics():
 
     #Plot mongosync State
     vState = vResumeData["state"]
-    match vState:
-        case 'RUNNING':
-            vColor = 'blue'
-        case "IDDLE":
-            vColor = "yellow"
-        case "PAUSED":
-            vColor = "red"
-        case "COMMITTED":
-            vColor = "green"
-        case _:
-            logging.warning(vState +" is not listed as an option")
+    if vState == 'RUNNING':
+        vColor = 'blue'
+    elif vState == "IDDLE":
+        vColor = "yellow"
+    elif vState == "PAUSED":
+        vColor = "red"
+    elif vState == "COMMITTED":
+        vColor = "green"
+    else:
+        logging.warning(vState + " is not listed as an option")
+        vColor = "gray"
 
     fig.add_trace(go.Scatter(x=[0], y=[0], text=[str(vState.capitalize())], mode='text', name='Mongosync State',textfont=dict(size=17, color=vColor)), row=1, col=1)
     fig.update_layout(xaxis1=dict(showgrid=False, zeroline=False, showticklabels=False), 
@@ -249,9 +248,9 @@ def gatherMetrics():
 
 
 def plotMetrics():
-    # Reading config file
-    config = configparser.ConfigParser()  
-    config.read('config.ini')
+    # Use the centralized configuration
+    from app_config import load_config
+    config = load_config()
 
     refreshTime = config['LiveMonitor']['refreshTime']
     refreshTimeMs = str(int(refreshTime) * 1000)
