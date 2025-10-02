@@ -4,7 +4,6 @@ from plotly.subplots import make_subplots
 from flask import request, render_template
 import json
 import logging
-from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from mongosync_plot_utils import format_byte_size, convert_bytes
 
@@ -13,19 +12,19 @@ def gatherMetrics():
     logger = logging.getLogger(__name__)
     
     # Import and use the centralized configuration
-    from app_config import load_config, INTERNAL_DB_NAME, MAX_PARTITIONS_DISPLAY
+    from app_config import load_config, INTERNAL_DB_NAME, MAX_PARTITIONS_DISPLAY, get_database
     config = load_config()
     
     TARGET_MONGO_URI = config['LiveMonitor']['connectionString']
     internalDb = INTERNAL_DB_NAME
     colors = ['red', 'blue', 'green', 'orange', 'yellow']
-    # Connect to MongoDB cluster
+    
+    # Connect to MongoDB cluster using connection pooling
     try:
-        clientDst = MongoClient(TARGET_MONGO_URI)
-        internalDbDst = clientDst[internalDb]
-        logging.info("Connected to target MongoDB cluster.")
+        internalDbDst = get_database(TARGET_MONGO_URI, internalDb)
+        logger.info("Connected to target MongoDB cluster using connection pooling.")
     except PyMongoError as e:
-        logging.error(f"Failed to connect to target MongoDB: {e}")
+        logger.error(f"Failed to connect to target MongoDB: {e}")
         exit(1)
     # Create a subplot for the scatter plots and a separate subplot for the table
     fig = make_subplots(rows=3, 

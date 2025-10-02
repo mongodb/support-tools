@@ -6,6 +6,9 @@ import os
 import logging
 from pathlib import Path
 import configparser
+from functools import lru_cache
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError, InvalidURI
 
 # Environment variable configuration
 CONFIG_PATH = os.getenv('MONGOSYNC_CONFIG', 'config.ini')
@@ -16,7 +19,7 @@ PORT = int(os.getenv('MONGOSYNC_PORT', '3030'))
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.6.9.2"
+APP_VERSION = "0.6.9.3"
 
 # File upload settings
 MAX_FILE_SIZE = int(os.getenv('MONGOSYNC_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
@@ -121,3 +124,106 @@ def validate_config():
         raise ValueError(f"Invalid port number: {PORT}. Must be between 1 and 65535.")
     
     return True
+
+# Database Connection Management
+# Connection pool settings
+CONNECTION_POOL_SIZE = int(os.getenv('MONGOSYNC_POOL_SIZE', '10'))
+CONNECTION_TIMEOUT_MS = int(os.getenv('MONGOSYNC_TIMEOUT_MS', '5000'))
+
+@lru_cache(maxsize=1)
+def get_mongo_client(connection_string):
+    """
+    Get a cached MongoDB client with connection pooling.
+    
+    Args:
+        connection_string (str): MongoDB connection string
+        
+    Returns:
+        MongoClient: Cached MongoDB client instance
+        
+    Raises:
+        InvalidURI: If the connection string is invalid
+        PyMongoError: If connection fails
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Validate connection string format
+        from pymongo.uri_parser import parse_uri
+        parse_uri(connection_string)
+        
+        # Create client with connection pooling
+        client = MongoClient(
+            connection_string,
+            maxPoolSize=CONNECTION_POOL_SIZE,
+            minPoolSize=1,
+            maxIdleTimeMS=30000,  # 30 seconds
+            serverSelectionTimeoutMS=CONNECTION_TIMEOUT_MS,
+            connectTimeoutMS=CONNECTION_TIMEOUT_MS,
+            socketTimeoutMS=CONNECTION_TIMEOUT_MS,
+            retryWrites=True,
+            retryReads=True
+        )
+        
+        # Test the connection
+        client.admin.command('ping')
+        logger.info(f"Successfully connected to MongoDB with pool size {CONNECTION_POOL_SIZE}")
+        
+        return client
+        
+    except InvalidURI as e:
+        logger.error(f"Invalid MongoDB connection string: {e}")
+        raise
+    except PyMongoError as e:
+        logger.error(f"Failed to connect to MongoDB: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error connecting to MongoDB: {e}")
+        raise PyMongoError(f"Connection failed: {e}")
+
+def get_database(connection_string, database_name):
+    """
+    Get a database instance using the cached client.
+    
+    Args:
+        connection_string (str): MongoDB connection string
+        database_name (str): Name of the database
+        
+    Returns:
+        Database: MongoDB database instance
+    """
+    client = get_mongo_client(connection_string)
+    return client[database_name]
+
+def validate_connection(connection_string):
+    """
+    Validate a MongoDB connection string and test connectivity.
+    
+    Args:
+        connection_string (str): MongoDB connection string to validate
+        
+    Returns:
+        bool: True if connection is valid and accessible
+        
+    Raises:
+        InvalidURI: If the connection string format is invalid
+        PyMongoError: If connection test fails
+    """
+    try:
+        # This will use the cached client or create a new one
+        client = get_mongo_client(connection_string)
+        # Test with a simple command
+        result = client.admin.command('ping')
+        return result.get('ok', 0) == 1
+    except Exception as e:
+        # Clear the cache if connection fails
+        get_mongo_client.cache_clear()
+        raise
+
+def clear_connection_cache():
+    """
+    Clear the connection cache. Useful when connection strings change.
+    """
+    logger = logging.getLogger(__name__)
+    get_mongo_client.cache_clear()
+    logger.info("MongoDB connection cache cleared")

@@ -2,9 +2,9 @@ import logging
 from flask import Flask, render_template, request
 from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics
-from pymongo.uri_parser import parse_uri  
-from pymongo.errors import InvalidURI 
-from app_config import load_config, setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, REFRESH_TIME, APP_VERSION
+from pymongo.errors import InvalidURI, PyMongoError
+from pymongo.uri_parser import parse_uri 
+from app_config import load_config, setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache
 
 # Validate configuration on startup
 try:
@@ -80,10 +80,13 @@ def renderMetrics():
     # If valid proceed to plot
     # If not, return to home 
     try:  
-        parse_uri(TARGET_MONGO_URI)  
+        validate_connection(TARGET_MONGO_URI)
         return plotMetrics()
-    except InvalidURI as e:  
+    except (InvalidURI, PyMongoError) as e:  
         logging.error(f"{e}. Invalid MongoDB connection string: "+ TARGET_MONGO_URI)
+        
+        # Clear connection cache when connection string changes
+        clear_connection_cache()
         
         config['LiveMonitor']['connectionString'] = ""
         config['LiveMonitor']['refreshTime'] = refreshTime
