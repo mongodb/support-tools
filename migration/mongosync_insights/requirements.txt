@@ -1,33 +1,28 @@
+# Mongosync Insights - Core Dependencies
+# Python 3.10+ required
+
+# Web Framework
+Flask==3.1.1
+Werkzeug==3.1
+itsdangerous==2.2
+MarkupSafe==2.1.3
 blinker==1.9
 click==8.1.7
-contourpy==1.1.0
-cycler==0.11.0
-dnspython==2.4.2
-Flask==3.1.0
-fonttools==4.42.1
-importlib-metadata==6.8.0
-importlib-resources==6.0.1
-itsdangerous==2.2
-Jinja2==3.1.2
-jq==1.8.0
-kaleido==0.2.1
-kiwisolver==1.4.4
-MarkupSafe==2.1.3
-matplotlib==3.10.0
-mtools==1.7.2
-numpy==2.2.4
-packaging==23.1
-pandas==2.2.3
-Pillow==11.1.0
+
+# Plotting and Visualization
 plotly==6.0.1
-psutil==5.9.5
+packaging==23.1
+
+# MongoDB Driver
 pymongo==4.11.0
-pyparsing==3.0.9
+dnspython==2.4.2
+
+# Date/Time Utilities
 python-dateutil==2.8.2
-pytz==2023.3
 six==1.16.0
-tenacity==8.2.3
-Werkzeug==3.1
-zipp==3.16.2
-tqdm==4.66.1
+
+# File Processing
 python-magic==0.4.27
+
+# Progress Bars
+tqdm==4.66.3

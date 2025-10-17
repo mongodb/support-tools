@@ -19,7 +19,7 @@ PORT = int(os.getenv('MONGOSYNC_PORT', '3030'))
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.7.0.5"
+APP_VERSION = "0.7.0.9"
 
 # File upload settings
 MAX_FILE_SIZE = int(os.getenv('MONGOSYNC_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
