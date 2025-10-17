@@ -14,12 +14,12 @@ from pymongo.errors import PyMongoError, InvalidURI
 CONFIG_PATH = os.getenv('MONGOSYNC_CONFIG', 'config.ini')
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 LOG_FILE = os.getenv('MONGOSYNC_LOG_FILE', 'insights.log')
-HOST = os.getenv('MONGOSYNC_HOST', '0.0.0.0')
+HOST = os.getenv('MONGOSYNC_HOST', '127.0.0.1')
 PORT = int(os.getenv('MONGOSYNC_PORT', '3030'))
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.6.9.3"
+APP_VERSION = "0.7.0.5"
 
 # File upload settings
 MAX_FILE_SIZE = int(os.getenv('MONGOSYNC_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
