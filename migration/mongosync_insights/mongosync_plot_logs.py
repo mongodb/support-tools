@@ -65,87 +65,87 @@ def upload_file():
                                  error_message=f"File size ({actual_size_mb:.1f} MB) exceeds maximum allowed size ({max_size_mb:.1f} MB).")
         
         logger.info(f"File validation passed: {filename} ({file_size} bytes, {file_ext})")
-        # Read the file and convert it to a list of lines
-        lines = list(file)
-
-        # Check if all lines are valid JSON
-        for line in tqdm(lines, desc="Reading lines"):
+        # Optimized single-pass log parsing with streaming approach
+        logging.info("Starting optimized log parsing - single pass through file")
+        
+        # Pre-compile all regex patterns once
+        patterns = {
+            'replication_progress': re.compile(r"Replication progress", re.IGNORECASE),
+            'version_info': re.compile(r"Version info", re.IGNORECASE),
+            'operation_stats': re.compile(r"Operation duration stats", re.IGNORECASE),
+            'sent_response': re.compile(r"sent response", re.IGNORECASE),
+            'phase_transitions': re.compile(r"Starting initializing collections and indexes phase|Starting initializing partitions phase|Starting collection copy phase|Starting change event application phase|Commit handler called", re.IGNORECASE),
+            'mongosync_options': re.compile(r"Mongosync Options", re.IGNORECASE),
+            'hidden_flags': re.compile(r"Mongosync HiddenFlags", re.IGNORECASE)
+        }
+        
+        # Initialize result containers
+        data = []
+        version_info_list = []
+        mongosync_ops_stats = []
+        mongosync_sent_response = []
+        phase_transitions_json = []
+        mongosync_opts_list = []
+        mongosync_hiddenflags = []
+        
+        # Single pass through the file with streaming
+        line_count = 0
+        invalid_json_count = 0
+        
+        # Reset file pointer to beginning
+        file.seek(0)
+        
+        for line in tqdm(file, desc="Processing log file"):
+            line_count += 1
+            line = line.strip()
+            
+            if not line:  # Skip empty lines
+                continue
+                
             try:
-                json.loads(line)
+                # Parse JSON only once per line
+                json_obj = json.loads(line)
+                message = json_obj.get('message', '')
+                
+                # Apply all filters to the same parsed object
+                if patterns['replication_progress'].search(message):
+                    data.append(json_obj)
+                
+                if patterns['version_info'].search(message):
+                    version_info_list.append(json_obj)
+                
+                if patterns['operation_stats'].search(message):
+                    mongosync_ops_stats.append(json_obj)
+                
+                if patterns['sent_response'].search(message):
+                    mongosync_sent_response.append(json_obj)
+                
+                if patterns['phase_transitions'].search(message):
+                    phase_transitions_json.append(json_obj)
+                
+                if patterns['mongosync_options'].search(message):
+                    # Filter out time and level fields for options
+                    filtered_obj = {k: v for k, v in json_obj.items() if k not in ('time', 'level')}
+                    mongosync_opts_list.append(filtered_obj)
+                
+                if patterns['hidden_flags'].search(message):
+                    # Filter out time and level fields for hidden flags
+                    filtered_obj = {k: v for k, v in json_obj.items() if k not in ('time', 'level')}
+                    mongosync_hiddenflags.append(filtered_obj)
+                    
             except json.JSONDecodeError as e:
-                logging.error(f"Invalid JSON file: {e}")
-                return redirect(request.url)  # or handle the error in another appropriate way
-
-        # Load lines with 'message' == "Replication progress."
-        #data = [json.loads(line) for line in lines if json.loads(line).get('message') == "Replication progress."]
-        logging.info(f"Loading Replication progress")
-        regex_pattern = re.compile(r"Replication progress", re.IGNORECASE)
-        data = [
-            json.loads(line) 
-            for line in lines 
-            if regex_pattern.search(json.loads(line).get('message', ''))
-        ]
-
-        # Load lines with 'message' == "Version info"
-        #version_info_list = [json.loads(line) for line in lines if json.loads(line).get('message') == "Version info"]
-        logging.info(f"Loading Version info")
-        regex_pattern = re.compile(r"Version info", re.IGNORECASE)
-        version_info_list = [
-            json.loads(line) 
-            for line in lines 
-            if regex_pattern.search(json.loads(line).get('message', ''))
-        ]
-
-        # Load lines with 'message' == "Operation duration stats."
-        #mongosync_ops_stats = [json.loads(line) for line in lines if json.loads(line).get('message') == "Operation duration stats."]
-        logging.info(f"Loading Operation duration stats")
-        regex_pattern = re.compile(r"Operation duration stats", re.IGNORECASE)
-        mongosync_ops_stats = [
-            json.loads(line) 
-            for line in lines 
-            if regex_pattern.search(json.loads(line).get('message', ''))
-        ]
-
-        # Load lines with 'message' == "sent response"
-        #mongosync_sent_response = [json.loads(line) for line in lines if json.loads(line).get('message') == "Sent response."]
-        logging.info(f"Loading sent response")
-        regex_pattern = re.compile(r"sent response", re.IGNORECASE)
-        mongosync_sent_response = [
-            json.loads(line) 
-            for line in lines 
-            if regex_pattern.search(json.loads(line).get('message', ''))
-        ]
-
-        # Load lines with 'message' == "<Phase Name>"
-        logging.info(f"Phase Transitions for Mongosync Standalone")
-        #regex_pattern = re.compile(r"Start handler called|Starting Mongosync|Starting initializing collections and indexes phase|Starting initializing partitions phase|Starting collection copy phase|Starting change event application phase|Commit handler called", 
-        #                           re.IGNORECASE) 
-        regex_pattern = re.compile(r"Starting initializing collections and indexes phase|Starting initializing partitions phase|Starting collection copy phase|Starting change event application phase|Commit handler called", 
-                                   re.IGNORECASE) 
-        phase_transitions_json = [
-            json.loads(line) 
-            for line in lines 
-            if regex_pattern.search(json.loads(line).get('message', ''))
-        ]
-
-        # Load lines with 'message' == "Mongosync Options"
-        #mongosync_opts_list = [json.loads(line) for line in lines if json.loads(line).get('message') == "Mongosync Options"]
-        logging.info(f"Loading Mongosync Options")
-        regex_pattern = re.compile(r"Mongosync Options", re.IGNORECASE)
-        mongosync_opts_list = [  
-            {k: v for k, v in json.loads(line).items() if k not in ('time', 'level')}  
-            for line in lines  
-            if regex_pattern.search(json.loads(line).get('message', ''))  
-        ]  
-
-        # Load lines with 'message' == "Mongosync HiddenFlags"
-        logging.info(f"Loading HiddenFlags")
-        regex_pattern = re.compile(r"Mongosync HiddenFlags", re.IGNORECASE)
-        mongosync_hiddenflags = [  
-            {k: v for k, v in json.loads(line).items() if k not in ('time', 'level')}  
-            for line in lines  
-            if regex_pattern.search(json.loads(line).get('message', ''))  
-        ]  
+                invalid_json_count += 1
+                if invalid_json_count <= 5:  # Log first 5 errors to avoid spam
+                    logging.warning(f"Invalid JSON on line {line_count}: {e}")
+                if invalid_json_count == 1:  # If this is the first error, it might be a non-JSON file
+                    logging.error(f"File appears to contain invalid JSON. First error on line {line_count}: {e}")
+                    return redirect(request.url)
+        
+        logging.info(f"Processed {line_count} lines, found {invalid_json_count} invalid JSON lines")
+        logging.info(f"Found: {len(data)} replication progress, {len(version_info_list)} version info, "
+                    f"{len(mongosync_ops_stats)} operation stats, {len(mongosync_sent_response)} sent responses, "
+                    f"{len(phase_transitions_json)} phase transitions, {len(mongosync_opts_list)} options, "
+                    f"{len(mongosync_hiddenflags)} hidden flags")  
         
 
         # The 'body' field is also a JSON string, so parse that as well
