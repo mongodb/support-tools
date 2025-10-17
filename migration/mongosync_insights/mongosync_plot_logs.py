@@ -2,16 +2,17 @@ import plotly.graph_objects as go
 from plotly.utils import PlotlyJSONEncoder
 from plotly.subplots import make_subplots
 from tqdm import tqdm
-from flask import request, redirect, render_template, flash
+from flask import request, render_template
 import json
 from datetime import datetime, timezone
 from dateutil import parser
 import re
 import logging
 import os
+import magic
 from werkzeug.utils import secure_filename
 from mongosync_plot_utils import format_byte_size, convert_bytes
-from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS
+from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
 
 def upload_file():
     # Use the centralized logging configuration
@@ -64,7 +65,29 @@ def upload_file():
                                  error_title="File Too Large",
                                  error_message=f"File size ({actual_size_mb:.1f} MB) exceeds maximum allowed size ({max_size_mb:.1f} MB).")
         
-        logger.info(f"File validation passed: {filename} ({file_size} bytes, {file_ext})")
+        # Check MIME type using python-magic
+        try:
+            mime = magic.Magic(mime=True)
+            file.seek(0)
+            # Read first 2KB for MIME detection (sufficient for most file types)
+            file_sample = file.read(2048)
+            file_mime_type = mime.from_buffer(file_sample)
+            file.seek(0)  # Reset to beginning
+            
+            logger.info(f"Detected MIME type: {file_mime_type}")
+            
+            if file_mime_type not in ALLOWED_MIME_TYPES:
+                logger.error(f"Invalid MIME type: {file_mime_type}. Allowed: {ALLOWED_MIME_TYPES}")
+                return render_template('error.html',
+                                     error_title="Invalid File Type",
+                                     error_message=f"File MIME type '{file_mime_type}' is not allowed. Only JSON/text files are accepted. Detected type: {file_mime_type}")
+        except Exception as e:
+            logger.error(f"Error detecting MIME type: {e}")
+            return render_template('error.html',
+                                 error_title="File Validation Error",
+                                 error_message=f"Unable to validate file type: {str(e)}")
+        
+        logger.info(f"File validation passed: {filename} ({file_size} bytes, {file_ext}, MIME: {file_mime_type})")
         # Optimized single-pass log parsing with streaming approach
         logging.info("Starting optimized log parsing - single pass through file")
         
@@ -139,7 +162,9 @@ def upload_file():
                     logging.warning(f"Invalid JSON on line {line_count}: {e}")
                 if invalid_json_count == 1:  # If this is the first error, it might be a non-JSON file
                     logging.error(f"File appears to contain invalid JSON. First error on line {line_count}: {e}")
-                    return redirect(request.url)
+                    return render_template('error.html',
+                                         error_title="Invalid File Format",
+                                         error_message=f"The uploaded file does not contain valid JSON format. Error on line {line_count}: {str(e)}. Please ensure you're uploading a valid mongosync log file in NDJSON format.")
         
         logging.info(f"Processed {line_count} lines, found {invalid_json_count} invalid JSON lines")
         logging.info(f"Found: {len(data)} replication progress, {len(version_info_list)} version info, "

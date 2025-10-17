@@ -24,6 +24,7 @@ APP_VERSION = "0.6.9.3"
 # File upload settings
 MAX_FILE_SIZE = int(os.getenv('MONGOSYNC_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
 ALLOWED_EXTENSIONS = {'.log', '.json', '.out'}
+ALLOWED_MIME_TYPES = ['application/json', 'text/json', 'text/plain', 'application/x-ndjson']
 
 # Live monitoring settings
 REFRESH_TIME = int(os.getenv('MONGOSYNC_REFRESH_TIME', '10'))
