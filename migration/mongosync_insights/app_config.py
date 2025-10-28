@@ -26,6 +26,9 @@ MAX_FILE_SIZE = int(os.getenv('MONGOSYNC_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 
 ALLOWED_EXTENSIONS = {'.log', '.json', '.out'}
 ALLOWED_MIME_TYPES = ['application/x-ndjson']
 
+# Security settings
+SECURE_COOKIES = os.getenv('MONGOSYNC_SECURE_COOKIES', 'True').lower() == 'true'
+
 # Live monitoring settings
 REFRESH_TIME = int(os.getenv('MONGOSYNC_REFRESH_TIME', '10'))
 

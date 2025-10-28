@@ -4,7 +4,7 @@ from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics
 from pymongo.errors import InvalidURI, PyMongoError
 from pymongo.uri_parser import parse_uri 
-from app_config import load_config, setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache
+from app_config import load_config, setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, SECURE_COOKIES
 
 # Validate configuration on startup
 try:
@@ -24,6 +24,45 @@ app = Flask(__name__)
 
 # Configure Flask for file uploads
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+# Security configuration
+app.config['SESSION_COOKIE_SECURE'] = SECURE_COOKIES  # Only send cookies over HTTPS (configurable via env)
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to session cookie
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'  # CSRF protection
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # Session timeout (1 hour)
+
+# Add security headers to all responses
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all HTTP responses."""
+    # Enforce HTTPS and prevent downgrade attacks
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    
+    # Prevent MIME type sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    
+    # Prevent clickjacking attacks
+    response.headers['X-Frame-Options'] = 'DENY'
+    
+    # Control referrer information
+    response.headers['Referrer-Policy'] = 'no-referrer'
+    
+    # Content Security Policy - configured to work with Plotly charts
+    # Note: Plotly requires 'unsafe-inline' and 'unsafe-eval' for rendering
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.plot.ly; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' data:; "
+        "connect-src 'self';"
+    )
+    
+    # Additional security headers
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+    
+    return response
 
 # Make app version available to all templates
 @app.context_processor
