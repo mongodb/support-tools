@@ -172,13 +172,15 @@ def upload_file():
                     f"{len(phase_transitions_json)} phase transitions, {len(mongosync_opts_list)} options, "
                     f"{len(mongosync_hiddenflags)} hidden flags")  
         
-
         # The 'body' field is also a JSON string, so parse that as well
         #mongosync_sent_response_body = json.loads(mongosync_sent_response.get('body'))
         mongosync_sent_response_body = None 
         for response in mongosync_sent_response:
             try:  
-                mongosync_sent_response_body = json.loads(response['body'])  
+                parsed_body = json.loads(response['body'])
+                # Only use this response if it contains 'progress'
+                if 'progress' in parsed_body:
+                    mongosync_sent_response_body = parsed_body  
             except (json.JSONDecodeError, TypeError):  
                 mongosync_sent_response_body = None  # If parse fails, use None 
                 logging.warning(f"No message 'sent response' found in the logs") 
@@ -286,26 +288,32 @@ def upload_file():
         
         phase_transitions = ""
         # Check that mongosync_sent_response_body is a dict before searching for 'progress'  
-        if isinstance(mongosync_sent_response_body, dict) and 'progress' in mongosync_sent_response_body:
+        if isinstance(mongosync_sent_response_body, dict): #and 'progress' in mongosync_sent_response_body:
         #if 'progress' in mongosync_sent_response_body:
             #getting the estimated total and copied
-            estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
-            estimated_copied_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedCopiedBytes']
+            if 'progress' in mongosync_sent_response_body:
+                estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
+                estimated_copied_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedCopiedBytes']
+
+                #Getting the Phase Transisitons
+                try:  
+                    # Try get Phase Transitions from the sent response body if it is Live Migrate
+                    phase_transitions = mongosync_sent_response_body['progress']['atlasLiveMigrateMetrics']['PhaseTransitions']  
+                except KeyError as e:  
+                    logging.error(f"Key not found: {e}")  
+                    phase_transitions = []
+
+            else:
+                logging.warning(f"Key 'progress' not found in mongosync_sent_response_body")
             
-            #Getting the Phase Transisitons
-            try:  
-                # Try to access deeply nested key  
-                phase_transitions = mongosync_sent_response_body['progress']['atlasLiveMigrateMetrics']['PhaseTransitions']  
-            except KeyError as e:  
-                logging.error(f"Key not found: {e}")  
-                phase_transitions = []
-            
+            # If phase_transitions is not empty, plot the phase transitions as it is Live Migrate
             if phase_transitions:
                 phase_list = [item['Phase'] for item in phase_transitions]  
                 ts_t_list = [item['Ts']['T'] for item in phase_transitions]  
                 ts_t_list_formatted = [ 
                     datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"  for t in ts_t_list 
                 ]
+            # Else get the phase transitions from the phase_transitions_json based on mongosync standalone 
             else:
                 if phase_transitions_json:
                     #print (phase_transitions_json)
@@ -318,7 +326,7 @@ def upload_file():
                         for t in ts_t_list  
                     ]  
         else:
-            logging.warning(f"Key 'progress' not found in mongosync_sent_response_body")
+            logging.warning(f"Response body is empty")
 
         estimated_total_bytes, estimated_total_bytes_unit = format_byte_size(estimated_total_bytes)
         estimated_copied_bytes = convert_bytes(estimated_copied_bytes, estimated_total_bytes_unit)
@@ -350,14 +358,17 @@ def upload_file():
             fig.add_trace(go.Scatter(x=ts_t_list_formatted, y=phase_list, mode='markers+text',marker=dict(color='green')), row=1, col=1)
             fig.update_yaxes(showticklabels=False, row=1, col=1)  
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Mongosync Finish',textfont=dict(size=30, color="black")), row=1, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Mongosync Phases',textfont=dict(size=30, color="black")), row=1, col=1)
 #            fig.update_layout(xaxis5=dict(showgrid=False, zeroline=False, showticklabels=False), 
 #                            yaxis5=dict(showgrid=False, zeroline=False, showticklabels=False))
 
         # Estimated Total and Copied
+        if estimated_total_bytes > 0  or estimated_copied_bytes > 0:
         #fig = go.Figure(data=[go.Bar(name='Estimated Total Bytes', x=['Bytes'], y=[estimated_total_bytes], row=1, col=1), go.Bar(name='Estimated Copied Bytes', x=['Bytes'], y=[estimated_copied_bytes])], row=1, col=1)
-        fig.add_trace( go.Bar( name='Estimated ' + estimated_total_bytes_unit + ' to be Copied',  x=[estimated_total_bytes_unit],  y=[estimated_total_bytes], legendgroup="groupTotalCopied" ), row=1, col=2)
-        fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=1, col=2)
+            fig.add_trace( go.Bar( name='Estimated ' + estimated_total_bytes_unit + ' to be Copied',  x=[estimated_total_bytes_unit],  y=[estimated_total_bytes], legendgroup="groupTotalCopied" ), row=1, col=2)
+            fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=1, col=2)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Estimated Total and Copied',textfont=dict(size=30, color="black")), row=1, col=2)
 
         # Lag Time
         fig.add_trace(go.Scatter(x=times, y=lagTimeSeconds, mode='lines', name='Seconds', legendgroup="groupEventsAndLags"), row=2, col=1)
