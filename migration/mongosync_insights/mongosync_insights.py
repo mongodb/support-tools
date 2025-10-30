@@ -4,7 +4,7 @@ from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics
 from pymongo.errors import InvalidURI, PyMongoError
 from pymongo.uri_parser import parse_uri 
-from app_config import load_config, setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, SECURE_COOKIES
+from app_config import load_config, setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, SECURE_COOKIES, save_config
 
 # Validate configuration on startup
 try:
@@ -104,48 +104,51 @@ def renderMetrics():
         TARGET_MONGO_URI = config['LiveMonitor']['connectionString']
     else:
         TARGET_MONGO_URI = request.form.get('connectionString')
-        
+
         # Add validation for empty connection string
         if not TARGET_MONGO_URI or not TARGET_MONGO_URI.strip():
             logger.error("No connection string provided")
             return render_template('error.html',
                                  error_title="No connection string provided",
                                  error_message="Please provide a valid MongoDB connection string.")
-        
-        config['LiveMonitor']['connectionString'] = TARGET_MONGO_URI
-        from app_config import save_config
-        save_config(config) 
 
-    # Validate the connection string 
-    # If valid proceed to plot
-    # If not, return error page
-    try:  
-        validate_connection(TARGET_MONGO_URI)
-        return plotMetrics()
-    except InvalidURI as e:
-        # Clear connection cache when connection string changes
-        clear_connection_cache()
+        # Validate the connection string 
+        # If valid proceed to plot
+        # If not, return error page
+        try:  
+            validate_connection(TARGET_MONGO_URI)
+            config['LiveMonitor']['connectionString'] = TARGET_MONGO_URI
+            save_config(config) 
+            
+        except InvalidURI as e:
+            # Clear connection cache when connection string changes
+            clear_connection_cache()
+            config['LiveMonitor']['connectionString'] = ""
+            save_config(config)   
+            
+            # Invalid connection string format
+            return render_template('error.html',
+                                error_title="Invalid Connection String",
+                                error_message=f"The connection string format is invalid. Please check your MongoDB connection string and try again.")
+        except PyMongoError as e:
+            # Clear connection cache when connection fails
+            clear_connection_cache()
+            config['LiveMonitor']['connectionString'] = ""
+            save_config(config)   
+            
+            # Failed to connect (authentication, network, etc.)
+            return render_template('error.html',
+                                error_title="Connection Failed",
+                                error_message=f"Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible.")
+
+    return plotMetrics()
+
         
-        config['LiveMonitor']['connectionString'] = ""
-        from app_config import save_config
-        save_config(config)   
         
-        # Invalid connection string format
-        return render_template('error.html',
-                             error_title="Invalid Connection String",
-                             error_message=f"The connection string format is invalid. Please check your MongoDB connection string and try again.")
-    except PyMongoError as e:
-        # Clear connection cache when connection fails
-        clear_connection_cache()
         
-        config['LiveMonitor']['connectionString'] = ""
-        from app_config import save_config
-        save_config(config)   
         
-        # Failed to connect (authentication, network, etc.)
-        return render_template('error.html',
-                             error_title="Connection Failed",
-                             error_message=f"Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible.")
+
+
 
 @app.route('/get_metrics_data', methods=['POST'])
 def getMetrics():
