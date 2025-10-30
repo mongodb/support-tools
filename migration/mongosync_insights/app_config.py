@@ -71,10 +71,6 @@ def load_config():
         'MONGOSYNC_CONNECTION_STRING', 
         config.get('LiveMonitor', 'connectionString', fallback='')
     )
-    config['LiveMonitor']['refreshTime'] = os.getenv(
-        'MONGOSYNC_REFRESH_TIME',
-        config.get('LiveMonitor', 'refreshTime', fallback='10')
-    )
     
     return config
 
@@ -83,7 +79,6 @@ def create_default_config(config_file):
     config = configparser.ConfigParser()
     config.add_section('LiveMonitor')
     config['LiveMonitor']['connectionString'] = ''
-    config['LiveMonitor']['refreshTime'] = '10'
     
     with open(config_file, 'w') as f:
         config.write(f)

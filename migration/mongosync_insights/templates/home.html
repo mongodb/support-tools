@@ -68,7 +68,7 @@
     </form>
 
     <!-- Second form: Metrics rendering -->
-    <form id="metadataForm" method="post" action="/renderMetrics" enctype="multipart/form-data" onsubmit="return checkAtlasConnection();">
+    <form id="metadataForm" method="post" action="/renderMetrics" enctype="multipart/form-data">
         <h2>Live Migration Monitoring</h2>
         {{ connection_string_form | safe }}
         <input type="submit" value="Live Monitor">
@@ -79,6 +79,8 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- You can remove or comment out this entire script block -->
+<!--
 <script>
 function checkAtlasConnection() {
     var conn = document.getElementById('connectionString').value.trim();
@@ -89,4 +91,5 @@ function checkAtlasConnection() {
     return true;
 }
 </script>
+-->
 {% endblock %}
