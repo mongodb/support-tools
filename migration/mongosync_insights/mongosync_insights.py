@@ -78,14 +78,10 @@ def too_large(e):
                          error_message=f"File size exceeds maximum allowed size ({max_size_mb:.1f} MB)."), 413
 
 @app.route('/')
-def home_page(message=""):
-    if message == "invalid connection string":
-        connection_string_form = '''<label for="connectionString"><b>The connection string provided is invalid, please provide a valid connection string.</b></label>  
-                                    <input type="text" id="connectionString" name="connectionString" size="47"   
-                                        placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>'''
-    elif not config['LiveMonitor']['connectionString']:
+def home_page(): 
+    if not config['LiveMonitor']['connectionString']:
         connection_string_form = '''<label for="connectionString">Atlas MongoDB Connection String:</label>  
-                                    <input type="text" id="connectionString" name="connectionString" size="47"   
+                                    <input type="text" id="connectionString" name="connectionString" size="47" autocomplete="off"
                                         placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>'''
     else:
         parsed = parse_uri(config['LiveMonitor']['connectionString'])  

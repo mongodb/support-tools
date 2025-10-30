@@ -57,7 +57,7 @@
 </div>
 <div class="form-container">
     <!-- First form: File upload -->
-    <form method="post" action="/upload" enctype="multipart/form-data">
+    <form method="post" action="/upload" enctype="multipart/form-data" autocomplete="off">
         <h2>Parse Mongosync Log File</h2>
         <input type="file" name="file" accept=".log,.json,.out"><br><br>
         <input type="submit" value="Upload">
@@ -68,7 +68,7 @@
     </form>
 
     <!-- Second form: Metrics rendering -->
-    <form id="metadataForm" method="post" action="/renderMetrics" enctype="multipart/form-data">
+    <form id="metadataForm" method="post" action="/renderMetrics" enctype="multipart/form-data" autocomplete="off">
         <h2>Live Migration Monitoring</h2>
         {{ connection_string_form | safe }}
         <input type="submit" value="Live Monitor">
@@ -79,8 +79,6 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- You can remove or comment out this entire script block -->
-<!--
 <script>
 function checkAtlasConnection() {
     var conn = document.getElementById('connectionString').value.trim();
@@ -91,5 +89,4 @@ function checkAtlasConnection() {
     return true;
 }
 </script>
--->
 {% endblock %}
