@@ -20,7 +20,7 @@ logger = setup_logging()
 config = load_config()
 
 # Create a Flask app
-app = Flask(__name__)
+app = Flask(__name__, static_folder='images', static_url_path='/images')
 
 # Configure Flask for file uploads
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
