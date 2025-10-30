@@ -4,7 +4,7 @@ from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics
 from pymongo.errors import InvalidURI, PyMongoError
 from pymongo.uri_parser import parse_uri 
-from app_config import load_config, setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, SECURE_COOKIES, save_config
+from app_config import setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, SECURE_COOKIES, CONNECTION_STRING
 
 # Validate configuration on startup
 try:
@@ -16,8 +16,8 @@ except (PermissionError, ValueError) as e:
 # Setup logging
 logger = setup_logging()
 
-# Load configuration
-config = load_config()
+# Runtime connection string storage (not persisted to disk)
+_runtime_connection_string = None
 
 # Create a Flask app
 app = Flask(__name__, static_folder='images', static_url_path='/images')
@@ -79,12 +79,12 @@ def too_large(e):
 
 @app.route('/')
 def home_page(): 
-    if not config['LiveMonitor']['connectionString']:
+    if not CONNECTION_STRING:
         connection_string_form = '''<label for="connectionString">Atlas MongoDB Connection String:</label>  
                                     <input type="text" id="connectionString" name="connectionString" size="47" autocomplete="off"
                                         placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>'''
     else:
-        parsed = parse_uri(config['LiveMonitor']['connectionString'])  
+        parsed = parse_uri(CONNECTION_STRING)  
         hosts = parsed['nodelist']
         hosts_str = ", ".join([f"{host}:{port}" for host, port in hosts])  
         connection_string_form = f"<p><b>Connecting to Destination Cluster at: </b>{hosts_str}</p>"
@@ -98,13 +98,16 @@ def uploadLogs():
 
 @app.route('/renderMetrics', methods=['POST'])
 def renderMetrics():
-
-    # If the connectionString is empty in the config, get it from the form and save it
-    if config['LiveMonitor']['connectionString']:
-        TARGET_MONGO_URI = config['LiveMonitor']['connectionString']
+    global _runtime_connection_string
+    
+    # Use environment variable if set, otherwise get from form or runtime cache
+    if CONNECTION_STRING:
+        TARGET_MONGO_URI = CONNECTION_STRING
+    elif _runtime_connection_string:
+        TARGET_MONGO_URI = _runtime_connection_string
     else:
         TARGET_MONGO_URI = request.form.get('connectionString')
-
+        
         # Add validation for empty connection string
         if not TARGET_MONGO_URI or not TARGET_MONGO_URI.strip():
             logger.error("No connection string provided")
@@ -112,53 +115,52 @@ def renderMetrics():
                                  error_title="No connection string provided",
                                  error_message="Please provide a valid MongoDB connection string.")
 
-        # Validate the connection string 
-        # If valid proceed to plot
-        # If not, return error page
-        try:  
-            validate_connection(TARGET_MONGO_URI)
-            config['LiveMonitor']['connectionString'] = TARGET_MONGO_URI
-            save_config(config) 
-            
-        except InvalidURI as e:
-            # Clear connection cache when connection string changes
-            clear_connection_cache()
-            config['LiveMonitor']['connectionString'] = ""
-            save_config(config)   
-            
-            # Invalid connection string format
-            return render_template('error.html',
-                                error_title="Invalid Connection String",
-                                error_message=f"The connection string format is invalid. Please check your MongoDB connection string and try again.")
-        except PyMongoError as e:
-            # Clear connection cache when connection fails
-            clear_connection_cache()
-            config['LiveMonitor']['connectionString'] = ""
-            save_config(config)   
-            
-            # Failed to connect (authentication, network, etc.)
-            return render_template('error.html',
-                                error_title="Connection Failed",
-                                error_message=f"Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible.")
+    # Validate the connection string 
+    # If valid proceed to plot
+    # If not, return error page
+    try:  
+        validate_connection(TARGET_MONGO_URI)
+        # Cache connection string for subsequent AJAX calls (only if not from env var)
+        if not CONNECTION_STRING:
+            _runtime_connection_string = TARGET_MONGO_URI
+    except InvalidURI as e:
+        # Clear connection cache when connection string changes
+        clear_connection_cache()
+        _runtime_connection_string = None
+        
+        # Invalid connection string format
+        logger.error(f"Invalid connection string format: {e}")
+        return render_template('error.html',
+                            error_title="Invalid Connection String",
+                            error_message=f"The connection string format is invalid. Please check your MongoDB connection string and try again.")
+    except PyMongoError as e:
+        # Clear connection cache when connection fails
+        clear_connection_cache()
+        _runtime_connection_string = None
+        
+        # Failed to connect (authentication, network, etc.)
+        logger.error(f"Failed to connect: {e}")
+        return render_template('error.html',
+                            error_title="Connection Failed",
+                            error_message=f"Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible.")
 
     return plotMetrics()
 
-        
-        
-        
-        
-
-
-
 @app.route('/get_metrics_data', methods=['POST'])
 def getMetrics():
-    return gatherMetrics()
+    # Use environment variable if set, otherwise use runtime cache
+    connection_string = CONNECTION_STRING if CONNECTION_STRING else _runtime_connection_string
+    
+    if not connection_string:
+        logger.error("No connection string available for metrics refresh")
+        return {"error": "No connection string available"}, 400
+    
+    return gatherMetrics(connection_string)
 
 if __name__ == '__main__':
     # Log startup information
     app_info = get_app_info()
     logger.info(f"Starting {app_info['name']} v{app_info['version']}")
-    logger.info(f"Configuration file: {app_info['config_path']}")
     logger.info(f"Log file: {app_info['log_file']}")
     logger.info(f"Server: {app_info['host']}:{app_info['port']}")
     

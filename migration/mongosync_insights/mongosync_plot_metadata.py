@@ -7,15 +7,14 @@ import logging
 from pymongo.errors import PyMongoError
 from mongosync_plot_utils import format_byte_size, convert_bytes
 
-def gatherMetrics():
+def gatherMetrics(connection_string):
     # Use the centralized logging and configuration
     logger = logging.getLogger(__name__)
     
     # Import and use the centralized configuration
-    from app_config import load_config, INTERNAL_DB_NAME, MAX_PARTITIONS_DISPLAY, get_database
-    config = load_config()
+    from app_config import INTERNAL_DB_NAME, MAX_PARTITIONS_DISPLAY, get_database
     
-    TARGET_MONGO_URI = config['LiveMonitor']['connectionString']
+    TARGET_MONGO_URI = connection_string
     internalDb = INTERNAL_DB_NAME
     colors = ['red', 'blue', 'green', 'orange', 'yellow']
     
@@ -248,8 +247,7 @@ def gatherMetrics():
 
 def plotMetrics():
     # Use the centralized configuration
-    from app_config import load_config, REFRESH_TIME
-    config = load_config()
+    from app_config import REFRESH_TIME
 
     refreshTime = REFRESH_TIME
     refreshTimeMs = str(int(refreshTime) * 1000)
