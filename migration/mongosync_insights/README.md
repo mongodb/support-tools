@@ -1,95 +1,159 @@
 # Mongosync Insights
 
-This project parses **mongosync** logs and reads the internal database (metadata), generating a variety of plots to assist with monitoring and troubleshooting ongoing mongosync migrations.
+This tool parses **mongosync** logs and reads the mongosync internal database (metadata), generating interactive plots to assist with monitoring and troubleshooting ongoing MongoDB migrations using mongosync.
 
-## requirements.txt
+## What Does This Tool Do?
 
-Mongosync Insights requires Python version 3.10+.
+Mongosync Insights provides two main capabilities:
 
-The `requirements.txt` file lists the Python packages on which the scripts depend. The packages are specified with their version numbers to ensure compatibility.          
+1. **Log File Analysis**: Upload and parse mongosync log files to visualize migration progress, data transfer rates, and performance metrics
+2. **Live Monitoring**: Connect directly to the mongosync internal database for real-time monitoring of ongoing migrations with auto-refreshing dashboards
 
-To install the dependencies, use the following command:
+## Prerequisites
+
+- **Python**: Version 3.10 or higher
+- **pip**: Python package installer
+- **MongoDB Access** (for live monitoring): Connection string to the destination cluster where mongosync stores its metadata
+
+## Installation
+
+### 1. Download the Tool
+
+Download or clone the Mongosync Insights folder from this repository.
+
+### 2. Install Dependencies
+
+Navigate to the directory containing the Python script and the `requirements.txt` file:
+
+```bash
+cd migration/mongosync_insights
+```
+
+Install the required Python packages:
 
 ```bash
 pip3 install -r requirements.txt
 ```
 
-Run the script in the Python environment where you want to run it. If you're using a virtual environment, activate it first.
+**Note**: Run this in the Python environment where you want to use the tool. If using a virtual environment, activate it first.
 
-## Getting Started
+## Running the Tool
 
-1. Download the Mongosync Insigths folder.
-2. Navigate to the directory containing the Python script and the `requirements.txt` file.
-3. Install the dependencies with `pip3 install -r requirements.txt`.
-4. Run the script `python3 mongosync_insights.py`.
+### Start the Application
 
-Please note that you need Python and pip installed on your machine to run the script and install the dependencies.
+```bash
+python3 mongosync_insights.py
+```
 
-## Accessing the Application and Viewing Plots
+The application will start and display:
+```
+Starting Mongosync Insights v0.7.0.15
+Server: 127.0.0.1:3030
+```
 
-Once the application runs, you can access it by opening a web browser and navigating to `http://localhost:3030`. It assumes the application runs on the same machine where you're opening the browser and is configured to listen on port 3030.
+### Access the Web Interface
+
+Open your web browser and navigate to:
+```
+http://localhost:3030
+```
 
 ![Mongosync Logs Analyzer](images/mongosync_insights_home.png)
 
-### Parsing the `mongosync` Log File
+## Using Mongosync Insights
 
-The application provides a user interface for uploading the `mongosync` log file. Clicking a "Browse" or "Choose File" button, select the file from your file system, and then click on "Open" or "Upload" button.
+### Option 1: Parsing Mongosync Log Files
 
-### Live monitoring the migration
-
-When running for the first time, the application will provide a form requesting the target's connection string. 
-Clicking the "Live Monitor" it will save the connection string in the `config.ini` and the page will refresh with the migration progress.
-
-## Viewing the Plot Information
-
-Once the `mongosync` data is loaded, the application processes the data and generates the plots. 
-
-If the plots aren't visible after uploading the file, you may need to refresh the page. If the plots still aren't visible, check for any error messages or notifications from the application.
-
-### Mongosync Logs
-
-This script processes the Mongosync logs and generates various plots. The plots include scatter plots and tables, and they visualize different aspects of the data, such as `Total and Copied bytes`, `CEA Reads and Writes`, `Collection Copy Reads and Writes`, `Events applied`, and `Lag Time`.
+1. Click the **"Browse"** or **"Choose File"** button
+2. Select your mongosync log file from your file system
+3. Click **"Open"** or **"Upload"**
+4. The application will process the log and display plots showing:
+   - Total and Copied bytes
+   - CEA (Change Event Application) Reads and Writes
+   - Collection Copy Reads and Writes
+   - Events applied
+   - Lag Time
 
 ![Mongosync logs analyzer](images/mongosync_log_analyzer.png)
 
-### Mongosync Metadata
+### Option 2: Live Monitoring
 
-This script processes Mongosync metadata and generates various plots refreshing every 10 seconds by default. The plots visualize different aspects of the data, such as `Partitions Completed`, `Data Copied`, `Phases`, and `Collection Progress`.
+1. Enter the MongoDB **connection string** to your destination cluster
+   - Format: `mongodb+srv://user:password@cluster.mongodb.net/`
+   - This is where mongosync stores its internal metadata
+2. Click **"Live Monitor"**
+3. The page will refresh automatically every 10 seconds (configurable) showing:
+   - Partitions Completed
+   - Data Copied
+   - Migration Phases
+   - Collection Progress
 
 ![Mongosync metadata plots](images/mongosync_metadata.png)
 
-## Documentation
+## Advanced Configuration
 
-For detailed configuration and deployment guides, see:
+### Environment Variables
 
-- **[CONFIGURATION.md](CONFIGURATION.md)** - Complete environment variables reference and configuration options
-- **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
-- **[CONNECTION_MANAGEMENT.md](CONNECTION_MANAGEMENT.md)** - MongoDB connection pooling and management
-- **[SECURITY_HEADERS.md](SECURITY_HEADERS.md)** - Security headers and best practices
+Configure the application using environment variables. See **[CONFIGURATION.md](CONFIGURATION.md)** for the complete reference, including:
 
-## Security
+- Server host and port settings
+- MongoDB connection strings
+- Refresh intervals
+- Upload size limits
+- UI customization
 
-### HTTPS Support
+**Quick Example:**
+```bash
+export MI_PORT=8080
+export MI_REFRESH_TIME=5
+export MI_CONNECTION_STRING="mongodb+srv://user:pass@cluster.mongodb.net/"
+python3 mongosync_insights.py
+```
 
-Mongosync Insights supports HTTPS for secure deployments. See [HTTPS_SETUP.md](HTTPS_SETUP.md) for:
+### Security and HTTPS
 
-- **Quick Start**: Enable HTTPS with Let's Encrypt certificates
-- **Direct SSL**: Run Flask with built-in SSL/TLS support
-- **Reverse Proxy**: Deploy with Nginx or Apache (recommended for production)
+For production deployments, enable HTTPS encryption. See **[HTTPS_SETUP.md](HTTPS_SETUP.md)** for:
 
-**Enable HTTPS:**
+- Quick Start with Let's Encrypt certificates
+- Direct Flask SSL configuration
+- Reverse proxy setup with Nginx/Apache (recommended)
+
+**Quick Enable HTTPS:**
 ```bash
 export MI_SSL_ENABLED=true
 export MI_SSL_CERT=/path/to/certificate.pem
 export MI_SSL_KEY=/path/to/private-key.pem
+export MI_PORT=8443
+python3 mongosync_insights.py
 ```
 
-### Best Practices
+## Documentation
+
+For detailed guides, see:
+
+- **[CONFIGURATION.md](CONFIGURATION.md)** - Complete environment variables reference and configuration options
+- **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
+- **[CONNECTION_MANAGEMENT.md](CONNECTION_MANAGEMENT.md)** - MongoDB connection pooling and management
+
+## Security Best Practices
 
 - ✅ Always use HTTPS in production environments
 - ✅ Keep SSL certificates up to date with auto-renewal
-- ✅ Use environment variables for sensitive configuration
-- ✅ Review [SECURITY_HEADERS.md](SECURITY_HEADERS.md) for additional security measures
+- ✅ Use environment variables for sensitive configuration (never hardcode connection strings)
+- ✅ The application includes security headers for XSS, CSRF, and clickjacking protection
+- ✅ Secure cookies are enabled by default when using HTTPS
+
+## Troubleshooting
+
+### Plots not visible after upload
+- Refresh the page
+- Check the console for error messages
+- Verify the log file format is correct
+
+### Connection failures (Live Monitoring)
+- Verify the connection string format and credentials
+- Ensure network connectivity to the MongoDB cluster
+- Check that the mongosync internal database exists
 
 ### License
 

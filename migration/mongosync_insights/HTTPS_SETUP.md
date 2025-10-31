@@ -2,12 +2,27 @@
 
 This guide explains how to enable HTTPS/SSL for Mongosync Insights to secure your deployment.
 
+## Prerequisites
+
+**Python 3.10+** is required. All commands in this guide use `python3` to ensure you're running Python 3.x.
+
+## Quick Reference
+
+| Setup Type | Best For | Complexity | Security |
+|------------|----------|------------|----------|
+| HTTP (Default) | Local dev, testing | ⭐ Easy | ⚠️ Low |
+| Direct Flask SSL | Small deployments | ⭐⭐ Medium | ✅ Good |
+| Reverse Proxy | Production | ⭐⭐⭐ Advanced | ✅ Excellent |
+
 ## Table of Contents
 
 1. [Default Setup (HTTP)](#default-setup-http)
 2. [Option A: Direct Flask SSL](#option-a-direct-flask-ssl)
 3. [Option B: Reverse Proxy (Recommended for Production)](#option-b-reverse-proxy-recommended-for-production)
 4. [Environment Variables Reference](#environment-variables-reference)
+5. [Firewall Configuration](#firewall-configuration)
+6. [Verify HTTPS Setup](#verify-https-setup)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -22,7 +37,7 @@ By default, Mongosync Insights runs on HTTP without SSL encryption. This is suit
 
 ```bash
 # Default behavior
-python mongosync_insights.py
+python3 mongosync_insights.py
 
 # Access at: http://localhost:3030
 ```
@@ -120,11 +135,11 @@ MI_SECURE_COOKIES=true
 
 ```bash
 # If using port 443, run with sudo
-sudo -E python mongosync_insights.py
+sudo -E python3 mongosync_insights.py
 
 # Or use a non-privileged port (e.g., 8443) and set up port forwarding
 export MI_PORT=8443
-python mongosync_insights.py
+python3 mongosync_insights.py
 ```
 
 ### Step 4: Access the Application
@@ -294,7 +309,7 @@ export MI_PORT=3030
 export MI_SSL_ENABLED=false
 
 # Start the application
-python mongosync_insights.py
+python3 mongosync_insights.py
 ```
 
 #### Step 6: Set Up Systemd Service (Optional)
@@ -466,7 +481,123 @@ MI_SECURE_COOKIES=false
 
 ---
 
+## Firewall Configuration
+
+### For Direct Flask SSL
+
+Allow HTTPS traffic on port 443:
+
+```bash
+# Ubuntu/Debian (ufw)
+sudo ufw allow 443/tcp
+sudo ufw reload
+
+# CentOS/RHEL (firewalld)
+sudo firewall-cmd --permanent --add-service=https
+sudo firewall-cmd --reload
+
+# Or specify port directly
+sudo firewall-cmd --permanent --add-port=443/tcp
+sudo firewall-cmd --reload
+```
+
+### For Reverse Proxy
+
+Allow both HTTP and HTTPS (Nginx/Apache will handle redirects):
+
+```bash
+# Ubuntu/Debian (ufw)
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw reload
+
+# CentOS/RHEL (firewalld)
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-service=https
+sudo firewall-cmd --reload
+```
+
+### Verify Firewall Status
+
+```bash
+# Ubuntu/Debian
+sudo ufw status
+
+# CentOS/RHEL
+sudo firewall-cmd --list-all
+```
+
+---
+
+## Verify HTTPS Setup
+
+Test your HTTPS configuration after setup:
+
+### Test SSL Certificate
+
+```bash
+# Basic connection test
+curl -v https://your-domain.com
+
+# Test with certificate validation
+curl https://your-domain.com
+
+# Check if HTTP redirects to HTTPS (for reverse proxy setups)
+curl -I http://your-domain.com
+```
+
+### Check Certificate Information
+
+```bash
+# View certificate details and expiration date
+openssl s_client -connect your-domain.com:443 -servername your-domain.com </dev/null 2>/dev/null | openssl x509 -noout -dates
+
+# More detailed certificate info
+openssl s_client -connect your-domain.com:443 -servername your-domain.com </dev/null 2>/dev/null | openssl x509 -noout -text
+```
+
+### Test from Browser
+
+1. Open your browser and navigate to `https://your-domain.com`
+2. Click the padlock icon in the address bar
+3. Verify certificate details:
+   - Valid certificate chain
+   - Correct domain name
+   - Valid expiration date
+   - Issued by Let's Encrypt (or your CA)
+
+### Online SSL Testing Tools
+
+- **SSL Labs**: [https://www.ssllabs.com/ssltest/](https://www.ssllabs.com/ssltest/)
+  - Comprehensive SSL/TLS testing
+  - Grade your security configuration
+  - Identify potential vulnerabilities
+
+---
+
 ## Troubleshooting
+
+### Python Command Not Found
+
+```
+ERROR: python3: command not found
+```
+
+**Solution**: Install Python 3.10 or higher:
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install python3 python3-pip
+
+# CentOS/RHEL
+sudo yum install python3 python3-pip
+
+# macOS (using Homebrew)
+brew install python@3.10
+
+# Verify installation
+python3 --version  # Should show 3.10 or higher
+```
 
 ### Certificate Not Found Error
 
@@ -490,12 +621,12 @@ ERROR: Permission denied: port 443
 **Solution**: Either run with sudo or use a non-privileged port:
 ```bash
 # Option 1: Run with sudo
-sudo -E python mongosync_insights.py
+sudo -E python3 mongosync_insights.py
 
 # Option 2: Use port forwarding (Linux)
 sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 8443
 export MI_PORT=8443
-python mongosync_insights.py
+python3 mongosync_insights.py
 
 # Option 3: Use reverse proxy (recommended)
 ```
