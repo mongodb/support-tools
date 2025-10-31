@@ -220,4 +220,3 @@ export MI_LOG_FILE=/var/log/mongosync-insights/insights.log
 
 - **[README.md](README.md)** - Getting started and installation guide
 - **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
-- **[CONNECTION_MANAGEMENT.md](CONNECTION_MANAGEMENT.md)** - MongoDB connection pooling details

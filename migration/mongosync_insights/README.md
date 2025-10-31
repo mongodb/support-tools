@@ -131,9 +131,8 @@ python3 mongosync_insights.py
 
 For detailed guides, see:
 
-- **[CONFIGURATION.md](CONFIGURATION.md)** - Complete environment variables reference and configuration options
+- **[CONFIGURATION.md](CONFIGURATION.md)** - Complete environment variables reference, configuration options, and MongoDB connection pooling
 - **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
-- **[CONNECTION_MANAGEMENT.md](CONNECTION_MANAGEMENT.md)** - MongoDB connection pooling and management
 
 ## Security Best Practices
 
