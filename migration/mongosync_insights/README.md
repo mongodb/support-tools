@@ -58,6 +58,39 @@ This script processes Mongosync metadata and generates various plots refreshing 
 
 ![Mongosync metadata plots](images/mongosync_metadata.png)
 
+## Documentation
+
+For detailed configuration and deployment guides, see:
+
+- **[CONFIGURATION.md](CONFIGURATION.md)** - Complete environment variables reference and configuration options
+- **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
+- **[CONNECTION_MANAGEMENT.md](CONNECTION_MANAGEMENT.md)** - MongoDB connection pooling and management
+- **[SECURITY_HEADERS.md](SECURITY_HEADERS.md)** - Security headers and best practices
+
+## Security
+
+### HTTPS Support
+
+Mongosync Insights supports HTTPS for secure deployments. See [HTTPS_SETUP.md](HTTPS_SETUP.md) for:
+
+- **Quick Start**: Enable HTTPS with Let's Encrypt certificates
+- **Direct SSL**: Run Flask with built-in SSL/TLS support
+- **Reverse Proxy**: Deploy with Nginx or Apache (recommended for production)
+
+**Enable HTTPS:**
+```bash
+export MI_SSL_ENABLED=true
+export MI_SSL_CERT=/path/to/certificate.pem
+export MI_SSL_KEY=/path/to/private-key.pem
+```
+
+### Best Practices
+
+- ✅ Always use HTTPS in production environments
+- ✅ Keep SSL certificates up to date with auto-renewal
+- ✅ Use environment variables for sensitive configuration
+- ✅ Review [SECURITY_HEADERS.md](SECURITY_HEADERS.md) for additional security measures
+
 ### License
 
 [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)

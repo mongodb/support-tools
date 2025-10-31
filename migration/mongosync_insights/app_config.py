@@ -17,7 +17,7 @@ PORT = int(os.getenv('MI_PORT', '3030'))
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.7.0.9"
+APP_VERSION = "0.7.0.15"
 
 # File upload settings
 MAX_FILE_SIZE = int(os.getenv('MI_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
@@ -26,6 +26,11 @@ ALLOWED_MIME_TYPES = ['application/x-ndjson']
 
 # Security settings
 SECURE_COOKIES = os.getenv('MI_SECURE_COOKIES', 'True').lower() == 'true'
+
+# SSL/TLS settings
+SSL_ENABLED = os.getenv('MI_SSL_ENABLED', 'False').lower() == 'true'
+SSL_CERT_PATH = os.getenv('MI_SSL_CERT', '/etc/letsencrypt/live/your-domain/fullchain.pem')
+SSL_KEY_PATH = os.getenv('MI_SSL_KEY', '/etc/letsencrypt/live/your-domain/privkey.pem')
 
 # Live monitoring settings
 REFRESH_TIME = int(os.getenv('MI_REFRESH_TIME', '10'))

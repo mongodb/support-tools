@@ -164,5 +164,32 @@ if __name__ == '__main__':
     logger.info(f"Log file: {app_info['log_file']}")
     logger.info(f"Server: {app_info['host']}:{app_info['port']}")
     
-    # Run the Flask app
-    app.run(host=HOST, port=PORT)
+    # Import SSL config
+    from app_config import SSL_ENABLED, SSL_CERT_PATH, SSL_KEY_PATH
+    
+    # Run the Flask app with or without SSL
+    if SSL_ENABLED:
+        import ssl
+        import os
+        
+        # Verify certificate files exist
+        if not os.path.exists(SSL_CERT_PATH):
+            logger.error(f"SSL certificate not found: {SSL_CERT_PATH}")
+            logger.error("Please provide a valid SSL certificate or set MI_SSL_ENABLED=false")
+            exit(1)
+        if not os.path.exists(SSL_KEY_PATH):
+            logger.error(f"SSL key not found: {SSL_KEY_PATH}")
+            logger.error("Please provide a valid SSL private key or set MI_SSL_ENABLED=false")
+            exit(1)
+        
+        # Create SSL context
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(SSL_CERT_PATH, SSL_KEY_PATH)
+        
+        logger.info("HTTPS enabled - Starting with SSL/TLS encryption")
+        logger.info(f"SSL Certificate: {SSL_CERT_PATH}")
+        app.run(host=HOST, port=PORT, ssl_context=context)
+    else:
+        logger.warning("HTTPS disabled - Starting with HTTP (insecure)")
+        logger.warning("For production use, enable HTTPS by setting MI_SSL_ENABLED=true")
+        app.run(host=HOST, port=PORT)
