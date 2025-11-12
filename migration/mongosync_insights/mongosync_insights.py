@@ -4,7 +4,16 @@ from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics
 from pymongo.errors import InvalidURI, PyMongoError
 from pymongo.uri_parser import parse_uri 
-from app_config import setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, SECURE_COOKIES, CONNECTION_STRING
+from app_config import (
+    setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, 
+    REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, 
+    SECURE_COOKIES, CONNECTION_STRING, get_validation_config, get_mongo_client
+)
+from connection_validator import (
+    validate_connection_string_content, check_rate_limit, record_failed_attempt,
+    clear_rate_limit, validate_required_database, sanitize_for_display,
+    ConnectionValidationError
+)
 
 # Validate configuration on startup
 try:
@@ -84,10 +93,9 @@ def home_page():
                                     <input type="text" id="connectionString" name="connectionString" size="47" autocomplete="off"
                                         placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>'''
     else:
-        parsed = parse_uri(CONNECTION_STRING)  
-        hosts = parsed['nodelist']
-        hosts_str = ", ".join([f"{host}:{port}" for host, port in hosts])  
-        connection_string_form = f"<p><b>Connecting to Destination Cluster at: </b>{hosts_str}</p>"
+        # Use safe sanitization for display
+        sanitized_connection = sanitize_for_display(CONNECTION_STRING)
+        connection_string_form = f"<p><b>Connecting to Destination Cluster at: </b>{sanitized_connection}</p>"
 
     return render_template('home.html', connection_string_form=connection_string_form)
 
@@ -99,6 +107,12 @@ def uploadLogs():
 @app.route('/renderMetrics', methods=['POST'])
 def renderMetrics():
     global _runtime_connection_string
+    
+    # Get client IP for rate limiting
+    client_ip = request.remote_addr
+    
+    # Get validation configuration
+    config = get_validation_config()
     
     # Use environment variable if set, otherwise get from form or runtime cache
     if CONNECTION_STRING:
@@ -115,34 +129,69 @@ def renderMetrics():
                                  error_title="No connection string provided",
                                  error_message="Please provide a valid MongoDB connection string.")
 
-    # Validate the connection string 
-    # If valid proceed to plot
-    # If not, return error page
-    try:  
+    # Comprehensive validation chain
+    try:
+        # 1. Rate limiting check (prevent brute force)
+        check_rate_limit(client_ip, config['max_attempts'], config['lockout_minutes'])
+        
+        # 2. Content validation (injection prevention, XSS, etc.)
+        TARGET_MONGO_URI = validate_connection_string_content(TARGET_MONGO_URI, config)
+        
+        # 3. Connection test (network, authentication)
         validate_connection(TARGET_MONGO_URI)
+        
+        # 4. Required database validation (if enabled)
+        if config['validate_required_db']:
+            client = get_mongo_client(TARGET_MONGO_URI)
+            validate_required_database(client, config['internal_db_name'])
+        
+        # Clear rate limit on successful validation
+        clear_rate_limit(client_ip)
+        
         # Cache connection string for subsequent AJAX calls (only if not from env var)
         if not CONNECTION_STRING:
             _runtime_connection_string = TARGET_MONGO_URI
-    except InvalidURI as e:
-        # Clear connection cache when connection string changes
+            
+    except ConnectionValidationError as e:
+        # Validation error (content, rate limit, etc.)
+        record_failed_attempt(client_ip)
         clear_connection_cache()
         _runtime_connection_string = None
         
+        logger.error(f"Connection validation failed: {e}")
+        return render_template('error.html',
+                            error_title="Validation Error",
+                            error_message=str(e))
+    except InvalidURI as e:
         # Invalid connection string format
+        record_failed_attempt(client_ip)
+        clear_connection_cache()
+        _runtime_connection_string = None
+        
         logger.error(f"Invalid connection string format: {e}")
         return render_template('error.html',
                             error_title="Invalid Connection String",
-                            error_message=f"The connection string format is invalid. Please check your MongoDB connection string and try again.")
+                            error_message="The connection string format is invalid. Please check your MongoDB connection string and try again.")
     except PyMongoError as e:
-        # Clear connection cache when connection fails
+        # Failed to connect (authentication, network, etc.)
+        record_failed_attempt(client_ip)
         clear_connection_cache()
         _runtime_connection_string = None
         
-        # Failed to connect (authentication, network, etc.)
         logger.error(f"Failed to connect: {e}")
         return render_template('error.html',
                             error_title="Connection Failed",
-                            error_message=f"Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible.")
+                            error_message="Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible.")
+    except Exception as e:
+        # Unexpected error
+        record_failed_attempt(client_ip)
+        clear_connection_cache()
+        _runtime_connection_string = None
+        
+        logger.error(f"Unexpected error during connection validation: {e}")
+        return render_template('error.html',
+                            error_title="Connection Error",
+                            error_message="An unexpected error occurred. Please try again.")
 
     return plotMetrics()
 

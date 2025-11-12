@@ -68,6 +68,27 @@ All configuration can be set using `export` commands before running the applicat
 
 > **Note**: For detailed HTTPS setup instructions, see [HTTPS_SETUP.md](HTTPS_SETUP.md)
 
+### Connection String Validation
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MI_MAX_CONNECTION_LENGTH` | `2048` | Maximum connection string length in characters |
+| `MI_MAX_FAILED_ATTEMPTS` | `5` | Maximum failed connection attempts before lockout |
+| `MI_LOCKOUT_MINUTES` | `15` | Lockout duration in minutes after max failures |
+| `MI_VALIDATE_LENGTH` | `true` | Enable connection string length validation |
+| `MI_VALIDATE_SCHEME` | `true` | Enable URI scheme validation (mongodb:// or mongodb+srv://) |
+| `MI_VALIDATE_CHARSET` | `true` | Enable character allowlist validation |
+| `MI_VALIDATE_HTML` | `true` | Enable HTML/script tag detection |
+| `MI_VALIDATE_ENCODING` | `true` | Enable double encoding detection |
+| `MI_VALIDATE_UNICODE` | `true` | Enable Unicode normalization and homograph detection |
+| `MI_VALIDATE_CREDENTIALS` | `true` | Enable credential format validation |
+| `MI_VALIDATE_PATH_TRAVERSAL` | `true` | Enable path traversal pattern detection |
+| `MI_VALIDATE_REQUIRED_DB` | `true` | Enable required database existence validation |
+
+> **Note**: For detailed validation information, see [VALIDATION.md](VALIDATION.md)
+>
+> **Security Warning**: Only disable validations in development/testing environments. All validations should remain enabled for production deployments.
+
 ---
 
 ## 🚀 Usage Examples

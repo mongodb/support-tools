@@ -39,6 +39,22 @@ CONNECTION_STRING = os.getenv('MI_CONNECTION_STRING', '')
 # MongoDB settings
 INTERNAL_DB_NAME = os.getenv('MI_INTERNAL_DB_NAME', "mongosync_reserved_for_internal_use")
 
+# Connection string validation settings
+MAX_CONNECTION_STRING_LENGTH = int(os.getenv('MI_MAX_CONNECTION_LENGTH', '2048'))
+MAX_FAILED_ATTEMPTS = int(os.getenv('MI_MAX_FAILED_ATTEMPTS', '5'))
+LOCKOUT_PERIOD_MINUTES = int(os.getenv('MI_LOCKOUT_MINUTES', '15'))
+
+# Validation toggles (all enabled by default for security)
+VALIDATE_LENGTH = os.getenv('MI_VALIDATE_LENGTH', 'true').lower() == 'true'
+VALIDATE_SCHEME = os.getenv('MI_VALIDATE_SCHEME', 'true').lower() == 'true'
+VALIDATE_CHARSET = os.getenv('MI_VALIDATE_CHARSET', 'true').lower() == 'true'
+VALIDATE_HTML = os.getenv('MI_VALIDATE_HTML', 'true').lower() == 'true'
+VALIDATE_ENCODING = os.getenv('MI_VALIDATE_ENCODING', 'true').lower() == 'true'
+VALIDATE_UNICODE = os.getenv('MI_VALIDATE_UNICODE', 'true').lower() == 'true'
+VALIDATE_CREDENTIALS = os.getenv('MI_VALIDATE_CREDENTIALS', 'true').lower() == 'true'
+VALIDATE_PATH_TRAVERSAL = os.getenv('MI_VALIDATE_PATH_TRAVERSAL', 'true').lower() == 'true'
+VALIDATE_REQUIRED_DB = os.getenv('MI_VALIDATE_REQUIRED_DB', 'true').lower() == 'true'
+
 # UI settings
 PLOT_WIDTH = int(os.getenv('MI_PLOT_WIDTH', '1450'))
 PLOT_HEIGHT = int(os.getenv('MI_PLOT_HEIGHT', '1800'))
@@ -183,3 +199,26 @@ def clear_connection_cache():
     logger = logging.getLogger(__name__)
     get_mongo_client.cache_clear()
     logger.info("MongoDB connection cache cleared")
+
+def get_validation_config():
+    """
+    Get validation configuration as a dictionary.
+    
+    Returns:
+        dict: Configuration dictionary for validation functions
+    """
+    return {
+        'validate_length': VALIDATE_LENGTH,
+        'validate_scheme': VALIDATE_SCHEME,
+        'validate_charset': VALIDATE_CHARSET,
+        'validate_html': VALIDATE_HTML,
+        'validate_encoding': VALIDATE_ENCODING,
+        'validate_unicode': VALIDATE_UNICODE,
+        'validate_credentials': VALIDATE_CREDENTIALS,
+        'validate_path_traversal': VALIDATE_PATH_TRAVERSAL,
+        'validate_required_db': VALIDATE_REQUIRED_DB,
+        'max_length': MAX_CONNECTION_STRING_LENGTH,
+        'max_attempts': MAX_FAILED_ATTEMPTS,
+        'lockout_minutes': LOCKOUT_PERIOD_MINUTES,
+        'internal_db_name': INTERNAL_DB_NAME
+    }
