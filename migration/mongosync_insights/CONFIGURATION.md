@@ -4,7 +4,7 @@ This document explains the configuration management system for Mongosync Insight
 
 ## Prerequisites
 
-**Python 3.10+** is required to run Mongosync Insights. See [README.md](README.md) for installation instructions.
+**Python 3.10+** and **libmagic** system library are required to run Mongosync Insights. See [README.md](README.md) for complete installation instructions including system dependencies.
 
 ## Configuration Overview
 

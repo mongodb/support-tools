@@ -21,7 +21,31 @@ Mongosync Insights provides two main capabilities:
 
 Download or clone the Mongosync Insights folder from this repository.
 
-### 2. Install Dependencies
+### 2. Install System Dependencies
+
+Before installing Python packages, ensure **libmagic** is installed on your system (required for file type detection):
+
+**macOS:**
+```bash
+brew install libmagic
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install libmagic1
+```
+
+**Red Hat/CentOS/Fedora:**
+```bash
+sudo yum install file-libs
+```
+
+**Windows:**
+- Download and install from [https://github.com/nscaife/file-windows](https://github.com/nscaife/file-windows)
+- Or use: `pip install python-magic-bin` (includes precompiled libmagic)
+
+### 3. Install Python Dependencies
 
 Navigate to the directory containing the Python script and the `requirements.txt` file:
 

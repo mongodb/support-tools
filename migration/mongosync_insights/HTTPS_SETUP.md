@@ -14,15 +14,52 @@ This guide explains how to enable HTTPS/SSL for Mongosync Insights to secure you
 | Direct Flask SSL | Small deployments | ⭐⭐ Medium | ✅ Good |
 | Reverse Proxy | Production | ⭐⭐⭐ Advanced | ✅ Excellent |
 
+## Why Use HTTPS?
+
+Mongosync Insights handles sensitive data that should be protected in transit:
+
+### 🔐 **Credentials Protection**
+The application transmits MongoDB connection strings containing usernames and passwords. Without HTTPS, these credentials are sent as plaintext over the network, making them vulnerable to interception by anyone monitoring network traffic.
+
+### 📊 **Database Metrics Privacy**
+Mongosync Insights displays detailed metrics about your database infrastructure, including collection names, performance characteristics, and sizing information. This data could reveal sensitive details about your application architecture to unauthorized parties.
+
+### 🛡️ **Security Features Require HTTPS**
+Several built-in security features only function properly with HTTPS:
+- **Secure session cookies** prevent session hijacking attacks
+- **HSTS headers** protect against protocol downgrade attacks
+- **Content Security Policy** guards against XSS attacks
+
+Without HTTPS, these protections are either disabled or ineffective.
+
+### ✅ **Best Practice**
+For any production deployment, especially those accessible over the internet or untrusted networks, HTTPS is industry standard and essential for maintaining data confidentiality and integrity.
+
+---
+
+**When HTTP is acceptable:**
+- Local development on `localhost`
+- Testing environments on isolated networks
+- Internal deployments with network-level security controls
+
+**When HTTPS is required:**
+- Production deployments
+- Internet-facing applications
+- Access over untrusted networks (public WiFi, VPNs, etc.)
+- Compliance requirements (SOC 2, PCI DSS, HIPAA, etc.)
+
+---
+
 ## Table of Contents
 
-1. [Default Setup (HTTP)](#default-setup-http)
-2. [Option A: Direct Flask SSL](#option-a-direct-flask-ssl)
-3. [Option B: Reverse Proxy (Recommended for Production)](#option-b-reverse-proxy-recommended-for-production)
-4. [Environment Variables Reference](#environment-variables-reference)
-5. [Firewall Configuration](#firewall-configuration)
-6. [Verify HTTPS Setup](#verify-https-setup)
-7. [Troubleshooting](#troubleshooting)
+1. [Why Use HTTPS?](#why-use-https)
+2. [Default Setup (HTTP)](#default-setup-http)
+3. [Option A: Direct Flask SSL](#option-a-direct-flask-ssl)
+4. [Option B: Reverse Proxy (Recommended for Production)](#option-b-reverse-proxy-recommended-for-production)
+5. [Environment Variables Reference](#environment-variables-reference)
+6. [Firewall Configuration](#firewall-configuration)
+7. [Verify HTTPS Setup](#verify-https-setup)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
