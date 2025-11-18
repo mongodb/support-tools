@@ -1,391 +1,196 @@
 # Connection String Validation
 
-This document describes the security validations implemented for MongoDB connection strings in Mongosync Insights.
+This document describes the connection string handling in Mongosync Insights.
 
 ## Overview
 
-The application implements comprehensive, multi-layered validation to protect against various security threats including:
-- Injection attacks (SQL, NoSQL, command injection)
-- Cross-Site Scripting (XSS)
-- Log injection
-- Brute force attacks
-- Encoding bypass attacks
-- Homograph attacks
+Mongosync Insights uses PyMongo's built-in validation for connection strings, which provides:
+- URI format validation
+- Connection testing
+- Authentication verification
 
-## Validation Layers
+## Validation Process
 
-### 1. Rate Limiting
+### 1. Empty String Check
 
-Prevents brute force attacks by limiting failed connection attempts.
+The application first checks if a connection string was provided:
 
-**Configuration:**
-```bash
-MI_MAX_FAILED_ATTEMPTS=5          # Maximum failed attempts before lockout
-MI_LOCKOUT_MINUTES=15             # Lockout duration in minutes
+```python
+if not TARGET_MONGO_URI or not TARGET_MONGO_URI.strip():
+    return error("Please provide a valid MongoDB connection string.")
 ```
 
-**Behavior:**
-- Tracks failed attempts per client IP address
-- Locks out clients after exceeding maximum attempts
-- Automatically expires lockouts after configured duration
-- Clears rate limit on successful validation
+### 2. PyMongo URI Parsing
 
-### 2. Length Validation
+PyMongo's `parse_uri()` function validates the connection string format and raises `InvalidURI` if the format is invalid. This checks:
+- Proper URI scheme (`mongodb://` or `mongodb+srv://`)
+- Valid URI syntax
+- Proper host and port format
+- Valid URI components
 
-Prevents Denial of Service (DoS) attacks using extremely long connection strings.
+### 3. Connection Test
 
-**Configuration:**
-```bash
-MI_MAX_CONNECTION_LENGTH=2048     # Maximum connection string length in characters
-MI_VALIDATE_LENGTH=true           # Enable/disable length validation
+The application attempts to connect to MongoDB using `validate_connection()`, which:
+- Creates a MongoDB client
+- Tests connectivity with a `ping` command
+- Validates authentication credentials
+- Raises `PyMongoError` if connection fails
+
+## Display Sanitization
+
+Connection strings are sanitized before display to protect credentials.
+
+### `sanitize_for_display(connection_string)`
+
+This function removes credentials from connection strings for safe display in the UI.
+
+**Example:**
+```python
+# Input
+connection_string = "mongodb+srv://user:password@cluster.mongodb.net/mydb"
+
+# Output
+sanitized = "cluster.mongodb.net:27017 (database: mydb)"
 ```
 
-**Checks:**
-- Connection string does not exceed maximum length
-
-### 3. URI Scheme Validation
-
-Ensures only legitimate MongoDB URI schemes are used.
-
-**Configuration:**
-```bash
-MI_VALIDATE_SCHEME=true           # Enable/disable scheme validation
-```
-
-**Allowed schemes:**
-- `mongodb://` - Standard MongoDB connection
-- `mongodb+srv://` - MongoDB Atlas/DNS SRV connection
-
-**Blocks:**
-- HTTP, HTTPS, FTP, and other non-MongoDB schemes
-
-### 4. Null Byte Prevention
-
-Prevents null byte injection attacks that can truncate strings and bypass security checks.
-
-**Configuration:**
-- Always enabled (critical security check)
-
-**Blocks:**
-- Raw null bytes (`\x00`)
-- URL-encoded null bytes (`%00`)
-
-### 5. CRLF Injection Prevention
-
-Prevents Carriage Return Line Feed (CRLF) injection that could manipulate logs or HTTP responses.
-
-**Configuration:**
-- Always enabled (critical security check)
-
-**Blocks:**
-- Raw CRLF characters (`\r`, `\n`)
-- URL-encoded CRLF (`%0d`, `%0a`)
-
-### 6. Character Allowlist
-
-Restricts connection strings to valid URI characters, preventing various injection attacks.
-
-**Configuration:**
-```bash
-MI_VALIDATE_CHARSET=true          # Enable/disable character validation
-```
-
-**Allowed characters:**
-- Alphanumeric: `A-Z`, `a-z`, `0-9`
-- Unreserved: `-`, `.`, `_`, `~`
-- Sub-delimiters: `!`, `$`, `&`, `'`, `(`, `)`, `*`, `+`, `,`, `;`, `=`
-- Gen-delimiters: `:`, `/`, `?`, `#`, `[`, `]`, `@`
-- Percent-encoded: `%XX`
-
-**Blocks:**
-- Control characters
-- Shell metacharacters
-- Script injection characters
-
-### 7. HTML/Script Detection
-
-Detects and blocks HTML and JavaScript content that could cause XSS when displayed.
-
-**Configuration:**
-```bash
-MI_VALIDATE_HTML=true             # Enable/disable HTML detection
-```
-
-**Blocks:**
-- `<script>` tags
-- `<iframe>`, `<object>`, `<embed>` tags
-- `<img>` tags
-- `javascript:` URIs
-- HTML event handlers (`onerror`, `onload`, etc.)
-
-### 8. Double Encoding Prevention
-
-Prevents double-encoding attacks that could bypass other validations.
-
-**Configuration:**
-```bash
-MI_VALIDATE_ENCODING=true         # Enable/disable encoding validation
-```
-
-**Blocks:**
-- Double percent-encoding (e.g., `%2527` for encoded `'`)
-- Suspicious encoded characters (`%00`, `%0d`, `%0a`, `%22`, `%27`, `%3c`, `%3e`)
-
-### 9. Unicode Normalization
-
-Normalizes Unicode and prevents homograph attacks using lookalike characters.
-
-**Configuration:**
-```bash
-MI_VALIDATE_UNICODE=true          # Enable/disable Unicode validation
-```
-
-**Checks:**
-- Normalizes to NFC (Canonical Decomposition, followed by Canonical Composition)
-- Rejects non-normalized strings
-- Blocks bidirectional override characters (used in spoofing attacks)
-
-**Blocks:**
-- Right-to-left override (`\u202E`)
-- Other bidirectional control characters
-
-### 10. Path Traversal Prevention
-
-Prevents path traversal patterns that could be exploited in unexpected code paths.
-
-**Configuration:**
-```bash
-MI_VALIDATE_PATH_TRAVERSAL=true   # Enable/disable path traversal validation
-```
-
-**Blocks:**
-- `../` patterns
-- `..\\` patterns
-- Encoded versions (`%2e%2e%2f`, `%2e%2e%5c`)
-
-### 11. Credential Format Validation
-
-Ensures credentials are properly formatted when present.
-
-**Configuration:**
-```bash
-MI_VALIDATE_CREDENTIALS=true      # Enable/disable credential validation
-```
-
-**Checks:**
-- Credentials follow `username:password` format
-- Neither username nor password is empty
-- No suspicious characters in credentials
-
-### 12. Required Database Validation
-
-Verifies the required mongosync internal database exists and is accessible.
-
-**Configuration:**
-```bash
-MI_VALIDATE_REQUIRED_DB=true      # Enable/disable database validation
-MI_INTERNAL_DB_NAME=mongosync_reserved_for_internal_use  # Required database name
-```
-
-**Checks:**
-- Database exists on the cluster
-- Database is accessible (read permissions)
-- Collections can be listed
-
-## Validation Order
-
-Validations are executed in the following order (optimized for performance):
-
-1. **Length check** - Quick, prevents processing oversized strings
-2. **Null byte check** - Simple, catches obvious attacks
-3. **CRLF check** - Simple, prevents log injection
-4. **URI scheme validation** - Ensures proper MongoDB URI
-5. **Character allowlist** - Broad injection prevention
-6. **HTML/script detection** - XSS prevention
-7. **Double encoding detection** - Encoding bypass prevention
-8. **Path traversal prevention** - Defense in depth
-9. **Unicode normalization** - Homograph attack prevention (expensive)
-10. **Credential format validation** - Structure validation
-11. **Connection test** - Network and authentication (expensive)
-12. **Required database validation** - Application-specific check
+**Implementation:**
+- Parses the connection string to extract hosts and database
+- Escapes HTML special characters
+- Returns only non-sensitive information
+- Returns `"[Connection String Provided]"` if parsing fails
 
 ## Error Handling
 
-### Generic Error Messages
+The application provides clear error messages for common issues:
 
-To prevent information leakage, validation errors return generic messages to users:
+### Invalid URI Format
+**Error Title:** "Invalid Connection String"  
+**Error Message:** "The connection string format is invalid. Please check your MongoDB connection string and try again."
 
-- **Validation Error**: "Invalid connection string format."
-- **Rate Limit**: "Too many failed attempts. Please try again in X minutes."
-- **Connection Failed**: "Could not connect to MongoDB. Please verify your credentials and network connectivity."
+**Common causes:**
+- Incorrect URI scheme
+- Missing required components
+- Invalid characters in URI
 
-### Detailed Logging
+### Connection Failed
+**Error Title:** "Connection Failed"  
+**Error Message:** "Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible."
 
-Specific error details are logged for administrators:
+**Common causes:**
+- Incorrect username or password
+- Network connectivity issues
+- Firewall blocking connection
+- MongoDB server not running
+- Incorrect host or port
+
+### Unexpected Error
+**Error Title:** "Connection Error"  
+**Error Message:** "An unexpected error occurred. Please try again."
+
+**Common causes:**
+- Timeout issues
+- DNS resolution failures
+- Unexpected server responses
+
+## Logging
+
+All connection attempts and errors are logged to `insights.log`:
 
 ```
-logger.error(f"CRLF characters detected in connection string")
-logger.error(f"Rate limit triggered for {client_ip} after {max_attempts} attempts")
-logger.error(f"Invalid credential format: missing separator")
+logger.error(f"Invalid connection string format: {e}")
+logger.error(f"Failed to connect: {e}")
+logger.error(f"Unexpected error during connection validation: {e}")
 ```
 
-## Testing
+**Note:** Connection strings with credentials are not logged to prevent credential exposure.
 
-Run the validation test suite:
+## Security Considerations
+
+### Credential Protection
+
+1. **Never displayed:** Credentials are always removed before displaying connection information
+2. **Not logged:** Connection strings with passwords are never written to logs
+3. **Sanitized output:** Only host, port, and database name are shown in the UI
+
+### HTTPS Recommended
+
+For production deployments, always use HTTPS to protect connection strings in transit. See [HTTPS_SETUP.md](HTTPS_SETUP.md) for setup instructions.
+
+### Secure Cookies
+
+Enable secure cookies when using HTTPS:
 
 ```bash
-cd migration/mongosync_insights
-python3 test_validations.py
+MI_SECURE_COOKIES=true
 ```
 
-The test suite validates:
-- All individual validation functions
-- Comprehensive validation chain
-- Common attack vectors (XSS, SQL injection, CRLF, etc.)
+This ensures session cookies are only transmitted over encrypted connections.
 
-## Security Best Practices
+## Connection String Best Practices
 
-### Always Enable
+### MongoDB Atlas
 
-The following validations should **always** be enabled:
-- Null byte prevention (always enabled)
-- CRLF prevention (always enabled)
-- Character allowlist
-- HTML/script detection
-- Double encoding prevention
+Use the SRV connection string format:
 
-### Production Deployment
+```
+mongodb+srv://username:password@cluster.mongodb.net/database
+```
 
-For production deployments, ensure:
+### Credentials in Environment Variables
 
-1. **All validations enabled**:
-   ```bash
-   MI_VALIDATE_LENGTH=true
-   MI_VALIDATE_SCHEME=true
-   MI_VALIDATE_CHARSET=true
-   MI_VALIDATE_HTML=true
-   MI_VALIDATE_ENCODING=true
-   MI_VALIDATE_UNICODE=true
-   MI_VALIDATE_CREDENTIALS=true
-   MI_VALIDATE_PATH_TRAVERSAL=true
-   MI_VALIDATE_REQUIRED_DB=true
-   ```
-
-2. **Strict rate limiting**:
-   ```bash
-   MI_MAX_FAILED_ATTEMPTS=5
-   MI_LOCKOUT_MINUTES=15
-   ```
-
-3. **HTTPS enabled** (see HTTPS_SETUP.md)
-
-4. **Secure cookies enabled**:
-   ```bash
-   MI_SECURE_COOKIES=true
-   ```
-
-### Development/Testing
-
-For local development, you can disable specific validations if needed:
+For production, store the connection string in an environment variable:
 
 ```bash
-# Example: Disable unicode validation for testing
-MI_VALIDATE_UNICODE=false
-
-# Example: Increase max length for testing large connection strings
-MI_MAX_CONNECTION_LENGTH=4096
+export MI_CONNECTION_STRING="mongodb+srv://user:pass@cluster.mongodb.net/db"
+python3 mongosync_insights.py
 ```
 
-**Warning**: Never disable critical validations (null bytes, CRLF) even in development.
+This prevents credentials from being entered through the web UI.
 
-## Configuration Reference
+### URL Encoding
 
-All validation environment variables:
+Special characters in passwords must be URL-encoded:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MI_MAX_CONNECTION_LENGTH` | `2048` | Maximum connection string length |
-| `MI_MAX_FAILED_ATTEMPTS` | `5` | Failed attempts before lockout |
-| `MI_LOCKOUT_MINUTES` | `15` | Lockout duration in minutes |
-| `MI_VALIDATE_LENGTH` | `true` | Enable length validation |
-| `MI_VALIDATE_SCHEME` | `true` | Enable URI scheme validation |
-| `MI_VALIDATE_CHARSET` | `true` | Enable character allowlist |
-| `MI_VALIDATE_HTML` | `true` | Enable HTML/script detection |
-| `MI_VALIDATE_ENCODING` | `true` | Enable double encoding detection |
-| `MI_VALIDATE_UNICODE` | `true` | Enable Unicode normalization |
-| `MI_VALIDATE_CREDENTIALS` | `true` | Enable credential format validation |
-| `MI_VALIDATE_PATH_TRAVERSAL` | `true` | Enable path traversal prevention |
-| `MI_VALIDATE_REQUIRED_DB` | `true` | Enable required database validation |
-| `MI_INTERNAL_DB_NAME` | `mongosync_reserved_for_internal_use` | Required database name |
+- `@` becomes `%40`
+- `:` becomes `%3A`
+- `/` becomes `%2F`
+- `?` becomes `%3F`
+- `#` becomes `%23`
 
-## Attack Vector Examples
+Example:
+```
+# Password: p@ss:word
+mongodb://user:p%40ss%3Aword@cluster.mongodb.net/db
+```
 
-### Blocked Attacks
+## Troubleshooting
 
-The validation system blocks these common attack vectors:
+### "Invalid Connection String" Error
 
-1. **XSS Attack**:
-   ```
-   mongodb+srv://user:pass<script>alert(1)</script>@test.mongodb.net/db
-   ```
+1. Check the URI format starts with `mongodb://` or `mongodb+srv://`
+2. Verify all components are properly formatted
+3. Ensure special characters in password are URL-encoded
+4. Check for typos in the connection string
 
-2. **SQL Injection**:
-   ```
-   mongodb://user'; DROP TABLE users--@localhost/db
-   ```
+### "Connection Failed" Error
 
-3. **CRLF Injection**:
-   ```
-   mongodb://user:pass@localhost/db\r\nInjected: header
-   ```
+1. Verify credentials are correct
+2. Check network connectivity to MongoDB server
+3. Ensure MongoDB server is running
+4. Verify firewall allows outbound connections on MongoDB port
+5. For Atlas, ensure IP address is whitelisted
 
-4. **Path Traversal**:
-   ```
-   mongodb://user:pass@localhost/../../../etc/passwd
-   ```
+### Connection Hangs
 
-5. **Null Byte Injection**:
-   ```
-   mongodb://user:pass\x00@localhost/db
-   ```
-
-6. **Double Encoding**:
-   ```
-   mongodb://test%2527%2520OR%25201=1@localhost
-   ```
-
-7. **Homograph Attack**:
-   ```
-   mongodb://user:pass@mоngodb.net  # Cyrillic 'o' instead of Latin 'o'
-   ```
+1. Check for network timeouts (default: 5 seconds)
+2. Verify DNS resolution for hostname
+3. Ensure no proxy blocking MongoDB traffic
 
 ## Support
 
-For questions or issues with validation:
+For connection issues:
 
 1. Check logs: `insights.log`
-2. Run test suite: `python3 test_validations.py`
-3. Review configuration: ensure all required environment variables are set
-4. Contact support with sanitized log entries (never include connection strings with credentials)
-
-### License
-
-[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
-
-DISCLAIMER
-----------
-Please note: all tools/ scripts in this repo are released for use "AS IS" **without any warranties of any kind**,
-including, but not limited to their installation, use, or performance.  We disclaim any and all warranties, either 
-express or implied, including but not limited to any warranty of noninfringement, merchantability, and/ or fitness 
-for a particular purpose.  We do not warrant that the technology will meet your requirements, that the operation 
-thereof will be uninterrupted or error-free, or that any errors will be corrected.
-
-Any use of these scripts and tools is **at your own risk**.  There is no guarantee that they have been through 
-thorough testing in a comparable environment and we are not responsible for any damage or data loss incurred with 
-their use.
-
-You are responsible for reviewing and testing any scripts you run *thoroughly* before use in any non-testing 
-environment.
-
-Thanks,  
-The MongoDB Support Team
+2. Verify connection string format
+3. Test connection using MongoDB shell or Compass
+4. Review MongoDB server logs for authentication failures
