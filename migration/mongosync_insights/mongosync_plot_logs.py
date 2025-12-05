@@ -363,7 +363,7 @@ def upload_file():
 #                            yaxis5=dict(showgrid=False, zeroline=False, showticklabels=False))
 
         # Estimated Total and Copied
-        if estimated_total_bytes > 0  or estimated_copied_bytes > 0:
+        if estimated_total_bytes > 0 or estimated_copied_bytes > 0:
         #fig = go.Figure(data=[go.Bar(name='Estimated Total Bytes', x=['Bytes'], y=[estimated_total_bytes], row=1, col=1), go.Bar(name='Estimated Copied Bytes', x=['Bytes'], y=[estimated_copied_bytes])], row=1, col=1)
             fig.add_trace( go.Bar( name='Estimated ' + estimated_total_bytes_unit + ' to be Copied',  x=[estimated_total_bytes_unit],  y=[estimated_total_bytes], legendgroup="groupTotalCopied" ), row=1, col=2)
             fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=1, col=2)
