@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Mongosync Insights - Log Analysis{% endblock %}
+
+{% block header_title %}Mongosync Insights - Logs{% endblock %}
+
+{% block styles %}
+    #plot {
+        margin: 0 auto;
+        max-width: 1450px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background-color: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    @media (max-width: 768px) {
+        #plot {
+            width: 95%;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+<div id="plot"></div>
+<script>
+var plot = {{ plot_json | safe }};
+Plotly.newPlot('plot', plot.data, plot.layout);
+</script>
+{% endblock %}
+
+{% block footer %}
+<p>Version {{ app_version }}</p>
+{% endblock %}

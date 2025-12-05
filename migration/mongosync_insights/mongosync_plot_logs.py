@@ -2,121 +2,185 @@ import plotly.graph_objects as go
 from plotly.utils import PlotlyJSONEncoder
 from plotly.subplots import make_subplots
 from tqdm import tqdm
-from flask import request, redirect, render_template_string
+from flask import request, render_template
 import json
 from datetime import datetime, timezone
 from dateutil import parser
 import re
 import logging
+import os
+import magic
+from werkzeug.utils import secure_filename
 from mongosync_plot_utils import format_byte_size, convert_bytes
+from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
 
 def upload_file():
-    logging.basicConfig(filename='mongosync_insights.log', level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s')
+    # Use the centralized logging configuration
+    logger = logging.getLogger(__name__)
     
     # Check if a file was uploaded
     if 'file' not in request.files:
-        logging.error(f"File was not uploaded")
-        return redirect(request.url)
+        logger.error("No file was uploaded")
+        return render_template('error.html', 
+                             error_title="Upload Error",
+                             error_message="No file was selected for upload.")
 
     file = request.files['file']
 
     # If the user does not select a file, the browser submits an
     # empty file without a filename.
     if file.filename == '':
-        logging.error(f"Empty file without a filename")
-        return redirect(request.url)
+        logger.error("Empty file without a filename")
+        return render_template('error.html',
+                             error_title="Upload Error", 
+                             error_message="Please select a file to upload.")
 
     if file:
-        # Read the file and convert it to a list of lines
-        lines = list(file)
-
-        # Check if all lines are valid JSON
-        for line in tqdm(lines, desc="Reading lines"):
-            try:
-                json.loads(line)
-            except json.JSONDecodeError as e:
-                logging.error(f"Invalid JSON file: {e}")
-                return redirect(request.url)  # or handle the error in another appropriate way
-
-        # Load lines with 'message' == "Replication progress."
-        #data = [json.loads(line) for line in lines if json.loads(line).get('message') == "Replication progress."]
-        logging.info(f"Loading Replication progress")
-        regex_pattern = re.compile(r"Replication progress", re.IGNORECASE)
-        data = [
-            json.loads(line) 
-            for line in lines 
-            if regex_pattern.search(json.loads(line).get('message', ''))
-        ]
-
-        # Load lines with 'message' == "Version info"
-        #version_info_list = [json.loads(line) for line in lines if json.loads(line).get('message') == "Version info"]
-        logging.info(f"Loading Version info")
-        regex_pattern = re.compile(r"Version info", re.IGNORECASE)
-        version_info_list = [
-            json.loads(line) 
-            for line in lines 
-            if regex_pattern.search(json.loads(line).get('message', ''))
-        ]
-
-        # Load lines with 'message' == "Operation duration stats."
-        #mongosync_ops_stats = [json.loads(line) for line in lines if json.loads(line).get('message') == "Operation duration stats."]
-        logging.info(f"Loading Operation duration stats")
-        regex_pattern = re.compile(r"Operation duration stats", re.IGNORECASE)
-        mongosync_ops_stats = [
-            json.loads(line) 
-            for line in lines 
-            if regex_pattern.search(json.loads(line).get('message', ''))
-        ]
-
-        # Load lines with 'message' == "sent response"
-        #mongosync_sent_response = [json.loads(line) for line in lines if json.loads(line).get('message') == "Sent response."]
-        logging.info(f"Loading sent response")
-        regex_pattern = re.compile(r"sent response", re.IGNORECASE)
-        mongosync_sent_response = [
-            json.loads(line) 
-            for line in lines 
-            if regex_pattern.search(json.loads(line).get('message', ''))
-        ]
-
-        # Load lines with 'message' == "<Phase Name>"
-        logging.info(f"Phase Transitions for Mongosync Standalone")
-        #regex_pattern = re.compile(r"Start handler called|Starting Mongosync|Starting initializing collections and indexes phase|Starting initializing partitions phase|Starting collection copy phase|Starting change event application phase|Commit handler called", 
-        #                           re.IGNORECASE) 
-        regex_pattern = re.compile(r"Starting initializing collections and indexes phase|Starting initializing partitions phase|Starting collection copy phase|Starting change event application phase|Commit handler called", 
-                                   re.IGNORECASE) 
-        phase_transitions_json = [
-            json.loads(line) 
-            for line in lines 
-            if regex_pattern.search(json.loads(line).get('message', ''))
-        ]
-
-        # Load lines with 'message' == "Mongosync Options"
-        #mongosync_opts_list = [json.loads(line) for line in lines if json.loads(line).get('message') == "Mongosync Options"]
-        logging.info(f"Loading Mongosync Options")
-        regex_pattern = re.compile(r"Mongosync Options", re.IGNORECASE)
-        mongosync_opts_list = [  
-            {k: v for k, v in json.loads(line).items() if k not in ('time', 'level')}  
-            for line in lines  
-            if regex_pattern.search(json.loads(line).get('message', ''))  
-        ]  
-
-        # Load lines with 'message' == "Mongosync HiddenFlags"
-        logging.info(f"Loading HiddenFlags")
-        regex_pattern = re.compile(r"Mongosync HiddenFlags", re.IGNORECASE)
-        mongosync_hiddenflags = [  
-            {k: v for k, v in json.loads(line).items() if k not in ('time', 'level')}  
-            for line in lines  
-            if regex_pattern.search(json.loads(line).get('message', ''))  
-        ]  
+        # Validate filename and extension
+        filename = secure_filename(file.filename)
+        if not filename:
+            logger.error("Invalid filename")
+            return render_template('error.html',
+                                 error_title="Upload Error",
+                                 error_message="Invalid filename. Please use a valid file name.")
         
-
+        # Check file extension
+        file_ext = os.path.splitext(filename)[1].lower()
+        if file_ext not in ALLOWED_EXTENSIONS:
+            logger.error(f"Invalid file extension: {file_ext}. Allowed: {ALLOWED_EXTENSIONS}")
+            return render_template('error.html',
+                                 error_title="Invalid File Type",
+                                 error_message=f"File type '{file_ext}' is not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}")
+        
+        # Check file size (Flask's request.files doesn't have content_length, so we need to read and check)
+        file.seek(0, 2)  # Seek to end of file
+        file_size = file.tell()  # Get current position (file size)
+        file.seek(0)  # Reset to beginning
+        
+        if file_size > MAX_FILE_SIZE:
+            logger.error(f"File too large: {file_size} bytes (max: {MAX_FILE_SIZE} bytes)")
+            max_size_mb = MAX_FILE_SIZE / (1024 * 1024)
+            actual_size_mb = file_size / (1024 * 1024)
+            return render_template('error.html',
+                                 error_title="File Too Large",
+                                 error_message=f"File size ({actual_size_mb:.1f} MB) exceeds maximum allowed size ({max_size_mb:.1f} MB).")
+        
+        # Check MIME type using python-magic
+        try:
+            mime = magic.Magic(mime=True)
+            file.seek(0)
+            # Read first 2KB for MIME detection (sufficient for most file types)
+            file_sample = file.read(2048)
+            file_mime_type = mime.from_buffer(file_sample)
+            file.seek(0)  # Reset to beginning
+            
+            logger.info(f"Detected MIME type: {file_mime_type}")
+            
+            if file_mime_type not in ALLOWED_MIME_TYPES:
+                logger.error(f"Invalid MIME type: {file_mime_type}. Allowed: {ALLOWED_MIME_TYPES}")
+                return render_template('error.html',
+                                     error_title="Invalid File Type",
+                                     error_message=f"File MIME type '{file_mime_type}' is not allowed. Only JSON/text files are accepted. Detected type: {file_mime_type}")
+        except Exception as e:
+            logger.error(f"Error detecting MIME type: {e}")
+            return render_template('error.html',
+                                 error_title="File Validation Error",
+                                 error_message=f"Unable to validate file type: {str(e)}")
+        
+        logger.info(f"File validation passed: {filename} ({file_size} bytes, {file_ext}, MIME: {file_mime_type})")
+        # Optimized single-pass log parsing with streaming approach
+        logging.info("Starting optimized log parsing - single pass through file")
+        
+        # Pre-compile all regex patterns once
+        patterns = {
+            'replication_progress': re.compile(r"Replication progress", re.IGNORECASE),
+            'version_info': re.compile(r"Version info", re.IGNORECASE),
+            'operation_stats': re.compile(r"Operation duration stats", re.IGNORECASE),
+            'sent_response': re.compile(r"sent response", re.IGNORECASE),
+            'phase_transitions': re.compile(r"Starting initializing collections and indexes phase|Starting initializing partitions phase|Starting collection copy phase|Starting change event application phase|Commit handler called", re.IGNORECASE),
+            'mongosync_options': re.compile(r"Mongosync Options", re.IGNORECASE),
+            'hidden_flags': re.compile(r"Mongosync HiddenFlags", re.IGNORECASE)
+        }
+        
+        # Initialize result containers
+        data = []
+        version_info_list = []
+        mongosync_ops_stats = []
+        mongosync_sent_response = []
+        phase_transitions_json = []
+        mongosync_opts_list = []
+        mongosync_hiddenflags = []
+        
+        # Single pass through the file with streaming
+        line_count = 0
+        invalid_json_count = 0
+        
+        # Reset file pointer to beginning
+        file.seek(0)
+        
+        for line in tqdm(file, desc="Processing log file"):
+            line_count += 1
+            line = line.strip()
+            
+            if not line:  # Skip empty lines
+                continue
+                
+            try:
+                # Parse JSON only once per line
+                json_obj = json.loads(line)
+                message = json_obj.get('message', '')
+                
+                # Apply all filters to the same parsed object
+                if patterns['replication_progress'].search(message):
+                    data.append(json_obj)
+                
+                if patterns['version_info'].search(message):
+                    version_info_list.append(json_obj)
+                
+                if patterns['operation_stats'].search(message):
+                    mongosync_ops_stats.append(json_obj)
+                
+                if patterns['sent_response'].search(message):
+                    mongosync_sent_response.append(json_obj)
+                
+                if patterns['phase_transitions'].search(message):
+                    phase_transitions_json.append(json_obj)
+                
+                if patterns['mongosync_options'].search(message):
+                    # Filter out time and level fields for options
+                    filtered_obj = {k: v for k, v in json_obj.items() if k not in ('time', 'level')}
+                    mongosync_opts_list.append(filtered_obj)
+                
+                if patterns['hidden_flags'].search(message):
+                    # Filter out time and level fields for hidden flags
+                    filtered_obj = {k: v for k, v in json_obj.items() if k not in ('time', 'level')}
+                    mongosync_hiddenflags.append(filtered_obj)
+                    
+            except json.JSONDecodeError as e:
+                invalid_json_count += 1
+                if invalid_json_count <= 5:  # Log first 5 errors to avoid spam
+                    logging.warning(f"Invalid JSON on line {line_count}: {e}")
+                if invalid_json_count == 1:  # If this is the first error, it might be a non-JSON file
+                    logging.error(f"File appears to contain invalid JSON. First error on line {line_count}: {e}")
+                    return render_template('error.html',
+                                         error_title="Invalid File Format",
+                                         error_message=f"The uploaded file does not contain valid JSON format. Error on line {line_count}: {str(e)}. Please ensure you're uploading a valid mongosync log file in NDJSON format.")
+        
+        logging.info(f"Processed {line_count} lines, found {invalid_json_count} invalid JSON lines")
+        logging.info(f"Found: {len(data)} replication progress, {len(version_info_list)} version info, "
+                    f"{len(mongosync_ops_stats)} operation stats, {len(mongosync_sent_response)} sent responses, "
+                    f"{len(phase_transitions_json)} phase transitions, {len(mongosync_opts_list)} options, "
+                    f"{len(mongosync_hiddenflags)} hidden flags")  
+        
         # The 'body' field is also a JSON string, so parse that as well
         #mongosync_sent_response_body = json.loads(mongosync_sent_response.get('body'))
         mongosync_sent_response_body = None 
         for response in mongosync_sent_response:
             try:  
-                mongosync_sent_response_body = json.loads(response['body'])  
+                parsed_body = json.loads(response['body'])
+                # Only use this response if it contains 'progress'
+                if 'progress' in parsed_body:
+                    mongosync_sent_response_body = parsed_body  
             except (json.JSONDecodeError, TypeError):  
                 mongosync_sent_response_body = None  # If parse fails, use None 
                 logging.warning(f"No message 'sent response' found in the logs") 
@@ -124,9 +188,9 @@ def upload_file():
         # Create a string with all the version information
         if version_info_list and isinstance(version_info_list[0], dict):  
             version = version_info_list[0].get('version', 'Unknown')  
-            os = version_info_list[0].get('os', 'Unknown')  
+            operating_system = version_info_list[0].get('os', 'Unknown')  
             arch = version_info_list[0].get('arch', 'Unknown')  
-            version_text = f"MongoSync Version: {version}, OS: {os}, Arch: {arch}"   
+            version_text = f"MongoSync Version: {version}, OS: {operating_system}, Arch: {arch}"   
         else:  
             version_text = f"MongoSync Version is not available"  
             logging.error(version_text)  
@@ -224,26 +288,32 @@ def upload_file():
         
         phase_transitions = ""
         # Check that mongosync_sent_response_body is a dict before searching for 'progress'  
-        if isinstance(mongosync_sent_response_body, dict) and 'progress' in mongosync_sent_response_body:
+        if isinstance(mongosync_sent_response_body, dict):
         #if 'progress' in mongosync_sent_response_body:
             #getting the estimated total and copied
-            estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
-            estimated_copied_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedCopiedBytes']
+            if 'progress' in mongosync_sent_response_body:
+                estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
+                estimated_copied_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedCopiedBytes']
+
+                #Getting the Phase Transisitons
+                try:  
+                    # Try get Phase Transitions from the sent response body if it is Live Migrate
+                    phase_transitions = mongosync_sent_response_body['progress']['atlasLiveMigrateMetrics']['PhaseTransitions']  
+                except KeyError as e:  
+                    logging.error(f"Key not found: {e}")  
+                    phase_transitions = []
+
+            else:
+                logging.warning(f"Key 'progress' not found in mongosync_sent_response_body")
             
-            #Getting the Phase Transisitons
-            try:  
-                # Try to access deeply nested key  
-                phase_transitions = mongosync_sent_response_body['progress']['atlasLiveMigrateMetrics']['PhaseTransitions']  
-            except KeyError as e:  
-                logging.error(f"Key not found: {e}")  
-                phase_transitions = []
-            
+            # If phase_transitions is not empty, plot the phase transitions as it is Live Migrate
             if phase_transitions:
                 phase_list = [item['Phase'] for item in phase_transitions]  
                 ts_t_list = [item['Ts']['T'] for item in phase_transitions]  
                 ts_t_list_formatted = [ 
                     datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"  for t in ts_t_list 
                 ]
+            # Else get the phase transitions from the phase_transitions_json based on mongosync standalone 
             else:
                 if phase_transitions_json:
                     #print (phase_transitions_json)
@@ -256,7 +326,7 @@ def upload_file():
                         for t in ts_t_list  
                     ]  
         else:
-            logging.warning(f"Key 'progress' not found in mongosync_sent_response_body")
+            logging.warning(f"Response body is empty")
 
         estimated_total_bytes, estimated_total_bytes_unit = format_byte_size(estimated_total_bytes)
         estimated_copied_bytes = convert_bytes(estimated_copied_bytes, estimated_total_bytes_unit)
@@ -288,14 +358,17 @@ def upload_file():
             fig.add_trace(go.Scatter(x=ts_t_list_formatted, y=phase_list, mode='markers+text',marker=dict(color='green')), row=1, col=1)
             fig.update_yaxes(showticklabels=False, row=1, col=1)  
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Mongosync Finish',textfont=dict(size=30, color="black")), row=1, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Mongosync Phases',textfont=dict(size=30, color="black")), row=1, col=1)
 #            fig.update_layout(xaxis5=dict(showgrid=False, zeroline=False, showticklabels=False), 
 #                            yaxis5=dict(showgrid=False, zeroline=False, showticklabels=False))
 
         # Estimated Total and Copied
+        if estimated_total_bytes > 0 or estimated_copied_bytes > 0:
         #fig = go.Figure(data=[go.Bar(name='Estimated Total Bytes', x=['Bytes'], y=[estimated_total_bytes], row=1, col=1), go.Bar(name='Estimated Copied Bytes', x=['Bytes'], y=[estimated_copied_bytes])], row=1, col=1)
-        fig.add_trace( go.Bar( name='Estimated ' + estimated_total_bytes_unit + ' to be Copied',  x=[estimated_total_bytes_unit],  y=[estimated_total_bytes], legendgroup="groupTotalCopied" ), row=1, col=2)
-        fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=1, col=2)
+            fig.add_trace( go.Bar( name='Estimated ' + estimated_total_bytes_unit + ' to be Copied',  x=[estimated_total_bytes_unit],  y=[estimated_total_bytes], legendgroup="groupTotalCopied" ), row=1, col=2)
+            fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=1, col=2)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Estimated Total and Copied',textfont=dict(size=30, color="black")), row=1, col=2)
 
         # Lag Time
         fig.add_trace(go.Scatter(x=times, y=lagTimeSeconds, mode='lines', name='Seconds', legendgroup="groupEventsAndLags"), row=2, col=1)
@@ -360,72 +433,4 @@ def upload_file():
         logging.info(f"Render the plot in the browse")
 
         # Render the plot in the browser
-        return render_template_string('''
-            <!DOCTYPE html>  
-            <html lang="en">  
-            <head>  
-                <meta charset="UTF-8">  
-                <title>Mongosync Insights</title>  
-                <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>  
-                <style>  
-                    body {  
-                        font-family: Arial, sans-serif;  
-                        margin: 0;  
-                        padding: 0;  
-                        background-color: #f4f4f9; /* Light background for good contrast */  
-                        color: #333; /* Dark text for readability */  
-                    }  
-            
-                    header {  
-                        background-color: #00684A;  
-                        color: #fff;  
-                        padding: 10px 20px;  
-                        text-align: center;  
-                    }  
-            
-                    main {  
-                        padding: 20px;  
-                    }  
-            
-                    #plot {  
-                        margin: 0 auto;  
-                        max-width: 1450px;  
-                        border: 1px solid #ccc; /* Add border for distinction */  
-                        border-radius: 8px; /* Rounded corners */  
-                        background-color: #fff;  
-                        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */  
-                    }  
-            
-                    footer {  
-                        text-align: center;  
-                        padding: 10px;  
-                        margin-top: 20px;  
-                        background-color: #00684A;  
-                        color: #fff;  
-                    }  
-            
-                    @media (max-width: 768px) {  
-                        #plot {  
-                            width: 95%; /* Make responsive for smaller screens */  
-                        }  
-                    }  
-                </style>  
-            </head>  
-            <body>  
-                <header>  
-                    <h1>Mongosync Insights - Logs</h1>  
-                </header>  
-                <main>  
-                    <div id="plot"></div>  
-                    <script>
-                    var plot = {{ plot_json | safe }};
-                    Plotly.newPlot('plot', plot.data, plot.layout);
-                    </script>
-                </main>  
-                <footer>  
-                    <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Version 0.6.8</p>
-                </footer>  
-            </body>  
-            </html>  
-        ''', plot_json=plot_json)
+        return render_template('upload_results.html', plot_json=plot_json)

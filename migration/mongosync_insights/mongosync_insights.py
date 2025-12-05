@@ -1,132 +1,99 @@
-import configparser
 import logging
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template, request
 from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics
-from pymongo.uri_parser import parse_uri  
-from pymongo.errors import InvalidURI 
+from pymongo.errors import InvalidURI, PyMongoError
+from pymongo.uri_parser import parse_uri 
+from app_config import (
+    setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, 
+    REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, 
+    SECURE_COOKIES, CONNECTION_STRING, get_mongo_client
+)
+from connection_validator import sanitize_for_display
 
-# Reading config file
-config = configparser.ConfigParser()  
-config.read('config.ini')
+# Validate configuration on startup
+try:
+    validate_config()
+except (PermissionError, ValueError) as e:
+    print(f"Configuration error: {e}")
+    exit(1)
 
-# Setting the script log file
-logging.basicConfig(filename='mongosync_insights.log', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+# Setup logging
+logger = setup_logging()
+
+# Runtime connection string storage (not persisted to disk)
+_runtime_connection_string = None
 
 # Create a Flask app
-app = Flask(__name__)
+app = Flask(__name__, static_folder='images', static_url_path='/images')
+
+# Configure Flask for file uploads
+app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+# Security configuration
+app.config['SESSION_COOKIE_SECURE'] = SECURE_COOKIES  # Only send cookies over HTTPS (configurable via env)
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to session cookie
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'  # CSRF protection
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # Session timeout (1 hour)
+
+# Add security headers to all responses
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all HTTP responses."""
+    # Enforce HTTPS and prevent downgrade attacks
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    
+    # Prevent MIME type sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    
+    # Prevent clickjacking attacks
+    response.headers['X-Frame-Options'] = 'DENY'
+    
+    # Control referrer information
+    response.headers['Referrer-Policy'] = 'no-referrer'
+    
+    # Content Security Policy - configured to work with Plotly charts
+    # Note: Plotly requires 'unsafe-inline' and 'unsafe-eval' for rendering
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.plot.ly; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' data:; "
+        "connect-src 'self';"
+    )
+    
+    # Additional security headers
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+    
+    return response
+
+# Make app version available to all templates
+@app.context_processor
+def inject_app_version():
+    return dict(app_version=APP_VERSION)
+
+# Handle file too large error
+@app.errorhandler(413)
+def too_large(e):
+    max_size_mb = MAX_FILE_SIZE / (1024 * 1024)
+    return render_template('error.html',
+                         error_title="File Too Large",
+                         error_message=f"File size exceeds maximum allowed size ({max_size_mb:.1f} MB)."), 413
 
 @app.route('/')
-def home_page(message = ""):
-
-    if message == "invalid connection string":
-        connectionStringForm = ''' <label for="connectionString"><b>The connection string provided is invalid, please provide a valid connection string.</b></label>  
-                                    <input type="text" id="connectionString" name="connectionString" size="47"   
-                                        placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>
-                                '''
-    elif not config['LiveMonitor']['connectionString']:
-        connectionStringForm =  ''' <label for="connectionString">Atlas MongoDB Connection String:</label>  
-                                    <input type="text" id="connectionString" name="connectionString" size="47"   
-                                        placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>
-                                '''
+def home_page(): 
+    if not CONNECTION_STRING:
+        connection_string_form = '''<label for="connectionString">Atlas MongoDB Connection String:</label>  
+                                    <input type="text" id="connectionString" name="connectionString" size="47" autocomplete="off"
+                                        placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>'''
     else:
-        parsed = parse_uri(config['LiveMonitor']['connectionString'])  
-        hosts = parsed['nodelist']
-        hosts_str = ", ".join([f"{host}:{port}" for host, port in hosts])  
-        connectionStringForm = "<p><b>Connecting to Destination Cluster at: </b>"+hosts_str+"</p>"
+        # Use safe sanitization for display
+        sanitized_connection = sanitize_for_display(CONNECTION_STRING)
+        connection_string_form = f"<p><b>Connecting to Destination Cluster at: </b>{sanitized_connection}</p>"
 
-
-    # Return a simple file upload form
-    return render_template_string ('''
-        <!DOCTYPE html>  
-        <html>  
-            <head>  
-                <title>Mongosync Insights</title>  
-                <style>  
-                    /* Create a container for the forms */  
-                    .form-container {  
-                        display: flex; /* Use flexbox to align forms side by side */  
-                        gap: 20px; /* Add space between the forms */  
-                        justify-content: center; /* Center the forms horizontally */  
-                        align-items: flex-start; /* Align forms to the top */  
-                    }  
-        
-                    /* Style individual forms */  
-                    form {  
-                        width: 350px; /* Set a width for the forms */  
-                        border: 1px solid #ccc; /* Add a border */  
-                        padding: 20px; /* Add padding inside the form */  
-                        border-radius: 8px; /* Optional: rounded corners */  
-                        background-color: #f9f9f9; /* Optional: light background color */  
-                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional: add shadow for aesthetics */  
-                    }  
-        
-                    /* Style the body of the page */  
-                    body {  
-                        font-family: Arial, sans-serif; /* Use a clean font */  
-                        margin: 0;  
-                        padding: 0;  
-                        display: flex;  
-                        justify-content: center;  
-                        align-items: center;  
-                        height: 100vh; /* Make the page take the full viewport height */  
-                        background-color: #ffffff; /* Background color */  
-                    }  
-        
-                    /* Optional: Style images */  
-                    img {  
-                        max-width: 100%; /* Ensure images fit within the container */  
-                        border: 1px solid #ccc; /* Add border to images */  
-                        border-radius: 8px; /* Add rounded corners (optional) */  
-                    }  
-                </style>  
-            </head>  
-            <body>
-                <div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); text-align: center;">  
-                    <h1 style="margin-bottom: 0;">Mongosync Insights <span style="font-size:0.6em;color:#777;">v0.6.8</span></h1>  
-                </div>    
-                <div class="form-container">  
-                    <!-- First form: File upload -->  
-                    <form method="post" action="/upload" enctype="multipart/form-data">  
-                        <h2>Parse Mongosync Log File</h2>  
-                        <input type="file" name="file"><br><br>  
-                        <input type="submit" value="Upload">  
-                        <p>Click the "Upload" button after selecting your Mongosync log file to generate migration progress plots.</p>  
-                        <img src="static/mongosync_log_analyzer.png" width="300" alt="Mongosync Log Analyzer">  
-                    </form>  
-        
-                    <!-- Second form: Metrics rendering -->  
-                    <form id="metadataForm" method="post" action="/renderMetrics" enctype="multipart/form-data" onsubmit="return checkAtlasConnection();">   
-                        <h2>Live Migration Monitoring</h2>''' + 
-                        
-                        connectionStringForm +
-
-                    '''    
-                        <input type="submit" value="Live Monitor">  
-                        <p>Click the “Live Monitor” button to start monitoring the migration progress in real time.</p>
-                        <img src="static/mongosync_metadata.png" width="300" alt="Mongosync Log Analyzer">
-                    </form>
-
-                            <script>  
-                            function checkAtlasConnection() {  
-                                var conn = document.getElementById('connectionString').value.trim();  
-                                if (!conn) {  
-                                    alert("Please enter the Atlas MongoDB Connection String.");  
-                                    return false; // Prevent form submission  
-                                }  
-                                return true; // Proceed with submission  
-                            }  
-                            </script>  
-                </div>
-                <!--
-                    <div style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); color:#888; font-size:0.9em;">  
-                        Mongosync Insights v1.2.0  
-                    </div>   
-                -->
-            </body>  
-        </html>  
-                                   ''')
+    return render_template('home.html', connection_string_form=connection_string_form)
 
 
 @app.route('/upload', methods=['POST'])
@@ -135,41 +102,106 @@ def uploadLogs():
 
 @app.route('/renderMetrics', methods=['POST'])
 def renderMetrics():
-
-    refreshTime = config['LiveMonitor']['refreshTime']
-
-    # If the connectionString is empty in the config.ini, get it from the form and save in the file.
-    if config['LiveMonitor']['connectionString']:
-        TARGET_MONGO_URI = config['LiveMonitor']['connectionString']
+    global _runtime_connection_string
+    
+    # Use environment variable if set, otherwise get from form or runtime cache
+    if CONNECTION_STRING:
+        TARGET_MONGO_URI = CONNECTION_STRING
+    elif _runtime_connection_string:
+        TARGET_MONGO_URI = _runtime_connection_string
     else:
         TARGET_MONGO_URI = request.form.get('connectionString')
-        config['LiveMonitor']['connectionString'] = TARGET_MONGO_URI
-        config['LiveMonitor']['refreshTime'] = refreshTime
-        with open('config.ini', 'w') as configfile:  
-            config.write(configfile) 
-
-    # Validate the connection string 
-    # If valid proceed to plot
-    # If not, return to home 
-    try:  
-        parse_uri(TARGET_MONGO_URI)  
-        return plotMetrics()
-    except InvalidURI as e:  
-        logging.error(f"{e}. Invalid MongoDB connection string: "+ TARGET_MONGO_URI)
         
-        config['LiveMonitor']['connectionString'] = ""
-        config['LiveMonitor']['refreshTime'] = refreshTime
-        with open('config.ini', 'w') as configfile:  
-            config.write(configfile)   
-        
-        return home_page("invalid connection string")
+        # Validation for empty connection string
+        if not TARGET_MONGO_URI or not TARGET_MONGO_URI.strip():
+            logger.error("No connection string provided")
+            return render_template('error.html',
+                                 error_title="No connection string provided",
+                                 error_message="Please provide a valid MongoDB connection string.")
 
-    #return plotMetrics()
+    # Test connection
+    try:
+        # Connection test (network, authentication)
+        validate_connection(TARGET_MONGO_URI)
+        
+        # Cache connection string for subsequent AJAX calls (only if not from env var)
+        if not CONNECTION_STRING:
+            _runtime_connection_string = TARGET_MONGO_URI
+            
+    except InvalidURI as e:
+        # Invalid connection string format
+        clear_connection_cache()
+        _runtime_connection_string = None
+        
+        logger.error(f"Invalid connection string format: {e}")
+        return render_template('error.html',
+                            error_title="Invalid Connection String",
+                            error_message="The connection string format is invalid. Please check your MongoDB connection string and try again.")
+    except PyMongoError as e:
+        # Failed to connect (authentication, network, etc.)
+        clear_connection_cache()
+        _runtime_connection_string = None
+        
+        logger.error(f"Failed to connect: {e}")
+        return render_template('error.html',
+                            error_title="Connection Failed",
+                            error_message="Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible.")
+    except Exception as e:
+        # Unexpected error
+        clear_connection_cache()
+        _runtime_connection_string = None
+        
+        logger.error(f"Unexpected error during connection validation: {e}")
+        return render_template('error.html',
+                            error_title="Connection Error",
+                            error_message="An unexpected error occurred. Please try again.")
+
+    return plotMetrics()
 
 @app.route('/get_metrics_data', methods=['POST'])
 def getMetrics():
-    return gatherMetrics()
+    # Use environment variable if set, otherwise use runtime cache
+    connection_string = CONNECTION_STRING if CONNECTION_STRING else _runtime_connection_string
+    
+    if not connection_string:
+        logger.error("No connection string available for metrics refresh")
+        return {"error": "No connection string available"}, 400
+    
+    return gatherMetrics(connection_string)
 
 if __name__ == '__main__':
-    # Run the Flask app
-    app.run(host='0.0.0.0', port=3030)
+    # Log startup information
+    app_info = get_app_info()
+    logger.info(f"Starting {app_info['name']} v{app_info['version']}")
+    logger.info(f"Log file: {app_info['log_file']}")
+    logger.info(f"Server: {app_info['host']}:{app_info['port']}")
+    
+    # Import SSL config
+    from app_config import SSL_ENABLED, SSL_CERT_PATH, SSL_KEY_PATH
+    
+    # Run the Flask app with or without SSL
+    if SSL_ENABLED:
+        import ssl
+        import os
+        
+        # Verify certificate files exist
+        if not os.path.exists(SSL_CERT_PATH):
+            logger.error(f"SSL certificate not found: {SSL_CERT_PATH}")
+            logger.error("Please provide a valid SSL certificate or set MI_SSL_ENABLED=false")
+            exit(1)
+        if not os.path.exists(SSL_KEY_PATH):
+            logger.error(f"SSL key not found: {SSL_KEY_PATH}")
+            logger.error("Please provide a valid SSL private key or set MI_SSL_ENABLED=false")
+            exit(1)
+        
+        # Create SSL context
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(SSL_CERT_PATH, SSL_KEY_PATH)
+        
+        logger.info("HTTPS enabled - Starting with SSL/TLS encryption")
+        logger.info(f"SSL Certificate: {SSL_CERT_PATH}")
+        app.run(host=HOST, port=PORT, ssl_context=context)
+    else:
+        logger.warning("HTTPS disabled - Starting with HTTP (insecure)")
+        logger.warning("For production use, enable HTTPS by setting MI_SSL_ENABLED=true")
+        app.run(host=HOST, port=PORT)

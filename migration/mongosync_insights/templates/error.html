@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Error - Mongosync Insights{% endblock %}
+
+{% block header_title %}Error{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 50px;">
+    <h2 style="color: #d32f2f;">{{ error_title | default('An Error Occurred') }}</h2>
+    <p style="font-size: 16px; color: #666; margin: 20px 0;">{{ error_message | default('Something went wrong. Please try again.') }}</p>
+    <a href="{{ url_for('home_page') }}" style="display: inline-block; background-color: #00684A; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px;">
+        Return to Home
+    </a>
+</div>
+{% endblock %}
