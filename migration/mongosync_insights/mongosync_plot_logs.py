@@ -288,7 +288,7 @@ def upload_file():
         
         phase_transitions = ""
         # Check that mongosync_sent_response_body is a dict before searching for 'progress'  
-        if isinstance(mongosync_sent_response_body, dict): #and 'progress' in mongosync_sent_response_body:
+        if isinstance(mongosync_sent_response_body, dict):
         #if 'progress' in mongosync_sent_response_body:
             #getting the estimated total and copied
             if 'progress' in mongosync_sent_response_body:
