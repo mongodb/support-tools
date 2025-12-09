@@ -64,7 +64,7 @@
 var _version = "4.1.1";
 
 (function () {
-   "use strict";
+    "use strict";
 }());
 
 // Taken from the >= 3.1.9 shell to capture print output
@@ -89,70 +89,72 @@ if (typeof print.captureAllOutput === "undefined") {
 
 // Convert NumberLongs to strings to save precision
 function longmangle(n) {
-    if (! n instanceof NumberLong)
+    if (!n instanceof NumberLong)
         return null;
     var s = n.toString();
-    s = s.replace("NumberLong(","").replace(")","");
+    s = s.replace("NumberLong(", "").replace(")", "");
     if (s[0] == '"')
-        s = s.slice(1, s.length-1)
+        s = s.slice(1, s.length - 1)
     return s;
 }
 
 // For use in JSON.stringify to properly serialize known types
-function jsonStringifyReplacer(k, v){
+function jsonStringifyReplacer(k, v) {
     if (v instanceof ObjectId)
-        return { "$oid" : v.valueOf() };
+        return { "$oid": v.valueOf() };
     if (v instanceof NumberLong)
-        return { "$numberLong" : longmangle(v) };
+        return { "$numberLong": longmangle(v) };
     if (v instanceof NumberInt)
         return v.toNumber();
     // For ISODates; the $ check prevents recursion
-    if (typeof v === "string" && k.startsWith('$') == false){
+    if (typeof v === "string" && k.startsWith('$') == false) {
         try {
             iso = ISODate(v);
-            return { "$date" : iso.valueOf() };
+            return { "$date": iso.valueOf() };
         }
         // Nothing to do here, we'll get the return at the end
-        catch(e) {}
+        catch (e) { }
     }
     return v;
 }
 
 // Copied from Mongo Shell
-function printShardInfo(){
+function printShardInfo() {
     section = "shard_info";
     var configDB = db.getSiblingDB("config");
 
-    printInfo("Sharding version", function(){
+    printInfo("Sharding version", function () {
         return configDB.getCollection('version').findOne();
     }, section);
 
-    printInfo("Sharding settings", function(){
-        return configDB.settings.find().sort({ _id : 1 }).toArray();
+    printInfo("Sharding settings", function () {
+        return configDB.settings.find().sort({ _id: 1 }).toArray();
     }, section);
 
-    printInfo("Routers", function(){
-        return configDB.mongos.find().sort({ _id : 1 }).toArray();
+    printInfo("Routers", function () {
+        return configDB.mongos.find().sort({ _id: 1 }).toArray();
     }, section);
 
-    printInfo("Shards", function(){
-        return configDB.shards.find().sort({ _id : 1 }).toArray();
+    printInfo("Shards", function () {
+        return configDB.shards.find().sort({ _id: 1 }).toArray();
     }, section);
 
-    printInfo("Sharded databases", function(){
+    printInfo("Sharded databases", function () {
         var ret = [];
-        configDB.databases.find().sort( { name : 1 } ).forEach(
-            function(db) {
+        configDB.databases.find().sort({ name: 1 }).forEach(
+            function (db) {
                 doc = {};
                 for (k in db) {
                     if (db.hasOwnProperty(k)) doc[k] = db[k];
                 }
                 if (db.partitioned) {
                     doc['collections'] = [];
-                    configDB.collections.find( { _id : new RegExp( "^" +
-                        RegExp.escape(db._id) + "\\." ) } ).
-                        sort( { _id : 1 } ).forEach( function( coll ) {
-                            if ( coll.dropped !== true ){
+                    configDB.collections.find({
+                        _id: new RegExp("^" +
+                            RegExp.escape(db._id) + "\\.")
+                    }).
+                        sort({ _id: 1 }).forEach(function (coll) {
+                            if (coll.dropped !== true) {
                                 collDoc = {};
                                 collDoc['_id'] = coll._id;
                                 collDoc['key'] = coll.key;
@@ -166,15 +168,15 @@ function printShardInfo(){
                                 res = (res.result ? res.result : res.toArray());
 
                                 collDoc['distribution'] = [];
-                                res.forEach( function(z) {
-                                    chunkDistDoc = {'shard': z._id, 'nChunks': z.nChunks};
+                                res.forEach(function (z) {
+                                    chunkDistDoc = { 'shard': z._id, 'nChunks': z.nChunks };
                                     collDoc['distribution'].push(chunkDistDoc);
-                                } );
+                                });
 
                                 if (_printChunkDetails) {
                                     collDoc['chunks'] = [];
-                                    configDB.chunks.find( { "ns" : coll._id } ).sort( { min : 1 } ).forEach(
-                                        function(chunk) {
+                                    configDB.chunks.find({ "ns": coll._id }).sort({ min: 1 }).forEach(
+                                        function (chunk) {
                                             chunkDoc = {};
                                             chunkDoc['min'] = chunk.min;
                                             chunkDoc['max'] = chunk.max;
@@ -186,8 +188,8 @@ function printShardInfo(){
                                 }
 
                                 collDoc['tags'] = [];
-                                configDB.tags.find( { ns : coll._id } ).sort( { min : 1 } ).forEach(
-                                    function(tag) {
+                                configDB.tags.find({ ns: coll._id }).sort({ min: 1 }).forEach(
+                                    function (tag) {
                                         tagDoc = {};
                                         tagDoc['tag'] = tag.tag;
                                         tagDoc['min'] = tag.min;
@@ -198,7 +200,7 @@ function printShardInfo(){
                                 doc['collections'].push(collDoc);
                             }
                         }
-                    );
+                        );
                 }
                 ret.push(doc);
             }
@@ -206,18 +208,18 @@ function printShardInfo(){
         return ret;
     }, section);
 
-    printInfo('Balancer status', function(){return db.adminCommand({balancerStatus: 1})}, section);
+    printInfo('Balancer status', function () { return db.adminCommand({ balancerStatus: 1 }) }, section);
 
     if (sh.getRecentMigrations) { // Function does not exist in older shell versions (2.6 and below)
-        printInfo('Recent chunk migrations', function(){return sh.getRecentMigrations()}, section);
+        printInfo('Recent chunk migrations', function () { return sh.getRecentMigrations() }, section);
     } else {
-        if (! _printJSON) print("\n** Recent chunk migrations: n/a")
+        if (!_printJSON) print("\n** Recent chunk migrations: n/a")
     }
 
     if (sh.getRecentFailedRounds) { // Function does not exist in older shell versions (2.6 and below)
-        printInfo('Recent failed balancer rounds', function(){return sh.getRecentFailedRounds()}, section);
+        printInfo('Recent failed balancer rounds', function () { return sh.getRecentFailedRounds() }, section);
     } else {
-        if (! _printJSON) print("\n** Recent failed balancer rounds: n/a")
+        if (!_printJSON) print("\n** Recent failed balancer rounds: n/a")
     }
 }
 
@@ -228,11 +230,11 @@ function removeUnnecessaryCommandFields(object) {
     });
 }
 
-var _jsonOutBuffer = ""; 
+var _jsonOutBuffer = "";
 function printInfo(message, command, section, printCapture, commandParameters) {
     var result = false;
     if (typeof printCapture === "undefined") var printCapture = false;
-    if (! _printJSON) print("\n** " + message + ":");
+    if (!_printJSON) print("\n** " + message + ":");
     startTime = new Date();
     try {
         if (printCapture) {
@@ -241,17 +243,17 @@ function printInfo(message, command, section, printCapture, commandParameters) {
             result = command();
         }
         err = null
-    } catch(err) {
-        if (! _printJSON) {
+    } catch (err) {
+        if (!_printJSON) {
             print("Error running '" + command + "':");
             print(err);
         } else {
-            throw("Error running '" + command + "': " + err);
+            throw ("Error running '" + command + "': " + err);
         }
     }
     endTime = new Date();
     doc = {};
-    if (typeof(section) !== "undefined") {
+    if (typeof (section) !== "undefined") {
         doc['section'] = section;
         doc['subsection'] = message.toLowerCase().replace(/ /g, "_");
     } else {
@@ -264,13 +266,13 @@ function printInfo(message, command, section, printCapture, commandParameters) {
         doc['host'] = _host;
         doc['ref'] = _ref;
         doc['tag'] = _tag;
-        doc['ts'] = {'start': startTime, 'end': endTime};
+        doc['ts'] = { 'start': startTime, 'end': endTime };
         doc['version'] = _version;
         if (typeof commandParameters !== undefined) {
             doc['commandParameters'] = commandParameters
         }
     } else {
-        if(err) {
+        if (err) {
             doc['error'] = err;
         }
         removeUnnecessaryCommandFields(result);
@@ -280,80 +282,86 @@ function printInfo(message, command, section, printCapture, commandParameters) {
 
     // Stream JSON array element.
     if (_printJSON) {
-        if (!_jsonOutBuffer) {
-            _jsonOutBuffer = JSON.stringify(doc, jsonStringifyReplacer, 4);
-        }
-        else {
+        if (_jsonOutBuffer) {
             print(_jsonOutBuffer, ",");
+        }
+        if (typeof EJSON === "undefined") {
             _jsonOutBuffer = JSON.stringify(doc, jsonStringifyReplacer, 4);
+        } else {
+            _jsonOutBuffer = EJSON.stringify(doc, (k, v) => {
+                if (typeof v === "object" && v && "$date" in v) {
+                    return { "$date": new Date(parseInt(v["$date"]["$numberLong"])).getTime() };
+                }
+                return v;
+            }, 4, { relaxed: false });
         }
     }
 
-    if (! _printJSON) printjson(result);
+    if (!_printJSON) printjson(result);
     return result;
 }
 
 function printServerInfo() {
     section = "server_info";
-    printInfo('Shell version',      version, section);
-    printInfo('Shell hostname',     hostname, section);
-    printInfo('db',                 function(){return db.getName()}, section);
-    printInfo('Server status info', function(){return db.serverStatus()}, section);
-    printInfo('Host info',          function(){return db.hostInfo()}, section);
-    printInfo('Command line info',  function(){return db.serverCmdLineOpts()}, section);
-    printInfo('Server build info',  function(){return db.serverBuildInfo()}, section);
-    printInfo('Server parameters',  function(){return db.adminCommand({getParameter: '*'})}, section);
+    printInfo('Shell version', version, section);
+    printInfo('Shell hostname', hostname, section);
+    printInfo('db', function () { return db.getName() }, section);
+    printInfo('Server status info', function () { return db.serverStatus() }, section);
+    printInfo('Host info', function () { return db.hostInfo() }, section);
+    printInfo('Command line info', function () { return db.serverCmdLineOpts() }, section);
+    printInfo('Server build info', function () { return db.serverBuildInfo() }, section);
+    printInfo('Server parameters', function () { return db.adminCommand({ getParameter: '*' }) }, section);
 }
 
 function printReplicaSetInfo() {
     section = "replicaset_info";
-    printInfo('Replica set config', function(){return rs.conf()}, section);
-    printInfo('Replica status',     function(){return rs.status()}, section);
-    printInfo('Replica info',       function(){return db.getReplicationInfo()}, section);
-    printInfo('Replica slave info', function(){return db.printSlaveReplicationInfo()}, section, true);
+    printInfo('Replica set config', function () { return rs.conf() }, section);
+    printInfo('Replica status', function () { return rs.status() }, section);
+    printInfo('Replica info', function () { return db.getReplicationInfo() }, section);
+    printInfo('Replica slave info', function () { return db.printSlaveReplicationInfo() }, section, true);
 }
 
 function printUserAuthInfo() {
-  section = "user_auth_info";
-  db = db.getSiblingDB('admin');
-  if (typeof db.system.users.countDocuments === 'function') {
-    printInfo('Database user count', function(){return db.system.users.countDocuments({})}, section);
-    printInfo('Custom role count', function(){return db.system.roles.countDocuments({})}, section);
-  } else {
-    printInfo('Database user count', function(){return db.system.users.count()}, section);
-    printInfo('Custom role count', function(){return db.system.roles.count()}, section);
-  }
+    section = "user_auth_info";
+    db = db.getSiblingDB('admin');
+    if (typeof db.system.users.countDocuments === 'function') {
+        printInfo('Database user count', function () { return db.system.users.countDocuments({}) }, section);
+        printInfo('Custom role count', function () { return db.system.roles.countDocuments({}) }, section);
+    } else {
+        printInfo('Database user count', function () { return db.system.users.count() }, section);
+        printInfo('Custom role count', function () { return db.system.roles.count() }, section);
+    }
 }
 
 function printDriverVersions() {
-  section = 'driverVersions';
-  printInfo('Driver Versions', function() {
-    return db.getSiblingDB('admin')
-        .aggregate([
-          {
-            $currentOp: {
-              allUsers: true,
-              idleConnections: true,
-              idleSessions: true,
-              localOps: true
-            },
-          },
-          {$match: {clientMetadata: {$exists: true}}},
-          {
-            $group: {
-              _id: {
-                application: '$clientMetadata.application',
-                driver: '$clientMetadata.driver',
-                platform: '$clientMetadata.platform',
-                os: '$clientMetadata.os',
-              },
-              count: {$sum: 1},
-              last: {$max: '$currentOpTime'},
-            },
-          },
-        ])
-        .toArray();
-  }, section);
+    section = 'driverVersions';
+    printInfo('Driver Versions', function () {
+        return db.getSiblingDB('admin')
+            .aggregate([
+                {
+                    $currentOp: {
+                        allUsers: true,
+                        idleConnections: true,
+                        idleSessions: true,
+                        localOps: true
+                    },
+                },
+                { $match: { clientMetadata: { $exists: true } } },
+                {
+                    $group: {
+                        _id: {
+                            application: '$clientMetadata.application',
+                            driver: '$clientMetadata.driver',
+                            platform: '$clientMetadata.platform',
+                            os: '$clientMetadata.os',
+                        },
+                        count: { $sum: 1 },
+                        last: { $max: '$currentOpTime' },
+                    },
+                },
+            ])
+            .toArray();
+    }, section);
 }
 
 // find all QE collections
@@ -399,20 +407,20 @@ function collectQueryableEncryptionInfo(isMongoS) {
     if (!dbs.databases) {
         return output;
     }
-    const getAuxiliaryCollectionInfo = function(db, collName) {
-        let collInfos = db.getCollectionInfos({name: collName});
+    const getAuxiliaryCollectionInfo = function (db, collName) {
+        let collInfos = db.getCollectionInfos({ name: collName });
         let exists = (collInfos.length > 0);
         let isClusteredCollection = exists && collInfos[0].hasOwnProperty("options") &&
             collInfos[0].options.hasOwnProperty("clusteredIndex");
-        return {exists, isClusteredCollection};
+        return { exists, isClusteredCollection };
     };
 
-    dbs.databases.forEach(function(someDbInfo) {
+    dbs.databases.forEach(function (someDbInfo) {
         const someDb = db.getSiblingDB(someDbInfo.name);
         const qeCollInfos = someDb.getCollectionInfos(
-            {"type": "collection", "options.encryptedFields": {$exists: true}});
+            { "type": "collection", "options.encryptedFields": { $exists: true } });
 
-        qeCollInfos.forEach(function(someCollInfo) {
+        qeCollInfos.forEach(function (someCollInfo) {
             const edcColl = someDb.getCollection(someCollInfo.name);
             const qeEntry = {};
 
@@ -420,14 +428,14 @@ function collectQueryableEncryptionInfo(isMongoS) {
             qeEntry["escCollectionInfo"] = (() => {
                 const escColl =
                     someDb.getCollection(someCollInfo.options.encryptedFields.escCollection);
-                const {exists, isClusteredCollection} =
+                const { exists, isClusteredCollection } =
                     getAuxiliaryCollectionInfo(someDb, escColl.getName());
                 if (!exists) {
-                    return {namespace: escColl.getFullName(), exists};
+                    return { namespace: escColl.getFullName(), exists };
                 }
                 const documentCount = escColl.countDocuments({});
-                const anchorCount = escColl.countDocuments({"value": {"$exists": true}});
-                const nonAnchorCount = escColl.countDocuments({"value": {"$exists": false}});
+                const anchorCount = escColl.countDocuments({ "value": { "$exists": true } });
+                const nonAnchorCount = escColl.countDocuments({ "value": { "$exists": false } });
                 return {
                     namespace: escColl.getFullName(),
                     exists,
@@ -440,14 +448,14 @@ function collectQueryableEncryptionInfo(isMongoS) {
             qeEntry["ecocCollectionInfo"] = (() => {
                 const ecocColl =
                     someDb.getCollection(someCollInfo.options.encryptedFields.ecocCollection);
-                const {exists, isClusteredCollection} =
+                const { exists, isClusteredCollection } =
                     getAuxiliaryCollectionInfo(someDb, ecocColl.getName());
                 if (!exists) {
-                    return {namespace: ecocColl.getFullName(), exists};
+                    return { namespace: ecocColl.getFullName(), exists };
                 }
                 const documentCount = ecocColl.countDocuments({});
                 const compactTempCollectionExists =
-                    someDb.getCollectionInfos({name: ecocColl.getName() + ".compact"}).length > 0;
+                    someDb.getCollectionInfos({ name: ecocColl.getName() + ".compact" }).length > 0;
                 return {
                     namespace: ecocColl.getFullName(),
                     exists,
@@ -462,11 +470,15 @@ function collectQueryableEncryptionInfo(isMongoS) {
                 const encryptedFieldPaths = someCollInfo.options.encryptedFields.fields.filter(
                     field => field.hasOwnProperty("queries")).map(field => field.path);
                 const missingTags = edcColl.aggregate([
-                    {$match: {$and: [
-                        {$or: encryptedFieldPaths.map((field) => {return {[field]: {$exists: true}};})},
-                        {$or: [{__safeContent__: {$exists: false}}, {__safeContent__: {$size: 0}} ]}
-                    ]}},
-                    {$count: "count"}
+                    {
+                        $match: {
+                            $and: [
+                                { $or: encryptedFieldPaths.map((field) => { return { [field]: { $exists: true } }; }) },
+                                { $or: [{ __safeContent__: { $exists: false } }, { __safeContent__: { $size: 0 } }] }
+                            ]
+                        }
+                    },
+                    { $count: "count" }
                 ]).toArray();
                 const indexedEncryptedDocumentsWithMissingSafeContentTags =
                     (missingTags.length > 0) ? missingTags[0].count : 0;
@@ -478,9 +490,9 @@ function collectQueryableEncryptionInfo(isMongoS) {
             if (isMongoS) {
                 qeEntry["shardingInfo"] = (() => {
                     const configDB = someDb.getSiblingDB("config");
-                    let shardDoc = configDB.collections.findOne({_id: edcColl.getFullName()});
+                    let shardDoc = configDB.collections.findOne({ _id: edcColl.getFullName() });
                     if (!shardDoc) {
-                        return {isSharded: false};
+                        return { isSharded: false };
                     }
                     return {
                         isSharded: true,
@@ -499,7 +511,7 @@ function collectQueryableEncryptionInfo(isMongoS) {
 
 function filterStatsOutput(stats) {
     function filterWiredTigerDetails(wiredTiger) {
-        if(_printWiredTigerDetails)
+        if (_printWiredTigerDetails)
             return wiredTiger;
 
         const { metadata, creationString, type, uri } = wiredTiger;
@@ -511,7 +523,7 @@ function filterStatsOutput(stats) {
     for (var shard in (stats.shards || {})) {
         var shardStats = stats.shards[shard];
 
-        if(!_verbose) {
+        if (!_verbose) {
             removeUnnecessaryCommandFields(shardStats);
         }
 
@@ -521,107 +533,108 @@ function filterStatsOutput(stats) {
             shardStats.indexDetails[index] = filterWiredTigerDetails(shardStats.indexDetails[index]);
         }
     }
-    
+
     return stats;
 }
 
 function printDataInfo(isMongoS) {
     section = "data_info";
-    var dbs = printInfo('List of databases', function(){return db.getMongo().getDBs()}, section);
+    var dbs = printInfo('List of databases', function () { return db.getMongo().getDBs() }, section);
     var collections_counter = 0;
 
     if (dbs.databases) {
-        dbs.databases.forEach(function(mydb) {
-            var collections = printInfo("List of collections for database '"+ mydb.name +"'",
-                function() {
+        dbs.databases.forEach(function (mydb) {
+            var collections = printInfo("List of collections for database '" + mydb.name + "'",
+                function () {
                     var collectionNames = []
 
                     // Filter out views
-                    db.getSiblingDB(mydb.name).getCollectionInfos({"type": "collection"}).forEach(function(collectionInfo) {
+                    db.getSiblingDB(mydb.name).getCollectionInfos({ "type": "collection" }).forEach(function (collectionInfo) {
                         var name = collectionInfo['name'];
                         if (!name.startsWith("system.")) {
                             // Filter out the collections with the "system." prefix in all databases
                             collectionNames.push(name);
                         }
                     })
-                    
+
                     return collectionNames;
                 }, section);
 
             printInfo('Database stats (MB)',
-                      function(){return db.getSiblingDB(mydb.name).stats(1024*1024)}, section);
+                function () { return db.getSiblingDB(mydb.name).stats(1024 * 1024) }, section);
             if (!isMongoS) {
-                printInfo("Database profiler for database '"+ mydb.name + "'",
-                          function(){return db.getSiblingDB(mydb.name).getProfilingStatus()}, section, false, {"db": mydb.name})
+                printInfo("Database profiler for database '" + mydb.name + "'",
+                    function () { return db.getSiblingDB(mydb.name).getProfilingStatus() }, section, false, { "db": mydb.name })
             }
 
             if (collections) {
-                collections.forEach(function(col) {
+                collections.forEach(function (col) {
                     printInfo('Collection stats (MB)',
-                              function(){return filterStatsOutput(db.getSiblingDB(mydb.name).getCollection(col).stats(1024*1024));}, section);
+                        function () { return filterStatsOutput(db.getSiblingDB(mydb.name).getCollection(col).stats(1024 * 1024)); }, section);
                     collections_counter++;
                     if (collections_counter > _maxCollections) {
-                        var err_msg = 'Already asked for stats on '+collections_counter+' collections ' +
-                          'which is above the max allowed for this script. No more database and ' +
-                          'collection-level stats will be gathered, so the overall data is ' +
-                          'incomplete. '
+                        var err_msg = 'Already asked for stats on ' + collections_counter + ' collections ' +
+                            'which is above the max allowed for this script. No more database and ' +
+                            'collection-level stats will be gathered, so the overall data is ' +
+                            'incomplete. '
 
                         throw {
-                          name: 'MaxCollectionsExceededException',
-                          message: err_msg
+                            name: 'MaxCollectionsExceededException',
+                            message: err_msg
                         }
                     }
                     if (isMongoS) {
-                        printInfo('Shard distribution', function() {
+                        printInfo('Shard distribution', function () {
                             try {
                                 var result = db.getSiblingDB(mydb.name).getCollection(col).getShardDistribution();
-                            } catch(e) {
+                            } catch (e) {
                                 var result = '';
                             }
                             return result;
                         }, section, true);
                     }
                     printInfo('Indexes',
-                              function(){return db.getSiblingDB(mydb.name).getCollection(col).getIndexes()}, section, false, {"db": mydb.name, "collection": col});
+                        function () { return db.getSiblingDB(mydb.name).getCollection(col).getIndexes() }, section, false, { "db": mydb.name, "collection": col });
                     printInfo('Index Stats',
-                              function(){
-                                var res = db.getSiblingDB(mydb.name).runCommand( {
-                                  aggregate: col,
-                                  pipeline: [
-                                    {$indexStats: {}},
-                                    {$group: {_id: "$key", stats: {$push: {accesses: "$accesses.ops", host: "$host", since: "$accesses.since"}}}},
-                                    {$project: {key: "$_id", stats: 1, _id: 0}}
-                                  ],
-                                  cursor: {}
-                                });
+                        function () {
+                            var res = db.getSiblingDB(mydb.name).runCommand({
+                                aggregate: col,
+                                pipeline: [
+                                    { $indexStats: {} },
+                                    { $group: { _id: "$key", stats: { $push: { accesses: "$accesses.ops", host: "$host", since: "$accesses.since" } } } },
+                                    { $project: { key: "$_id", stats: 1, _id: 0 } }
+                                ],
+                                cursor: {}
+                            });
 
-                                //It is assumed that there always will be a single batch as collections
-                                //are limited to 64 indexes and usage from all shards is grouped
-                                //into a single document
-                                if (res.hasOwnProperty('cursor') && res.cursor.hasOwnProperty('firstBatch')) {
-                                  res.cursor.firstBatch.forEach(
-                                    function(d){
-                                      d.stats.forEach(
-                                        function(d){
-                                          d.since = d.since.toUTCString();
-                                        })
+                            //It is assumed that there always will be a single batch as collections
+                            //are limited to 64 indexes and usage from all shards is grouped
+                            //into a single document
+                            if (res.hasOwnProperty('cursor') && res.cursor.hasOwnProperty('firstBatch')) {
+                                res.cursor.firstBatch.forEach(
+                                    function (d) {
+                                        d.stats.forEach(
+                                            function (d) {
+                                                d.since = d.since.toUTCString();
+                                            })
                                     });
-                                }
+                            }
 
-                                return res;
-                              }, section);
+                            return res;
+                        }, section);
                 });
             }
         });
     }
 
-    printInfo("Queryable Encryption Info", function(){
-        return collectQueryableEncryptionInfo(isMongoS);}, section, false);
+    printInfo("Queryable Encryption Info", function () {
+        return collectQueryableEncryptionInfo(isMongoS);
+    }, section, false);
 }
 
 function printShardOrReplicaSetInfo() {
     section = "shard_or_replicaset_info";
-    printInfo('isMaster', function(){return db.isMaster()}, section);
+    printInfo('isMaster', function () { return db.isMaster() }, section);
     var state;
 
     // Compatible with mongosh
@@ -631,16 +644,16 @@ function printShardOrReplicaSetInfo() {
         var stateInfo = e.errorResponse;
     }
     if (stateInfo.ok) {
-        stateInfo.members.forEach( function( member ) { if ( member.self ) { state = member.stateStr; } } );
-        if ( !state ) state = stateInfo.myState;
+        stateInfo.members.forEach(function (member) { if (member.self) { state = member.stateStr; } });
+        if (!state) state = stateInfo.myState;
     } else {
         var info = stateInfo.info;
-        if ( info && info.length < 20 ) {
+        if (info && info.length < 20) {
             state = info; // "mongos", "configsvr"
         }
-        if ( ! state ) state = "standalone";
+        if (!state) state = "standalone";
     }
-    if (! _printJSON) print("\n** Connected to " + state);
+    if (!_printJSON) print("\n** Connected to " + state);
     if (state == "mongos") {
         printShardInfo();
         return true;
@@ -675,7 +688,7 @@ if (typeof _verbose === "undefined") var _verbose = true;
 if (typeof _maxCollections === "undefined") var _maxCollections = 2500;
 
 // Compatibility issues between mongo and mongosh
-if (typeof hostname === 'undefined') hostname = function() {return os.hostname();}
+if (typeof hostname === 'undefined') hostname = function () { return os.hostname(); }
 if (typeof RegExp.escape === 'undefined') {
     RegExp.escape = function (string) {
         return string.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
@@ -687,7 +700,7 @@ if (typeof db.printSecondaryReplicationInfo === 'function') {
 
 var _total_collection_ct = 0;
 var _tag = ObjectId();
-if (! _printJSON) {
+if (!_printJSON) {
     print("================================");
     print("MongoDB Config and Schema Report");
     print("getMongoData.js version " + _version);
@@ -705,12 +718,12 @@ try {
     printUserAuthInfo();
     printDataInfo(isMongoS);
     printDriverVersions();
-} catch(e) {
+} catch (e) {
     _error = e.message;
     if (e.name === 'MaxCollectionsExceededException') {
-        printInfo("incomplete_databases_and_collections_info", function(){ return e.message; });
+        printInfo("incomplete_databases_and_collections_info", function () { return e.message; });
     } else {
-        printInfo("generic_error", function(){ return e.message; });
+        printInfo("generic_error", function () { return e.message; });
     }
 }
 
@@ -721,11 +734,11 @@ if (_printJSON) {
     print("]");
 }
 
-if(_error) {
+if (_error) {
     if (!_suppressError) {
         // To ensure that the operator knows there was an error, print the error
         // even when outputting JSON to make it invalid JSON.
-        print('\nERROR: '+ _error);
+        print('\nERROR: ' + _error);
     }
     quit(1);
 }
