@@ -1,32 +1,29 @@
-import configparser
 import plotly.graph_objects as go
 from plotly.utils import PlotlyJSONEncoder
 from plotly.subplots import make_subplots
-from flask import request, render_template_string
+from flask import request, render_template
 import json
 import logging
-from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from mongosync_plot_utils import format_byte_size, convert_bytes
 
-def gatherMetrics():
-    logging.basicConfig(filename='mongosync_insights.log', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+def gatherMetrics(connection_string):
+    # Use the centralized logging and configuration
+    logger = logging.getLogger(__name__)
     
-    # Reading config file
-    config = configparser.ConfigParser()  
-    config.read('config.ini')
+    # Import and use the centralized configuration
+    from app_config import INTERNAL_DB_NAME, MAX_PARTITIONS_DISPLAY, get_database
     
-    TARGET_MONGO_URI = config['LiveMonitor']['connectionString']
-    internalDb = "mongosync_reserved_for_internal_use"
+    TARGET_MONGO_URI = connection_string
+    internalDb = INTERNAL_DB_NAME
     colors = ['red', 'blue', 'green', 'orange', 'yellow']
-    # Connect to MongoDB cluster
+    
+    # Connect to MongoDB cluster using connection pooling
     try:
-        clientDst = MongoClient(TARGET_MONGO_URI)
-        internalDbDst = clientDst[internalDb]
-        logging.info("Connected to target MongoDB cluster.")
+        internalDbDst = get_database(TARGET_MONGO_URI, internalDb)
+        logger.info("Connected to target MongoDB cluster using connection pooling.")
     except PyMongoError as e:
-        logging.error(f"Failed to connect to target MongoDB: {e}")
+        logger.error(f"Failed to connect to target MongoDB: {e}")
         exit(1)
     # Create a subplot for the scatter plots and a separate subplot for the table
     fig = make_subplots(rows=3, 
@@ -51,17 +48,17 @@ def gatherMetrics():
 
     #Plot mongosync State
     vState = vResumeData["state"]
-    match vState:
-        case 'RUNNING':
-            vColor = 'blue'
-        case "IDDLE":
-            vColor = "yellow"
-        case "PAUSED":
-            vColor = "red"
-        case "COMMITTED":
-            vColor = "green"
-        case _:
-            logging.warning(vState +" is not listed as an option")
+    if vState == 'RUNNING':
+        vColor = 'blue'
+    elif vState == "IDDLE":
+        vColor = "yellow"
+    elif vState == "PAUSED":
+        vColor = "red"
+    elif vState == "COMMITTED":
+        vColor = "green"
+    else:
+        logging.warning(vState + " is not listed as an option")
+        vColor = "gray"
 
     fig.add_trace(go.Scatter(x=[0], y=[0], text=[str(vState.capitalize())], mode='text', name='Mongosync State',textfont=dict(size=17, color=vColor)), row=1, col=1)
     fig.update_layout(xaxis1=dict(showgrid=False, zeroline=False, showticklabels=False), 
@@ -124,16 +121,16 @@ def gatherMetrics():
 
     vPartitionData = list(vPartitionData)
 
-    #Limits the total of namespaces to 10 in the partitions completed
-    if len(vPartitionData) > 10:  
+    #Limits the total of namespaces to MAX_PARTITIONS_DISPLAY in the partitions completed
+    if len(vPartitionData) > MAX_PARTITIONS_DISPLAY:  
         # Remove PercCompleted == 100  
         filtered = [doc for doc in vPartitionData if doc.get('PercCompleted') != 100]  
-        # If we still have more than 10, trim to 10  
-        if len(filtered) >= 10:  
-            vPartitionData = filtered[:9]  
+        # If we still have more than MAX_PARTITIONS_DISPLAY, trim to MAX_PARTITIONS_DISPLAY  
+        if len(filtered) >= MAX_PARTITIONS_DISPLAY:  
+            vPartitionData = filtered[:MAX_PARTITIONS_DISPLAY-1]  
         else:  
-            # If after removal less than 10, fill up with remaining PercCompleted==100  
-            needed = 10 - len(filtered)  
+            # If after removal less than MAX_PARTITIONS_DISPLAY, fill up with remaining PercCompleted==100  
+            needed = MAX_PARTITIONS_DISPLAY - len(filtered)  
             completed_100 = [doc for doc in vPartitionData if doc.get('PercCompleted') == 100]  
             vPartitionData = filtered + completed_100[:needed]  
 
@@ -249,97 +246,12 @@ def gatherMetrics():
 
 
 def plotMetrics():
-    # Reading config file
-    config = configparser.ConfigParser()  
-    config.read('config.ini')
+    # Use the centralized configuration
+    from app_config import REFRESH_TIME
 
-    refreshTime = config['LiveMonitor']['refreshTime']
+    refreshTime = REFRESH_TIME
     refreshTimeMs = str(int(refreshTime) * 1000)
     
-    return render_template_string('''
-            <!DOCTYPE html>  
-            <html lang="en">  
-            <head>  
-                <meta charset="UTF-8">  
-                <title>Mongosync Insights</title>  
-                <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>  
-
-                <style>  
-                    body {  
-                        font-family: Arial, sans-serif;  
-                        margin: 0;  
-                        padding: 0;  
-                        background-color: #f4f4f9; /* Light background for good contrast */  
-                        color: #333; /* Dark text for readability */  
-                    }  
-            
-                    header {  
-                        background-color: #00684A;  
-                        color: #fff;  
-                        padding: 10px 20px;  
-                        text-align: center;  
-                    }  
-            
-                    main {  
-                        padding: 20px;  
-                    }  
-            
-                    #plot {  
-                        margin: 0 auto;  
-                        max-width: 1450px;  
-                        border: 1px solid #ccc; /* Add border for distinction */  
-                        border-radius: 8px; /* Rounded corners */  
-                        background-color: #fff;  
-                        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */  
-                    }  
-            
-                    footer {  
-                        text-align: center;  
-                        padding: 10px;  
-                        margin-top: 20px;  
-                        background-color: #00684A;  
-                        color: #fff;  
-                    }  
-            
-                    @media (max-width: 768px) {  
-                        #plot {  
-                            width: 95%; /* Make responsive for smaller screens */  
-                        }  
-                    }  
-                </style>  
-            </head>  
-                                  
-            <body>  
-                <header>  
-                    <h1>Mongosync Insights - Metadata</h1>  
-                </header>  
-                <main>  
-                    <div id="loading">Loading metrics...</div>
-                    <div id="plot" style="display:none;"></div>
-
-            <script>
-                async function fetchPlotData() {
-                    try {
-                        const response = await fetch("/get_metrics_data", { method: 'POST' });
-                        const plotData = await response.json();
-                        document.getElementById("loading").style.display = "none";
-                        document.getElementById("plot").style.display = "block";
-                        Plotly.react('plot', plotData.data, plotData.layout);
-                    } catch (err) {
-                        console.error("Error fetching data:", err);
-                        document.getElementById("loading").innerText = "Error loading data.";
-                    }
-                }
-
-                fetchPlotData(); // initial load
-                setInterval(fetchPlotData, ''' + refreshTimeMs + '''); // update every ''' + refreshTime + ''' seconds
-            </script>
-
-            </main>  
-                <footer>  
-                    <!-- <p>&copy; 2023 MongoDB. All rights reserved.</p>  -->
-                    <p>Refresing every '''+ refreshTime +''' seconds - Version 0.6.5</p>
-                </footer>  
-            </body>  
-            </html>  
-    ''')
+    return render_template('metrics.html', 
+                         refresh_time=refreshTime, 
+                         refresh_time_ms=refreshTimeMs)
