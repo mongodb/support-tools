@@ -646,12 +646,19 @@ function printShardOrReplicaSetInfo() {
         return true;
     } else if (state != "standalone" && state != "configsvr") {
         if (state == "SECONDARY" || state == 2) {
-            if (rs.secondaryOk) {
-                rs.secondaryOk();
+            // Detect mongosh (Node-style 'process' exists)
+            const isMongoSh = (typeof process !== 'undefined' &&
+                               process.release && process.release.name === 'node');
+          
+            if (isMongoSh) {
+              // mongosh: avoid deprecation noise
+              db.getMongo().setReadPref("primaryPreferred");
+            } else if (typeof rs !== "undefined" && typeof rs.secondaryOk === "function") {
+              rs.secondaryOk();
             } else {
-                rs.slaveOk();
+              throw new Error("Could not enable reads on secondary in legacy mongo shell");
             }
-        }
+          }
         printReplicaSetInfo();
     }
     return false;
