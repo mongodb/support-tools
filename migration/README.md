@@ -4,6 +4,9 @@ This section contains scripts to help before, during, and after migrations.
 ## [Mongosync Insights](mongosync_insights)
 This project parses **mongosync** logs and reads the internal database (metadata), generating a variety of plots to assist with monitoring and troubleshooting ongoing mongosync migrations.
 
+## [Toolbox](toolbox)
+It contains scripts used by Migration Factory team during the Data Capture Request.
+
 ### License
 
 [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
