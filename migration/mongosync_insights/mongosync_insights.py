@@ -84,6 +84,9 @@ def too_large(e):
 
 @app.route('/')
 def home_page(): 
+    # Calculate max file size in GB for display
+    max_file_size_gb = MAX_FILE_SIZE / (1024 * 1024 * 1024)
+    
     if not CONNECTION_STRING:
         connection_string_form = '''<label for="connectionString">Atlas MongoDB Connection String:</label>  
                                     <input type="text" id="connectionString" name="connectionString" size="47" autocomplete="off"
@@ -93,7 +96,9 @@ def home_page():
         sanitized_connection = sanitize_for_display(CONNECTION_STRING)
         connection_string_form = f"<p><b>Connecting to Destination Cluster at: </b>{sanitized_connection}</p>"
 
-    return render_template('home.html', connection_string_form=connection_string_form)
+    return render_template('home.html', 
+                           connection_string_form=connection_string_form,
+                           max_file_size_gb=max_file_size_gb)
 
 
 @app.route('/upload', methods=['POST'])

@@ -17,12 +17,38 @@ PORT = int(os.getenv('MI_PORT', '3030'))
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.7.0.17"
+APP_VERSION = "0.7.1.1"
 
 # File upload settings
 MAX_FILE_SIZE = int(os.getenv('MI_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
-ALLOWED_EXTENSIONS = {'.log', '.json', '.out'}
-ALLOWED_MIME_TYPES = ['application/x-ndjson']
+ALLOWED_EXTENSIONS = {'.log', '.json', '.out', '.gz', '.zip', '.bz2', '.tar.gz', '.tgz', '.tar.bz2'}
+ALLOWED_MIME_TYPES = [
+    'application/x-ndjson',
+    'application/gzip', 'application/x-gzip',
+    'application/zip', 'application/x-zip-compressed',
+    'application/x-bzip2',
+    'application/x-tar',  # Tar archives
+    'application/octet-stream'  # Generic binary (often used for compressed files)
+]
+
+# Compressed file MIME types (subset of ALLOWED_MIME_TYPES)
+COMPRESSED_MIME_TYPES = {
+    'application/gzip', 'application/x-gzip',
+    'application/zip', 'application/x-zip-compressed',
+    'application/x-bzip2',
+    'application/x-tar',  # Tar archives
+    'application/octet-stream'  # Generic binary (often used for compressed files)
+}
+
+# File extension to compression type mapping (for octet-stream fallback and tar detection)
+EXTENSION_TO_COMPRESSION = {
+    '.gz': 'gzip',
+    '.zip': 'zip',
+    '.bz2': 'bzip2',
+    '.tar.gz': 'tar_gzip',
+    '.tgz': 'tar_gzip',
+    '.tar.bz2': 'tar_bzip2'
+}
 
 # Security settings
 SECURE_COOKIES = os.getenv('MI_SECURE_COOKIES', 'True').lower() == 'true'

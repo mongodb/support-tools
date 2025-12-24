@@ -13,6 +13,7 @@ import magic
 from werkzeug.utils import secure_filename
 from mongosync_plot_utils import format_byte_size, convert_bytes
 from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
+from file_decompressor import decompress_file, is_compressed_mime_type
 
 def upload_file():
     # Use the centralized logging configuration
@@ -118,11 +119,25 @@ def upload_file():
         # Reset file pointer to beginning
         file.seek(0)
         
-        for line in tqdm(file, desc="Processing log file"):
+        # Determine if file is compressed and get appropriate iterator
+        if is_compressed_mime_type(file_mime_type):
+            logger.info(f"Decompressing {file_mime_type} file before processing")
+            file_iterator = decompress_file(file, file_mime_type, filename)
+        else:
+            file_iterator = file
+        
+        for line in tqdm(file_iterator, desc="Processing log file"):
             line_count += 1
+            # Handle both bytes and string input (decompressed files return bytes)
+            if isinstance(line, bytes):
+                line = line.decode('utf-8', errors='replace')
             line = line.strip()
             
             if not line:  # Skip empty lines
+                continue
+            
+            # Skip lines that don't look like JSON objects (handles trailing garbage from decompression)
+            if not line.startswith('{'):
                 continue
                 
             try:
