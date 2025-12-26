@@ -1,5 +1,5 @@
 # Mongosync Insights - Core Dependencies
-# Python 3.10+ required
+# Python 3.11+ required
 
 # Web Framework
 Flask==3.1.1

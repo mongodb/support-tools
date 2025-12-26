@@ -4,7 +4,7 @@ This guide explains how to enable HTTPS/SSL for Mongosync Insights to secure you
 
 ## Prerequisites
 
-**Python 3.10+** is required. All commands in this guide use `python3` to ensure you're running Python 3.x.
+**Python 3.11+** is required. All commands in this guide use `python3` to ensure you're running Python 3.x.
 
 ## Quick Reference
 
@@ -620,7 +620,7 @@ openssl s_client -connect your-domain.com:443 -servername your-domain.com </dev/
 ERROR: python3: command not found
 ```
 
-**Solution**: Install Python 3.10 or higher:
+**Solution**: Install Python 3.11 or higher:
 ```bash
 # Ubuntu/Debian
 sudo apt-get update
@@ -630,10 +630,10 @@ sudo apt-get install python3 python3-pip
 sudo yum install python3 python3-pip
 
 # macOS (using Homebrew)
-brew install python@3.10
+brew install python@3.11
 
 # Verify installation
-python3 --version  # Should show 3.10 or higher
+python3 --version  # Should show 3.11 or higher
 ```
 
 ### Certificate Not Found Error

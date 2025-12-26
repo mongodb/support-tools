@@ -11,7 +11,7 @@ Mongosync Insights provides two main capabilities:
 
 ## Prerequisites
 
-- **Python**: Version 3.10 or higher
+- **Python**: Version 3.11 or higher
 - **pip**: Python package installer
 - **MongoDB Access** (for live monitoring): Connection string to the destination cluster where mongosync stores its metadata
 

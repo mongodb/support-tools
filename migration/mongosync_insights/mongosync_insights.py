@@ -54,13 +54,14 @@ def add_security_headers(response):
     
     # Content Security Policy - configured to work with Plotly charts
     # Note: Plotly requires 'unsafe-inline' and 'unsafe-eval' for rendering
+    # Note: blob: is required for Plotly snapshot/download functionality
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.plot.ly; "
         "style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data: https:; "
+        "img-src 'self' data: blob: https:; "
         "font-src 'self' data:; "
-        "connect-src 'self';"
+        "connect-src 'self' blob:;"
     )
     
     # Additional security headers

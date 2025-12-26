@@ -336,8 +336,9 @@ def upload_file():
                     
                     phase_list = [item.get('message') for item in phase_transitions]  
                     ts_t_list = [item['time'] for item in phase_transitions]  
+                    # Replace 'Z' with '+00:00' for Python < 3.11 compatibility
                     ts_t_list_formatted = [  
-                        datetime.fromisoformat(t).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"  
+                        datetime.fromisoformat(t.replace('Z', '+00:00')).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"  
                         for t in ts_t_list  
                     ]  
         else:
