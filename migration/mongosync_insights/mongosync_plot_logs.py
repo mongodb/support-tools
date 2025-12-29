@@ -203,9 +203,9 @@ def upload_file():
         # Create a string with all the version information
         if version_info_list and isinstance(version_info_list[0], dict):  
             version = version_info_list[0].get('version', 'Unknown')  
-            operating_system = version_info_list[0].get('os', 'Unknown')  
+            os_name = version_info_list[0].get('os', 'Unknown')  
             arch = version_info_list[0].get('arch', 'Unknown')  
-            version_text = f"MongoSync Version: {version}, OS: {operating_system}, Arch: {arch}"   
+            version_text = f"MongoSync Version: {version}, OS: {os_name}, Arch: {arch}"   
         else:  
             version_text = f"MongoSync Version is not available"  
             logging.error(version_text)  
