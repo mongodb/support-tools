@@ -44,7 +44,8 @@ def gatherMetrics(connection_string):
         exit(1)
     # Create a subplot for the scatter plots and a separate subplot for the table
     fig = make_subplots(rows=4, 
-                        cols=5, 
+                        cols=6, 
+                        row_heights=[0.15, 0.15, 0.35, 0.35],
                         subplot_titles=("Current State", 
                                         "Current Phase",
                                         "Lag Time",
@@ -62,10 +63,10 @@ def gatherMetrics(connection_string):
 
                                         "Mongosync Phases",
                                         "Collections Progress"),
-                        specs=[[{}, {}, {}, {}, {}],
-                               [{}, {}, {}, {}, {}],
-                               [{"colspan": 2}, None, None, {"colspan": 2}, None],
-                               [{"colspan": 2}, None, None, {"colspan": 2}, None]]                           
+                        specs=[[{}, {}, {"colspan": 2}, None, {}, {}],
+                               [{}, {}, {"colspan": 2}, None, {}, {}],
+                               [None, {"colspan": 2}, None, None, {"colspan": 2}, None],
+                               [None, {"colspan": 2}, None, None, {"colspan": 2}, None]]                           
                         )
 
     #Get State and Phase from resumeData collection
@@ -162,7 +163,7 @@ def gatherMetrics(connection_string):
     else:
         newInitialText = newInitial.strftime("%Y-%m-%d %H:%M:%S")
 
-    fig.add_trace(go.Scatter(x=[0], y=[0], text=[newInitialText], mode='text', name='Mongosync Start',textfont=dict(size=17, color="black")), row=1, col=4)
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[newInitialText], mode='text', name='Mongosync Start',textfont=dict(size=17, color="black")), row=1, col=5)
     fig.update_layout(xaxis4=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis4=dict(showgrid=False, zeroline=False, showticklabels=False))
     
@@ -173,7 +174,7 @@ def gatherMetrics(connection_string):
     else:
         newFinishText = newFinish.strftime("%Y-%m-%d %H:%M:%S")
 
-    fig.add_trace(go.Scatter(x=[0], y=[0], text=[newFinishText], mode='text', name='Mongosync Finish',textfont=dict(size=17, color="black")), row=1, col=5)
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[newFinishText], mode='text', name='Mongosync Finish',textfont=dict(size=17, color="black")), row=1, col=6)
     fig.update_layout(xaxis5=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis5=dict(showgrid=False, zeroline=False, showticklabels=False))
 
@@ -216,13 +217,13 @@ def gatherMetrics(connection_string):
     
     #Plot Detect Random Id
     detectRandomIdValue = str(vGlobalState.get("detectRandomId", "NO DATA")) if vGlobalState else "NO DATA"
-    fig.add_trace(go.Scatter(x=[0], y=[0], text=[detectRandomIdValue], mode='text', name='Detect Random Id',textfont=dict(size=17, color="black")), row=2, col=4)
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[detectRandomIdValue], mode='text', name='Detect Random Id',textfont=dict(size=17, color="black")), row=2, col=5)
     fig.update_layout(xaxis9=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis9=dict(showgrid=False, zeroline=False, showticklabels=False))
     
     #Plot Verification Mode
     verificationModeValue = str(vGlobalState.get("verificationmode", "NO DATA")).capitalize() if vGlobalState else "NO DATA"
-    fig.add_trace(go.Scatter(x=[0], y=[0], text=[verificationModeValue], mode='text', name='Embedded Verifier',textfont=dict(size=17, color="black")), row=2, col=5)
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[verificationModeValue], mode='text', name='Embedded Verifier',textfont=dict(size=17, color="black")), row=2, col=6)
     fig.update_layout(xaxis10=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis10=dict(showgrid=False, zeroline=False, showticklabels=False))
 
@@ -252,7 +253,7 @@ def gatherMetrics(connection_string):
             vPartitionData = filtered + completed_100[:needed]  
 
     if len(vPartitionData) == 0:
-        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Mongosync Finish',textfont=dict(size=30, color="black")), row=3, col=1)
+        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Mongosync Finish',textfont=dict(size=30, color="black")), row=3, col=2)
         fig.update_layout(xaxis11=dict(showgrid=False, zeroline=False, showticklabels=False), 
                           yaxis11=dict(showgrid=False, zeroline=False, showticklabels=False))
     else:
@@ -262,9 +263,9 @@ def gatherMetrics(connection_string):
             vNamespace.append(partition["namespace"])
             vPercComplete.append(partition["PercCompleted"])
         fig.add_trace(go.Bar(x=vPercComplete, y=vNamespace, orientation='h', 
-                             marker=dict(color=vPercComplete, colorscale='blugrn')), row=3, col=1)
-        fig.update_xaxes(title_text="Completed %", row=3, col=1)
-        fig.update_yaxes(title_text="Namespace", row=3, col=1)
+                             marker=dict(color=vPercComplete, colorscale='blugrn')), row=3, col=2)
+        fig.update_xaxes(title_text="Completed %", row=3, col=2)
+        fig.update_yaxes(title_text="Namespace", row=3, col=2)
         fig.update_layout(xaxis11=dict(range=[1, 100], dtick=5))
 
     #Plot total and copied data
@@ -276,7 +277,7 @@ def gatherMetrics(connection_string):
     vTypeByte=['Copied Data', 'Total Data']
     vBytes=[]
     if len(vCompleteData) == 0:
-        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=3, col=4)
+        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=3, col=5)
         fig.update_layout(xaxis12=dict(showgrid=False, zeroline=False, showticklabels=False), 
                           yaxis12=dict(showgrid=False, zeroline=False, showticklabels=False))
     else:        
@@ -288,16 +289,16 @@ def gatherMetrics(connection_string):
         vBytes.append(vCopiedBytes)
         vBytes.append(vTotalBytes)
         fig.add_trace(go.Bar(x=vBytes, y=vTypeByte, orientation='h',
-                             marker=dict(color=vBytes, colorscale='redor')), row=3, col=4)
-        fig.update_xaxes(title_text=f"Data in {estimated_total_bytes_unit}", row=3, col=4)
-        fig.update_yaxes(title_text="Copied / Total Data", row=3, col=4)
+                             marker=dict(color=vBytes, colorscale='redor')), row=3, col=5)
+        fig.update_xaxes(title_text=f"Data in {estimated_total_bytes_unit}", row=3, col=5)
+        fig.update_yaxes(title_text="Copied / Total Data", row=3, col=5)
         fig.update_layout(xaxis12=dict(range=[0, vTotalBytes]))
 
     #Plot Phases transitions (using phaseTransitions from vResumeData)
     vPhase=[]
     vTs=[]
     if len(phaseTransitions) == 0:
-        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=4, col=1)
+        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=4, col=2)
         fig.update_layout(xaxis13=dict(showgrid=False, zeroline=False, showticklabels=False), 
                           yaxis13=dict(showgrid=False, zeroline=False, showticklabels=False))
     else:        
@@ -310,7 +311,7 @@ def gatherMetrics(connection_string):
                 vTs.append(ts)
             else:
                 vTs.append(None)
-        fig.add_trace(go.Scatter(x=vTs, y=vPhase, mode='markers+text',marker=dict(color='green')), row=4, col=1)
+        fig.add_trace(go.Scatter(x=vTs, y=vPhase, mode='markers+text',marker=dict(color='green')), row=4, col=2)
     
     #Colection Progress
     vProject1 = {"$project": {  "namespace": {  "$concat": ["$namespace.db", ".", "$namespace.coll"]  },  "partitionPhase": 1  }}
@@ -325,7 +326,7 @@ def gatherMetrics(connection_string):
     vTypeProc=[]
     vTypeValue=[]
     if len(vCollectionData) == 0:
-        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=4, col=4)
+        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=4, col=5)
         fig.update_layout(xaxis14=dict(showgrid=False, zeroline=False, showticklabels=False), 
                           yaxis14=dict(showgrid=False, zeroline=False, showticklabels=False))
     else:
@@ -350,13 +351,13 @@ def gatherMetrics(connection_string):
         xMax = max(vTypeValue)
 
         fig.add_trace(go.Bar(x=vTypeValue, y=vTypeProc, orientation='h',
-                             marker=dict(color=vTypeValue, colorscale='Oryel')), row=4, col=4)
-        fig.update_xaxes(title_text=f"Totals", row=4, col=4)
-        fig.update_yaxes(title_text="Process", row=4, col=4)
+                             marker=dict(color=vTypeValue, colorscale='Oryel')), row=4, col=5)
+        fig.update_xaxes(title_text=f"Totals", row=4, col=5)
+        fig.update_yaxes(title_text="Process", row=4, col=5)
         fig.update_layout(xaxis14=dict(range=[0, xMax])) 
     
     # Update layout
-    fig.update_layout(height=1000, width=1450, autosize=True, title_text="Mongosync Replication Progress - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
+    fig.update_layout(height=1000, width=1550, autosize=True, title_text="Mongosync Replication Progress - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
     
     # Convert the figure to JSON
     plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)

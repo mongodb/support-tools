@@ -71,7 +71,7 @@ python3 mongosync_insights.py
 
 The application will start and display:
 ```
-Starting Mongosync Insights v0.7.1.2
+Starting Mongosync Insights v0.7.1.3
 Server: 127.0.0.1:3030
 ```
 
