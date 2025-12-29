@@ -4,8 +4,25 @@ from plotly.subplots import make_subplots
 from flask import request, render_template
 import json
 import logging
+import textwrap
+from datetime import datetime, timezone
+from bson import Timestamp
 from pymongo.errors import PyMongoError
 from mongosync_plot_utils import format_byte_size, convert_bytes
+
+
+def get_phase_timestamp(phase_transitions, phase_name):
+    """Find the first matching phase and return its timestamp as datetime."""
+    if not phase_transitions:
+        return None
+    for pt in phase_transitions:
+        if pt.get("phase") == phase_name:
+            ts = pt.get("ts")
+            if isinstance(ts, Timestamp):
+                return datetime.fromtimestamp(ts.time, tz=timezone.utc)
+            elif isinstance(ts, datetime):
+                return ts
+    return None
 
 def gatherMetrics(connection_string):
     # Use the centralized logging and configuration
@@ -30,6 +47,7 @@ def gatherMetrics(connection_string):
                         cols=5, 
                         subplot_titles=("Current State", 
                                         "Current Phase",
+                                        "Lag Time",
                                         "Start",
                                         "Finish",
 
@@ -38,7 +56,7 @@ def gatherMetrics(connection_string):
 
                                         "Mongosync Phases",
                                         "Collections Progress"),
-                        specs=[[{}, {}, None, {}, {}],
+                        specs=[[{}, {}, {}, {}, {}],
                                [{"colspan": 2}, None, None, {"colspan": 2}, None],
                                [{"colspan": 2}, None, None, {"colspan": 2}, None]]                           
                         )
@@ -59,57 +77,100 @@ def gatherMetrics(connection_string):
     else:
         logging.warning(vState + " is not listed as an option")
         vColor = "gray"
-
-    fig.add_trace(go.Scatter(x=[0], y=[0], text=[str(vState.capitalize())], mode='text', name='Mongosync State',textfont=dict(size=17, color=vColor)), row=1, col=1)
+    
+    #Plot Mongosync State
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[str(vState)], mode='text', name='Mongosync State',textfont=dict(size=17, color=vColor)), row=1, col=1)
     fig.update_layout(xaxis1=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis1=dict(showgrid=False, zeroline=False, showticklabels=False))
 
-    #Plot Mongosync State
+    #Plot Mongosync Phase
     vPhase = vResumeData["syncPhase"].capitalize()
-    fig.add_trace(go.Scatter(x=[0], y=[0], text=[str(vPhase)], mode='text', name='Mongosync State',textfont=dict(size=17, color="black")), row=1, col=2)
+    wrapped_phase = "<br>".join(textwrap.wrap(str(vPhase), width=15))
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[wrapped_phase], mode='text', name='Mongosync Phase',textfont=dict(size=17, color="black")), row=1, col=2)
     fig.update_layout(xaxis2=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis2=dict(showgrid=False, zeroline=False, showticklabels=False))
 
-    #Plot Mongosync Start time
-    vMatch = {"$match": {"_id": "coordinator"}}
-    vAddFields = {"$addFields":{"phaseTransitions": {"$filter": {"input": "$phaseTransitions", "as": "phaseTransitions", 
-                  "cond":{"$eq": ["$$phaseTransitions.phase", "initializing collections and indexes"]}
-                }}}}
-    vProject = {"$project":{"_id": 0, "ts": {"$toDate": {"$arrayElemAt": ["$phaseTransitions.ts" ,0]}}}}
-    vInitialData = internalDbDst.resumeData.aggregate([vMatch, vAddFields, vProject])
-    vInitialData = list(vInitialData)
-    
-    if len(vInitialData) > 0:
-        for initial in vInitialData:
-            newInitial = initial['ts']
-    else:
-        newInitial = 'NO DATA'
+    #Plot Lag Time (calculated from crudChangeStreamResumeInfo.lastEventTs)
+    def format_lag_duration(delta):
+        """Format a timedelta as a human-readable string."""
+        total_seconds = int(delta.total_seconds())
+        if total_seconds < 0:
+            return "0s"
+        days, remainder = divmod(total_seconds, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        parts = []
+        if days > 0:
+            parts.append(f"{days}d")
+        if hours > 0:
+            parts.append(f"{hours}h")
+        if minutes > 0:
+            parts.append(f"{minutes}m")
+        parts.append(f"{seconds}s")
+        return " ".join(parts)
 
-    fig.add_trace(go.Scatter(x=[0], y=[0], text=[str(newInitial)], mode='text', name='Mongosync Start',textfont=dict(size=17, color="black")), row=1, col=4)
+    def get_last_event_datetime(resume_info):
+        """Extract lastEventTs from resume info and convert to datetime."""
+        if not resume_info:
+            return None
+        lastEventTs = resume_info.get("lastEventTs")
+        if not lastEventTs:
+            return None
+        if isinstance(lastEventTs, Timestamp):
+            return datetime.fromtimestamp(lastEventTs.time, tz=timezone.utc)
+        elif isinstance(lastEventTs, datetime):
+            return lastEventTs if lastEventTs.tzinfo else lastEventTs.replace(tzinfo=timezone.utc)
+        return None
+
+    lagTimeText = 'NO DATA'
+    crudChangeStreamResumeInfo = vResumeData.get("crudChangeStreamResumeInfo") if vResumeData else None
+    ddlChangeStreamResumeInfo = vResumeData.get("ddlChangeStreamResumeInfo") if vResumeData else None
+    
+    crudLastEventDt = get_last_event_datetime(crudChangeStreamResumeInfo)
+    ddlLastEventDt = get_last_event_datetime(ddlChangeStreamResumeInfo)
+    
+    # Use the most recent timestamp between crud and ddl
+    lastEventDt = None
+    if crudLastEventDt and ddlLastEventDt:
+        lastEventDt = max(crudLastEventDt, ddlLastEventDt)
+    elif crudLastEventDt:
+        lastEventDt = crudLastEventDt
+    elif ddlLastEventDt:
+        lastEventDt = ddlLastEventDt
+    
+    if lastEventDt:
+        currentTime = datetime.now(tz=timezone.utc)
+        lagDuration = currentTime - lastEventDt
+        lagTimeText = format_lag_duration(lagDuration)
+
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[lagTimeText], mode='text', name='Lag Time',textfont=dict(size=17, color="black")), row=1, col=3)
     fig.update_layout(xaxis3=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis3=dict(showgrid=False, zeroline=False, showticklabels=False))
-    
-    #Plot Mongosync Finish time
-    vMatch = {"$match": {"_id": "coordinator"}}
-    vAddFields = {"$addFields":{"phaseTransitions": {"$filter": {"input": "$phaseTransitions", "as": "phaseTransitions", 
-                  "cond":{"$eq": ["$$phaseTransitions.phase", "commit completed"]}
-                }}}}
-    vProject = {"$project":{"_id": 0, "ts": {"$toDate": {"$arrayElemAt": ["$phaseTransitions.ts" ,0]}}}}
-    vFinishData = internalDbDst.resumeData.aggregate([vMatch, vAddFields, vProject])
-    vFinishData = list(vFinishData)
-    
-    if len(vFinishData) > 0:
-        for finish in vFinishData:
-            newFinish = finish['ts']
-    else:
-        newFinish = 'NO DATA'
 
-    fig.add_trace(go.Scatter(x=[0], y=[0], text=[str(newFinish)], mode='text', name='Mongosync Finish',textfont=dict(size=17, color="black")), row=1, col=5)
+    #Plot Mongosync Start time (using phaseTransitions from vResumeData)
+    phaseTransitions = vResumeData.get("phaseTransitions", []) if vResumeData else []
+    newInitial = get_phase_timestamp(phaseTransitions, "initializing collections and indexes")
+    if newInitial is None:
+        newInitialText = 'NO DATA'
+    else:
+        newInitialText = newInitial.strftime("%Y-%m-%d %H:%M:%S")
+
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[newInitialText], mode='text', name='Mongosync Start',textfont=dict(size=17, color="black")), row=1, col=4)
     fig.update_layout(xaxis4=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis4=dict(showgrid=False, zeroline=False, showticklabels=False))
+    
+    #Plot Mongosync Finish time (using phaseTransitions from vResumeData)
+    newFinish = get_phase_timestamp(phaseTransitions, "commit completed")
+    if newFinish is None:
+        newFinishText = 'NO DATA'
+    else:
+        newFinishText = newFinish.strftime("%Y-%m-%d %H:%M:%S")
+
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[newFinishText], mode='text', name='Mongosync Finish',textfont=dict(size=17, color="black")), row=1, col=5)
+    fig.update_layout(xaxis5=dict(showgrid=False, zeroline=False, showticklabels=False), 
+                      yaxis5=dict(showgrid=False, zeroline=False, showticklabels=False))
 
     #Plot partition data
-
     vGroup1 = {"$group": {"_id": {"namespace": {"$concat": ["$namespace.db", ".", "$namespace.coll"]}, "partitionPhase": "$partitionPhase" },  "documentCount": { "$sum": 1 }}}
     vGroup2 = {"$group": {  "_id": {  "namespace": "$_id.namespace"},  "partitionPhaseCounts": {  "$push": {  "k": "$_id.partitionPhase",  "v": "$documentCount"  }  },  "totalDocumentCount": { "$sum": "$documentCount" }  }  }
     vAddFields1 = {"$addFields": {"namespace": "$_id.namespace"}}
@@ -136,8 +197,8 @@ def gatherMetrics(connection_string):
 
     if len(vPartitionData) == 0:
         fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Mongosync Finish',textfont=dict(size=30, color="black")), row=2, col=1)
-        fig.update_layout(xaxis5=dict(showgrid=False, zeroline=False, showticklabels=False), 
-                          yaxis5=dict(showgrid=False, zeroline=False, showticklabels=False))
+        fig.update_layout(xaxis6=dict(showgrid=False, zeroline=False, showticklabels=False), 
+                          yaxis6=dict(showgrid=False, zeroline=False, showticklabels=False))
     else:
         vNamespace = []
         vPercComplete = []        
@@ -148,9 +209,9 @@ def gatherMetrics(connection_string):
                              marker=dict(color=vPercComplete, colorscale='blugrn')), row=2, col=1)
         fig.update_xaxes(title_text="Completed %", row=2, col=1)
         fig.update_yaxes(title_text="Namespace", row=2, col=1)
-        fig.update_layout(xaxis5=dict(range=[1, 100], dtick=5))
+        fig.update_layout(xaxis6=dict(range=[1, 100], dtick=5))
 
-    #Plot complete data
+    #Plot total and copied data
     vGroup = {"$group":{"_id": None, "totalCopiedBytes": { "$sum": "$copiedByteCount" }, "totalBytesCount": { "$sum": "$totalByteCount" }  }}
     vCompleteData = internalDbDst.partitions.aggregate([vGroup])
     vCompleteData=list(vCompleteData)
@@ -160,8 +221,8 @@ def gatherMetrics(connection_string):
     vBytes=[]
     if len(vCompleteData) == 0:
         fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=2, col=4)
-        fig.update_layout(xaxis6=dict(showgrid=False, zeroline=False, showticklabels=False), 
-                          yaxis6=dict(showgrid=False, zeroline=False, showticklabels=False))
+        fig.update_layout(xaxis7=dict(showgrid=False, zeroline=False, showticklabels=False), 
+                          yaxis7=dict(showgrid=False, zeroline=False, showticklabels=False))
     else:        
         for comp in list(vCompleteData):
             vCopiedBytes=comp["totalCopiedBytes"] + vCopiedBytes
@@ -174,24 +235,25 @@ def gatherMetrics(connection_string):
                              marker=dict(color=vBytes, colorscale='redor')), row=2, col=4)
         fig.update_xaxes(title_text=f"Data in {estimated_total_bytes_unit}", row=2, col=4)
         fig.update_yaxes(title_text="Copied / Total Data", row=2, col=4)
-        fig.update_layout(xaxis6=dict(range=[0, vTotalBytes]))
+        fig.update_layout(xaxis7=dict(range=[0, vTotalBytes]))
 
-    #Plot Phases transitions
-    vMatch = {"$match": {"_id": "coordinator"}}
-    vUnwind = {"$unwind": "$phaseTransitions"}
-    vProject = {"$project":{"_id": 0, "phase": "$phaseTransitions.phase", "ts": {"$toDate": "$phaseTransitions.ts" }}}
-    vTransitionData = internalDbDst.resumeData.aggregate([vMatch, vUnwind, vProject])
-    vTransitionData=list(vTransitionData)
+    #Plot Phases transitions (using phaseTransitions from vResumeData)
     vPhase=[]
     vTs=[]
-    if len(vTransitionData) == 0:
+    if len(phaseTransitions) == 0:
         fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=3, col=1)
-        fig.update_layout(xaxis7=dict(showgrid=False, zeroline=False, showticklabels=False), 
-                          yaxis7=dict(showgrid=False, zeroline=False, showticklabels=False))
+        fig.update_layout(xaxis8=dict(showgrid=False, zeroline=False, showticklabels=False), 
+                          yaxis8=dict(showgrid=False, zeroline=False, showticklabels=False))
     else:        
-        for phase in list(vTransitionData):
-            vPhase.append(phase["phase"])
-            vTs.append(phase["ts"])
+        for pt in phaseTransitions:
+            vPhase.append(pt.get("phase", "").capitalize())
+            ts = pt.get("ts")
+            if isinstance(ts, Timestamp):
+                vTs.append(datetime.fromtimestamp(ts.time, tz=timezone.utc))
+            elif isinstance(ts, datetime):
+                vTs.append(ts)
+            else:
+                vTs.append(None)
         fig.add_trace(go.Scatter(x=vTs, y=vPhase, mode='markers+text',marker=dict(color='green')), row=3, col=1)
     
     #Colection Progress
@@ -208,8 +270,8 @@ def gatherMetrics(connection_string):
     vTypeValue=[]
     if len(vCollectionData) == 0:
         fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=3, col=4)
-        fig.update_layout(xaxis8=dict(showgrid=False, zeroline=False, showticklabels=False), 
-                          yaxis8=dict(showgrid=False, zeroline=False, showticklabels=False))
+        fig.update_layout(xaxis9=dict(showgrid=False, zeroline=False, showticklabels=False), 
+                          yaxis9=dict(showgrid=False, zeroline=False, showticklabels=False))
     else:
         NotStarted = 0
         InProgress = 0
@@ -235,7 +297,7 @@ def gatherMetrics(connection_string):
                              marker=dict(color=vTypeValue, colorscale='Oryel')), row=3, col=4)
         fig.update_xaxes(title_text=f"Totals", row=3, col=4)
         fig.update_yaxes(title_text="Process", row=3, col=4)
-        fig.update_layout(xaxis8=dict(range=[0, xMax])) 
+        fig.update_layout(xaxis9=dict(range=[0, xMax])) 
     
     # Update layout
     fig.update_layout(height=850, width=1450, autosize=True, title_text="Mongosync Replication Progress - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
