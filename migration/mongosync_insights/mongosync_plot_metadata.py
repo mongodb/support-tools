@@ -76,7 +76,7 @@ def gatherMetrics(connection_string):
     vState = vResumeData["state"]
     if vState == 'RUNNING':
         vColor = 'blue'
-    elif vState == "IDDLE":
+    elif vState == "IDLE":
         vColor = "yellow"
     elif vState == "PAUSED":
         vColor = "red"
