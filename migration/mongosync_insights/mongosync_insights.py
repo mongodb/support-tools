@@ -1,7 +1,7 @@
 import logging
 from flask import Flask, render_template, request
 from mongosync_plot_logs import upload_file
-from mongosync_plot_metadata import plotMetrics, gatherMetrics
+from mongosync_plot_metadata import plotMetrics, gatherMetrics, gatherPartitionsMetrics
 from pymongo.errors import InvalidURI, PyMongoError
 from pymongo.uri_parser import parse_uri 
 from app_config import (
@@ -174,6 +174,17 @@ def getMetrics():
         return {"error": "No connection string available"}, 400
     
     return gatherMetrics(connection_string)
+
+@app.route('/get_partitions_data', methods=['POST'])
+def getPartitionsData():
+    # Use environment variable if set, otherwise use runtime cache
+    connection_string = CONNECTION_STRING if CONNECTION_STRING else _runtime_connection_string
+    
+    if not connection_string:
+        logger.error("No connection string available for partitions data refresh")
+        return {"error": "No connection string available"}, 400
+    
+    return gatherPartitionsMetrics(connection_string)
 
 if __name__ == '__main__':
     # Log startup information

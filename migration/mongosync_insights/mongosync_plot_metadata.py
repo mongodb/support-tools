@@ -357,9 +357,268 @@ def gatherMetrics(connection_string):
         fig.update_layout(xaxis14=dict(range=[0, xMax])) 
     
     # Update layout
-    fig.update_layout(height=1000, width=1550, autosize=True, title_text="Mongosync Replication Progress - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
+    fig.update_layout(height=1000, width=1550, autosize=True, title_text="Mongosync Status - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
     
     # Convert the figure to JSON
+    plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
+    return plot_json
+
+
+def gatherPartitionsMetrics(connection_string):
+    """Generate a detailed partitions view with namespace breakdown and progress details."""
+    logger = logging.getLogger(__name__)
+    
+    from app_config import INTERNAL_DB_NAME, get_database
+    
+    TARGET_MONGO_URI = connection_string
+    internalDb = INTERNAL_DB_NAME
+    
+    try:
+        internalDbDst = get_database(TARGET_MONGO_URI, internalDb)
+        logger.info("Connected to target MongoDB for partitions metrics.")
+    except PyMongoError as e:
+        logger.error(f"Failed to connect to target MongoDB: {e}")
+        exit(1)
+    
+    # Create subplots for detailed partition view
+    fig = make_subplots(
+        rows=2, 
+        cols=2, 
+        row_heights=[0.5, 0.5],
+        subplot_titles=(
+            "Partition Status Distribution",
+            "Top 20 Namespaces by Total Bytes",
+            "Partition Progress by Namespace",
+            "Copy Progress (Bytes)"
+        ),
+        specs=[
+            [{"type": "pie"}, {"type": "bar"}],
+            [{"type": "bar"}, {"type": "bar"}]
+        ],
+        horizontal_spacing=0.1,
+        vertical_spacing=0.12
+    )
+    
+    # 1. Partition Status Distribution (Pie Chart)
+    pipeline_status = [
+        {"$group": {"_id": "$partitionPhase", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
+    status_data = list(internalDbDst.partitions.aggregate(pipeline_status))
+    
+    if status_data:
+        labels = [item["_id"].capitalize() for item in status_data]
+        values = [item["count"] for item in status_data]
+        colors_map = {
+            "Not started": "#ff6b6b",
+            "In progress": "#ffd93d",
+            "Done": "#6bcb77"
+        }
+        colors = [colors_map.get(label, "#999999") for label in labels]
+        
+        fig.add_trace(
+            go.Pie(
+                labels=labels, 
+                values=values, 
+                hole=0.4,
+                marker=dict(colors=colors),
+                textinfo='label+percent+value',
+                textposition='outside'
+            ),
+            row=1, col=1
+        )
+    else:
+        fig.add_trace(
+            go.Scatter(x=[0], y=[0], text=["NO DATA"], mode='text', textfont=dict(size=20)),
+            row=1, col=1
+        )
+        fig.update_xaxes(showgrid=False, zeroline=False, showticklabels=False, row=1, col=1)
+        fig.update_yaxes(showgrid=False, zeroline=False, showticklabels=False, row=1, col=1)
+    
+    # 2. Top 20 Namespaces by Total Bytes
+    pipeline_bytes = [
+        {"$group": {
+            "_id": {"$concat": ["$namespace.db", ".", "$namespace.coll"]},
+            "totalBytes": {"$sum": "$totalByteCount"},
+            "copiedBytes": {"$sum": "$copiedByteCount"}
+        }},
+        {"$sort": {"totalBytes": -1}},
+        {"$limit": 20}
+    ]
+    bytes_data = list(internalDbDst.partitions.aggregate(pipeline_bytes))
+    
+    if bytes_data:
+        namespaces = [item["_id"] for item in bytes_data]
+        total_bytes = [item["totalBytes"] for item in bytes_data]
+        copied_bytes = [item["copiedBytes"] for item in bytes_data]
+        
+        # Convert to appropriate unit
+        max_bytes = max(total_bytes) if total_bytes else 0
+        if max_bytes > 1024**3:
+            unit = "GB"
+            divisor = 1024**3
+        elif max_bytes > 1024**2:
+            unit = "MB"
+            divisor = 1024**2
+        elif max_bytes > 1024:
+            unit = "KB"
+            divisor = 1024
+        else:
+            unit = "B"
+            divisor = 1
+        
+        total_converted = [b / divisor for b in total_bytes]
+        copied_converted = [b / divisor for b in copied_bytes]
+        
+        # Truncate long namespace names for display
+        namespaces_display = [ns[:30] + "..." if len(ns) > 30 else ns for ns in namespaces]
+        
+        fig.add_trace(
+            go.Bar(
+                y=namespaces_display,
+                x=total_converted,
+                name=f'Total ({unit})',
+                orientation='h',
+                marker_color='#4ecdc4'
+            ),
+            row=1, col=2
+        )
+        fig.update_xaxes(title_text=f"Size ({unit})", row=1, col=2)
+    else:
+        fig.add_trace(
+            go.Scatter(x=[0], y=[0], text=["NO DATA"], mode='text', textfont=dict(size=20)),
+            row=1, col=2
+        )
+        fig.update_xaxes(showgrid=False, zeroline=False, showticklabels=False, row=1, col=2)
+        fig.update_yaxes(showgrid=False, zeroline=False, showticklabels=False, row=1, col=2)
+    
+    # 3. Partition Progress by Namespace (stacked bar)
+    pipeline_progress = [
+        {"$group": {
+            "_id": {
+                "namespace": {"$concat": ["$namespace.db", ".", "$namespace.coll"]},
+                "phase": "$partitionPhase"
+            },
+            "count": {"$sum": 1}
+        }},
+        {"$group": {
+            "_id": "$_id.namespace",
+            "phases": {"$push": {"phase": "$_id.phase", "count": "$count"}},
+            "total": {"$sum": "$count"}
+        }},
+        {"$sort": {"total": -1}},
+        {"$limit": 15}
+    ]
+    progress_data = list(internalDbDst.partitions.aggregate(pipeline_progress))
+    
+    if progress_data:
+        namespaces = [item["_id"] for item in progress_data]
+        namespaces_display = [ns[:25] + "..." if len(ns) > 25 else ns for ns in namespaces]
+        
+        # Initialize phase counts
+        not_started = []
+        in_progress = []
+        done = []
+        
+        for item in progress_data:
+            phases_dict = {p["phase"]: p["count"] for p in item["phases"]}
+            not_started.append(phases_dict.get("not started", 0))
+            in_progress.append(phases_dict.get("in progress", 0))
+            done.append(phases_dict.get("done", 0))
+        
+        fig.add_trace(
+            go.Bar(
+                y=namespaces_display,
+                x=done,
+                name='Done',
+                orientation='h',
+                marker_color='#6bcb77'
+            ),
+            row=2, col=1
+        )
+        fig.add_trace(
+            go.Bar(
+                y=namespaces_display,
+                x=in_progress,
+                name='In Progress',
+                orientation='h',
+                marker_color='#ffd93d'
+            ),
+            row=2, col=1
+        )
+        fig.add_trace(
+            go.Bar(
+                y=namespaces_display,
+                x=not_started,
+                name='Not Started',
+                orientation='h',
+                marker_color='#ff6b6b'
+            ),
+            row=2, col=1
+        )
+        fig.update_xaxes(title_text="Partition Count", row=2, col=1)
+        fig.update_layout(barmode='stack')
+    else:
+        fig.add_trace(
+            go.Scatter(x=[0], y=[0], text=["NO DATA"], mode='text', textfont=dict(size=20)),
+            row=2, col=1
+        )
+        fig.update_xaxes(showgrid=False, zeroline=False, showticklabels=False, row=2, col=1)
+        fig.update_yaxes(showgrid=False, zeroline=False, showticklabels=False, row=2, col=1)
+    
+    # 4. Copy Progress by Namespace (Copied vs Total)
+    if bytes_data:
+        namespaces_display = [ns[:25] + "..." if len(ns) > 25 else ns for ns in namespaces[:15]]
+        total_converted_15 = total_converted[:15]
+        copied_converted_15 = copied_converted[:15]
+        
+        fig.add_trace(
+            go.Bar(
+                y=namespaces_display,
+                x=copied_converted_15,
+                name=f'Copied ({unit})',
+                orientation='h',
+                marker_color='#6bcb77'
+            ),
+            row=2, col=2
+        )
+        fig.add_trace(
+            go.Bar(
+                y=namespaces_display,
+                x=[t - c for t, c in zip(total_converted_15, copied_converted_15)],
+                name=f'Remaining ({unit})',
+                orientation='h',
+                marker_color='#e0e0e0'
+            ),
+            row=2, col=2
+        )
+        fig.update_xaxes(title_text=f"Size ({unit})", row=2, col=2)
+    else:
+        fig.add_trace(
+            go.Scatter(x=[0], y=[0], text=["NO DATA"], mode='text', textfont=dict(size=20)),
+            row=2, col=2
+        )
+        fig.update_xaxes(showgrid=False, zeroline=False, showticklabels=False, row=2, col=2)
+        fig.update_yaxes(showgrid=False, zeroline=False, showticklabels=False, row=2, col=2)
+    
+    # Update layout
+    fig.update_layout(
+        height=900,
+        width=1550,
+        autosize=True,
+        title_text="Mongosync Progress - Timezone info: UTC",
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        plot_bgcolor="white",
+        barmode='stack'
+    )
+    
     plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
     return plot_json
 
