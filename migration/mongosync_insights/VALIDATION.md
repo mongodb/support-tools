@@ -133,7 +133,7 @@ This ensures session cookies are only transmitted over encrypted connections.
 Use the SRV connection string format:
 
 ```
-mongodb+srv://username:password@cluster.mongodb.net/database
+mongodb+srv://username:password@cluster.mongodb.net/
 ```
 
 ### Credentials in Environment Variables
@@ -141,7 +141,7 @@ mongodb+srv://username:password@cluster.mongodb.net/database
 For production, store the connection string in an environment variable:
 
 ```bash
-export MI_CONNECTION_STRING="mongodb+srv://user:pass@cluster.mongodb.net/db"
+export MI_CONNECTION_STRING="mongodb+srv://user:pass@cluster.mongodb.net/"
 python3 mongosync_insights.py
 ```
 
@@ -160,7 +160,7 @@ Special characters in passwords must be URL-encoded:
 Example:
 ```
 # Password: p@ss:word
-mongodb://user:p%40ss%3Aword@cluster.mongodb.net/db
+mongodb://user:p%40ss%3Aword@cluster.mongodb.net/
 ```
 
 ## Troubleshooting

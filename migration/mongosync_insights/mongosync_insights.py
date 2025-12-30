@@ -91,7 +91,7 @@ def home_page():
     if not CONNECTION_STRING:
         connection_string_form = '''<label for="connectionString">Atlas MongoDB Connection String:</label>  
                                     <input type="text" id="connectionString" name="connectionString" size="47" autocomplete="off"
-                                        placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/myDB"><br><br>'''
+                                        placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/"><br><br>'''
     else:
         # Use safe sanitization for display
         sanitized_connection = sanitize_for_display(CONNECTION_STRING)
