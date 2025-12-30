@@ -29,11 +29,10 @@ def gatherMetrics(connection_string):
     logger = logging.getLogger(__name__)
     
     # Import and use the centralized configuration
-    from app_config import INTERNAL_DB_NAME, MAX_PARTITIONS_DISPLAY, get_database
+    from app_config import INTERNAL_DB_NAME, get_database
     
     TARGET_MONGO_URI = connection_string
     internalDb = INTERNAL_DB_NAME
-    colors = ['red', 'blue', 'green', 'orange', 'yellow']
     
     # Connect to MongoDB cluster using connection pooling
     try:
@@ -42,10 +41,10 @@ def gatherMetrics(connection_string):
     except PyMongoError as e:
         logger.error(f"Failed to connect to target MongoDB: {e}")
         exit(1)
-    # Create a subplot for the scatter plots and a separate subplot for the table
-    fig = make_subplots(rows=4, 
-                        cols=6, 
-                        row_heights=[0.15, 0.15, 0.35, 0.35],
+    # Create a subplot for status information only (2 rows)
+    fig = make_subplots(rows=2, 
+                        cols=5, 
+                        row_heights=[0.5, 0.5],
                         subplot_titles=("Current State", 
                                         "Current Phase",
                                         "Lag Time",
@@ -56,17 +55,9 @@ def gatherMetrics(connection_string):
                                         "Write Blocking Mode",
                                         "Build Indexes",
                                         "Detect Random Id",
-                                        "Embedded Verifier",
-
-                                        "Partitions Completed %",
-                                        "Total X Copied Data",
-
-                                        "Mongosync Phases",
-                                        "Collections Progress"),
-                        specs=[[{}, {}, {"colspan": 2}, None, {}, {}],
-                               [{}, {}, {"colspan": 2}, None, {}, {}],
-                               [None, {"colspan": 2}, None, None, {"colspan": 2}, None],
-                               [None, {"colspan": 2}, None, None, {"colspan": 2}, None]]                           
+                                        "Embedded Verifier"),
+                        specs=[[{}, {}, {}, {}, {}],
+                               [{}, {}, {}, {}, {}]]                           
                         )
 
     #Get State and Phase from resumeData collection
@@ -163,7 +154,7 @@ def gatherMetrics(connection_string):
     else:
         newInitialText = newInitial.strftime("%Y-%m-%d %H:%M:%S")
 
-    fig.add_trace(go.Scatter(x=[0], y=[0], text=[newInitialText], mode='text', name='Mongosync Start',textfont=dict(size=17, color="black")), row=1, col=5)
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[newInitialText], mode='text', name='Mongosync Start',textfont=dict(size=17, color="black")), row=1, col=4)
     fig.update_layout(xaxis4=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis4=dict(showgrid=False, zeroline=False, showticklabels=False))
     
@@ -174,7 +165,7 @@ def gatherMetrics(connection_string):
     else:
         newFinishText = newFinish.strftime("%Y-%m-%d %H:%M:%S")
 
-    fig.add_trace(go.Scatter(x=[0], y=[0], text=[newFinishText], mode='text', name='Mongosync Finish',textfont=dict(size=17, color="black")), row=1, col=6)
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[newFinishText], mode='text', name='Mongosync Finish',textfont=dict(size=17, color="black")), row=1, col=5)
     fig.update_layout(xaxis5=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis5=dict(showgrid=False, zeroline=False, showticklabels=False))
 
@@ -217,17 +208,60 @@ def gatherMetrics(connection_string):
     
     #Plot Detect Random Id
     detectRandomIdValue = str(vGlobalState.get("detectRandomId", "NO DATA")) if vGlobalState else "NO DATA"
-    fig.add_trace(go.Scatter(x=[0], y=[0], text=[detectRandomIdValue], mode='text', name='Detect Random Id',textfont=dict(size=17, color="black")), row=2, col=5)
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[detectRandomIdValue], mode='text', name='Detect Random Id',textfont=dict(size=17, color="black")), row=2, col=4)
     fig.update_layout(xaxis9=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis9=dict(showgrid=False, zeroline=False, showticklabels=False))
     
     #Plot Verification Mode
     verificationModeValue = str(vGlobalState.get("verificationmode", "NO DATA")).capitalize() if vGlobalState else "NO DATA"
-    fig.add_trace(go.Scatter(x=[0], y=[0], text=[verificationModeValue], mode='text', name='Embedded Verifier',textfont=dict(size=17, color="black")), row=2, col=6)
+    fig.add_trace(go.Scatter(x=[0], y=[0], text=[verificationModeValue], mode='text', name='Embedded Verifier',textfont=dict(size=17, color="black")), row=2, col=5)
     fig.update_layout(xaxis10=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis10=dict(showgrid=False, zeroline=False, showticklabels=False))
+    
+    # Update layout
+    fig.update_layout(height=450, width=1550, autosize=True, title_text="Mongosync Status - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
+    
+    # Convert the figure to JSON
+    plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
+    return plot_json
 
-    #Plot partition data
+
+def gatherPartitionsMetrics(connection_string):
+    """Generate progress view with partitions, data copy, phases, and collection progress."""
+    logger = logging.getLogger(__name__)
+    
+    from app_config import INTERNAL_DB_NAME, MAX_PARTITIONS_DISPLAY, get_database
+    
+    TARGET_MONGO_URI = connection_string
+    internalDb = INTERNAL_DB_NAME
+    
+    try:
+        internalDbDst = get_database(TARGET_MONGO_URI, internalDb)
+        logger.info("Connected to target MongoDB for progress metrics.")
+    except PyMongoError as e:
+        logger.error(f"Failed to connect to target MongoDB: {e}")
+        exit(1)
+    
+    # Create subplots for progress view (2x2 grid)
+    fig = make_subplots(
+        rows=2, 
+        cols=2, 
+        row_heights=[0.5, 0.5],
+        subplot_titles=(
+            "Partitions Completed %",
+            "Total X Copied Data",
+            "Mongosync Phases",
+            "Collections Progress"
+        ),
+        horizontal_spacing=0.15,
+        vertical_spacing=0.2
+    )
+    
+    # Get resumeData for phase transitions
+    vResumeData = internalDbDst.resumeData.find_one({"_id": "coordinator"})
+    phaseTransitions = vResumeData.get("phaseTransitions", []) if vResumeData else []
+    
+    # 1. Partitions Completed % (Row 1, Col 1)
     vGroup1 = {"$group": {"_id": {"namespace": {"$concat": ["$namespace.db", ".", "$namespace.coll"]}, "partitionPhase": "$partitionPhase" },  "documentCount": { "$sum": 1 }}}
     vGroup2 = {"$group": {  "_id": {  "namespace": "$_id.namespace"},  "partitionPhaseCounts": {  "$push": {  "k": "$_id.partitionPhase",  "v": "$documentCount"  }  },  "totalDocumentCount": { "$sum": "$documentCount" }  }  }
     vAddFields1 = {"$addFields": {"namespace": "$_id.namespace"}}
@@ -239,7 +273,7 @@ def gatherMetrics(connection_string):
 
     vPartitionData = list(vPartitionData)
 
-    #Limits the total of namespaces to MAX_PARTITIONS_DISPLAY in the partitions completed
+    # Limits the total of namespaces to MAX_PARTITIONS_DISPLAY in the partitions completed
     if len(vPartitionData) > MAX_PARTITIONS_DISPLAY:  
         # Remove PercCompleted == 100  
         filtered = [doc for doc in vPartitionData if doc.get('PercCompleted') != 100]  
@@ -253,9 +287,9 @@ def gatherMetrics(connection_string):
             vPartitionData = filtered + completed_100[:needed]  
 
     if len(vPartitionData) == 0:
-        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Mongosync Finish',textfont=dict(size=30, color="black")), row=3, col=2)
-        fig.update_layout(xaxis11=dict(showgrid=False, zeroline=False, showticklabels=False), 
-                          yaxis11=dict(showgrid=False, zeroline=False, showticklabels=False))
+        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=1, col=1)
+        fig.update_layout(xaxis1=dict(showgrid=False, zeroline=False, showticklabels=False), 
+                          yaxis1=dict(showgrid=False, zeroline=False, showticklabels=False))
     else:
         vNamespace = []
         vPercComplete = []        
@@ -263,44 +297,44 @@ def gatherMetrics(connection_string):
             vNamespace.append(partition["namespace"])
             vPercComplete.append(partition["PercCompleted"])
         fig.add_trace(go.Bar(x=vPercComplete, y=vNamespace, orientation='h', 
-                             marker=dict(color=vPercComplete, colorscale='blugrn')), row=3, col=2)
-        fig.update_xaxes(title_text="Completed %", row=3, col=2)
-        fig.update_yaxes(title_text="Namespace", row=3, col=2)
-        fig.update_layout(xaxis11=dict(range=[1, 100], dtick=5))
+                             marker=dict(color=vPercComplete, colorscale='blugrn')), row=1, col=1)
+        fig.update_xaxes(title_text="Completed %", row=1, col=1)
+        fig.update_yaxes(title_text="Namespace", row=1, col=1)
+        fig.update_layout(xaxis1=dict(range=[1, 100], dtick=5))
 
-    #Plot total and copied data
+    # 2. Total X Copied Data (Row 1, Col 2)
     vGroup = {"$group":{"_id": None, "totalCopiedBytes": { "$sum": "$copiedByteCount" }, "totalBytesCount": { "$sum": "$totalByteCount" }  }}
     vCompleteData = internalDbDst.partitions.aggregate([vGroup])
-    vCompleteData=list(vCompleteData)
-    vCopiedBytes=0
-    vTotalBytes=0
-    vTypeByte=['Copied Data', 'Total Data']
-    vBytes=[]
+    vCompleteData = list(vCompleteData)
+    vCopiedBytes = 0
+    vTotalBytes = 0
+    vTypeByte = ['Copied Data', 'Total Data']
+    vBytes = []
     if len(vCompleteData) == 0:
-        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=3, col=5)
-        fig.update_layout(xaxis12=dict(showgrid=False, zeroline=False, showticklabels=False), 
-                          yaxis12=dict(showgrid=False, zeroline=False, showticklabels=False))
+        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=1, col=2)
+        fig.update_layout(xaxis2=dict(showgrid=False, zeroline=False, showticklabels=False), 
+                          yaxis2=dict(showgrid=False, zeroline=False, showticklabels=False))
     else:        
         for comp in list(vCompleteData):
-            vCopiedBytes=comp["totalCopiedBytes"] + vCopiedBytes
-            vTotalBytes=comp["totalBytesCount"] + vTotalBytes
+            vCopiedBytes = comp["totalCopiedBytes"] + vCopiedBytes
+            vTotalBytes = comp["totalBytesCount"] + vTotalBytes
         vTotalBytes, estimated_total_bytes_unit = format_byte_size(vTotalBytes)
         vCopiedBytes = convert_bytes(vCopiedBytes, estimated_total_bytes_unit)
         vBytes.append(vCopiedBytes)
         vBytes.append(vTotalBytes)
         fig.add_trace(go.Bar(x=vBytes, y=vTypeByte, orientation='h',
-                             marker=dict(color=vBytes, colorscale='redor')), row=3, col=5)
-        fig.update_xaxes(title_text=f"Data in {estimated_total_bytes_unit}", row=3, col=5)
-        fig.update_yaxes(title_text="Copied / Total Data", row=3, col=5)
-        fig.update_layout(xaxis12=dict(range=[0, vTotalBytes]))
+                             marker=dict(color=vBytes, colorscale='redor')), row=1, col=2)
+        fig.update_xaxes(title_text=f"Data in {estimated_total_bytes_unit}", row=1, col=2)
+        fig.update_yaxes(title_text="Copied / Total Data", row=1, col=2)
+        fig.update_layout(xaxis2=dict(range=[0, vTotalBytes]))
 
-    #Plot Phases transitions (using phaseTransitions from vResumeData)
-    vPhase=[]
-    vTs=[]
+    # 3. Mongosync Phases (Row 2, Col 1)
+    vPhase = []
+    vTs = []
     if len(phaseTransitions) == 0:
-        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=4, col=2)
-        fig.update_layout(xaxis13=dict(showgrid=False, zeroline=False, showticklabels=False), 
-                          yaxis13=dict(showgrid=False, zeroline=False, showticklabels=False))
+        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=2, col=1)
+        fig.update_layout(xaxis3=dict(showgrid=False, zeroline=False, showticklabels=False), 
+                          yaxis3=dict(showgrid=False, zeroline=False, showticklabels=False))
     else:        
         for pt in phaseTransitions:
             vPhase.append(pt.get("phase", "").capitalize())
@@ -311,24 +345,23 @@ def gatherMetrics(connection_string):
                 vTs.append(ts)
             else:
                 vTs.append(None)
-        fig.add_trace(go.Scatter(x=vTs, y=vPhase, mode='markers+text',marker=dict(color='green')), row=4, col=2)
+        fig.add_trace(go.Scatter(x=vTs, y=vPhase, mode='markers+text', marker=dict(color='green')), row=2, col=1)
     
-    #Colection Progress
+    # 4. Collections Progress (Row 2, Col 2)
     vProject1 = {"$project": {  "namespace": {  "$concat": ["$namespace.db", ".", "$namespace.coll"]  },  "partitionPhase": 1  }}
     vGroup1 = {"$group": {  "_id": "$namespace",  "phases": { "$addToSet": "$partitionPhase" }  } }
     vProject2 = {"$project": {  "_id": 0,  "namespace": "$_id",  "phases": {  "$arrayToObject": {  "$map": {  "input": "$phases",  "as": "phase",  "in": { "k": "$$phase", "v": 1 }  }  }  }  }}
     vProject3 = {"$project": {  "_id": 0,"namespace": 1,  "phases": {  "$mergeObjects": [  { "not started": 0, "in progress": 0, "done": 0 },  "$phases"  ]  }}  }
 
     vCollectionData = internalDbDst.partitions.aggregate([vProject1, vGroup1, vProject2, vProject3])
-
     vCollectionData = list(vCollectionData)
 
-    vTypeProc=[]
-    vTypeValue=[]
+    vTypeProc = []
+    vTypeValue = []
     if len(vCollectionData) == 0:
-        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=4, col=5)
-        fig.update_layout(xaxis14=dict(showgrid=False, zeroline=False, showticklabels=False), 
-                          yaxis14=dict(showgrid=False, zeroline=False, showticklabels=False))
+        fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', textfont=dict(size=30, color="black")), row=2, col=2)
+        fig.update_layout(xaxis4=dict(showgrid=False, zeroline=False, showticklabels=False), 
+                          yaxis4=dict(showgrid=False, zeroline=False, showticklabels=False))
     else:
         NotStarted = 0
         InProgress = 0
@@ -347,259 +380,13 @@ def gatherMetrics(connection_string):
         vTypeValue.append(InProgress)
         vTypeProc.append("Completed")
         vTypeValue.append(Done)
-        xMin = min(vTypeValue)
         xMax = max(vTypeValue)
 
         fig.add_trace(go.Bar(x=vTypeValue, y=vTypeProc, orientation='h',
-                             marker=dict(color=vTypeValue, colorscale='Oryel')), row=4, col=5)
-        fig.update_xaxes(title_text=f"Totals", row=4, col=5)
-        fig.update_yaxes(title_text="Process", row=4, col=5)
-        fig.update_layout(xaxis14=dict(range=[0, xMax])) 
-    
-    # Update layout
-    fig.update_layout(height=1000, width=1550, autosize=True, title_text="Mongosync Status - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
-    
-    # Convert the figure to JSON
-    plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
-    return plot_json
-
-
-def gatherPartitionsMetrics(connection_string):
-    """Generate a detailed partitions view with namespace breakdown and progress details."""
-    logger = logging.getLogger(__name__)
-    
-    from app_config import INTERNAL_DB_NAME, get_database
-    
-    TARGET_MONGO_URI = connection_string
-    internalDb = INTERNAL_DB_NAME
-    
-    try:
-        internalDbDst = get_database(TARGET_MONGO_URI, internalDb)
-        logger.info("Connected to target MongoDB for partitions metrics.")
-    except PyMongoError as e:
-        logger.error(f"Failed to connect to target MongoDB: {e}")
-        exit(1)
-    
-    # Create subplots for detailed partition view
-    fig = make_subplots(
-        rows=2, 
-        cols=2, 
-        row_heights=[0.5, 0.5],
-        subplot_titles=(
-            "Partition Status Distribution",
-            "Top 20 Namespaces by Total Bytes",
-            "Partition Progress by Namespace",
-            "Copy Progress (Bytes)"
-        ),
-        specs=[
-            [{"type": "pie"}, {"type": "bar"}],
-            [{"type": "bar"}, {"type": "bar"}]
-        ],
-        horizontal_spacing=0.1,
-        vertical_spacing=0.12
-    )
-    
-    # 1. Partition Status Distribution (Pie Chart)
-    pipeline_status = [
-        {"$group": {"_id": "$partitionPhase", "count": {"$sum": 1}}},
-        {"$sort": {"_id": 1}}
-    ]
-    status_data = list(internalDbDst.partitions.aggregate(pipeline_status))
-    
-    if status_data:
-        labels = [item["_id"].capitalize() for item in status_data]
-        values = [item["count"] for item in status_data]
-        colors_map = {
-            "Not started": "#ff6b6b",
-            "In progress": "#ffd93d",
-            "Done": "#6bcb77"
-        }
-        colors = [colors_map.get(label, "#999999") for label in labels]
-        
-        fig.add_trace(
-            go.Pie(
-                labels=labels, 
-                values=values, 
-                hole=0.4,
-                marker=dict(colors=colors),
-                textinfo='label+percent+value',
-                textposition='outside'
-            ),
-            row=1, col=1
-        )
-    else:
-        fig.add_trace(
-            go.Scatter(x=[0], y=[0], text=["NO DATA"], mode='text', textfont=dict(size=20)),
-            row=1, col=1
-        )
-        fig.update_xaxes(showgrid=False, zeroline=False, showticklabels=False, row=1, col=1)
-        fig.update_yaxes(showgrid=False, zeroline=False, showticklabels=False, row=1, col=1)
-    
-    # 2. Top 20 Namespaces by Total Bytes
-    pipeline_bytes = [
-        {"$group": {
-            "_id": {"$concat": ["$namespace.db", ".", "$namespace.coll"]},
-            "totalBytes": {"$sum": "$totalByteCount"},
-            "copiedBytes": {"$sum": "$copiedByteCount"}
-        }},
-        {"$sort": {"totalBytes": -1}},
-        {"$limit": 20}
-    ]
-    bytes_data = list(internalDbDst.partitions.aggregate(pipeline_bytes))
-    
-    if bytes_data:
-        namespaces = [item["_id"] for item in bytes_data]
-        total_bytes = [item["totalBytes"] for item in bytes_data]
-        copied_bytes = [item["copiedBytes"] for item in bytes_data]
-        
-        # Convert to appropriate unit
-        max_bytes = max(total_bytes) if total_bytes else 0
-        if max_bytes > 1024**3:
-            unit = "GB"
-            divisor = 1024**3
-        elif max_bytes > 1024**2:
-            unit = "MB"
-            divisor = 1024**2
-        elif max_bytes > 1024:
-            unit = "KB"
-            divisor = 1024
-        else:
-            unit = "B"
-            divisor = 1
-        
-        total_converted = [b / divisor for b in total_bytes]
-        copied_converted = [b / divisor for b in copied_bytes]
-        
-        # Truncate long namespace names for display
-        namespaces_display = [ns[:30] + "..." if len(ns) > 30 else ns for ns in namespaces]
-        
-        fig.add_trace(
-            go.Bar(
-                y=namespaces_display,
-                x=total_converted,
-                name=f'Total ({unit})',
-                orientation='h',
-                marker_color='#4ecdc4'
-            ),
-            row=1, col=2
-        )
-        fig.update_xaxes(title_text=f"Size ({unit})", row=1, col=2)
-    else:
-        fig.add_trace(
-            go.Scatter(x=[0], y=[0], text=["NO DATA"], mode='text', textfont=dict(size=20)),
-            row=1, col=2
-        )
-        fig.update_xaxes(showgrid=False, zeroline=False, showticklabels=False, row=1, col=2)
-        fig.update_yaxes(showgrid=False, zeroline=False, showticklabels=False, row=1, col=2)
-    
-    # 3. Partition Progress by Namespace (stacked bar)
-    pipeline_progress = [
-        {"$group": {
-            "_id": {
-                "namespace": {"$concat": ["$namespace.db", ".", "$namespace.coll"]},
-                "phase": "$partitionPhase"
-            },
-            "count": {"$sum": 1}
-        }},
-        {"$group": {
-            "_id": "$_id.namespace",
-            "phases": {"$push": {"phase": "$_id.phase", "count": "$count"}},
-            "total": {"$sum": "$count"}
-        }},
-        {"$sort": {"total": -1}},
-        {"$limit": 15}
-    ]
-    progress_data = list(internalDbDst.partitions.aggregate(pipeline_progress))
-    
-    if progress_data:
-        namespaces = [item["_id"] for item in progress_data]
-        namespaces_display = [ns[:25] + "..." if len(ns) > 25 else ns for ns in namespaces]
-        
-        # Initialize phase counts
-        not_started = []
-        in_progress = []
-        done = []
-        
-        for item in progress_data:
-            phases_dict = {p["phase"]: p["count"] for p in item["phases"]}
-            not_started.append(phases_dict.get("not started", 0))
-            in_progress.append(phases_dict.get("in progress", 0))
-            done.append(phases_dict.get("done", 0))
-        
-        fig.add_trace(
-            go.Bar(
-                y=namespaces_display,
-                x=done,
-                name='Done',
-                orientation='h',
-                marker_color='#6bcb77'
-            ),
-            row=2, col=1
-        )
-        fig.add_trace(
-            go.Bar(
-                y=namespaces_display,
-                x=in_progress,
-                name='In Progress',
-                orientation='h',
-                marker_color='#ffd93d'
-            ),
-            row=2, col=1
-        )
-        fig.add_trace(
-            go.Bar(
-                y=namespaces_display,
-                x=not_started,
-                name='Not Started',
-                orientation='h',
-                marker_color='#ff6b6b'
-            ),
-            row=2, col=1
-        )
-        fig.update_xaxes(title_text="Partition Count", row=2, col=1)
-        fig.update_layout(barmode='stack')
-    else:
-        fig.add_trace(
-            go.Scatter(x=[0], y=[0], text=["NO DATA"], mode='text', textfont=dict(size=20)),
-            row=2, col=1
-        )
-        fig.update_xaxes(showgrid=False, zeroline=False, showticklabels=False, row=2, col=1)
-        fig.update_yaxes(showgrid=False, zeroline=False, showticklabels=False, row=2, col=1)
-    
-    # 4. Copy Progress by Namespace (Copied vs Total)
-    if bytes_data:
-        namespaces_display = [ns[:25] + "..." if len(ns) > 25 else ns for ns in namespaces[:15]]
-        total_converted_15 = total_converted[:15]
-        copied_converted_15 = copied_converted[:15]
-        
-        fig.add_trace(
-            go.Bar(
-                y=namespaces_display,
-                x=copied_converted_15,
-                name=f'Copied ({unit})',
-                orientation='h',
-                marker_color='#6bcb77'
-            ),
-            row=2, col=2
-        )
-        fig.add_trace(
-            go.Bar(
-                y=namespaces_display,
-                x=[t - c for t, c in zip(total_converted_15, copied_converted_15)],
-                name=f'Remaining ({unit})',
-                orientation='h',
-                marker_color='#e0e0e0'
-            ),
-            row=2, col=2
-        )
-        fig.update_xaxes(title_text=f"Size ({unit})", row=2, col=2)
-    else:
-        fig.add_trace(
-            go.Scatter(x=[0], y=[0], text=["NO DATA"], mode='text', textfont=dict(size=20)),
-            row=2, col=2
-        )
-        fig.update_xaxes(showgrid=False, zeroline=False, showticklabels=False, row=2, col=2)
-        fig.update_yaxes(showgrid=False, zeroline=False, showticklabels=False, row=2, col=2)
+                             marker=dict(color=vTypeValue, colorscale='Oryel')), row=2, col=2)
+        fig.update_xaxes(title_text="Totals", row=2, col=2)
+        fig.update_yaxes(title_text="Process", row=2, col=2)
+        fig.update_layout(xaxis4=dict(range=[0, xMax])) 
     
     # Update layout
     fig.update_layout(
@@ -607,16 +394,8 @@ def gatherPartitionsMetrics(connection_string):
         width=1550,
         autosize=True,
         title_text="Mongosync Progress - Timezone info: UTC",
-        showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        ),
-        plot_bgcolor="white",
-        barmode='stack'
+        showlegend=False,
+        plot_bgcolor="white"
     )
     
     plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
