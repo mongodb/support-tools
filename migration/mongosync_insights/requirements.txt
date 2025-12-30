@@ -15,7 +15,7 @@ packaging==23.1
 
 # MongoDB Driver
 pymongo==4.11.0
-dnspython==2.4.2
+dnspython==2.6.1
 
 # Date/Time Utilities
 python-dateutil==2.8.2
