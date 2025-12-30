@@ -3,6 +3,7 @@ Configuration management for Mongosync Insights.
 Supports environment variables and configurable paths.
 """
 import os
+import re
 import logging
 from pathlib import Path
 from functools import lru_cache
@@ -53,6 +54,19 @@ EXTENSION_TO_COMPRESSION = {
 # Security settings
 SECURE_COOKIES = os.getenv('MI_SECURE_COOKIES', 'True').lower() == 'true'
 
+# Session secret key - MUST be set in production for security
+# Generate a secure key with: python -c "import secrets; print(secrets.token_hex(32))"
+SESSION_SECRET_KEY = os.getenv('MI_SESSION_SECRET_KEY', None)
+if SESSION_SECRET_KEY is None:
+    import secrets
+    # Generate a random key for development (will change on restart)
+    SESSION_SECRET_KEY = secrets.token_hex(32)
+    import logging
+    logging.getLogger(__name__).warning(
+        "No MI_SESSION_SECRET_KEY set. Using random key (sessions won't persist across restarts). "
+        "Set MI_SESSION_SECRET_KEY environment variable for production."
+    )
+
 # SSL/TLS settings
 SSL_ENABLED = os.getenv('MI_SSL_ENABLED', 'False').lower() == 'true'
 SSL_CERT_PATH = os.getenv('MI_SSL_CERT', '/etc/letsencrypt/live/your-domain/fullchain.pem')
@@ -61,6 +75,7 @@ SSL_KEY_PATH = os.getenv('MI_SSL_KEY', '/etc/letsencrypt/live/your-domain/privke
 # Live monitoring settings
 REFRESH_TIME = int(os.getenv('MI_REFRESH_TIME', '10'))
 CONNECTION_STRING = os.getenv('MI_CONNECTION_STRING', '')
+PROGRESS_ENDPOINT_URL = os.getenv('MI_PROGRESS_ENDPOINT_URL', '')
 
 # MongoDB settings
 INTERNAL_DB_NAME = os.getenv('MI_INTERNAL_DB_NAME', "mongosync_reserved_for_internal_use")
@@ -106,6 +121,21 @@ def validate_config():
         raise ValueError(f"Invalid port number: {PORT}. Must be between 1 and 65535.")
     
     return True
+
+def validate_progress_endpoint_url(url):
+    """
+    Validate Mongosync Progress Endpoint URL format.
+    
+    Args:
+        url (str): URL to validate in format host:port/api/v1/progress
+        
+    Returns:
+        bool: True if URL matches the expected format
+    """
+    if not url:
+        return False
+    pattern = r'^[\w\.\-]+:\d+/api/v1/progress$'
+    return bool(re.match(pattern, url))
 
 # Database Connection Management
 # Connection pool settings

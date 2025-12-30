@@ -5,6 +5,7 @@ from flask import request, render_template
 import json
 import logging
 import textwrap
+import requests
 from datetime import datetime, timezone
 from bson import Timestamp
 from pymongo.errors import PyMongoError
@@ -402,7 +403,167 @@ def gatherPartitionsMetrics(connection_string):
     return plot_json
 
 
-def plotMetrics():
+def gatherEndpointMetrics(endpoint_url):
+    """Fetch and display data from the Mongosync Progress Endpoint URL."""
+    logger = logging.getLogger(__name__)
+    
+    # Create a figure for displaying endpoint data
+    fig = make_subplots(
+        rows=3,
+        cols=4,
+        row_heights=[0.35, 0.35, 0.30],
+        subplot_titles=(
+            "State", "Can Commit", "Can Write", "Lag Time (seconds)",
+            "Mongosync ID", "Coordinator ID", "Info", "Success",
+            "Collection Copy", "Direction Mapping", "Source", "Destination"
+        ),
+        specs=[
+            [{}, {}, {}, {}],
+            [{}, {}, {}, {}],
+            [{}, {}, {}, {}]
+        ],
+        horizontal_spacing=0.08,
+        vertical_spacing=0.15
+    )
+    
+    try:
+        # Make HTTP GET request to the endpoint
+        url = f"http://{endpoint_url}"
+        logger.info(f"Fetching data from endpoint: {url}")
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Extract progress data
+        progress = data.get("progress", {})
+        success = data.get("success", False)
+        
+        # Helper function to format values for display
+        def format_value(value):
+            if value is None:
+                return "null"
+            elif isinstance(value, bool):
+                return str(value).lower()
+            elif isinstance(value, dict):
+                return json.dumps(value, indent=2)[:100] + "..." if len(json.dumps(value)) > 100 else json.dumps(value)
+            else:
+                return str(value)
+        
+        # Helper function to get color based on value
+        def get_color(key, value):
+            if key == "state":
+                if value == "RUNNING":
+                    return "blue"
+                elif value == "IDLE":
+                    return "orange"
+                elif value == "COMMITTED":
+                    return "green"
+                elif value == "PAUSED":
+                    return "red"
+            elif key in ["canCommit", "canWrite", "success"]:
+                return "green" if value else "gray"
+            return "black"
+        
+        # Row 1: State, Can Commit, Can Write, Lag Time
+        state = progress.get("state", "N/A")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(state)], mode='text',
+                                  textfont=dict(size=20, color=get_color("state", state))), row=1, col=1)
+        
+        canCommit = progress.get("canCommit", False)
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(canCommit)], mode='text',
+                                  textfont=dict(size=20, color=get_color("canCommit", canCommit))), row=1, col=2)
+        
+        canWrite = progress.get("canWrite", False)
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(canWrite)], mode='text',
+                                  textfont=dict(size=20, color=get_color("canWrite", canWrite))), row=1, col=3)
+        
+        lagTime = progress.get("lagTimeSeconds")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(lagTime)], mode='text',
+                                  textfont=dict(size=20, color="black")), row=1, col=4)
+        
+        # Row 2: Mongosync ID, Coordinator ID, Info, Success
+        mongosyncID = progress.get("mongosyncID", "N/A")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(mongosyncID)], mode='text',
+                                  textfont=dict(size=16, color="black")), row=2, col=1)
+        
+        coordinatorID = progress.get("coordinatorID", "N/A")
+        coordText = format_value(coordinatorID) if coordinatorID else "(empty)"
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[coordText], mode='text',
+                                  textfont=dict(size=16, color="black")), row=2, col=2)
+        
+        info = progress.get("info")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(info)], mode='text',
+                                  textfont=dict(size=16, color="black")), row=2, col=3)
+        
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(success)], mode='text',
+                                  textfont=dict(size=20, color=get_color("success", success))), row=2, col=4)
+        
+        # Row 3: Collection Copy, Direction Mapping, Source, Destination
+        collectionCopy = progress.get("collectionCopy")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(collectionCopy)], mode='text',
+                                  textfont=dict(size=14, color="black")), row=3, col=1)
+        
+        directionMapping = progress.get("directionMapping")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(directionMapping)], mode='text',
+                                  textfont=dict(size=14, color="black")), row=3, col=2)
+        
+        source = progress.get("source")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(source)], mode='text',
+                                  textfont=dict(size=14, color="black")), row=3, col=3)
+        
+        destination = progress.get("destination")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(destination)], mode='text',
+                                  textfont=dict(size=14, color="black")), row=3, col=4)
+        
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout connecting to endpoint: {endpoint_url}")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=["TIMEOUT - Could not reach endpoint"], mode='text',
+                                  textfont=dict(size=20, color="red")), row=1, col=1)
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Connection error to endpoint {endpoint_url}: {e}")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=["CONNECTION ERROR"], mode='text',
+                                  textfont=dict(size=20, color="red")), row=1, col=1)
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request error to endpoint {endpoint_url}: {e}")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=["REQUEST ERROR"], mode='text',
+                                  textfont=dict(size=20, color="red")), row=1, col=1)
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON response from endpoint {endpoint_url}: {e}")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=["INVALID JSON RESPONSE"], mode='text',
+                                  textfont=dict(size=20, color="red")), row=1, col=1)
+    except Exception as e:
+        logger.error(f"Unexpected error fetching endpoint data: {e}")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[f"ERROR: {str(e)[:50]}"], mode='text',
+                                  textfont=dict(size=16, color="red")), row=1, col=1)
+    
+    # Hide all axes
+    for i in range(1, 13):
+        fig.update_layout(**{
+            f'xaxis{i}': dict(showgrid=False, zeroline=False, showticklabels=False),
+            f'yaxis{i}': dict(showgrid=False, zeroline=False, showticklabels=False)
+        })
+    
+    # Update layout
+    fig.update_layout(
+        height=600,
+        width=1550,
+        autosize=True,
+        title_text=f"Mongosync Endpoint Data - {endpoint_url}",
+        showlegend=False,
+        plot_bgcolor="white"
+    )
+    
+    plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
+    return plot_json
+
+
+def plotMetrics(has_connection_string=True, has_endpoint_url=False):
+    """
+    Render the metrics page with tab configuration.
+    
+    Credentials are stored in server-side session for security - 
+    they are never passed to the client-side JavaScript.
+    """
     # Use the centralized configuration
     from app_config import REFRESH_TIME
 
@@ -411,4 +572,6 @@ def plotMetrics():
     
     return render_template('metrics.html', 
                          refresh_time=refreshTime, 
-                         refresh_time_ms=refreshTimeMs)
+                         refresh_time_ms=refreshTimeMs,
+                         has_connection_string=has_connection_string,
+                         has_endpoint_url=has_endpoint_url)

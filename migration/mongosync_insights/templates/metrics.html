@@ -64,7 +64,7 @@
         min-height: 400px;
     }
 
-    #loading1, #loading2 {
+    #loading1, #loading2, #loading3 {
         text-align: center;
         font-size: 18px;
         color: #666;
@@ -87,10 +87,16 @@
 {% block content %}
 <div class="tabs-container">
     <div class="tab-buttons">
+        {% if has_connection_string %}
         <button class="tab-btn active" onclick="switchTab('overview')" id="tab-overview">Live Monitoring - Status</button>
         <button class="tab-btn" onclick="switchTab('partitions')" id="tab-partitions">Live Monitoring - Progress</button>
+        {% endif %}
+        {% if has_endpoint_url %}
+        <button class="tab-btn {% if not has_connection_string %}active{% endif %}" onclick="switchTab('endpoint')" id="tab-endpoint">Live Monitoring - Endpoint</button>
+        {% endif %}
     </div>
 
+    {% if has_connection_string %}
     <div id="overview-tab" class="tab-content active">
         <div class="plot-container">
             <div id="loading1">Loading metrics...</div>
@@ -104,13 +110,28 @@
             <div id="plot2" style="display:none;"></div>
         </div>
     </div>
+    {% endif %}
+
+    {% if has_endpoint_url %}
+    <div id="endpoint-tab" class="tab-content {% if not has_connection_string %}active{% endif %}">
+        <div class="plot-container">
+            <div id="loading3">Loading endpoint data...</div>
+            <div id="plot3" style="display:none;"></div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-let currentTab = 'overview';
-let dataLoaded = { overview: false, partitions: false };
+// Configuration flags only - credentials are stored securely in server-side session
+// No sensitive data (connection strings, URLs) is exposed to the client
+const hasConnectionString = {{ has_connection_string|tojson }};
+const hasEndpointUrl = {{ has_endpoint_url|tojson }};
+
+let currentTab = hasConnectionString ? 'overview' : 'endpoint';
+let dataLoaded = { overview: false, partitions: false, endpoint: false };
 
 function switchTab(tabName) {
     // Update tab buttons
@@ -128,12 +149,22 @@ function switchTab(tabName) {
         fetchOverviewData();
     } else if (tabName === 'partitions' && !dataLoaded.partitions) {
         fetchPartitionsData();
+    } else if (tabName === 'endpoint' && !dataLoaded.endpoint) {
+        fetchEndpointData();
     }
 }
 
 async function fetchOverviewData() {
     try {
-        const response = await fetch("/get_metrics_data", { method: 'POST' });
+        // No credentials sent - server reads from secure session
+        const response = await fetch("/get_metrics_data", { 
+            method: 'POST',
+            credentials: 'same-origin'  // Include session cookie
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Request failed');
+        }
         const plotData = await response.json();
         document.getElementById("loading1").style.display = "none";
         document.getElementById("plot1").style.display = "block";
@@ -141,13 +172,21 @@ async function fetchOverviewData() {
         dataLoaded.overview = true;
     } catch (err) {
         console.error("Error fetching overview data:", err);
-        document.getElementById("loading1").innerText = "Error loading data.";
+        document.getElementById("loading1").innerText = "Error loading data: " + err.message;
     }
 }
 
 async function fetchPartitionsData() {
     try {
-        const response = await fetch("/get_partitions_data", { method: 'POST' });
+        // No credentials sent - server reads from secure session
+        const response = await fetch("/get_partitions_data", { 
+            method: 'POST',
+            credentials: 'same-origin'  // Include session cookie
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Request failed');
+        }
         const plotData = await response.json();
         document.getElementById("loading2").style.display = "none";
         document.getElementById("plot2").style.display = "block";
@@ -155,20 +194,48 @@ async function fetchPartitionsData() {
         dataLoaded.partitions = true;
     } catch (err) {
         console.error("Error fetching partitions data:", err);
-        document.getElementById("loading2").innerText = "Error loading data.";
+        document.getElementById("loading2").innerText = "Error loading data: " + err.message;
+    }
+}
+
+async function fetchEndpointData() {
+    try {
+        // No credentials sent - server reads from secure session
+        const response = await fetch("/get_endpoint_data", { 
+            method: 'POST',
+            credentials: 'same-origin'  // Include session cookie
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Request failed');
+        }
+        const plotData = await response.json();
+        document.getElementById("loading3").style.display = "none";
+        document.getElementById("plot3").style.display = "block";
+        Plotly.react('plot3', plotData.data, plotData.layout);
+        dataLoaded.endpoint = true;
+    } catch (err) {
+        console.error("Error fetching endpoint data:", err);
+        document.getElementById("loading3").innerText = "Error loading data: " + err.message;
     }
 }
 
 async function refreshCurrentTab() {
-    if (currentTab === 'overview') {
+    if (currentTab === 'overview' && hasConnectionString) {
         await fetchOverviewData();
-    } else if (currentTab === 'partitions') {
+    } else if (currentTab === 'partitions' && hasConnectionString) {
         await fetchPartitionsData();
+    } else if (currentTab === 'endpoint' && hasEndpointUrl) {
+        await fetchEndpointData();
     }
 }
 
-// Initial load
-fetchOverviewData();
+// Initial load based on available data
+if (hasConnectionString) {
+    fetchOverviewData();
+} else if (hasEndpointUrl) {
+    fetchEndpointData();
+}
 
 // Refresh current tab periodically
 setInterval(refreshCurrentTab, {{ refresh_time_ms }});

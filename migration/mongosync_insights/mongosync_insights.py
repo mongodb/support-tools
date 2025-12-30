@@ -1,13 +1,14 @@
 import logging
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 from mongosync_plot_logs import upload_file
-from mongosync_plot_metadata import plotMetrics, gatherMetrics, gatherPartitionsMetrics
+from mongosync_plot_metadata import plotMetrics, gatherMetrics, gatherPartitionsMetrics, gatherEndpointMetrics
 from pymongo.errors import InvalidURI, PyMongoError
 from pymongo.uri_parser import parse_uri 
 from app_config import (
     setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, 
     REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, 
-    SECURE_COOKIES, CONNECTION_STRING, get_mongo_client
+    SECURE_COOKIES, CONNECTION_STRING, get_mongo_client,
+    PROGRESS_ENDPOINT_URL, validate_progress_endpoint_url, SESSION_SECRET_KEY
 )
 from connection_validator import sanitize_for_display
 
@@ -21,14 +22,14 @@ except (PermissionError, ValueError) as e:
 # Setup logging
 logger = setup_logging()
 
-# Runtime connection string storage (not persisted to disk)
-_runtime_connection_string = None
-
 # Create a Flask app
 app = Flask(__name__, static_folder='images', static_url_path='/images')
 
 # Configure Flask for file uploads
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+# Session secret key for secure server-side session storage
+app.secret_key = SESSION_SECRET_KEY
 
 # Security configuration
 app.config['SESSION_COOKIE_SECURE'] = SECURE_COOKIES  # Only send cookies over HTTPS (configurable via env)
@@ -97,8 +98,16 @@ def home_page():
         sanitized_connection = sanitize_for_display(CONNECTION_STRING)
         connection_string_form = f"<p><b>Connecting to Destination Cluster at: </b>{sanitized_connection}</p>"
 
+    if not PROGRESS_ENDPOINT_URL:
+        progress_endpoint_form = '''<label for="progressEndpointUrl">Mongosync Progress Endpoint URL:</label>  
+                                    <input type="text" id="progressEndpointUrl" name="progressEndpointUrl" size="47" autocomplete="off"
+                                        placeholder="host:port/api/v1/progress"><br><br>'''
+    else:
+        progress_endpoint_form = f"<p><b>Mongosync Progress Endpoint: </b>{PROGRESS_ENDPOINT_URL}</p>"
+
     return render_template('home.html', 
                            connection_string_form=connection_string_form,
+                           progress_endpoint_form=progress_endpoint_form,
                            max_file_size_gb=max_file_size_gb)
 
 
@@ -108,83 +117,117 @@ def uploadLogs():
 
 @app.route('/renderMetrics', methods=['POST'])
 def renderMetrics():
-    global _runtime_connection_string
-    
-    # Use environment variable if set, otherwise get from form or runtime cache
+    # Get connection string from env var or form (no caching)
     if CONNECTION_STRING:
         TARGET_MONGO_URI = CONNECTION_STRING
-    elif _runtime_connection_string:
-        TARGET_MONGO_URI = _runtime_connection_string
     else:
         TARGET_MONGO_URI = request.form.get('connectionString')
-        
-        # Validation for empty connection string
-        if not TARGET_MONGO_URI or not TARGET_MONGO_URI.strip():
-            logger.error("No connection string provided")
+        if TARGET_MONGO_URI:
+            TARGET_MONGO_URI = TARGET_MONGO_URI.strip() if TARGET_MONGO_URI.strip() else None
+
+    # Get progress endpoint URL from env var or form (no caching)
+    if PROGRESS_ENDPOINT_URL:
+        progress_url = PROGRESS_ENDPOINT_URL
+    else:
+        progress_url = request.form.get('progressEndpointUrl')
+        if progress_url:
+            progress_url = progress_url.strip() if progress_url.strip() else None
+
+    # Validate that at least one field is provided
+    if not TARGET_MONGO_URI and not progress_url:
+        logger.error("No connection string or progress endpoint URL provided")
+        return render_template('error.html',
+                             error_title="No Input Provided",
+                             error_message="Please provide at least one of the following: MongoDB Connection String or Mongosync Progress Endpoint URL (or both).")
+
+    # Validate progress endpoint URL format if provided
+    if progress_url:
+        if not validate_progress_endpoint_url(progress_url):
+            logger.error(f"Invalid progress endpoint URL format: {progress_url}")
             return render_template('error.html',
-                                 error_title="No connection string provided",
-                                 error_message="Please provide a valid MongoDB connection string.")
+                                 error_title="Invalid Progress Endpoint URL",
+                                 error_message="The Progress Endpoint URL format is invalid. Expected format: host:port/api/v1/progress (e.g., localhost:27182/api/v1/progress)")
 
-    # Test connection
-    try:
-        # Connection test (network, authentication)
-        validate_connection(TARGET_MONGO_URI)
-        
-        # Cache connection string for subsequent AJAX calls (only if not from env var)
-        if not CONNECTION_STRING:
-            _runtime_connection_string = TARGET_MONGO_URI
-            
-    except InvalidURI as e:
-        # Invalid connection string format
-        clear_connection_cache()
-        _runtime_connection_string = None
-        
-        logger.error(f"Invalid connection string format: {e}")
-        return render_template('error.html',
-                            error_title="Invalid Connection String",
-                            error_message="The connection string format is invalid. Please check your MongoDB connection string and try again.")
-    except PyMongoError as e:
-        # Failed to connect (authentication, network, etc.)
-        clear_connection_cache()
-        _runtime_connection_string = None
-        
-        logger.error(f"Failed to connect: {e}")
-        return render_template('error.html',
-                            error_title="Connection Failed",
-                            error_message="Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible.")
-    except Exception as e:
-        # Unexpected error
-        clear_connection_cache()
-        _runtime_connection_string = None
-        
-        logger.error(f"Unexpected error during connection validation: {e}")
-        return render_template('error.html',
-                            error_title="Connection Error",
-                            error_message="An unexpected error occurred. Please try again.")
+    # Test MongoDB connection if connection string is provided
+    if TARGET_MONGO_URI:
+        try:
+            # Connection test (network, authentication)
+            validate_connection(TARGET_MONGO_URI)
+                
+        except InvalidURI as e:
+            clear_connection_cache()
+            logger.error(f"Invalid connection string format: {e}")
+            return render_template('error.html',
+                                error_title="Invalid Connection String",
+                                error_message="The connection string format is invalid. Please check your MongoDB connection string and try again.")
+        except PyMongoError as e:
+            clear_connection_cache()
+            logger.error(f"Failed to connect: {e}")
+            return render_template('error.html',
+                                error_title="Connection Failed",
+                                error_message="Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible.")
+        except Exception as e:
+            clear_connection_cache()
+            logger.error(f"Unexpected error during connection validation: {e}")
+            return render_template('error.html',
+                                error_title="Connection Error",
+                                error_message="An unexpected error occurred. Please try again.")
 
-    return plotMetrics()
+    # Store credentials securely in server-side session (never sent to client)
+    session['connection_string'] = TARGET_MONGO_URI
+    session['endpoint_url'] = progress_url
+    session.permanent = True  # Use the configured session lifetime
+
+    # Determine which tabs to show (pass only boolean flags to template, not credentials)
+    has_connection_string = bool(TARGET_MONGO_URI)
+    has_endpoint_url = bool(progress_url)
+    
+    return plotMetrics(
+        has_connection_string=has_connection_string, 
+        has_endpoint_url=has_endpoint_url
+    )
 
 @app.route('/get_metrics_data', methods=['POST'])
 def getMetrics():
-    # Use environment variable if set, otherwise use runtime cache
-    connection_string = CONNECTION_STRING if CONNECTION_STRING else _runtime_connection_string
+    # Get connection string from env var or server-side session (secure)
+    if CONNECTION_STRING:
+        connection_string = CONNECTION_STRING
+    else:
+        connection_string = session.get('connection_string')
     
     if not connection_string:
         logger.error("No connection string available for metrics refresh")
-        return {"error": "No connection string available"}, 400
+        return {"error": "No connection string available. Please refresh the page and re-enter your credentials."}, 400
     
     return gatherMetrics(connection_string)
 
 @app.route('/get_partitions_data', methods=['POST'])
 def getPartitionsData():
-    # Use environment variable if set, otherwise use runtime cache
-    connection_string = CONNECTION_STRING if CONNECTION_STRING else _runtime_connection_string
+    # Get connection string from env var or server-side session (secure)
+    if CONNECTION_STRING:
+        connection_string = CONNECTION_STRING
+    else:
+        connection_string = session.get('connection_string')
     
     if not connection_string:
         logger.error("No connection string available for partitions data refresh")
-        return {"error": "No connection string available"}, 400
+        return {"error": "No connection string available. Please refresh the page and re-enter your credentials."}, 400
     
     return gatherPartitionsMetrics(connection_string)
+
+@app.route('/get_endpoint_data', methods=['POST'])
+def getEndpointData():
+    # Get endpoint URL from env var or server-side session (secure)
+    if PROGRESS_ENDPOINT_URL:
+        endpoint_url = PROGRESS_ENDPOINT_URL
+    else:
+        endpoint_url = session.get('endpoint_url')
+    
+    if not endpoint_url:
+        logger.error("No progress endpoint URL available for endpoint data refresh")
+        return {"error": "No progress endpoint URL available. Please refresh the page and re-enter your credentials."}, 400
+    
+    return gatherEndpointMetrics(endpoint_url)
 
 if __name__ == '__main__':
     # Log startup information
