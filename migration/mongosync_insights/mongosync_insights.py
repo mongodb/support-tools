@@ -1,5 +1,5 @@
 import logging
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, make_response
 from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics, gatherPartitionsMetrics, gatherEndpointMetrics
 from pymongo.errors import InvalidURI, PyMongoError
@@ -8,9 +8,12 @@ from app_config import (
     setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, 
     REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, 
     SECURE_COOKIES, CONNECTION_STRING, get_mongo_client,
-    PROGRESS_ENDPOINT_URL, validate_progress_endpoint_url, SESSION_SECRET_KEY
+    PROGRESS_ENDPOINT_URL, validate_progress_endpoint_url, session_store, SESSION_TIMEOUT
 )
 from connection_validator import sanitize_for_display
+
+# Cookie name for session ID
+SESSION_COOKIE_NAME = 'mi_session_id'
 
 # Validate configuration on startup
 try:
@@ -27,15 +30,6 @@ app = Flask(__name__, static_folder='images', static_url_path='/images')
 
 # Configure Flask for file uploads
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
-
-# Session secret key for secure server-side session storage
-app.secret_key = SESSION_SECRET_KEY
-
-# Security configuration
-app.config['SESSION_COOKIE_SECURE'] = SECURE_COOKIES  # Only send cookies over HTTPS (configurable via env)
-app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to session cookie
-app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'  # CSRF protection
-app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # Session timeout (1 hour)
 
 # Add security headers to all responses
 @app.after_request
@@ -173,27 +167,44 @@ def renderMetrics():
                                 error_title="Connection Error",
                                 error_message="An unexpected error occurred. Please try again.")
 
-    # Store credentials securely in server-side session (never sent to client)
-    session['connection_string'] = TARGET_MONGO_URI
-    session['endpoint_url'] = progress_url
-    session.permanent = True  # Use the configured session lifetime
+    # Store credentials in server-side in-memory session store
+    session_data = {
+        'connection_string': TARGET_MONGO_URI,
+        'endpoint_url': progress_url
+    }
+    session_id = session_store.create_session(session_data)
 
     # Determine which tabs to show (pass only boolean flags to template, not credentials)
     has_connection_string = bool(TARGET_MONGO_URI)
     has_endpoint_url = bool(progress_url)
     
-    return plotMetrics(
+    # Render the metrics page
+    response = make_response(plotMetrics(
         has_connection_string=has_connection_string, 
         has_endpoint_url=has_endpoint_url
+    ))
+    
+    # Set session ID in a secure cookie
+    response.set_cookie(
+        SESSION_COOKIE_NAME,
+        session_id,
+        httponly=True,  # Prevent JavaScript access
+        secure=SECURE_COOKIES,  # Only send over HTTPS when enabled
+        samesite='Strict',  # CSRF protection
+        max_age=SESSION_TIMEOUT
     )
+    
+    return response
 
 @app.route('/get_metrics_data', methods=['POST'])
 def getMetrics():
-    # Get connection string from env var or server-side session (secure)
+    # Get connection string from env var or in-memory session store
     if CONNECTION_STRING:
         connection_string = CONNECTION_STRING
     else:
-        connection_string = session.get('connection_string')
+        session_id = request.cookies.get(SESSION_COOKIE_NAME)
+        session_data = session_store.get_session(session_id)
+        connection_string = session_data.get('connection_string')
     
     if not connection_string:
         logger.error("No connection string available for metrics refresh")
@@ -203,11 +214,13 @@ def getMetrics():
 
 @app.route('/get_partitions_data', methods=['POST'])
 def getPartitionsData():
-    # Get connection string from env var or server-side session (secure)
+    # Get connection string from env var or in-memory session store
     if CONNECTION_STRING:
         connection_string = CONNECTION_STRING
     else:
-        connection_string = session.get('connection_string')
+        session_id = request.cookies.get(SESSION_COOKIE_NAME)
+        session_data = session_store.get_session(session_id)
+        connection_string = session_data.get('connection_string')
     
     if not connection_string:
         logger.error("No connection string available for partitions data refresh")
@@ -217,11 +230,13 @@ def getPartitionsData():
 
 @app.route('/get_endpoint_data', methods=['POST'])
 def getEndpointData():
-    # Get endpoint URL from env var or server-side session (secure)
+    # Get endpoint URL from env var or in-memory session store
     if PROGRESS_ENDPOINT_URL:
         endpoint_url = PROGRESS_ENDPOINT_URL
     else:
-        endpoint_url = session.get('endpoint_url')
+        session_id = request.cookies.get(SESSION_COOKIE_NAME)
+        session_data = session_store.get_session(session_id)
+        endpoint_url = session_data.get('endpoint_url')
     
     if not endpoint_url:
         logger.error("No progress endpoint URL available for endpoint data refresh")
