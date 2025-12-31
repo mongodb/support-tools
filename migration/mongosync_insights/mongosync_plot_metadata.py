@@ -496,13 +496,13 @@ def gatherEndpointMetrics(endpoint_url):
             "State", "Lag Time", "Can Commit", "Can Write",
             "Info", "Mongosync ID", "Coordinator ID", "Collection Copy",
             "Direction Mapping", "Source", "Destination", "Events Applied",
-            "Verification"
+            "Embedded Verifier Status", "Verifier Document Count"
         ),
         specs=[
             [{}, {}, {}, {}],
             [{}, {}, {}, {"type": "pie"}],
             [{"type": "table"}, {"type": "table"}, {"type": "table"}, {}],
-            [{"type": "table", "colspan": 4}, None, None, None]
+            [{"type": "table", "colspan": 3}, None, None, {"type": "pie"}]
         ],
         horizontal_spacing=0.08,
         vertical_spacing=0.12
@@ -740,6 +740,31 @@ def gatherEndpointMetrics(endpoint_url):
                 cells=dict(values=[["Verification"], ["No Data"], ["No Data"]], align=['left'], font=dict(size=10, color='darkblue')),
                 columnwidth=[1.5, 1, 1]
             ), row=4, col=1)
+        
+        # Estimated Document Count pie chart (source vs destination)
+        src_estimated_docs = verif_source.get("estimatedDocumentCount", 0) or 0 if verif_source else 0
+        dst_estimated_docs = verif_dest.get("estimatedDocumentCount", 0) or 0 if verif_dest else 0
+        
+        if src_estimated_docs > 0 or dst_estimated_docs > 0:
+            fig.add_trace(go.Pie(
+                labels=[f"Source ({src_estimated_docs:,})", f"Destination ({dst_estimated_docs:,})"],
+                values=[src_estimated_docs, dst_estimated_docs],
+                marker=dict(colors=["blue", "green"]),
+                textinfo="percent",
+                textposition="outside",
+                textfont=dict(size=12),
+                hole=0.3,
+                showlegend=True
+            ), row=4, col=4)
+        else:
+            fig.add_trace(go.Pie(
+                labels=["No Data"],
+                values=[1],
+                marker=dict(colors=["lightgray"]),
+                textinfo="label",
+                textfont=dict(size=14),
+                showlegend=False
+            ), row=4, col=4)
         
     except requests.exceptions.Timeout:
         logger.error(f"Timeout connecting to endpoint: {endpoint_url}")
