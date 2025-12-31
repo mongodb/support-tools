@@ -489,21 +489,23 @@ def gatherEndpointMetrics(endpoint_url):
     
     # Create a figure for displaying endpoint data
     fig = make_subplots(
-        rows=3,
+        rows=4,
         cols=4,
-        row_heights=[0.35, 0.35, 0.30],
+        row_heights=[0.25, 0.25, 0.25, 0.25],
         subplot_titles=(
             "State", "Lag Time", "Can Commit", "Can Write",
             "Info", "Mongosync ID", "Coordinator ID", "Collection Copy",
-            "Direction Mapping", "Source", "Destination", "Events Applied"
+            "Direction Mapping", "Source", "Destination", "Events Applied",
+            "Verification"
         ),
         specs=[
             [{}, {}, {}, {}],
             [{}, {}, {}, {"type": "pie"}],
-            [{"type": "table"}, {"type": "table"}, {"type": "table"}, {}]
+            [{"type": "table"}, {"type": "table"}, {"type": "table"}, {}],
+            [{"type": "table", "colspan": 4}, None, None, None]
         ],
         horizontal_spacing=0.08,
-        vertical_spacing=0.15
+        vertical_spacing=0.12
     )
     
     try:
@@ -694,6 +696,51 @@ def gatherEndpointMetrics(endpoint_url):
         fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(totalEventsApplied)], mode='text',
                                   textfont=dict(size=14, color="black")), row=3, col=4)
         
+        # Row 4: Verification comparison table (source vs destination)
+        verification = progress.get("verification", {})
+        verif_source = verification.get("source", {}) if verification else {}
+        verif_dest = verification.get("destination", {}) if verification else {}
+        
+        # Define the fields to compare
+        verif_fields = [
+            ("scannedCollectionCount", "Scanned Collection Count"),
+            ("totalCollectionCount", "Total Collection Count"),
+            ("phase", "Phase"),
+            ("lagTimeSeconds", "Lag Time Seconds"),
+            ("hashedDocumentCount", "Hashed Document Count"),
+            ("estimatedDocumentCount", "Estimated Document Count")
+        ]
+        
+        # Build table columns
+        field_names = []
+        source_values = []
+        dest_values = []
+        
+        for field_key, field_label in verif_fields:
+            field_names.append(field_label)
+            
+            # Get source value
+            src_val = verif_source.get(field_key) if verif_source else None
+            source_values.append(str(src_val) if src_val is not None else "No Data")
+            
+            # Get destination value
+            dst_val = verif_dest.get(field_key) if verif_dest else None
+            dest_values.append(str(dst_val) if dst_val is not None else "No Data")
+        
+        # Create verification comparison table
+        if verification:
+            fig.add_trace(go.Table(
+                header=dict(values=["Field", "Source", "Destination"], font=dict(size=12, color='black')),
+                cells=dict(values=[field_names, source_values, dest_values], align=['left'], font=dict(size=10, color='darkblue')),
+                columnwidth=[1.5, 1, 1]
+            ), row=4, col=1)
+        else:
+            fig.add_trace(go.Table(
+                header=dict(values=["Field", "Source", "Destination"], font=dict(size=12, color='black')),
+                cells=dict(values=[["Verification"], ["No Data"], ["No Data"]], align=['left'], font=dict(size=10, color='darkblue')),
+                columnwidth=[1.5, 1, 1]
+            ), row=4, col=1)
+        
     except requests.exceptions.Timeout:
         logger.error(f"Timeout connecting to endpoint: {endpoint_url}")
         fig.add_trace(go.Scatter(x=[0], y=[0], text=["TIMEOUT - Could not reach endpoint"], mode='text',
@@ -715,8 +762,8 @@ def gatherEndpointMetrics(endpoint_url):
         fig.add_trace(go.Scatter(x=[0], y=[0], text=[f"ERROR: {str(e)[:50]}"], mode='text',
                                   textfont=dict(size=16, color="red")), row=1, col=1)
     
-    # Hide all axes
-    for i in range(1, 13):
+    # Hide all axes (4 rows x 4 cols = 16 potential axes)
+    for i in range(1, 17):
         fig.update_layout(**{
             f'xaxis{i}': dict(showgrid=False, zeroline=False, showticklabels=False),
             f'yaxis{i}': dict(showgrid=False, zeroline=False, showticklabels=False)
@@ -724,7 +771,7 @@ def gatherEndpointMetrics(endpoint_url):
     
     # Update layout
     fig.update_layout(
-        height=600,
+        height=800,
         width=1550,
         autosize=True,
         title_text=f"Mongosync Endpoint Data - {endpoint_url}",
