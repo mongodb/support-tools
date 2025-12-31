@@ -413,14 +413,14 @@ def gatherEndpointMetrics(endpoint_url):
         cols=4,
         row_heights=[0.35, 0.35, 0.30],
         subplot_titles=(
-            "State", "Can Commit", "Can Write", "Lag Time (seconds)",
-            "Mongosync ID", "Coordinator ID", "Info", "Success",
-            "Collection Copy", "Direction Mapping", "Source", "Destination"
+            "State", "Lag Time", "Can Commit", "Can Write",
+            "Info", "Mongosync ID", "Coordinator ID", "Collection Copy",
+            "Direction Mapping", "Source", "Destination", "Events Applied"
         ),
         specs=[
             [{}, {}, {}, {}],
-            [{}, {}, {}, {}],
-            [{}, {}, {}, {}]
+            [{}, {}, {}, {"type": "pie"}],
+            [{"type": "table"}, {"type": "table"}, {"type": "table"}, {}]
         ],
         horizontal_spacing=0.08,
         vertical_spacing=0.15
@@ -436,18 +436,21 @@ def gatherEndpointMetrics(endpoint_url):
         
         # Extract progress data
         progress = data.get("progress", {})
-        success = data.get("success", False)
         
         # Helper function to format values for display
         def format_value(value):
             if value is None:
-                return "null"
+                return "No Data"
             elif isinstance(value, bool):
-                return str(value).lower()
+                return str(value).capitalize()
             elif isinstance(value, dict):
-                return json.dumps(value, indent=2)[:100] + "..." if len(json.dumps(value)) > 100 else json.dumps(value)
+                json_str = json.dumps(value, indent=2)
+                return (json_str[:100] + "...").capitalize() if len(json_str) > 100 else json_str.capitalize()
             else:
-                return str(value)
+                str_value = str(value).strip()
+                if str_value == "" or str_value.upper() in ("N/A", "NULL", "NONE"):
+                    return "No Data"
+                return str_value.capitalize()
         
         # Helper function to get color based on value
         def get_color(key, value):
@@ -460,59 +463,155 @@ def gatherEndpointMetrics(endpoint_url):
                     return "green"
                 elif value == "PAUSED":
                     return "red"
-            elif key in ["canCommit", "canWrite", "success"]:
-                return "green" if value else "gray"
+            elif key in ["canCommit", "canWrite"]:
+                return "green" if value else "red"
             return "black"
         
-        # Row 1: State, Can Commit, Can Write, Lag Time
+        # Helper function to format lag time in seconds to human-readable format
+        def format_lag_time(seconds):
+            if seconds is None:
+                return "No Data"
+            try:
+                total_seconds = int(seconds)
+                if total_seconds < 0:
+                    return "0s"
+                days, remainder = divmod(total_seconds, 86400)
+                hours, remainder = divmod(remainder, 3600)
+                minutes, secs = divmod(remainder, 60)
+                parts = []
+                if days > 0:
+                    parts.append(f"{days}d")
+                if hours > 0:
+                    parts.append(f"{hours}h")
+                if minutes > 0:
+                    parts.append(f"{minutes}m")
+                parts.append(f"{secs}s")
+                return " ".join(parts)
+            except (ValueError, TypeError):
+                return "No Data"
+        
+        # Row 1: State, Lag Time, Can Commit, Can Write
         state = progress.get("state", "N/A")
         fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(state)], mode='text',
                                   textfont=dict(size=20, color=get_color("state", state))), row=1, col=1)
         
+        lagTime = progress.get("lagTimeSeconds")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_lag_time(lagTime)], mode='text',
+                                  textfont=dict(size=20, color="black")), row=1, col=2)
+        
         canCommit = progress.get("canCommit", False)
         fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(canCommit)], mode='text',
-                                  textfont=dict(size=20, color=get_color("canCommit", canCommit))), row=1, col=2)
+                                  textfont=dict(size=20, color=get_color("canCommit", canCommit))), row=1, col=3)
         
         canWrite = progress.get("canWrite", False)
         fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(canWrite)], mode='text',
-                                  textfont=dict(size=20, color=get_color("canWrite", canWrite))), row=1, col=3)
+                                  textfont=dict(size=20, color=get_color("canWrite", canWrite))), row=1, col=4)
         
-        lagTime = progress.get("lagTimeSeconds")
-        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(lagTime)], mode='text',
-                                  textfont=dict(size=20, color="black")), row=1, col=4)
-        
-        # Row 2: Mongosync ID, Coordinator ID, Info, Success
-        mongosyncID = progress.get("mongosyncID", "N/A")
-        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(mongosyncID)], mode='text',
+        # Row 2: Info, Mongosync ID, Coordinator ID, Collection Copy (pie chart)
+        info = progress.get("info")
+        infoText = "No Data" if info is None or str(info).strip() == "" else str(info).upper()
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[infoText], mode='text',
                                   textfont=dict(size=16, color="black")), row=2, col=1)
         
-        coordinatorID = progress.get("coordinatorID", "N/A")
-        coordText = format_value(coordinatorID) if coordinatorID else "(empty)"
-        fig.add_trace(go.Scatter(x=[0], y=[0], text=[coordText], mode='text',
+        mongosyncID = progress.get("mongosyncID", "N/A")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(mongosyncID)], mode='text',
                                   textfont=dict(size=16, color="black")), row=2, col=2)
         
-        info = progress.get("info")
-        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(info)], mode='text',
+        coordinatorID = progress.get("coordinatorID", "N/A")
+        coordText = format_value(coordinatorID) if coordinatorID else "No Data"
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[coordText], mode='text',
                                   textfont=dict(size=16, color="black")), row=2, col=3)
         
-        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(success)], mode='text',
-                                  textfont=dict(size=20, color=get_color("success", success))), row=2, col=4)
+        # Collection Copy (pie chart) - Row 2, Col 4
+        collectionCopy = progress.get("collectionCopy", {})
+        if collectionCopy and isinstance(collectionCopy, dict):
+            estimatedTotalBytes = collectionCopy.get("estimatedTotalBytes", 0) or 0
+            estimatedCopiedBytes = collectionCopy.get("estimatedCopiedBytes", 0) or 0
+            remainingBytes = max(0, estimatedTotalBytes - estimatedCopiedBytes)
+            
+            if estimatedTotalBytes > 0:
+                # Format bytes to human-readable format
+                copiedValue, copiedUnit = format_byte_size(estimatedCopiedBytes)
+                remainingValue, remainingUnit = format_byte_size(remainingBytes)
+                
+                # Create labels with formatted byte sizes
+                copiedLabel = f"Copied ({copiedValue:.2f} {copiedUnit})"
+                remainingLabel = f"Remaining ({remainingValue:.2f} {remainingUnit})"
+                
+                # Create pie chart with copied vs remaining bytes
+                fig.add_trace(go.Pie(
+                    labels=[copiedLabel, remainingLabel],
+                    values=[estimatedCopiedBytes, remainingBytes],
+                    marker=dict(colors=["green", "lightgray"]),
+                    textinfo="percent",
+                    textposition="outside",
+                    textfont=dict(size=12),
+                    hole=0.3,
+                    showlegend=True
+                ), row=2, col=4)
+            else:
+                fig.add_trace(go.Pie(
+                    labels=["No Data"],
+                    values=[1],
+                    marker=dict(colors=["lightgray"]),
+                    textinfo="label",
+                    textfont=dict(size=14),
+                    showlegend=False
+                ), row=2, col=4)
+        else:
+            fig.add_trace(go.Pie(
+                labels=["No Data"],
+                values=[1],
+                marker=dict(colors=["lightgray"]),
+                textinfo="label",
+                textfont=dict(size=14),
+                showlegend=False
+            ), row=2, col=4)
         
-        # Row 3: Collection Copy, Direction Mapping, Source, Destination
-        collectionCopy = progress.get("collectionCopy")
-        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(collectionCopy)], mode='text',
-                                  textfont=dict(size=14, color="black")), row=3, col=1)
+        # Helper function to create table data from dict
+        def dict_to_table(data):
+            if not data or not isinstance(data, dict):
+                return ["Key"], ["No Data"]
+            keys = []
+            values = []
+            for k, v in data.items():
+                # Wrap long values
+                key_str = str(k).capitalize()
+                val_str = str(v) if v is not None else "No Data"
+                # Wrap text if longer than 30 characters
+                if len(val_str) > 30:
+                    val_str = "<br>".join([val_str[i:i+30] for i in range(0, len(val_str), 30)])
+                keys.append(key_str)
+                values.append(val_str)
+            return keys, values
         
+        # Row 3: Direction Mapping, Source, Destination, Events Applied
         directionMapping = progress.get("directionMapping")
-        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(directionMapping)], mode='text',
-                                  textfont=dict(size=14, color="black")), row=3, col=2)
+        dm_keys, dm_values = dict_to_table(directionMapping)
+        fig.add_trace(go.Table(
+            header=dict(values=["Key", "Value"], font=dict(size=12, color='black')),
+            cells=dict(values=[dm_keys, dm_values], align=['left'], font=dict(size=10, color='darkblue')),
+            columnwidth=[0.75, 2.5]
+        ), row=3, col=1)
         
         source = progress.get("source")
-        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(source)], mode='text',
-                                  textfont=dict(size=14, color="black")), row=3, col=3)
+        src_keys, src_values = dict_to_table(source)
+        fig.add_trace(go.Table(
+            header=dict(values=["Key", "Value"], font=dict(size=12, color='black')),
+            cells=dict(values=[src_keys, src_values], align=['left'], font=dict(size=10, color='darkblue')),
+            columnwidth=[0.75, 2.5]
+        ), row=3, col=2)
         
         destination = progress.get("destination")
-        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(destination)], mode='text',
+        dst_keys, dst_values = dict_to_table(destination)
+        fig.add_trace(go.Table(
+            header=dict(values=["Key", "Value"], font=dict(size=12, color='black')),
+            cells=dict(values=[dst_keys, dst_values], align=['left'], font=dict(size=10, color='darkblue')),
+            columnwidth=[0.75, 2.5]
+        ), row=3, col=3)
+        
+        totalEventsApplied = progress.get("totalEventsApplied")
+        fig.add_trace(go.Scatter(x=[0], y=[0], text=[format_value(totalEventsApplied)], mode='text',
                                   textfont=dict(size=14, color="black")), row=3, col=4)
         
     except requests.exceptions.Timeout:
