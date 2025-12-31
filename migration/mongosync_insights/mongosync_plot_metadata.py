@@ -42,10 +42,10 @@ def gatherMetrics(connection_string):
     except PyMongoError as e:
         logger.error(f"Failed to connect to target MongoDB: {e}")
         exit(1)
-    # Create a subplot for status information only (2 rows)
-    fig = make_subplots(rows=2, 
+    # Create a subplot for status information (3 rows)
+    fig = make_subplots(rows=3, 
                         cols=5, 
-                        row_heights=[0.5, 0.5],
+                        row_heights=[0.35, 0.35, 0.30],
                         subplot_titles=("Current State", 
                                         "Current Phase",
                                         "Lag Time",
@@ -56,9 +56,13 @@ def gatherMetrics(connection_string):
                                         "Write Blocking Mode",
                                         "Build Indexes",
                                         "Detect Random Id",
-                                        "Embedded Verifier"),
+                                        "Embedded Verifier",
+                                        
+                                        "Namespace Filter - Inclusion",
+                                        "Namespace Filter - Exclusion"),
                         specs=[[{}, {}, {}, {}, {}],
-                               [{}, {}, {}, {}, {}]]                           
+                               [{}, {}, {}, {}, {}],
+                               [{"type": "table", "colspan": 2}, None, None, {"type": "table", "colspan": 2}, None]]                           
                         )
 
     #Get State and Phase from resumeData collection
@@ -219,8 +223,84 @@ def gatherMetrics(connection_string):
     fig.update_layout(xaxis10=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis10=dict(showgrid=False, zeroline=False, showticklabels=False))
     
+    # Helper function to format namespace filter data for table display
+    def format_namespace_filter(filter_data, filter_type="inclusion"):
+        """Convert namespace filter data to table columns (keys, values).
+        
+        Args:
+            filter_data: The filter data from globalState
+            filter_type: "inclusion" or "exclusion" - affects empty state message
+        """
+        # Handle empty/null filter data
+        if not filter_data:
+            if filter_type == "inclusion":
+                return ["Database"], ["All (no filter)"]
+            else:  # exclusion
+                return ["Filter"], ["No filter"]
+        
+        keys = []
+        values = []
+        
+        for idx, item in enumerate(filter_data):
+            if isinstance(item, dict):
+                # Extract database info
+                database = item.get("database")
+                if database:
+                    # Flatten nested lists
+                    if isinstance(database, list):
+                        db_list = []
+                        for db in database:
+                            if isinstance(db, list):
+                                db_list.extend(db)
+                            else:
+                                db_list.append(str(db))
+                        keys.append("Database")
+                        values.append(", ".join(db_list) if db_list else "All (no filter)")
+                
+                # Extract collections info
+                collections = item.get("collections")
+                if collections:
+                    if isinstance(collections, list):
+                        keys.append("Collections")
+                        values.append(", ".join([str(c) for c in collections]))
+                    else:
+                        keys.append("Collections")
+                        values.append(str(collections))
+                elif collections is None and database:
+                    keys.append("Collections")
+                    values.append("All (no filter)")
+        
+        if not keys:
+            if filter_type == "inclusion":
+                return ["Database"], ["All (no filter)"]
+            else:  # exclusion
+                return ["Filter"], ["No filter"]
+        
+        return keys, values
+    
+    # Parse namespaceFilter from globalState
+    namespaceFilter = vGlobalState.get("namespaceFilter", {}) if vGlobalState else {}
+    inclusionFilter = namespaceFilter.get("inclusionFilter") if namespaceFilter else None
+    exclusionFilter = namespaceFilter.get("exclusionFilter") if namespaceFilter else None
+    
+    # Create Inclusion Filter table
+    inc_keys, inc_values = format_namespace_filter(inclusionFilter, "inclusion")
+    fig.add_trace(go.Table(
+        header=dict(values=["Key", "Value"], font=dict(size=12, color='black')),
+        cells=dict(values=[inc_keys, inc_values], align=['left'], font=dict(size=10, color='darkblue')),
+        columnwidth=[0.75, 2.5]
+    ), row=3, col=1)
+    
+    # Create Exclusion Filter table
+    exc_keys, exc_values = format_namespace_filter(exclusionFilter, "exclusion")
+    fig.add_trace(go.Table(
+        header=dict(values=["Key", "Value"], font=dict(size=12, color='black')),
+        cells=dict(values=[exc_keys, exc_values], align=['left'], font=dict(size=10, color='darkblue')),
+        columnwidth=[0.75, 2.5]
+    ), row=3, col=4)
+    
     # Update layout
-    fig.update_layout(height=450, width=1550, autosize=True, title_text="Mongosync Status - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
+    fig.update_layout(height=650, width=1550, autosize=True, title_text="Mongosync Status - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
     
     # Convert the figure to JSON
     plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
