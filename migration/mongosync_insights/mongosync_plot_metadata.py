@@ -703,10 +703,10 @@ def gatherEndpointMetrics(endpoint_url):
         
         # Define the fields to compare
         verif_fields = [
-            ("scannedCollectionCount", "Scanned Collection Count"),
-            ("totalCollectionCount", "Total Collection Count"),
             ("phase", "Phase"),
-            ("lagTimeSeconds", "Lag Time Seconds"),
+            ("lagTimeSeconds", "Lag Time Seconds"), 
+            ("totalCollectionCount", "Total Collection Count"),
+            ("scannedCollectionCount", "Scanned Collection Count"),
             ("hashedDocumentCount", "Hashed Document Count"),
             ("estimatedDocumentCount", "Estimated Document Count")
         ]
@@ -741,15 +741,20 @@ def gatherEndpointMetrics(endpoint_url):
                 columnwidth=[1.5, 1, 1]
             ), row=4, col=1)
         
-        # Estimated Document Count pie chart (source vs destination)
+        # Verifier Document Count pie chart (Verified vs Remaining)
         src_estimated_docs = verif_source.get("estimatedDocumentCount", 0) or 0 if verif_source else 0
         dst_estimated_docs = verif_dest.get("estimatedDocumentCount", 0) or 0 if verif_dest else 0
         
-        if src_estimated_docs > 0 or dst_estimated_docs > 0:
+        # Verified Documents = src_estimated_docs (documents already verified)
+        # Remaining Documents = dst_estimated_docs - src_estimated_docs (documents left to verify)
+        verified_docs = dst_estimated_docs
+        remaining_docs = max(0,  src_estimated_docs - dst_estimated_docs)
+        
+        if verified_docs > 0 or remaining_docs > 0:
             fig.add_trace(go.Pie(
-                labels=[f"Source ({src_estimated_docs:,})", f"Destination ({dst_estimated_docs:,})"],
-                values=[src_estimated_docs, dst_estimated_docs],
-                marker=dict(colors=["blue", "green"]),
+                labels=[f"Verified ({verified_docs:,})", f"Remaining ({remaining_docs:,})"],
+                values=[verified_docs, remaining_docs],
+                marker=dict(colors=["green", "lightgray"]),
                 textinfo="percent",
                 textposition="outside",
                 textfont=dict(size=12),
