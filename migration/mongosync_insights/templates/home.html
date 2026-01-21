@@ -62,7 +62,7 @@
         <input type="file" name="file" accept=".log,.json,.out,.gz,.zip,.bz2,.tar.gz,.tgz,.tar.bz2"><br><br>
         <input type="submit" value="Upload">
         <p>Click the "Upload" button after selecting your Mongosync log file to generate migration progress plots.</p>
-        <p><small><strong>Supported formats:</strong> .log, .json, .out (uncompressed or .gz, .zip, .bz2, .tar.gz, .tar.bz2 compressed)<br>
+        <p><small><strong>Supported formats:</strong> .log, .json, .out (uncompressed) or .gz, .zip, .bz2, .tgz, .tar.gz, .tar.bz2 (compressed)<br>
         <strong>Maximum size:</strong> {{ max_file_size_gb | round(1) }} GB</small></p>
         <img src="{{ url_for('static', filename='mongosync_log_analyzer.png') }}" width="300" alt="Mongosync Log Analyzer">
     </form>
@@ -74,7 +74,9 @@
         {{ progress_endpoint_form | safe }}
         <input type="submit" value="Live Monitor">
         <p>Click the "Live Monitor" button to start monitoring the migration progress in real time.</p>
-        <img src="{{ url_for('static', filename='mongosync_metadata.png') }}" width="300" alt="Mongosync Log Analyzer">
+        <img src="{{ url_for('static', filename='mongosync_metadata_status.png') }}" width="300" alt="Mongosync Metadata Status">
+        <img src="{{ url_for('static', filename='mongosync_metadata_progress.png') }}" width="300" alt="Mongosync Metadata Progress">
+        <img src="{{ url_for('static', filename='mongosync_endpoint.png') }}" width="300" alt="Mongosync Endpoint">
     </form>
 </div>
 {% endblock %}
