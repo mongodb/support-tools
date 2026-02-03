@@ -100,7 +100,8 @@ def upload_file():
             'sent_response': re.compile(r"sent response", re.IGNORECASE),
             'phase_transitions': re.compile(r"Starting initializing collections and indexes phase|Starting initializing partitions phase|Starting collection copy phase|Starting change event application phase|Commit handler called", re.IGNORECASE),
             'mongosync_options': re.compile(r"Mongosync Options", re.IGNORECASE),
-            'hidden_flags': re.compile(r"Mongosync HiddenFlags", re.IGNORECASE)
+            'hidden_flags': re.compile(r"Mongosync HiddenFlags", re.IGNORECASE),
+            'crud_events_rate': re.compile(r"Average Source CRUD events rate", re.IGNORECASE)
         }
         
         # Initialize result containers
@@ -111,6 +112,7 @@ def upload_file():
         phase_transitions_json = []
         mongosync_opts_list = []
         mongosync_hiddenflags = []
+        mongosync_crud_rate = []
         
         # Single pass through the file with streaming
         line_count = 0
@@ -170,6 +172,9 @@ def upload_file():
                     # Filter out time and level fields for hidden flags
                     filtered_obj = {k: v for k, v in json_obj.items() if k not in ('time', 'level')}
                     mongosync_hiddenflags.append(filtered_obj)
+                
+                if patterns['crud_events_rate'].search(message):
+                    mongosync_crud_rate.append(json_obj)
                     
             except json.JSONDecodeError as e:
                 invalid_json_count += 1
@@ -185,7 +190,7 @@ def upload_file():
         logging.info(f"Found: {len(data)} replication progress, {len(version_info_list)} version info, "
                     f"{len(mongosync_ops_stats)} operation stats, {len(mongosync_sent_response)} sent responses, "
                     f"{len(phase_transitions_json)} phase transitions, {len(mongosync_opts_list)} options, "
-                    f"{len(mongosync_hiddenflags)} hidden flags")  
+                    f"{len(mongosync_hiddenflags)} hidden flags, {len(mongosync_crud_rate)} CRUD rate entries")  
         
         # The 'body' field is also a JSON string, so parse that as well
         #mongosync_sent_response_body = json.loads(mongosync_sent_response.get('body'))
@@ -297,6 +302,14 @@ def upload_file():
         CEADestinationWrite_maximum = [float(item['CEADestinationWrite']['maximumDurationMs']) for item in mongosync_ops_stats if 'CEADestinationWrite' in item and 'maximumDurationMs' in item['CEADestinationWrite']]    
         CEADestinationWrite_numOperations = [float(item['CEADestinationWrite']['numOperations']) for item in mongosync_ops_stats if 'CEADestinationWrite' in item and 'numOperations' in item['CEADestinationWrite']] 
         
+        # Ping latency data (from operation stats)
+        sourcePingLatencyMs = [float(item['sourcePingLatencyMs']) for item in mongosync_ops_stats if 'sourcePingLatencyMs' in item]
+        destinationPingLatencyMs = [float(item['destinationPingLatencyMs']) for item in mongosync_ops_stats if 'destinationPingLatencyMs' in item]
+        
+        # CRUD events rate data
+        srcCRUDEventsPerSec = [float(item['srcCRUDEventsPerSec']) for item in mongosync_crud_rate if 'srcCRUDEventsPerSec' in item]
+        crud_rate_times = [datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f") for item in mongosync_crud_rate if 'time' in item]
+        
         # Initialize estimated_total_bytes and estimated_copied_bytes with a default value
         estimated_total_bytes = 0
         estimated_copied_bytes = 0
@@ -350,8 +363,9 @@ def upload_file():
         logging.info(f"Plotting")
 
         # Create a subplot for the scatter plots and a separate subplot for the table
-        fig = make_subplots(rows=8, cols=2, subplot_titles=("Mongosync Phases", "Estimated Total and Copied " + estimated_total_bytes_unit,
+        fig = make_subplots(rows=9, cols=2, subplot_titles=("Mongosync Phases", "Estimated Total and Copied " + estimated_total_bytes_unit,
                                                             "Lag Time (seconds)", "Change Events Applied",
+                                                            "Ping Latency (ms)", "Average Source CRUD Event Rate (Events/sec)",
                                                             "Collection Copy - Avg and Max Read time (ms)", "Collection Copy Source Reads",
                                                             "Collection Copy - Avg and Max Write time (ms)", "Collection Copy Destination Writes",
                                                             "CEA Source - Avg and Max Read time (ms)", "CEA Source Reads",
@@ -360,6 +374,7 @@ def upload_file():
                                                             "MongoSync Hidden Options",),
                             specs=[ [{}, {}], #Mongosync Phases and Estimated Total and Copied 
                                     [{}, {}], #Lag Time and Events Applied
+                                    [{}, {}], #Ping Latency and CRUD Event Rate (NEW)
                                     [{}, {}], #Collection Copy Source
                                     [{}, {}], #Collection Copy Destination
                                     [{}, {}], #CEA Source
@@ -394,47 +409,60 @@ def upload_file():
         fig.add_trace(go.Scatter(x=times, y=totalEventsApplied, mode='lines', name='Events', legendgroup="groupEventsAndLags"), row=2, col=2)
         #fig.update_yaxes(title_text="Change Events Applied", row=2, col=2)
 
+        # Ping Latency
+        if sourcePingLatencyMs or destinationPingLatencyMs:
+            fig.add_trace(go.Scatter(x=times, y=sourcePingLatencyMs, mode='lines', name='Source Ping (ms)', legendgroup="groupPingLatency"), row=3, col=1)
+            fig.add_trace(go.Scatter(x=times, y=destinationPingLatencyMs, mode='lines', name='Destination Ping (ms)', legendgroup="groupPingLatency"), row=3, col=1)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Ping Latency', textfont=dict(size=30, color="black")), row=3, col=1)
+
+        # Average Source CRUD Event Rate
+        if srcCRUDEventsPerSec:
+            fig.add_trace(go.Scatter(x=crud_rate_times, y=srcCRUDEventsPerSec, mode='lines', name='Events/sec', legendgroup="groupCRUDRate"), row=3, col=2)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CRUD Event Rate', textfont=dict(size=30, color="black")), row=3, col=2)
+
         # Collection Copy Source Read
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCCSourceRead"), row=3, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCSourceRead"), row=3, col=1)
-        #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=3, col=1)
-
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCCSourceRead"), row=3, col=2)
-        #fig.update_yaxes(title_text="Number of Reads", secondary_y=True, row=3, col=2)
-
-        #Collection Copy Destination
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCCDestinationWrite"), row=4, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCDestinationWrite"), row=4, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCCSourceRead"), row=4, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCSourceRead"), row=4, col=1)
         #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=4, col=1)
 
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite_numOperations, mode='lines', name='Writes', legendgroup="groupCCDestinationWrite"), row=4, col=2,)
-        #fig.update_yaxes(title_text="Number of Writes", secondary_y=True, row=4, col=2)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCCSourceRead"), row=4, col=2)
+        #fig.update_yaxes(title_text="Number of Reads", secondary_y=True, row=4, col=2)
 
-        #CEA Source
-        fig.add_trace(go.Scatter(x=times, y=CEASourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCEASourceRead"), row=5, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CEASourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEASourceRead"), row=5, col=1)
+        #Collection Copy Destination
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCCDestinationWrite"), row=5, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCDestinationWrite"), row=5, col=1)
         #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=5, col=1)
 
-        fig.add_trace(go.Scatter(x=times, y=CEASourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCEASourceRead"), row=5, col=2)
-        #fig.update_yaxes(title_text="Number of Reads", secondary_y=True, row=5, col=2)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite_numOperations, mode='lines', name='Writes', legendgroup="groupCCDestinationWrite"), row=5, col=2,)
+        #fig.update_yaxes(title_text="Number of Writes", secondary_y=True, row=5, col=2)
 
-        #CEA Destination
-        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCEADestinationWrite"), row=6, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEADestinationWrite"), row=6, col=1)
+        #CEA Source
+        fig.add_trace(go.Scatter(x=times, y=CEASourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCEASourceRead"), row=6, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CEASourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEASourceRead"), row=6, col=1)
         #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=6, col=1)
 
-        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='Writes during CEA', legendgroup="groupCEADestinationWrite"), row=6, col=2)
-        #fig.update_yaxes(title_text="Number of Writes", secondary_y=True, row=6, col=2)
+        fig.add_trace(go.Scatter(x=times, y=CEASourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCEASourceRead"), row=6, col=2)
+        #fig.update_yaxes(title_text="Number of Reads", secondary_y=True, row=6, col=2)
+
+        #CEA Destination
+        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCEADestinationWrite"), row=7, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEADestinationWrite"), row=7, col=1)
+        #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=7, col=1)
+
+        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='Writes during CEA', legendgroup="groupCEADestinationWrite"), row=7, col=2)
+        #fig.update_yaxes(title_text="Number of Writes", secondary_y=True, row=7, col=2)
 
         #Add the Mongosync options
-        fig.add_trace(table_trace, row=7, col=1)
+        fig.add_trace(table_trace, row=8, col=1)
 
-        #Add the Mongosync options
-        fig.add_trace(table_hiddenflags, row=8, col=1)
+        #Add the Mongosync hidden options
+        fig.add_trace(table_hiddenflags, row=9, col=1)
 
         # Update layout
         # 225 per plot
-        fig.update_layout(height=1800, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=170, showlegend=False)
+        fig.update_layout(height=2025, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=170, showlegend=False)
 
 
         fig.update_layout(
