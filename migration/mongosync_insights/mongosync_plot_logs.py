@@ -310,6 +310,20 @@ def upload_file():
         srcCRUDEventsPerSec = [float(item['srcCRUDEventsPerSec']) for item in mongosync_crud_rate if 'srcCRUDEventsPerSec' in item]
         crud_rate_times = [datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f") for item in mongosync_crud_rate if 'time' in item]
         
+        # Calculate global date range from all time sources for X-axis synchronization
+        all_times = []
+        if times:
+            all_times.extend(times)
+        if crud_rate_times:
+            all_times.extend(crud_rate_times)
+        
+        if all_times:
+            global_min_date = min(all_times)
+            global_max_date = max(all_times)
+        else:
+            global_min_date = None
+            global_max_date = None
+        
         # Initialize estimated_total_bytes and estimated_copied_bytes with a default value
         estimated_total_bytes = 0
         estimated_copied_bytes = 0
@@ -520,7 +534,12 @@ def upload_file():
         
         # Force all y-axes to start at 0 for better visual comparison
         fig.update_yaxes(rangemode='tozero')
-
+        
+        # Synchronize X-axis date range across all date-based plots (rows 2-7)
+        if global_min_date and global_max_date:
+            for row in range(2, 8):  # rows 2 through 7
+                for col in range(1, 3):  # columns 1 and 2
+                    fig.update_xaxes(range=[global_min_date, global_max_date], row=row, col=col)
 
         fig.update_layout(
             legend=dict(
