@@ -218,53 +218,12 @@ def upload_file():
 
         logging.info(f"Extracting data")
 
-        # Extract the keys from the mongosync_hiddenflags
-        # For each key, extract the corresponding values from mongosync_hiddenflags
-        if mongosync_hiddenflags:
-            keys = list(mongosync_hiddenflags[0].keys())
-            #It takes the first hidden options listed
-            values = [str(v) for v in mongosync_hiddenflags[0].values()]  
-            #If wanted to taken all hidden options listed, replace with it
-            #values = [[str(item[key]).replace('{', '').replace('}', '')  for item in mongosync_hiddenflags] for key in keys]
-
-            # Create a table trace with the keys as the first column and the corresponding values as the second column
-            table_hiddenflags = go.Table(
-                header=dict(values=['Key', 'Value'], font=dict(size=12, color='black')),
-                cells=dict(values=[keys, values],  align=['left'], font=dict(size=10, color='darkblue')), #
-                columnwidth=[0.75, 2.5]  # Adjust the column widths as needed
-            )
-        else:
+        # Log if options data is empty
+        if not mongosync_hiddenflags:
             logging.info("mongosync_hiddenflags is empty")
-            table_hiddenflags = go.Table(
-                header=dict(values=['Mongosync Hidden Flags']),
-                cells=dict(values=[["No Mongosync Hidden Flags found in the log file"]])
-            )
         
-        if mongosync_opts_list:
-            keys = list(mongosync_opts_list[0].keys())
-            #It takes the first options listed
-            values = list(mongosync_opts_list[0].values()) 
-            #If wanted to taken all option listed, replace with it
-            #values = [[item[key] for item in mongosync_opts_list[0]] for key in keys]
-
-            # Create a table trace with the keys as the first column and the corresponding values as the second column
-            table_trace = go.Table(
-                header=dict(values=['Key', 'Value'], font=dict(size=12, color='black')),
-                cells=dict(values=[keys, values], align=['left'], font=dict(size=10, color='darkblue')),
-                columnwidth=[0.75, 2.5]  # Adjust the column widths as needed
-            )
-
-            # If the key is 'hiddenFlags', extract its keys and values and add them to the keys and values lists
-            for i, key in enumerate(keys):
-                if key == 'hiddenFlags':
-                    hidden_keys = list(values[i][0].keys())
-                    hidden_values = [[item.get(key, '') for item in values[i]] for key in hidden_keys]
-                    keys = keys[:i] + hidden_keys + keys[i+1:]
-                    values = values[:i] + hidden_values + values[i+1:]
-        else:
+        if not mongosync_opts_list:
             logging.info("mongosync_opts_list is empty")
-            table_trace = go.Table(header=dict(values=['Mongosync Options']),
-            cells=dict(values=[["No Mongosync Options found in the log file"]]))
 
         #Getting the Timezone
         try:  
@@ -376,25 +335,21 @@ def upload_file():
 
         logging.info(f"Plotting")
 
-        # Create a subplot for the scatter plots and a separate subplot for the table
-        fig = make_subplots(rows=9, cols=2, subplot_titles=("Mongosync Phases", "Estimated Total and Copied " + estimated_total_bytes_unit,
+        # Create a subplot for the scatter plots (tables are now in a separate tab)
+        fig = make_subplots(rows=7, cols=2, subplot_titles=("Mongosync Phases", "Estimated Total and Copied " + estimated_total_bytes_unit,
                                                             "Lag Time (seconds)", "Change Events Applied",
                                                             "Ping Latency (ms)", "Average Source CRUD Event Rate (Events/sec)",
                                                             "Collection Copy - Avg and Max Read time (ms)", "Collection Copy Source Reads",
                                                             "Collection Copy - Avg and Max Write time (ms)", "Collection Copy Destination Writes",
                                                             "CEA Source - Avg and Max Read time (ms)", "CEA Source Reads",
-                                                            "CEA Destination - Avg and Max Write time (ms)", "CEA Destination Writes",
-                                                            "MongoSync Options", 
-                                                            "MongoSync Hidden Options",),
+                                                            "CEA Destination - Avg and Max Write time (ms)", "CEA Destination Writes"),
                             specs=[ [{}, {}], #Mongosync Phases and Estimated Total and Copied 
                                     [{}, {}], #Lag Time and Events Applied
                                     [{}, {}], #Ping Latency and CRUD Event Rate (NEW)
                                     [{}, {}], #Collection Copy Source
                                     [{}, {}], #Collection Copy Destination
                                     [{}, {}], #CEA Source
-                                    [{}, {}], #CEA Destination 
-                                    [{"colspan": 2, "type": "table"}, None], 
-                                    [{"colspan": 2, "type": "table"}, None] ])
+                                    [{}, {}] ]) #CEA Destination
 
         # Add traces
 
@@ -522,15 +477,9 @@ def upload_file():
             fig.update_yaxes(range=[-1, 1], row=7, col=2)  # Center the text vertically
             fig.update_xaxes(range=[-1, 1], row=7, col=2)  # Also center horizontally
 
-        #Add the Mongosync options
-        fig.add_trace(table_trace, row=8, col=1)
-
-        #Add the Mongosync hidden options
-        fig.add_trace(table_hiddenflags, row=9, col=1)
-
         # Update layout
-        # 225 per plot
-        fig.update_layout(height=2025, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=170, showlegend=False)
+        # 225 per plot (7 rows = 1575)
+        fig.update_layout(height=1575, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=170, showlegend=False)
         
         # Force all y-axes to start at 0 for better visual comparison
         fig.update_yaxes(rangemode='tozero')
@@ -550,7 +499,28 @@ def upload_file():
         # Convert the figure to JSON
         plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
 
-        logging.info(f"Render the plot in the browse")
+        logging.info(f"Render the plot in the browser")
+
+        # Prepare mongosync options data for HTML table
+        options_data = []
+        if mongosync_opts_list:
+            for key, value in mongosync_opts_list[0].items():
+                # Convert complex values to string representation
+                if isinstance(value, (dict, list)):
+                    value = json.dumps(value, indent=2)
+                options_data.append({'key': str(key), 'value': str(value)})
+        
+        # Prepare hidden options data for HTML table
+        hidden_options_data = []
+        if mongosync_hiddenflags:
+            for key, value in mongosync_hiddenflags[0].items():
+                # Convert complex values to string representation
+                if isinstance(value, (dict, list)):
+                    value = json.dumps(value, indent=2)
+                hidden_options_data.append({'key': str(key), 'value': str(value)})
 
         # Render the plot in the browser
-        return render_template('upload_results.html', plot_json=plot_json)
+        return render_template('upload_results.html', 
+                             plot_json=plot_json,
+                             options_data=options_data,
+                             hidden_options_data=hidden_options_data)

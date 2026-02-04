@@ -5,27 +5,381 @@
 {% block header_title %}Mongosync Insights - Logs{% endblock %}
 
 {% block styles %}
+    .tabs-container {
+        max-width: 1550px;
+        margin: 0 auto;
+    }
+
+    .tab-buttons {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 0;
+        border-bottom: 2px solid #00684A;
+    }
+
+    .tab-btn {
+        padding: 12px 24px;
+        background: #e8f5f1;
+        border: none;
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        color: #00684A;
+        transition: all 0.2s ease;
+        position: relative;
+        bottom: -2px;
+    }
+
+    .tab-btn:hover {
+        background: #c8e6dc;
+    }
+
+    .tab-btn.active {
+        background: #00684A;
+        color: #fff;
+        border-bottom: 2px solid #00684A;
+    }
+
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .plot-container {
+        margin: 0 auto;
+        border: 1px solid #ccc;
+        border-radius: 0 8px 8px 8px;
+        background-color: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        min-height: 400px;
+    }
+
     #plot {
         margin: 0 auto;
         max-width: 1450px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        background-color: #fff;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .options-container {
+        padding: 20px;
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .options-table-wrapper {
+        flex: 1;
+        min-width: 400px;
+        max-width: 700px;
+    }
+
+    .options-table-wrapper > h3 {
+        color: #00684A;
+        margin-bottom: 15px;
+        font-size: 18px;
+        border-bottom: 2px solid #00684A;
+        padding-bottom: 8px;
+    }
+
+    .options-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .options-table th {
+        background-color: #00684A;
+        color: white;
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    .options-table td {
+        padding: 10px 15px;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: top;
+    }
+
+    .options-table tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .options-table .key-cell {
+        font-weight: 600;
+        color: #333;
+        width: 30%;
+        white-space: nowrap;
+    }
+
+    .options-table .value-cell {
+        color: #1a5276;
+        word-break: break-word;
+        max-width: 400px;
+        white-space: pre-wrap;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+    }
+
+    .no-data-message {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-size: 16px;
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #00684A;
+        padding-bottom: 8px;
+    }
+
+    .table-header h3 {
+        color: #00684A;
+        font-size: 18px;
+        margin: 0;
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .copy-btn {
+        padding: 6px 14px;
+        font-size: 12px;
+        background: #e8f5f1;
+        border: 1px solid #00684A;
+        border-radius: 4px;
+        color: #00684A;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+
+    .copy-btn:hover {
+        background: #00684A;
+        color: white;
+    }
+
+    .copy-btn.copied {
+        background: #28a745;
+        border-color: #28a745;
+        color: white;
+    }
+
+    .copy-btn:disabled {
+        background: #ccc;
+        border-color: #ccc;
+        color: #666;
+        cursor: not-allowed;
     }
 
     @media (max-width: 768px) {
-        #plot {
+        .plot-container {
             width: 95%;
+        }
+        
+        .tab-btn {
+            padding: 10px 16px;
+            font-size: 13px;
+        }
+
+        .options-container {
+            flex-direction: column;
+        }
+
+        .options-table-wrapper {
+            min-width: 100%;
         }
     }
 {% endblock %}
 
 {% block content %}
-<div id="plot"></div>
+<div class="tabs-container">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab('charts')" id="tab-charts">Charts</button>
+        <button class="tab-btn" onclick="switchTab('options')" id="tab-options">Mongosync Options</button>
+    </div>
+
+    <div id="charts-tab" class="tab-content active">
+        <div class="plot-container">
+            <div id="plot"></div>
+        </div>
+    </div>
+
+    <div id="options-tab" class="tab-content">
+        <div class="plot-container">
+            <div class="options-container">
+                <div class="options-table-wrapper">
+                    <div class="table-header">
+                        <h3>Mongosync Options</h3>
+                        {% if options_data %}
+                        <button class="copy-btn" onclick="copyTableAsMarkdown('options', this)">Copy as Markdown</button>
+                        {% endif %}
+                    </div>
+                    {% if options_data %}
+                    <table class="options-table" id="options-table">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in options_data %}
+                            <tr>
+                                <td class="key-cell">{{ item.key }}</td>
+                                <td class="value-cell">{{ item.value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="no-data-message">No Mongosync Options found in the log file</div>
+                    {% endif %}
+                </div>
+
+                <div class="options-table-wrapper">
+                    <div class="table-header">
+                        <h3>Mongosync Hidden Options</h3>
+                        {% if hidden_options_data %}
+                        <button class="copy-btn" onclick="copyTableAsMarkdown('hidden', this)">Copy as Markdown</button>
+                        {% endif %}
+                    </div>
+                    {% if hidden_options_data %}
+                    <table class="options-table" id="hidden-options-table">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in hidden_options_data %}
+                            <tr>
+                                <td class="key-cell">{{ item.key }}</td>
+                                <td class="value-cell">{{ item.value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="no-data-message">No Mongosync Hidden Options found in the log file</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
 <script>
 var plot = {{ plot_json | safe }};
 Plotly.newPlot('plot', plot.data, plot.layout);
+
+// Store table data for Markdown conversion
+var optionsData = {{ options_data | tojson }};
+var hiddenOptionsData = {{ hidden_options_data | tojson }};
+
+function switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.getElementById(tabName + '-tab').classList.add('active');
+}
+
+function copyTableAsMarkdown(tableType, buttonElement) {
+    var data, title;
+    
+    if (tableType === 'options') {
+        data = optionsData;
+        title = 'Mongosync Options';
+    } else {
+        data = hiddenOptionsData;
+        title = 'Mongosync Hidden Options';
+    }
+    
+    if (!data || data.length === 0) {
+        return;
+    }
+    
+    // Build Markdown table
+    var markdown = '## ' + title + '\n\n';
+    markdown += '| Key | Value |\n';
+    markdown += '|-----|-------|\n';
+    
+    data.forEach(function(item) {
+        // Escape pipe characters and replace newlines with spaces for Markdown compatibility
+        var value = String(item.value)
+            .replace(/\|/g, '\\|')
+            .replace(/\n/g, ' ');
+        
+        markdown += '| ' + item.key + ' | ' + value + ' |\n';
+    });
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(markdown).then(function() {
+        // Visual feedback
+        var originalText = buttonElement.textContent;
+        buttonElement.textContent = 'Copied!';
+        buttonElement.classList.add('copied');
+        
+        setTimeout(function() {
+            buttonElement.textContent = originalText;
+            buttonElement.classList.remove('copied');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Failed to copy: ', err);
+        // Fallback for older browsers
+        fallbackCopyToClipboard(markdown, buttonElement);
+    });
+}
+
+function fallbackCopyToClipboard(text, buttonElement) {
+    var textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        var originalText = buttonElement.textContent;
+        buttonElement.textContent = 'Copied!';
+        buttonElement.classList.add('copied');
+        
+        setTimeout(function() {
+            buttonElement.textContent = originalText;
+            buttonElement.classList.remove('copied');
+        }, 2000);
+    } catch (err) {
+        console.error('Fallback copy failed: ', err);
+        buttonElement.textContent = 'Copy failed';
+        setTimeout(function() {
+            buttonElement.textContent = 'Copy as Markdown';
+        }, 2000);
+    }
+    
+    document.body.removeChild(textArea);
+}
 </script>
 {% endblock %}
 
