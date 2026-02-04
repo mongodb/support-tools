@@ -463,6 +463,9 @@ def upload_file():
         # Update layout
         # 225 per plot
         fig.update_layout(height=2025, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=170, showlegend=False)
+        
+        # Force all y-axes to start at 0 for better visual comparison
+        fig.update_yaxes(rangemode='tozero')
 
 
         fig.update_layout(
