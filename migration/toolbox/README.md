@@ -65,6 +65,30 @@ mongosh "mongodb://user:password@localhost:27017" --quiet probIndexesComplete.js
 └─────────┴────────┴────────────────┴──────────────┴────────────┴────────┴──────────┴──────────┴─────────┴─────────────────────────┘
 ```
 
+## Mongosync Limitations Checker
+
+**Script:** `mongosync_limitations_checker_unified.py`
+
+Detects a known mongosync limitation where a collection has two indexes with the exact same key pattern—one unique and one non-unique. This condition can cause mongosync to fail during migrations.
+
+The script supports two modes:
+- **Online mode:** Connects directly to a MongoDB cluster via connection string
+- **Offline mode:** Parses a `getMongoData` JSON file (no cluster access required)
+
+### Quick Usage
+
+**Offline (getMongoData):**
+```bash
+python3 mongosync_limitations_checker_unified.py --getmongodata <file>.json
+```
+
+**Online (MongoDB cluster):**
+```bash
+python3 mongosync_limitations_checker_unified.py --uri "mongodb+srv://USER:PASS@host"
+```
+
+For full documentation, filtering options, and examples, see [README_limitations_checker.md](README_limitations_checker.md).
+
 ### License
 
 [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
