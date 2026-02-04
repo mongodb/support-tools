@@ -2,54 +2,243 @@
 
 {% block title %}Mongosync Insights - Live Monitoring{% endblock %}
 
-{% block header_title %}Mongosync Insights - Metadata{% endblock %}
+{% block header_title %}Mongosync Insights - Live Monitoring{% endblock %}
 
 {% block styles %}
-    #plot {
+    .tabs-container {
+        max-width: 1550px;
         margin: 0 auto;
-        max-width: 1450px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        background-color: #fff;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
 
-    #loading {
+    .tab-buttons {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 0;
+        border-bottom: 2px solid #00684A;
+    }
+
+    .tab-btn {
+        padding: 12px 24px;
+        background: #e8f5f1;
+        border: none;
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        color: #00684A;
+        transition: all 0.2s ease;
+        position: relative;
+        bottom: -2px;
+    }
+
+    .tab-btn:hover {
+        background: #c8e6dc;
+    }
+
+    .tab-btn.active {
+        background: #00684A;
+        color: #fff;
+        border-bottom: 2px solid #00684A;
+    }
+
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .plot-container {
+        margin: 0 auto;
+        border: 1px solid #ccc;
+        border-radius: 0 8px 8px 8px;
+        background-color: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        min-height: 400px;
+    }
+
+    #loading1, #loading2, #loading3 {
         text-align: center;
         font-size: 18px;
         color: #666;
         margin: 50px 0;
+        padding: 50px;
     }
 
     @media (max-width: 768px) {
-        #plot {
+        .plot-container {
             width: 95%;
+        }
+        
+        .tab-btn {
+            padding: 10px 16px;
+            font-size: 13px;
         }
     }
 {% endblock %}
 
 {% block content %}
-<div id="loading">Loading metrics...</div>
-<div id="plot" style="display:none;"></div>
+<div class="tabs-container">
+    <div class="tab-buttons">
+        {% if has_connection_string %}
+        <button class="tab-btn active" onclick="switchTab('overview')" id="tab-overview">Live Monitoring - Status</button>
+        <button class="tab-btn" onclick="switchTab('partitions')" id="tab-partitions">Live Monitoring - Progress</button>
+        {% endif %}
+        {% if has_endpoint_url %}
+        <button class="tab-btn {% if not has_connection_string %}active{% endif %}" onclick="switchTab('endpoint')" id="tab-endpoint">Live Monitoring - Endpoint</button>
+        {% endif %}
+    </div>
+
+    {% if has_connection_string %}
+    <div id="overview-tab" class="tab-content active">
+        <div class="plot-container">
+            <div id="loading1">Loading metrics...</div>
+            <div id="plot1" style="display:none;"></div>
+        </div>
+    </div>
+
+    <div id="partitions-tab" class="tab-content">
+        <div class="plot-container">
+            <div id="loading2">Loading partitions data...</div>
+            <div id="plot2" style="display:none;"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if has_endpoint_url %}
+    <div id="endpoint-tab" class="tab-content {% if not has_connection_string %}active{% endif %}">
+        <div class="plot-container">
+            <div id="loading3">Loading endpoint data...</div>
+            <div id="plot3" style="display:none;"></div>
+        </div>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-async function fetchPlotData() {
-    try {
-        const response = await fetch("/get_metrics_data", { method: 'POST' });
-        const plotData = await response.json();
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("plot").style.display = "block";
-        Plotly.react('plot', plotData.data, plotData.layout);
-    } catch (err) {
-        console.error("Error fetching data:", err);
-        document.getElementById("loading").innerText = "Error loading data.";
+// Configuration flags only - credentials are stored securely in server-side session
+// No sensitive data (connection strings, URLs) is exposed to the client
+const hasConnectionString = {{ has_connection_string|tojson }};
+const hasEndpointUrl = {{ has_endpoint_url|tojson }};
+
+let currentTab = hasConnectionString ? 'overview' : 'endpoint';
+let dataLoaded = { overview: false, partitions: false, endpoint: false };
+
+function switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.getElementById(tabName + '-tab').classList.add('active');
+    
+    currentTab = tabName;
+    
+    // Load data for the tab if not already loaded
+    if (tabName === 'overview' && !dataLoaded.overview) {
+        fetchOverviewData();
+    } else if (tabName === 'partitions' && !dataLoaded.partitions) {
+        fetchPartitionsData();
+    } else if (tabName === 'endpoint' && !dataLoaded.endpoint) {
+        fetchEndpointData();
     }
 }
 
-fetchPlotData(); // initial load
-setInterval(fetchPlotData, {{ refresh_time_ms }}); // update every {{ refresh_time }} seconds
+async function fetchOverviewData() {
+    try {
+        // No credentials sent - server reads from secure session
+        const response = await fetch("/get_metrics_data", { 
+            method: 'POST',
+            credentials: 'same-origin'  // Include session cookie
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Request failed');
+        }
+        const plotData = await response.json();
+        document.getElementById("loading1").style.display = "none";
+        document.getElementById("plot1").style.display = "block";
+        Plotly.react('plot1', plotData.data, plotData.layout);
+        dataLoaded.overview = true;
+    } catch (err) {
+        console.error("Error fetching overview data:", err);
+        document.getElementById("loading1").innerText = "Error loading data: " + err.message;
+    }
+}
+
+async function fetchPartitionsData() {
+    try {
+        // No credentials sent - server reads from secure session
+        const response = await fetch("/get_partitions_data", { 
+            method: 'POST',
+            credentials: 'same-origin'  // Include session cookie
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Request failed');
+        }
+        const plotData = await response.json();
+        document.getElementById("loading2").style.display = "none";
+        document.getElementById("plot2").style.display = "block";
+        Plotly.react('plot2', plotData.data, plotData.layout);
+        dataLoaded.partitions = true;
+    } catch (err) {
+        console.error("Error fetching partitions data:", err);
+        document.getElementById("loading2").innerText = "Error loading data: " + err.message;
+    }
+}
+
+async function fetchEndpointData() {
+    try {
+        // No credentials sent - server reads from secure session
+        const response = await fetch("/get_endpoint_data", { 
+            method: 'POST',
+            credentials: 'same-origin'  // Include session cookie
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Request failed');
+        }
+        const plotData = await response.json();
+        document.getElementById("loading3").style.display = "none";
+        document.getElementById("plot3").style.display = "block";
+        Plotly.react('plot3', plotData.data, plotData.layout);
+        dataLoaded.endpoint = true;
+    } catch (err) {
+        console.error("Error fetching endpoint data:", err);
+        document.getElementById("loading3").innerText = "Error loading data: " + err.message;
+    }
+}
+
+async function refreshCurrentTab() {
+    if (currentTab === 'overview' && hasConnectionString) {
+        await fetchOverviewData();
+    } else if (currentTab === 'partitions' && hasConnectionString) {
+        await fetchPartitionsData();
+    } else if (currentTab === 'endpoint' && hasEndpointUrl) {
+        await fetchEndpointData();
+    }
+}
+
+// Initial load based on available data
+if (hasConnectionString) {
+    fetchOverviewData();
+} else if (hasEndpointUrl) {
+    fetchEndpointData();
+}
+
+// Refresh current tab periodically
+setInterval(refreshCurrentTab, {{ refresh_time_ms }});
 </script>
 {% endblock %}
 

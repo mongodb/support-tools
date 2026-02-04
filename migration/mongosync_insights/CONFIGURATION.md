@@ -4,7 +4,7 @@ This document explains the configuration management system for Mongosync Insight
 
 ## Prerequisites
 
-**Python 3.10+** and **libmagic** system library are required to run Mongosync Insights. See [README.md](README.md) for complete installation instructions including system dependencies.
+**Python 3.11+** and **libmagic** system library are required to run Mongosync Insights. See [README.md](README.md) for complete installation instructions including system dependencies.
 
 ## Configuration Overview
 
@@ -42,6 +42,7 @@ All configuration can be set using `export` commands before running the applicat
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MI_REFRESH_TIME` | `10` | Live monitoring refresh interval in seconds |
+| `MI_PROGRESS_ENDPOINT_URL` | _(empty)_ | Mongosync progress endpoint URL (optional, can be provided via UI) |
 
 ### File Upload Settings
 
@@ -62,6 +63,7 @@ All configuration can be set using `export` commands before running the applicat
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MI_SECURE_COOKIES` | `true` | Enable secure cookies (requires HTTPS) |
+| `MI_SESSION_TIMEOUT` | `3600` | Session timeout in seconds (1 hour default) |
 | `MI_SSL_ENABLED` | `false` | Enable HTTPS/SSL in Flask application |
 | `MI_SSL_CERT` | `/etc/letsencrypt/live/your-domain/fullchain.pem` | Path to SSL certificate file |
 | `MI_SSL_KEY` | `/etc/letsencrypt/live/your-domain/privkey.pem` | Path to SSL private key file |
@@ -112,6 +114,24 @@ Set the MongoDB connection string to avoid entering it in the UI:
 export MI_CONNECTION_STRING="mongodb+srv://user:pass@cluster.mongodb.net/"
 
 # Optional: Adjust refresh rate
+export MI_REFRESH_TIME=5
+
+# Run the application
+python3 mongosync_insights.py
+```
+
+### Example 3b: Combined Monitoring (Metadata + Progress Endpoint)
+
+Pre-configure both the connection string and progress endpoint for comprehensive monitoring:
+
+```bash
+# Set MongoDB connection string for metadata access
+export MI_CONNECTION_STRING="mongodb+srv://user:pass@cluster.mongodb.net/"
+
+# Set mongosync progress endpoint URL
+export MI_PROGRESS_ENDPOINT_URL="localhost:27182/api/v1/progress"
+
+# Faster refresh for active migrations
 export MI_REFRESH_TIME=5
 
 # Run the application

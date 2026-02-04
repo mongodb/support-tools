@@ -1,19 +1,20 @@
 # Mongosync Insights
 
-This tool parses **mongosync** logs and reads the mongosync internal database (metadata), generating interactive plots to assist with monitoring and troubleshooting ongoing MongoDB migrations using mongosync.
+This tool can parse the **mongosync** logs, read the **mongosync** internal database (metadata) and connect to **mongosync** progress endpoint, generating interactive plots to assist with monitoring and troubleshooting ongoing MongoDB migrations using mongosync.
 
 ## What Does This Tool Do?
 
 Mongosync Insights provides two main capabilities:
 
 1. **Log File Analysis**: Upload and parse mongosync log files to visualize migration progress, data transfer rates, and performance metrics
-2. **Live Monitoring**: Connect directly to the mongosync internal database for real-time monitoring of ongoing migrations with auto-refreshing dashboards
+2. **Live Monitoring**: Connect directly to the **mongosync** internal database or to the **mongosync** progress endpoint for real-time monitoring of ongoing migrations with auto-refreshing dashboards
 
 ## Prerequisites
 
-- **Python**: Version 3.10 or higher
+- **Python**: Version 3.11 or higher
 - **pip**: Python package installer
-- **MongoDB Access** (for live monitoring): Connection string to the destination cluster where mongosync stores its metadata
+- **MongoDB Access** (for live monitoring): Connection string to the destination cluster where **mongosync** stores its metadata
+- **Progress Endpoint Access** (for live monitoring): Network access to the **mongosync** progress endpoint
 
 ## Installation
 
@@ -71,7 +72,7 @@ python3 mongosync_insights.py
 
 The application will start and display:
 ```
-Starting Mongosync Insights v0.7.0.17
+Starting Mongosync Insights v0.7.1.6
 Server: 127.0.0.1:3030
 ```
 
@@ -92,27 +93,78 @@ http://localhost:3030
 2. Select your mongosync log file from your file system
 3. Click **"Open"** or **"Upload"**
 4. The application will process the log and display plots showing:
-   - Total and Copied bytes
-   - CEA (Change Event Application) Reads and Writes
-   - Collection Copy Reads and Writes
-   - Events applied
-   - Lag Time
+
+**Supported File Formats:**
+- Plain text: `.log`, `.json`, `.out`
+- Compressed: `.gz`, `.zip`, `.bz2`, `.tar.gz`, `.tgz`, `.tar.bz2`
+
+Compressed files are automatically decompressed during processing, which can significantly reduce upload time for large log files.
+
+**Note**: Log files must be in mongosync's native **NDJSON** (Newline Delimited JSON) format. Each line should be a valid JSON object.
+
+**Metrics displayed:**
+- Total and Copied bytes
+- CEA (Change Event Application) Reads and Writes
+- Collection Copy Reads and Writes
+- Events applied
+- Lag Time
 
 ![Mongosync logs analyzer](images/mongosync_log_analyzer.png)
 
-### Option 2: Live Monitoring
+### Option 2: Live Monitoring (Metadata)
 
 1. Enter the MongoDB **connection string** to your destination cluster
    - Format: `mongodb+srv://user:password@cluster.mongodb.net/`
    - This is where mongosync stores its internal metadata
 2. Click **"Live Monitor"**
 3. The page will refresh automatically every 10 seconds (configurable) showing:
+   - State
+   - Phase
+   - Start and finish time
+   - Lag time
+   - Reversible
+   - Write Blocking Mode
+   - Build Indexes Method
+   - Detect Random ID
+   - Embedded Verifier method
+   - Namespace Filters
    - Partitions Completed
    - Data Copied
    - Migration Phases
    - Collection Progress
 
-![Mongosync metadata plots](images/mongosync_metadata.png)
+![Mongosync metadata status](images/mongosync_metadata_status.png)
+![Mongosync metadata progress](images/mongosync_metadata_progress.png)
+
+### Option 3: Live Monitoring (Progress Endpoint)
+
+1. Enter the MongoDB **Progress Endpoint URL**
+   - Format: `host:port/api/v1/progress`
+2. Click **"Live Monitor"**
+3. The page will refresh automatically every 10 seconds (configurable) showing:
+   - State
+   - Lag time 
+   - Can Commit
+   - Can Write
+   - Phase
+   - Mongosync ID
+   - Coordinator ID
+   - Collection Copy progress
+   - Direction Mapping (source x destination)
+   - Source and Destination Ping Latency
+   - Events applied
+   - Verification table to compare the status between the source and the destination
+   - Verification progress based on Document Count
+
+![Mongosync Endpoint](images/mongosync_endpoint.png)
+
+### Option 4: Combined Monitoring (Metadata + Progress Endpoint)
+
+You can provide **both** the MongoDB connection string and the Progress Endpoint URL to get a comprehensive view that combines data from both sources. Simply fill in both fields and click **"Live Monitor"**.
+
+This combined approach provides:
+- Full metadata insights from the destination cluster (partitions, collection progress, configuration)
+- Real-time progress data from the mongosync endpoint (state, lag time, verification status)
 
 ## Advanced Configuration
 

@@ -1,5 +1,5 @@
 # Mongosync Insights - Core Dependencies
-# Python 3.10+ required
+# Python 3.11+ required
 
 # Web Framework
 Flask==3.1.1
@@ -15,7 +15,7 @@ packaging==23.1
 
 # MongoDB Driver
 pymongo==4.11.0
-dnspython==2.4.2
+dnspython==2.6.1
 
 # Date/Time Utilities
 python-dateutil==2.8.2
@@ -23,6 +23,9 @@ six==1.16.0
 
 # File Processing
 python-magic==0.4.27
+
+# HTTP Requests
+requests==2.32.3
 
 # Progress Bars
 tqdm==4.66.3

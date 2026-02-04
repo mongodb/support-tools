@@ -13,6 +13,7 @@ import magic
 from werkzeug.utils import secure_filename
 from mongosync_plot_utils import format_byte_size, convert_bytes
 from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
+from file_decompressor import decompress_file, is_compressed_mime_type
 
 def upload_file():
     # Use the centralized logging configuration
@@ -118,11 +119,25 @@ def upload_file():
         # Reset file pointer to beginning
         file.seek(0)
         
-        for line in tqdm(file, desc="Processing log file"):
+        # Determine if file is compressed and get appropriate iterator
+        if is_compressed_mime_type(file_mime_type):
+            logger.info(f"Decompressing {file_mime_type} file before processing")
+            file_iterator = decompress_file(file, file_mime_type, filename)
+        else:
+            file_iterator = file
+        
+        for line in tqdm(file_iterator, desc="Processing log file"):
             line_count += 1
+            # Handle both bytes and string input (decompressed files return bytes)
+            if isinstance(line, bytes):
+                line = line.decode('utf-8', errors='replace')
             line = line.strip()
             
             if not line:  # Skip empty lines
+                continue
+            
+            # Skip lines that don't look like JSON objects (handles trailing garbage from decompression)
+            if not line.startswith('{'):
                 continue
                 
             try:
@@ -188,9 +203,9 @@ def upload_file():
         # Create a string with all the version information
         if version_info_list and isinstance(version_info_list[0], dict):  
             version = version_info_list[0].get('version', 'Unknown')  
-            operating_system = version_info_list[0].get('os', 'Unknown')  
+            os_name = version_info_list[0].get('os', 'Unknown')  
             arch = version_info_list[0].get('arch', 'Unknown')  
-            version_text = f"MongoSync Version: {version}, OS: {operating_system}, Arch: {arch}"   
+            version_text = f"MongoSync Version: {version}, OS: {os_name}, Arch: {arch}"   
         else:  
             version_text = f"MongoSync Version is not available"  
             logging.error(version_text)  
@@ -321,8 +336,9 @@ def upload_file():
                     
                     phase_list = [item.get('message') for item in phase_transitions]  
                     ts_t_list = [item['time'] for item in phase_transitions]  
+                    # Replace 'Z' with '+00:00' for Python < 3.11 compatibility
                     ts_t_list_formatted = [  
-                        datetime.fromisoformat(t).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"  
+                        datetime.fromisoformat(t.replace('Z', '+00:00')).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"  
                         for t in ts_t_list  
                     ]  
         else:

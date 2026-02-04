@@ -59,11 +59,11 @@
     <!-- First form: File upload -->
     <form method="post" action="/upload" enctype="multipart/form-data" autocomplete="off">
         <h2>Parse Mongosync Log File</h2>
-        <input type="file" name="file" accept=".log,.json,.out"><br><br>
+        <input type="file" name="file" accept=".log,.json,.out,.gz,.zip,.bz2,.tar.gz,.tgz,.tar.bz2"><br><br>
         <input type="submit" value="Upload">
         <p>Click the "Upload" button after selecting your Mongosync log file to generate migration progress plots.</p>
-        <p><small><strong>Supported formats:</strong> .log, .json, .out files<br>
-        <strong>Maximum size:</strong> 10 GB</small></p>
+        <p><small><strong>Supported formats:</strong> .log, .json, .out (uncompressed) or .gz, .zip, .bz2, .tgz, .tar.gz, .tar.bz2 (compressed)<br>
+        <strong>Maximum size:</strong> {{ max_file_size_gb | round(1) }} GB</small></p>
         <img src="{{ url_for('static', filename='mongosync_log_analyzer.png') }}" width="300" alt="Mongosync Log Analyzer">
     </form>
 
@@ -71,22 +71,54 @@
     <form id="metadataForm" method="post" action="/renderMetrics" enctype="multipart/form-data" autocomplete="off">
         <h2>Live Migration Monitoring</h2>
         {{ connection_string_form | safe }}
+        {{ progress_endpoint_form | safe }}
         <input type="submit" value="Live Monitor">
         <p>Click the "Live Monitor" button to start monitoring the migration progress in real time.</p>
-        <img src="{{ url_for('static', filename='mongosync_metadata.png') }}" width="300" alt="Mongosync Log Analyzer">
+        <img src="{{ url_for('static', filename='mongosync_metadata_status.png') }}" width="300" alt="Mongosync Metadata Status">
+        <img src="{{ url_for('static', filename='mongosync_metadata_progress.png') }}" width="300" alt="Mongosync Metadata Progress">
+        <img src="{{ url_for('static', filename='mongosync_endpoint.png') }}" width="300" alt="Mongosync Endpoint">
     </form>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function checkAtlasConnection() {
-    var conn = document.getElementById('connectionString').value.trim();
-    if (!conn) {
-        alert("Please enter the Atlas MongoDB Connection String.");
+function validateForm() {
+    var connField = document.getElementById('connectionString');
+    var urlField = document.getElementById('progressEndpointUrl');
+    
+    // If field doesn't exist, it means env var is set (field is replaced with <p> tag)
+    // Treat missing field as "already configured" (true)
+    var connConfigured = connField === null || connField.value.trim() !== '';
+    var urlConfigured = urlField === null || urlField.value.trim() !== '';
+    
+    // Check if at least one field is filled OR configured via env var
+    if (!connConfigured && !urlConfigured) {
+        alert("Please provide at least one of the following: MongoDB Connection String or Mongosync Progress Endpoint URL (or both).");
         return false;
     }
+    
+    // Validate progress endpoint URL format if field exists and has a value
+    if (urlField && urlField.value.trim()) {
+        var pattern = /^[\w\.\-]+:\d+\/api\/v1\/progress$/;
+        if (!pattern.test(urlField.value.trim())) {
+            alert("Invalid Progress Endpoint URL format. Expected: host:port/api/v1/progress (e.g., localhost:27182/api/v1/progress)");
+            return false;
+        }
+    }
+    
     return true;
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('metadataForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+            }
+        });
+    }
+});
 </script>
 {% endblock %}
