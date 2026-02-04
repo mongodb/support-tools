@@ -185,6 +185,39 @@
         cursor: not-allowed;
     }
 
+    .filter-container {
+        width: 100%;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .filter-input {
+        width: 100%;
+        max-width: 500px;
+        padding: 12px 16px;
+        font-size: 14px;
+        border: 2px solid #00684A;
+        border-radius: 6px;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+
+    .filter-input:focus {
+        box-shadow: 0 0 8px rgba(0, 104, 74, 0.3);
+    }
+
+    .filter-input::placeholder {
+        color: #999;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+        font-style: italic;
+        display: none;
+    }
+
     @media (max-width: 768px) {
         .plot-container {
             width: 95%;
@@ -220,6 +253,11 @@
 
     <div id="options-tab" class="tab-content">
         <div class="plot-container">
+            <div class="filter-container">
+                <input type="text" id="table-filter" class="filter-input" 
+                       placeholder="Filter by key or value..." 
+                       oninput="filterTables(this.value)">
+            </div>
             <div class="options-container">
                 <div class="options-table-wrapper">
                     <div class="table-header">
@@ -245,6 +283,7 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                    <div class="no-results">No matching options found</div>
                     {% else %}
                     <div class="no-data-message">No Mongosync Options found in the log file</div>
                     {% endif %}
@@ -274,6 +313,7 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                    <div class="no-results">No matching hidden options found</div>
                     {% else %}
                     <div class="no-data-message">No Mongosync Hidden Options found in the log file</div>
                     {% endif %}
@@ -379,6 +419,48 @@ function fallbackCopyToClipboard(text, buttonElement) {
     }
     
     document.body.removeChild(textArea);
+}
+
+function filterTables(searchText) {
+    var filter = searchText.toLowerCase().trim();
+    
+    // Get all table bodies
+    var tables = document.querySelectorAll('.options-table tbody');
+    
+    tables.forEach(function(tbody) {
+        var rows = tbody.querySelectorAll('tr');
+        var visibleCount = 0;
+        
+        rows.forEach(function(row) {
+            var keyCell = row.querySelector('.key-cell');
+            var valueCell = row.querySelector('.value-cell');
+            
+            if (keyCell && valueCell) {
+                var keyText = keyCell.textContent.toLowerCase();
+                var valueText = valueCell.textContent.toLowerCase();
+                
+                // Show row if filter is empty OR key/value contains the search text
+                if (filter === '' || keyText.includes(filter) || valueText.includes(filter)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+        
+        // Show/hide "no results" message for each table
+        var tableWrapper = tbody.closest('.options-table-wrapper');
+        var noResultsMsg = tableWrapper.querySelector('.no-results');
+        
+        if (noResultsMsg) {
+            if (visibleCount === 0 && filter !== '') {
+                noResultsMsg.style.display = 'block';
+            } else {
+                noResultsMsg.style.display = 'none';
+            }
+        }
+    });
 }
 </script>
 {% endblock %}
