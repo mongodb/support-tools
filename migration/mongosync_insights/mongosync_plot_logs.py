@@ -390,8 +390,8 @@ def upload_file():
             fig.update_yaxes(showticklabels=False, row=1, col=1)  
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Mongosync Phases',textfont=dict(size=30, color="black")), row=1, col=1)
-#            fig.update_layout(xaxis5=dict(showgrid=False, zeroline=False, showticklabels=False), 
-#                            yaxis5=dict(showgrid=False, zeroline=False, showticklabels=False))
+            fig.update_yaxes(range=[-1, 1], row=1, col=1)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=1, col=1)  # Also center horizontally
 
         # Estimated Total and Copied
         if estimated_total_bytes > 0 or estimated_copied_bytes > 0:
@@ -400,12 +400,16 @@ def upload_file():
             fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=1, col=2)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Estimated Total and Copied',textfont=dict(size=30, color="black")), row=1, col=2)
+            fig.update_yaxes(range=[-1, 1], row=1, col=2)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=1, col=2)  # Also center horizontally
 
         # Lag Time
         if lagTimeSeconds:
             fig.add_trace(go.Scattergl(x=times, y=lagTimeSeconds, mode='lines', name='Seconds', legendgroup="groupEventsAndLags"), row=2, col=1)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Lag Time',textfont=dict(size=30, color="black")), row=2, col=1)
+            fig.update_yaxes(range=[-1, 1], row=2, col=1)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=2, col=1)  # Also center horizontally
         #fig.update_yaxes(title_text="Lag Time (seconds)", row=2, col=1)
 
         # Total Events Applied
@@ -413,6 +417,8 @@ def upload_file():
             fig.add_trace(go.Scattergl(x=times, y=totalEventsApplied, mode='lines', name='Events', legendgroup="groupEventsAndLags"), row=2, col=2)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Change Events Applied',textfont=dict(size=30, color="black")), row=2, col=2)
+            fig.update_yaxes(range=[-1, 1], row=2, col=2)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=2, col=2)  # Also center horizontally
         #fig.update_yaxes(title_text="Change Events Applied", row=2, col=2)
 
         # Ping Latency
@@ -421,12 +427,16 @@ def upload_file():
             fig.add_trace(go.Scattergl(x=times, y=destinationPingLatencyMs, mode='lines', name='Destination Ping (ms)', legendgroup="groupPingLatency"), row=3, col=1)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Ping Latency', textfont=dict(size=30, color="black")), row=3, col=1)
+            fig.update_yaxes(range=[-1, 1], row=3, col=1)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=3, col=1)  # Also center horizontally
 
         # Average Source CRUD Event Rate
         if srcCRUDEventsPerSec:
             fig.add_trace(go.Scattergl(x=crud_rate_times, y=srcCRUDEventsPerSec, mode='lines', name='Events/sec', legendgroup="groupCRUDRate"), row=3, col=2)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CRUD Event Rate', textfont=dict(size=30, color="black")), row=3, col=2)
+            fig.update_yaxes(range=[-1, 1], row=3, col=2)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=3, col=2)  # Also center horizontally
 
         # Collection Copy Source Read
         if CollectionCopySourceRead or CollectionCopySourceRead_maximum:
@@ -435,11 +445,16 @@ def upload_file():
             #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=4, col=1)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Source Read',textfont=dict(size=30, color="black")), row=4, col=1)
+            fig.update_yaxes(range=[-1, 1], row=4, col=1)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=4, col=1)  # Also center horizontally
 
         if CollectionCopySourceRead_numOperations:
             fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCCSourceRead"), row=4, col=2)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Source Reads',textfont=dict(size=30, color="black")), row=4, col=2)
+
+            fig.update_yaxes(range=[-1, 1], row=4, col=2)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=4, col=2)  # Also center horizontally
         #fig.update_yaxes(title_text="Number of Reads", secondary_y=True, row=4, col=2)
 
         #Collection Copy Destination
@@ -449,13 +464,15 @@ def upload_file():
             #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=5, col=1)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Destination Write',textfont=dict(size=30, color="black")), row=5, col=1)
-        #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=5, col=1)
+            fig.update_yaxes(range=[-1, 1], row=5, col=1)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=5, col=1)  # Also center horizontally
 
         if CollectionCopyDestinationWrite_numOperations:
             fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite_numOperations, mode='lines', name='Writes', legendgroup="groupCCDestinationWrite"), row=5, col=2,)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Destination Writes',textfont=dict(size=30, color="black")), row=5, col=2)
-        #fig.update_yaxes(title_text="Number of Writes", secondary_y=True, row=5, col=2)
+            fig.update_yaxes(range=[-1, 1], row=5, col=2)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=5, col=2)  # Also center horizontally
 
         #CEA Source
         if CEASourceRead or CEASourceRead_maximum:
@@ -464,13 +481,15 @@ def upload_file():
             #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=6, col=1)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Source Read',textfont=dict(size=30, color="black")), row=6, col=1)
-        #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=6, col=1)
+            fig.update_yaxes(range=[-1, 1], row=6, col=1)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=6, col=1)  # Also center horizontally
 
         if CEASourceRead_numOperations:
             fig.add_trace(go.Scattergl(x=times, y=CEASourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCEASourceRead"), row=6, col=2)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Source Reads',textfont=dict(size=30, color="black")), row=6, col=2)
-        #fig.update_yaxes(title_text="Number of Reads", secondary_y=True, row=6, col=2)
+            fig.update_yaxes(range=[-1, 1], row=6, col=2)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=6, col=2)  # Also center horizontally
 
         #CEA Destination
         if CEADestinationWrite or CEADestinationWrite_maximum:
@@ -479,12 +498,15 @@ def upload_file():
             #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=7, col=1)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Destination Write',textfont=dict(size=30, color="black")), row=7, col=1)
+            fig.update_yaxes(range=[-1, 1], row=7, col=1)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=7, col=1)  # Also center horizontally
 
         if CEADestinationWrite_numOperations:
             fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='Writes during CEA', legendgroup="groupCEADestinationWrite"), row=7, col=2)
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Destination Writes',textfont=dict(size=30, color="black")), row=7, col=2)
-        #fig.update_yaxes(title_text="Number of Writes", secondary_y=True, row=7, col=2)
+            fig.update_yaxes(range=[-1, 1], row=7, col=2)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=7, col=2)  # Also center horizontally
 
         #Add the Mongosync options
         fig.add_trace(table_trace, row=8, col=1)
