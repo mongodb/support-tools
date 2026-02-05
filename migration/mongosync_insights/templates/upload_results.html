@@ -519,13 +519,13 @@ function filterErrorsTable(searchText) {
     var visibleCount = 0;
     
     rows.forEach(function(row) {
-        var cells = row.querySelectorAll('td');
-        var rowText = '';
-        cells.forEach(function(cell) {
-            rowText += cell.textContent.toLowerCase() + ' ';
-        });
+        var keyCell = row.querySelector('.key-cell');
+        var valueCell = row.querySelector('.value-cell');
         
-        if (filter === '' || rowText.includes(filter)) {
+        var friendlyName = keyCell ? keyCell.textContent.toLowerCase() : '';
+        var message = valueCell ? valueCell.textContent.toLowerCase() : '';
+        
+        if (filter === '' || friendlyName.includes(filter) || message.includes(filter)) {
             row.style.display = '';
             visibleCount++;
         } else {
