@@ -136,5 +136,10 @@
         "pattern": "The level of CEA parallelization for this collection is low",
         "friendly_name": "Hot Documents",
         "full_error_message": "The level of CEA parallelization for this collection is low. This might mean that relatively few documents are being constantly updated. Mongosync may not be able to keep pace with the source's workload."
+      },
+      {
+        "pattern": "refetched db-spec for recreating dst coll for natural scan",
+        "friendly_name": "Restart Collection Copy in natural order",
+        "full_error_message": "refetched db-spec for recreating dst coll for natural scan, collSpec: {COLLECTION DETAILS UUID {}}, isSrcDropped: XXX"
       }
     ]
