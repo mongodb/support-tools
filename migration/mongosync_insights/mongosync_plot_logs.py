@@ -12,7 +12,7 @@ import os
 import magic
 from werkzeug.utils import secure_filename
 from mongosync_plot_utils import format_byte_size, convert_bytes
-from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
+from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES, load_error_patterns
 from file_decompressor import decompress_file, is_compressed_mime_type
 
 def upload_file():
@@ -104,6 +104,16 @@ def upload_file():
             'crud_events_rate': re.compile(r"Average Source CRUD events rate", re.IGNORECASE)
         }
         
+        # Load error patterns from external file
+        error_patterns_config = load_error_patterns()
+        error_patterns = [
+            {
+                'pattern': re.compile(ep['pattern'], re.IGNORECASE),
+                'friendly_name': ep['friendly_name']
+            }
+            for ep in error_patterns_config
+        ]
+        
         # Initialize result containers
         data = []
         version_info_list = []
@@ -113,6 +123,7 @@ def upload_file():
         mongosync_opts_list = []
         mongosync_hiddenflags = []
         mongosync_crud_rate = []
+        matched_errors = []
         
         # Single pass through the file with streaming
         line_count = 0
@@ -175,6 +186,17 @@ def upload_file():
                 
                 if patterns['crud_events_rate'].search(message):
                     mongosync_crud_rate.append(json_obj)
+                
+                # Check for common error patterns
+                for ep in error_patterns:
+                    if ep['pattern'].search(message):
+                        matched_errors.append({
+                            'friendly_name': ep['friendly_name'],
+                            'message': message,
+                            'time': json_obj.get('time', ''),
+                            'level': json_obj.get('level', '')
+                        })
+                        break  # Only match first pattern per message
                     
             except json.JSONDecodeError as e:
                 invalid_json_count += 1
@@ -190,7 +212,8 @@ def upload_file():
         logging.info(f"Found: {len(data)} replication progress, {len(version_info_list)} version info, "
                     f"{len(mongosync_ops_stats)} operation stats, {len(mongosync_sent_response)} sent responses, "
                     f"{len(phase_transitions_json)} phase transitions, {len(mongosync_opts_list)} options, "
-                    f"{len(mongosync_hiddenflags)} hidden flags, {len(mongosync_crud_rate)} CRUD rate entries")  
+                    f"{len(mongosync_hiddenflags)} hidden flags, {len(mongosync_crud_rate)} CRUD rate entries, "
+                    f"{len(matched_errors)} common errors")  
         
         # The 'body' field is also a JSON string, so parse that as well
         #mongosync_sent_response_body = json.loads(mongosync_sent_response.get('body'))
@@ -523,4 +546,5 @@ def upload_file():
         return render_template('upload_results.html', 
                              plot_json=plot_json,
                              options_data=options_data,
-                             hidden_options_data=hidden_options_data)
+                             hidden_options_data=hidden_options_data,
+                             errors_data=matched_errors)

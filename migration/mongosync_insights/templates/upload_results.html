@@ -243,6 +243,7 @@
     <div class="tab-buttons">
         <button class="tab-btn active" onclick="switchTab('charts')" id="tab-charts">Charts</button>
         <button class="tab-btn" onclick="switchTab('options')" id="tab-options">Mongosync Options</button>
+        <button class="tab-btn" onclick="switchTab('errors')" id="tab-errors">Common Errors{% if errors_data %} ({{ errors_data|length }}){% endif %}</button>
     </div>
 
     <div id="charts-tab" class="tab-content active">
@@ -321,6 +322,51 @@
             </div>
         </div>
     </div>
+
+    <div id="errors-tab" class="tab-content">
+        <div class="plot-container">
+            <div class="filter-container">
+                <input type="text" id="errors-filter" class="filter-input" 
+                       placeholder="Filter errors by name or message..." 
+                       oninput="filterErrorsTable(this.value)">
+            </div>
+            <div class="options-container">
+                <div class="options-table-wrapper" style="max-width: 100%; min-width: 100%;">
+                    <div class="table-header">
+                        <h3>Common Errors Found in Log</h3>
+                        {% if errors_data %}
+                        <button class="copy-btn" onclick="copyErrorsAsMarkdown(this)">Copy as Markdown</button>
+                        {% endif %}
+                    </div>
+                    {% if errors_data %}
+                    <table class="options-table" id="errors-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">Friendly Name</th>
+                                <th style="width: 20%;">Time</th>
+                                <th style="width: 10%;">Level</th>
+                                <th style="width: 55%;">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for error in errors_data %}
+                            <tr>
+                                <td class="key-cell">{{ error.friendly_name }}</td>
+                                <td>{{ error.time }}</td>
+                                <td>{{ error.level }}</td>
+                                <td class="value-cell">{{ error.message }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="no-results" id="errors-no-results">No matching errors found</div>
+                    {% else %}
+                    <div class="no-data-message">No common errors found in the log file</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -332,6 +378,7 @@ Plotly.newPlot('plot', plot.data, plot.layout);
 // Store table data for Markdown conversion
 var optionsData = {{ options_data | tojson }};
 var hiddenOptionsData = {{ hidden_options_data | tojson }};
+var errorsData = {{ errors_data | tojson }};
 
 function switchTab(tabName) {
     // Update tab buttons
@@ -460,6 +507,69 @@ function filterTables(searchText) {
                 noResultsMsg.style.display = 'none';
             }
         }
+    });
+}
+
+function filterErrorsTable(searchText) {
+    var filter = searchText.toLowerCase().trim();
+    var table = document.getElementById('errors-table');
+    if (!table) return;
+    
+    var rows = table.querySelectorAll('tbody tr');
+    var visibleCount = 0;
+    
+    rows.forEach(function(row) {
+        var cells = row.querySelectorAll('td');
+        var rowText = '';
+        cells.forEach(function(cell) {
+            rowText += cell.textContent.toLowerCase() + ' ';
+        });
+        
+        if (filter === '' || rowText.includes(filter)) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    var noResultsMsg = document.getElementById('errors-no-results');
+    if (noResultsMsg) {
+        noResultsMsg.style.display = (visibleCount === 0 && filter !== '') ? 'block' : 'none';
+    }
+}
+
+function copyErrorsAsMarkdown(buttonElement) {
+    if (!errorsData || errorsData.length === 0) {
+        return;
+    }
+    
+    // Build Markdown table
+    var markdown = '## Common Errors Found in Log\n\n';
+    markdown += '| Friendly Name | Time | Level | Message |\n';
+    markdown += '|---------------|------|-------|----------|\n';
+    
+    errorsData.forEach(function(item) {
+        var message = String(item.message)
+            .replace(/\|/g, '\\|')
+            .replace(/\n/g, ' ');
+        
+        markdown += '| ' + item.friendly_name + ' | ' + item.time + ' | ' + item.level + ' | ' + message + ' |\n';
+    });
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(markdown).then(function() {
+        var originalText = buttonElement.textContent;
+        buttonElement.textContent = 'Copied!';
+        buttonElement.classList.add('copied');
+        
+        setTimeout(function() {
+            buttonElement.textContent = originalText;
+            buttonElement.classList.remove('copied');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Failed to copy: ', err);
+        fallbackCopyToClipboard(markdown, buttonElement);
     });
 }
 </script>

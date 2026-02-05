@@ -21,7 +21,7 @@ PORT = int(os.getenv('MI_PORT', '3030'))
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.7.2.1"
+APP_VERSION = "0.7.2.3"
 
 # File upload settings
 MAX_FILE_SIZE = int(os.getenv('MI_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
@@ -74,6 +74,35 @@ INTERNAL_DB_NAME = os.getenv('MI_INTERNAL_DB_NAME', "mongosync_reserved_for_inte
 PLOT_WIDTH = int(os.getenv('MI_PLOT_WIDTH', '1450'))
 PLOT_HEIGHT = int(os.getenv('MI_PLOT_HEIGHT', '1800'))
 MAX_PARTITIONS_DISPLAY = int(os.getenv('MI_MAX_PARTITIONS_DISPLAY', '10'))
+
+# Error patterns file
+ERROR_PATTERNS_FILE = os.getenv('MI_ERROR_PATTERNS_FILE', 
+                                 os.path.join(os.path.dirname(__file__), 'error_patterns.json'))
+
+def load_error_patterns():
+    """
+    Load error patterns from external JSON file.
+    
+    Returns:
+        list: List of dictionaries with 'pattern' and 'friendly_name' keys
+    """
+    import json
+    logger = logging.getLogger(__name__)
+    
+    try:
+        with open(ERROR_PATTERNS_FILE, 'r') as f:
+            patterns = json.load(f)
+            logger.info(f"Loaded {len(patterns)} error patterns from {ERROR_PATTERNS_FILE}")
+            return patterns
+    except FileNotFoundError:
+        logger.warning(f"Error patterns file not found: {ERROR_PATTERNS_FILE}")
+        return []
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in error patterns file: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"Error loading error patterns: {e}")
+        return []
 
 def setup_logging():
     """Configure logging based on environment variables."""
