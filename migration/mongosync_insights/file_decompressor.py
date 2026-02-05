@@ -64,6 +64,8 @@ def decompress_bzip2(file_obj: BinaryIO) -> Iterator[bytes]:
 def decompress_zip(file_obj: BinaryIO) -> Iterator[bytes]:
     """
     Decompress a zip archive and yield lines from all contained files (concatenated).
+    Handles nested compressed files (.gz, .bz2) inside the archive, which is common
+    when mongosync log rotation produces compressed rotated log files.
     
     Args:
         file_obj: File-like object containing zip data
@@ -83,13 +85,30 @@ def decompress_zip(file_obj: BinaryIO) -> Iterator[bytes]:
             
             logger.info(f"Processing file from ZIP: {filename}")
             with zf.open(filename) as inner_file:
-                for line in inner_file:
-                    yield line
+                if filename.lower().endswith('.gz'):
+                    # Nested gzip file (e.g. mongosync.log.1.gz from log rotation)
+                    logger.info(f"Decompressing nested gzip file: {filename}")
+                    inner_bytes = io.BytesIO(inner_file.read())
+                    with gzip.GzipFile(fileobj=inner_bytes, mode='rb') as gz:
+                        for line in gz:
+                            yield line
+                elif filename.lower().endswith('.bz2'):
+                    # Nested bzip2 file
+                    logger.info(f"Decompressing nested bzip2 file: {filename}")
+                    decompressed = bz2.decompress(inner_file.read())
+                    for line in io.BytesIO(decompressed):
+                        yield line
+                else:
+                    # Regular uncompressed file (e.g. mongosync.log)
+                    for line in inner_file:
+                        yield line
 
 
 def decompress_tar(file_obj: BinaryIO, compression: str = 'gz') -> Iterator[bytes]:
     """
     Decompress a tar archive (tar.gz or tar.bz2) and yield lines from all contained files (concatenated).
+    Handles nested compressed files (.gz, .bz2) inside the archive, which is common
+    when mongosync log rotation produces compressed rotated log files.
     
     Args:
         file_obj: File-like object containing tar archive data
@@ -114,8 +133,23 @@ def decompress_tar(file_obj: BinaryIO, compression: str = 'gz') -> Iterator[byte
             logger.info(f"Processing file from TAR: {member.name}")
             inner_file = tf.extractfile(member)
             if inner_file:
-                for line in inner_file:
-                    yield line
+                if member.name.lower().endswith('.gz'):
+                    # Nested gzip file (e.g. mongosync.log.1.gz from log rotation)
+                    logger.info(f"Decompressing nested gzip file: {member.name}")
+                    inner_bytes = io.BytesIO(inner_file.read())
+                    with gzip.GzipFile(fileobj=inner_bytes, mode='rb') as gz:
+                        for line in gz:
+                            yield line
+                elif member.name.lower().endswith('.bz2'):
+                    # Nested bzip2 file
+                    logger.info(f"Decompressing nested bzip2 file: {member.name}")
+                    decompressed = bz2.decompress(inner_file.read())
+                    for line in io.BytesIO(decompressed):
+                        yield line
+                else:
+                    # Regular uncompressed file (e.g. mongosync.log)
+                    for line in inner_file:
+                        yield line
 
 
 def get_file_extension(filename: str) -> str:
