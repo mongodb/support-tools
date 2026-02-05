@@ -194,7 +194,8 @@ def upload_file():
                             'friendly_name': ep['friendly_name'],
                             'message': message,
                             'time': json_obj.get('time', ''),
-                            'level': json_obj.get('level', '')
+                            'level': json_obj.get('level', ''),
+                            'full_log': json.dumps(json_obj, indent=2)
                         })
                         break  # Only match first pattern per message
                     

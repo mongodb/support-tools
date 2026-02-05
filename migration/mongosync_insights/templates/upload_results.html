@@ -218,6 +218,33 @@
         display: none;
     }
 
+    .error-row {
+        cursor: pointer;
+    }
+
+    .error-row:hover {
+        background-color: #e8f5f1 !important;
+    }
+
+    .error-detail-row {
+        display: none;
+    }
+
+    .error-detail-cell {
+        background-color: #f8f9fa;
+        padding: 15px 20px !important;
+        border-left: 4px solid #00684A;
+    }
+
+    .error-detail-cell pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        font-family: 'Courier New', monospace;
+        color: #1a5276;
+    }
+
     @media (max-width: 768px) {
         .plot-container {
             width: 95%;
@@ -243,7 +270,7 @@
     <div class="tab-buttons">
         <button class="tab-btn active" onclick="switchTab('charts')" id="tab-charts">Charts</button>
         <button class="tab-btn" onclick="switchTab('options')" id="tab-options">Mongosync Options</button>
-        <button class="tab-btn" onclick="switchTab('errors')" id="tab-errors">Common Errors{% if errors_data %} ({{ errors_data|length }}){% endif %}</button>
+        <button class="tab-btn" onclick="switchTab('errors')" id="tab-errors">Errors and Warnings{% if errors_data %} ({{ errors_data|length }}){% endif %}</button>
     </div>
 
     <div id="charts-tab" class="tab-content active">
@@ -350,11 +377,16 @@
                         </thead>
                         <tbody>
                             {% for error in errors_data %}
-                            <tr>
+                            <tr class="error-row" onclick="toggleErrorDetail('error-detail-{{ loop.index }}')">
                                 <td class="key-cell">{{ error.friendly_name }}</td>
                                 <td>{{ error.time }}</td>
                                 <td>{{ error.level }}</td>
                                 <td class="value-cell">{{ error.message }}</td>
+                            </tr>
+                            <tr id="error-detail-{{ loop.index }}" class="error-detail-row">
+                                <td colspan="4" class="error-detail-cell">
+                                    <pre>{{ error.full_log }}</pre>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -510,12 +542,19 @@ function filterTables(searchText) {
     });
 }
 
+function toggleErrorDetail(id) {
+    var detailRow = document.getElementById(id);
+    if (detailRow) {
+        detailRow.style.display = (detailRow.style.display === 'table-row') ? 'none' : 'table-row';
+    }
+}
+
 function filterErrorsTable(searchText) {
     var filter = searchText.toLowerCase().trim();
     var table = document.getElementById('errors-table');
     if (!table) return;
     
-    var rows = table.querySelectorAll('tbody tr');
+    var rows = table.querySelectorAll('tbody tr.error-row');
     var visibleCount = 0;
     
     rows.forEach(function(row) {
@@ -525,11 +564,17 @@ function filterErrorsTable(searchText) {
         var friendlyName = keyCell ? keyCell.textContent.toLowerCase() : '';
         var message = valueCell ? valueCell.textContent.toLowerCase() : '';
         
+        var detailRow = row.nextElementSibling;
+        
         if (filter === '' || friendlyName.includes(filter) || message.includes(filter)) {
             row.style.display = '';
             visibleCount++;
         } else {
             row.style.display = 'none';
+            // Also hide the detail row when filtering out
+            if (detailRow && detailRow.classList.contains('error-detail-row')) {
+                detailRow.style.display = 'none';
+            }
         }
     });
     
