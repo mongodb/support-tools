@@ -250,6 +250,12 @@ def upload_file():
                     f"{len(matched_errors)} common errors")
         logging.info(f"Metrics collector: {metrics_collector.metrics_count} metric points from {metrics_collector.line_count} lines")  
         
+        # Sort log data by timestamp to ensure correct chronological plot ordering
+        # (archives may contain rotated log files in non-chronological order)
+        data.sort(key=lambda x: x.get('time', ''))
+        mongosync_ops_stats.sort(key=lambda x: x.get('time', ''))
+        mongosync_crud_rate.sort(key=lambda x: x.get('time', ''))
+
         # The 'body' field is also a JSON string, so parse that as well
         #mongosync_sent_response_body = json.loads(mongosync_sent_response.get('body'))
         mongosync_sent_response_body = None 
