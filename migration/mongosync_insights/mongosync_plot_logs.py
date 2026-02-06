@@ -12,8 +12,9 @@ import os
 import magic
 from werkzeug.utils import secure_filename
 from mongosync_plot_utils import format_byte_size, convert_bytes
-from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES, load_error_patterns
-from file_decompressor import decompress_file, is_compressed_mime_type
+from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES, load_error_patterns, classify_file_type
+from file_decompressor import decompress_file, decompress_file_classified, is_compressed_mime_type
+from mongosync_plot_prometheus_metrics import MetricsCollector, create_metrics_plots
 
 def upload_file():
     # Use the centralized logging configuration
@@ -114,7 +115,7 @@ def upload_file():
             for ep in error_patterns_config
         ]
         
-        # Initialize result containers
+        # Initialize result containers for logs
         data = []
         version_info_list = []
         mongosync_ops_stats = []
@@ -125,22 +126,41 @@ def upload_file():
         mongosync_crud_rate = []
         matched_errors = []
         
+        # Initialize metrics collector for prometheus metrics
+        metrics_collector = MetricsCollector()
+        
         # Single pass through the file with streaming
         line_count = 0
+        logs_line_count = 0
+        metrics_line_count = 0
         invalid_json_count = 0
         
         # Reset file pointer to beginning
         file.seek(0)
         
         # Determine if file is compressed and get appropriate iterator
+        # Use classified decompressor to track file types from archives
         if is_compressed_mime_type(file_mime_type):
-            logger.info(f"Decompressing {file_mime_type} file before processing")
-            file_iterator = decompress_file(file, file_mime_type, filename)
+            logger.info(f"Decompressing {file_mime_type} file before processing (with classification)")
+            file_iterator = decompress_file_classified(file, file_mime_type, filename)
+            use_classified = True
         else:
+            # For non-compressed files, classify by filename
+            file_type = classify_file_type(filename)
+            logger.info(f"Non-compressed file classified as: {file_type}")
             file_iterator = file
+            use_classified = False
         
-        for line in tqdm(file_iterator, desc="Processing log file"):
+        for item in tqdm(file_iterator, desc="Processing log file"):
             line_count += 1
+            
+            # Handle classified vs non-classified iterators
+            if use_classified:
+                line, current_file_type = item
+            else:
+                line = item
+                current_file_type = file_type
+            
             # Handle both bytes and string input (decompressed files return bytes)
             if isinstance(line, bytes):
                 line = line.decode('utf-8', errors='replace')
@@ -152,9 +172,21 @@ def upload_file():
             # Skip lines that don't look like JSON objects (handles trailing garbage from decompression)
             if not line.startswith('{'):
                 continue
+            
+            # Route to appropriate parser based on file type
+            if current_file_type == 'metrics':
+                # Process as Prometheus metrics
+                metrics_line_count += 1
+                metrics_collector.process_line(line)
+                continue
+            elif current_file_type == 'logs':
+                logs_line_count += 1
+            else:
+                # Unknown file type - skip
+                continue
                 
             try:
-                # Parse JSON only once per line
+                # Parse JSON only once per line (for logs)
                 json_obj = json.loads(line)
                 message = json_obj.get('message', '')
                 
@@ -203,18 +235,20 @@ def upload_file():
                 invalid_json_count += 1
                 if invalid_json_count <= 5:  # Log first 5 errors to avoid spam
                     logging.warning(f"Invalid JSON on line {line_count}: {e}")
-                if invalid_json_count == 1:  # If this is the first error, it might be a non-JSON file
+                # Only treat as fatal error if this is the first error AND we haven't processed any valid lines
+                if invalid_json_count == 1 and logs_line_count == 0 and metrics_line_count == 0:
                     logging.error(f"File appears to contain invalid JSON. First error on line {line_count}: {e}")
                     return render_template('error.html',
                                          error_title="Invalid File Format",
                                          error_message=f"The uploaded file does not contain valid JSON format. Error on line {line_count}: {str(e)}. Please ensure you're uploading a valid mongosync log file in NDJSON format.")
         
-        logging.info(f"Processed {line_count} lines, found {invalid_json_count} invalid JSON lines")
+        logging.info(f"Processed {line_count} total lines ({logs_line_count} logs, {metrics_line_count} metrics), found {invalid_json_count} invalid JSON lines")
         logging.info(f"Found: {len(data)} replication progress, {len(version_info_list)} version info, "
                     f"{len(mongosync_ops_stats)} operation stats, {len(mongosync_sent_response)} sent responses, "
                     f"{len(phase_transitions_json)} phase transitions, {len(mongosync_opts_list)} options, "
                     f"{len(mongosync_hiddenflags)} hidden flags, {len(mongosync_crud_rate)} CRUD rate entries, "
-                    f"{len(matched_errors)} common errors")  
+                    f"{len(matched_errors)} common errors")
+        logging.info(f"Metrics collector: {metrics_collector.metrics_count} metric points from {metrics_collector.line_count} lines")  
         
         # The 'body' field is also a JSON string, so parse that as well
         #mongosync_sent_response_body = json.loads(mongosync_sent_response.get('body'))
@@ -521,9 +555,15 @@ def upload_file():
         )
 
         # Convert the figure to JSON
-        plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
+        plot_json = json.dumps(fig, cls=PlotlyJSONEncoder) if logs_line_count > 0 else ""
 
         logging.info(f"Render the plot in the browser")
+        
+        # Generate metrics plot if we have metrics data
+        metrics_plot_json = ""
+        if metrics_collector.metrics_count > 0:
+            logging.info(f"Creating Prometheus metrics plots")
+            metrics_plot_json = create_metrics_plots(metrics_collector)
 
         # Prepare mongosync options data for HTML table
         options_data = []
@@ -543,9 +583,16 @@ def upload_file():
                     value = json.dumps(value, indent=2)
                 hidden_options_data.append({'key': str(key), 'value': str(value)})
 
+        # Determine which tabs have data
+        has_logs_data = logs_line_count > 0 and len(data) > 0
+        has_metrics_data = metrics_collector.metrics_count > 0
+
         # Render the plot in the browser
         return render_template('upload_results.html', 
                              plot_json=plot_json,
+                             metrics_plot_json=metrics_plot_json,
                              options_data=options_data,
                              hidden_options_data=hidden_options_data,
-                             errors_data=matched_errors)
+                             errors_data=matched_errors,
+                             has_logs_data=has_logs_data,
+                             has_metrics_data=has_metrics_data)

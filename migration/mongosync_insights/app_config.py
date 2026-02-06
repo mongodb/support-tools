@@ -54,6 +54,51 @@ EXTENSION_TO_COMPRESSION = {
     '.tar.bz2': 'tar_bzip2'
 }
 
+# File type patterns for identification
+# mongosync logs: mongosync.log or mongosync-* (but NOT mongosync_metrics*)
+MONGOSYNC_LOG_PATTERN = re.compile(r'^mongosync\.log$|^mongosync-(?!metrics).*', re.IGNORECASE)
+# mongosync metrics: mongosync_metrics.log or mongosync_metrics-*
+MONGOSYNC_METRICS_PATTERN = re.compile(r'^mongosync_metrics\.log$|^mongosync_metrics-.*', re.IGNORECASE)
+
+
+def classify_file_type(filename: str) -> str:
+    """
+    Classify a file as mongosync logs, mongosync metrics, or unknown based on filename pattern.
+    
+    Args:
+        filename: The filename to classify (can include path, only basename is used)
+        
+    Returns:
+        'logs' for mongosync log files
+        'metrics' for mongosync metrics files
+        None for unrecognized files
+    """
+    import os
+    # Extract just the filename without path
+    basename = os.path.basename(filename)
+    
+    # Remove compression extensions to get the base name
+    # Handle compound extensions like .log.gz, .log.1.gz, etc.
+    name_without_compression = basename
+    for ext in ['.gz', '.bz2', '.zip']:
+        if name_without_compression.lower().endswith(ext):
+            name_without_compression = name_without_compression[:-len(ext)]
+    
+    # Check patterns against the name without compression extension
+    if MONGOSYNC_METRICS_PATTERN.match(name_without_compression):
+        return 'metrics'
+    elif MONGOSYNC_LOG_PATTERN.match(name_without_compression):
+        return 'logs'
+    
+    # Also check the original basename in case pattern includes extension
+    if MONGOSYNC_METRICS_PATTERN.match(basename):
+        return 'metrics'
+    elif MONGOSYNC_LOG_PATTERN.match(basename):
+        return 'logs'
+    
+    return None
+
+
 # Security settings
 SECURE_COOKIES = os.getenv('MI_SECURE_COOKIES', 'True').lower() == 'true'
 

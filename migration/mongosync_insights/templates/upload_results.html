@@ -268,17 +268,35 @@
 {% block content %}
 <div class="tabs-container">
     <div class="tab-buttons">
-        <button class="tab-btn active" onclick="switchTab('charts')" id="tab-charts">Mongosync Logs</button>
+        {% if has_logs_data or (not has_metrics_data) %}
+        <button class="tab-btn {% if has_logs_data or (not has_metrics_data) %}active{% endif %}" onclick="switchTab('charts')" id="tab-charts">Mongosync Logs</button>
+        {% endif %}
+        {% if has_metrics_data %}
+        <button class="tab-btn {% if has_metrics_data and not has_logs_data %}active{% endif %}" onclick="switchTab('metrics')" id="tab-metrics">Mongosync Metrics</button>
+        {% endif %}
+        {% if has_logs_data %}
         <button class="tab-btn" onclick="switchTab('options')" id="tab-options">Mongosync Options</button>
         <button class="tab-btn" onclick="switchTab('errors')" id="tab-errors">Errors and Warnings{% if errors_data %} ({{ errors_data|length }}){% endif %}</button>
+        {% endif %}
     </div>
 
-    <div id="charts-tab" class="tab-content active">
+    {% if has_logs_data or (not has_metrics_data) %}
+    <div id="charts-tab" class="tab-content {% if has_logs_data or (not has_metrics_data) %}active{% endif %}">
         <div class="plot-container">
             <div id="plot"></div>
         </div>
     </div>
+    {% endif %}
 
+    {% if has_metrics_data %}
+    <div id="metrics-tab" class="tab-content {% if has_metrics_data and not has_logs_data %}active{% endif %}">
+        <div class="plot-container">
+            <div id="metrics-plot"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if has_logs_data %}
     <div id="options-tab" class="tab-content">
         <div class="plot-container">
             <div class="filter-container">
@@ -399,13 +417,27 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+// Render mongosync logs plot if data exists
+{% if plot_json %}
 var plot = {{ plot_json | safe }};
-Plotly.newPlot('plot', plot.data, plot.layout);
+if (plot && plot.data) {
+    Plotly.newPlot('plot', plot.data, plot.layout);
+}
+{% endif %}
+
+// Render Prometheus metrics plot if data exists
+{% if metrics_plot_json %}
+var metricsPlot = {{ metrics_plot_json | safe }};
+if (metricsPlot && metricsPlot.data) {
+    Plotly.newPlot('metrics-plot', metricsPlot.data, metricsPlot.layout);
+}
+{% endif %}
 
 // Store table data for Markdown conversion
 var optionsData = {{ options_data | tojson }};
