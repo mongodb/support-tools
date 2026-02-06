@@ -129,8 +129,9 @@ class MetricsCollector:
         # Time series data: {metric_name: {labels_key: [(timestamp, value), ...]}}
         self.time_series = defaultdict(lambda: defaultdict(list))
         
-        # Histogram data: {metric_name: {labels_key: {bucket_le: [(timestamp, count), ...]}}}
-        self.histograms = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        # Histogram data: {metric_name: {labels_key: {timestamp: {bucket_le: count}}}}
+        # Indexed by timestamp first for O(1) lookup during percentile calculation
+        self.histograms = defaultdict(lambda: defaultdict(dict))
         
         # Counters for tracking
         self.line_count = 0
@@ -159,7 +160,10 @@ class MetricsCollector:
             # Create key without 'le' label
             key = self._labels_to_key(labels, exclude_keys=['le'])
             
-            self.histograms[base_name][key][le].append((timestamp, value))
+            # Store indexed by timestamp for O(1) lookup during percentile calculation
+            if timestamp not in self.histograms[base_name][key]:
+                self.histograms[base_name][key][timestamp] = {}
+            self.histograms[base_name][key][timestamp][le] = value
         elif '_sum' in name or '_count' in name:
             # Histogram sum/count - store in time_series
             key = self._labels_to_key(labels)
@@ -239,27 +243,20 @@ class MetricsCollector:
         result = {p: ([], []) for p in percentiles}
         
         # Process each label variant
-        for key, bucket_data in self.histograms[base_name].items():
-            # Get all timestamps from bucket data
-            all_timestamps = set()
-            for le, points in bucket_data.items():
-                for ts, _ in points:
-                    all_timestamps.add(ts)
-            
-            # For each timestamp, calculate percentiles
-            for ts in sorted(all_timestamps):
+        for key, timestamp_data in self.histograms[base_name].items():
+            # Iterate through timestamps directly (O(T log T) for sorting)
+            for ts in sorted(timestamp_data.keys()):
+                # O(1) lookup - get all bucket values for this timestamp
+                bucket_values = timestamp_data[ts]
+                
                 # Build cumulative distribution for this timestamp
                 buckets = []
-                for le_str, points in bucket_data.items():
-                    # Find the value at this timestamp
-                    for point_ts, count in points:
-                        if point_ts == ts:
-                            try:
-                                le = float(le_str) if le_str != '+Inf' else float('inf')
-                                buckets.append((le, count))
-                            except ValueError:
-                                pass
-                            break
+                for le_str, count in bucket_values.items():
+                    try:
+                        le = float(le_str) if le_str != '+Inf' else float('inf')
+                        buckets.append((le, count))
+                    except ValueError:
+                        pass
                 
                 if not buckets:
                     continue
