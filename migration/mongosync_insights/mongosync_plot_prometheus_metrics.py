@@ -294,6 +294,14 @@ class MetricsCollector:
                         prev_le = le
                         prev_count = count
         
+        # Sort each percentile's results by timestamp to ensure correct chronological order
+        # (multiple label keys may have interleaved timestamps)
+        for pct in percentiles:
+            times_list, values_list = result[pct]
+            if times_list:
+                paired = sorted(zip(times_list, values_list), key=lambda x: x[0])
+                result[pct] = ([t for t, v in paired], [v for t, v in paired])
+        
         return result
 
 
