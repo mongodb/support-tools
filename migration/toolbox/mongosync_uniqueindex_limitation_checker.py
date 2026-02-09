@@ -247,6 +247,7 @@ def iter_indexes_from_cluster(
 def print_report(limitations: List[Dict[str, Any]], title: str, input_label: str) -> None:
     print(title)
     print(f"Input: {input_label}")
+    print("Checking for unique and non-unique indexes on the same field/s...")
     print(f"Limitations found: {len(limitations)}\n")
 
     if not limitations:
@@ -255,9 +256,10 @@ def print_report(limitations: List[Dict[str, Any]], title: str, input_label: str
 
     for item in limitations:
         ns = f"{item['database']}.{item['collection']}"
+        keys_dict = {k: v for k, v in item["index_keys"]}
         print(
-            f"- {ns} | keys={item['index_keys']} "
-            f"| unique={item['unique_index_names']} | non-unique={item['non_unique_index_names']}"
+            f"- {ns} | keys={keys_dict} "
+            f"| uniqueIndex={item['unique_index_names']} | non-uniqueIndex={item['non_unique_index_names']}"
         )
 
 

@@ -107,7 +107,7 @@ Run the script with `--use-certifi-ca` when connecting to Atlas.
 
 Exactly one mode flag is required.
 ```bash
-python3 mongosync_limitations_checker_unified.py \
+python3 mongosync_uniqueindex_limitation_checker.py \
 (--uri "<MONGODB_URI>" | --getmongodata <getMongoData.json>) \
 [flags...]
 ```
@@ -178,14 +178,14 @@ The `--include-ns` flag accepts a regex pattern that is searched against the ful
 ### Offline (getMongoData)
 
 ```bash
-python3 mongosync_limitations_checker_unified.py \
+python3 mongosync_uniqueindex_limitation_checker.py \
 --getmongodata <getMongoData_output>.json
 ```
 
 With JSON output:
 
 ```bash
-python3 mongosync_limitations_checker_unified.py \
+python3 mongosync_uniqueindex_limitation_checker.py \
 --getmongodata <getMongoData_output>.json \
 --out <output_file>.json
 ```
@@ -193,7 +193,7 @@ python3 mongosync_limitations_checker_unified.py \
 Offline + DB filter:
 
 ```bash
-python3 mongosync_limitations_checker_unified.py \
+python3 mongosync_uniqueindex_limitation_checker.py \
 --getmongodata <getMongoData_output>.json \
 --include-dbs <db1>,<db2> \
 --out <output_file>.json
@@ -204,7 +204,7 @@ python3 mongosync_limitations_checker_unified.py \
 ### Online (non-SRV)
 
 ```bash
-python3 mongosync_limitations_checker_unified.py \
+python3 mongosync_uniqueindex_limitation_checker.py \
 --uri "mongodb://<username>:<password>@<host>:<port>/admin?appName=<app_name>" \
 --out <output_file>.json
 ```
@@ -214,7 +214,7 @@ python3 mongosync_limitations_checker_unified.py \
 ### Online (Atlas SRV)
 
 ```bash
-python3 mongosync_limitations_checker_unified.py \
+python3 mongosync_uniqueindex_limitation_checker.py \
 --uri "mongodb+srv://USER:PASS@<SRV_conn_String>/admin?appName=checker" \
 --out <output_file>.json
 ```
@@ -228,7 +228,7 @@ python3 -m pip install certifi
 Then: 
 
 ```bash
-python3 mongosync_limitations_checker_unified.py \
+python3 mongosync_uniqueindex_limitation_checker.py \
 --uri "mongodb+srv://USER:PASS@<SRV_conn_String>/admin?appName=checker" \
 --use-certifi-ca \
 --out <output_file>.json
