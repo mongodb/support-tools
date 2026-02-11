@@ -317,56 +317,97 @@ def create_metrics_plots(collector: MetricsCollector) -> str:
     """
     logger.info(f"Creating metrics plots from {collector.metrics_count} metric points")
     
-    # Create subplot layout - 19 rows x 2 columns
-    # Order: Collection Copy (1-4), CEA (5-11), Buffer Service (12-14), Bulk Inserter (15-16), Verifier (17-19)
+    # Create subplot layout - 35 rows x 2 columns
+    # Organized by section from mongosync_metrics.json
     fig = make_subplots(
-        rows=19, cols=2,
+        rows=35, cols=2,
         subplot_titles=(
-            # Row 1-4: Collection Copy
+            # Row 1-4: Collection Copy & Partition
             "Docs Copied Rate (docs/sec)", "Bytes Copied Rate (bytes/sec)",
             "Collection Copy Source Read Duration (ms)", "Collection Copy Destination Write Duration (ms)",
             "Partitions Completed Rate", "Partition Bytes Read Rate (bytes/sec)",
             "Partition Size (bytes)", "Partition Copy Duration (ms)",
-            # Row 5-11: CEA metrics
-            "Mongosync Phase", "Lag Time (ms)",
+            # Row 5: Collection Copy Cleanup
+            "Partitions Deleted Rate", "Docs Deleted Rate",
+            # Row 6: Collection Copy Cleanup (continued)
+            "Bytes Deleted Rate", "",
+            # Row 7-11: Core Replication and Phase + Host Load
+            "Mongosync Phase", "Lag Time (sec)",
             "Host CPU Usage (%)", "Host Memory Usage (%)",
             "Source Ping Latency (ms)", "Destination Ping Latency (ms)",
+            "Source Unavailable", "Destination Unavailable",
+            "Verifier Lag Time (sec)", "Retry Count",
+            # Row 12-13: CEA Reader & Overall
             "Events Read Rate (events/sec)", "Events Applied Rate (events/sec)",
+            "Bytes Read Rate (bytes/sec)", "DDL Events Applied Rate",
+            # Row 14-15: CEA Durations
             "CEA Destination Write Duration (ms)", "CEA Source Read Duration (ms)",
             "Transaction Duration (ms)", "Transaction Size",
-            "Retry Count", "CRUD Applier Error Counts",
-            # Row 12-14: Buffer Service
+            # Row 16-19: CEA CRUD Applier
+            "Single Event Count Rate", "Single Write Duration (ms)",
+            "Duplicate Key Errors Rate", "One-by-One Events Rate",
+            "Default Errors Rate", "Refetch Duration (ms)",
+            "Apply Event Duration (ms)", "Total CRUD Events Rate",
+            # Row 20-21: CEA CRUD Applier (continued)
+            "LWS Get Entry Duration (ms)", "LWS Set Entry Duration (ms)",
+            "Reader-Dispatcher Channel Util", "Dispatcher-Processor Channel Util",
+            # Row 22: CEA Spread
+            "Spread Disparity", "",
+            # Row 23-24: Hot Documents
+            "Hot Doc States Read Duration (ms)", "Hot Doc Refetch Duration (ms)",
+            "Hot Doc Apply Duration (ms)", "Hot Doc Events Skipped Rate",
+            # Row 25: Indexes
+            "Index Create Duration (ms)", "Indexes Created Rate",
+            # Row 26-28: Buffer Service
             "Buffer Docs Processed Rate (docs/sec)", "Buffer Bytes Processed Rate (bytes/sec)",
             "Buffer Insert Duration (ms)", "Doc Buffers in Channel",
             "Document Size (bytes)", "Buffer Insertions Rate",
-            # Row 15-16: Bulk Inserter
+            # Row 29-30: Bulk Inserter
             "Bulk Inserter Docs Rate (docs/sec)", "Bulk Inserter Bytes Rate (bytes/sec)",
             "Docs Per Batch", "Bytes Per Batch",
-            # Row 17-19: Verifier
+            # Row 31-35: Verifier
             "Verifier Docs Hashed", "Verifier Estimated Doc Count",
-            "Verifier Batch Total Time (ms)", "Verifier Payloads Processed",
-            "Initial Hasher Docs Rate (docs/sec)", "Stream Hasher Buffer Size"
+            "Scanned Collection Count", "Batch Total Time (ms)",
+            "Batch Read Time (ms)", "Batch Write Time (ms)",
+            "Batch Payloads Processed", "Initial Hasher Docs Rate (docs/sec)",
+            "Stream Hasher Buffer Size", "",
         ),
         specs=[
             [{}, {}],  # Row 1: Collection Copy Progress
             [{}, {}],  # Row 2: Collection Copy Durations
             [{}, {}],  # Row 3: Partition Progress
             [{}, {}],  # Row 4: Partition Histograms
-            [{}, {}],  # Row 5: Phase, Lag Time
-            [{}, {}],  # Row 6: CPU, Memory
-            [{}, {}],  # Row 7: Ping latencies
-            [{}, {}],  # Row 8: Events throughput
-            [{}, {}],  # Row 9: CEA durations
-            [{}, {}],  # Row 10: Transaction metrics
-            [{}, {}],  # Row 11: Retry count, Errors
-            [{}, {}],  # Row 12: Buffer Service throughput
-            [{}, {}],  # Row 13: Buffer Service insert
-            [{}, {}],  # Row 14: Buffer Service doc size
-            [{}, {}],  # Row 15: Bulk Inserter throughput
-            [{}, {}],  # Row 16: Bulk Inserter batch size
-            [{}, {}],  # Row 17: Verifier auditor
-            [{}, {}],  # Row 18: Verifier batch writer
-            [{}, {}],  # Row 19: Verifier hasher
+            [{}, {}],  # Row 5: Collection Copy Cleanup
+            [{}, {}],  # Row 6: Collection Copy Cleanup (continued)
+            [{}, {}],  # Row 7: Phase, Lag Time
+            [{}, {}],  # Row 8: CPU, Memory
+            [{}, {}],  # Row 9: Ping latencies
+            [{}, {}],  # Row 10: Src/Dst Unavailable
+            [{}, {}],  # Row 11: Verifier Lag, Retry
+            [{}, {}],  # Row 12: Events throughput
+            [{}, {}],  # Row 13: Bytes read, DDL
+            [{}, {}],  # Row 14: CEA durations
+            [{}, {}],  # Row 15: Transaction metrics
+            [{}, {}],  # Row 16: CEA CRUD single
+            [{}, {}],  # Row 17: CEA CRUD errors
+            [{}, {}],  # Row 18: CEA CRUD refetch/apply
+            [{}, {}],  # Row 19: CEA CRUD events
+            [{}, {}],  # Row 20: CEA CRUD LWS
+            [{}, {}],  # Row 21: CEA Channel util
+            [{}, {}],  # Row 22: CEA Spread
+            [{}, {}],  # Row 23: Hot docs read/refetch
+            [{}, {}],  # Row 24: Hot docs apply/skipped
+            [{}, {}],  # Row 25: Indexes
+            [{}, {}],  # Row 26: Buffer Service throughput
+            [{}, {}],  # Row 27: Buffer Service insert
+            [{}, {}],  # Row 28: Buffer Service doc size
+            [{}, {}],  # Row 29: Bulk Inserter throughput
+            [{}, {}],  # Row 30: Bulk Inserter batch size
+            [{}, {}],  # Row 31: Verifier auditor
+            [{}, {}],  # Row 32: Verifier scanned, batch total
+            [{}, {}],  # Row 33: Verifier batch read/write
+            [{}, {}],  # Row 34: Verifier payloads, initial hasher
+            [{}, {}],  # Row 35: Verifier stream hasher
         ]
     )
     
@@ -395,327 +436,197 @@ def create_metrics_plots(collector: MetricsCollector) -> str:
         else:
             add_no_data(row, col, no_data_label)
     
-    # ==================== ROWS 1-4: COLLECTION COPY ====================
+    # Helper to add counter rate trace
+    def add_counter_rate(row, col, metric_name, trace_name, legend_group, no_data_label):
+        times, values = collector.get_counter_rate(metric_name)
+        if times:
+            fig.add_trace(
+                go.Scattergl(x=times, y=values, mode='lines', name=trace_name,
+                            legendgroup=legend_group),
+                row=row, col=col
+            )
+        else:
+            add_no_data(row, col, no_data_label)
     
-    # Row 1, Col 1: Docs Copied Rate
-    docs_copied_times, docs_copied_values = collector.get_counter_rate('mongosync_collection_copy_copied_docs_count')
-    if docs_copied_times:
-        fig.add_trace(
-            go.Scattergl(x=docs_copied_times, y=docs_copied_values, mode='lines', name='Docs/sec',
-                        legendgroup="groupDocsCopied"),
-            row=1, col=1
-        )
-    else:
-        add_no_data(1, 1, 'Docs Copied Rate')
+    # Helper to add gauge trace
+    def add_gauge(row, col, metric_name, trace_name, legend_group, no_data_label):
+        times, values = collector.get_gauge_series(metric_name)
+        if times:
+            fig.add_trace(
+                go.Scattergl(x=times, y=values, mode='lines', name=trace_name,
+                            legendgroup=legend_group),
+                row=row, col=col
+            )
+        else:
+            add_no_data(row, col, no_data_label)
     
-    # Row 1, Col 2: Bytes Copied Rate
-    bytes_copied_times, bytes_copied_values = collector.get_counter_rate('mongosync_collection_copy_copied_bytes_count')
-    if bytes_copied_times:
-        fig.add_trace(
-            go.Scattergl(x=bytes_copied_times, y=bytes_copied_values, mode='lines', name='Bytes/sec',
-                        legendgroup="groupBytesCopied"),
-            row=1, col=2
-        )
-    else:
-        add_no_data(1, 2, 'Bytes Copied Rate')
+    # ==================== ROWS 1-4: COLLECTION COPY & PARTITION ====================
     
-    # Row 2, Col 1: Collection Copy Source Read Duration
-    add_histogram_percentiles(2, 1, 'mongosync_collection_copy_source_read_op_duration', 
-                             'groupCCSourceRead', 'CC Source Read Duration')
+    # Row 1: Docs/Bytes Copied Rate
+    add_counter_rate(1, 1, 'mongosync_collection_copy_copied_docs_count', 'Docs/sec', 'groupDocsCopied', 'Docs Copied Rate')
+    add_counter_rate(1, 2, 'mongosync_collection_copy_copied_bytes_count', 'Bytes/sec', 'groupBytesCopied', 'Bytes Copied Rate')
     
-    # Row 2, Col 2: Collection Copy Destination Write Duration
-    add_histogram_percentiles(2, 2, 'mongosync_collection_copy_destination_write_op_duration',
-                             'groupCCDestWrite', 'CC Dest Write Duration')
+    # Row 2: Collection Copy Durations
+    add_histogram_percentiles(2, 1, 'mongosync_collection_copy_source_read_op_duration', 'groupCCSourceRead', 'CC Source Read Duration')
+    add_histogram_percentiles(2, 2, 'mongosync_collection_copy_destination_write_op_duration', 'groupCCDestWrite', 'CC Dest Write Duration')
     
-    # Row 3, Col 1: Partitions Completed Rate
-    partitions_times, partitions_values = collector.get_counter_rate('mongosync_collection_copy_partitions_completed_count')
-    if partitions_times:
-        fig.add_trace(
-            go.Scattergl(x=partitions_times, y=partitions_values, mode='lines', name='Partitions/sec',
-                        legendgroup="groupPartitionsCompleted"),
-            row=3, col=1
-        )
-    else:
-        add_no_data(3, 1, 'Partitions Completed Rate')
+    # Row 3: Partition Progress
+    add_counter_rate(3, 1, 'mongosync_collection_copy_partitions_completed_count', 'Partitions/sec', 'groupPartitionsCompleted', 'Partitions Completed Rate')
+    add_gauge(3, 2, 'mongosync_collection_copy_partition_copy_bytes_read_per_second', 'Bytes/sec', 'groupPartitionBytesRead', 'Partition Bytes Read Rate')
     
-    # Row 3, Col 2: Partition Bytes Read Rate (gauge)
-    partition_bytes_times, partition_bytes_values = collector.get_gauge_series('mongosync_collection_copy_partition_copy_bytes_read_per_second')
-    if partition_bytes_times:
-        fig.add_trace(
-            go.Scattergl(x=partition_bytes_times, y=partition_bytes_values, mode='lines', name='Bytes/sec',
-                        legendgroup="groupPartitionBytesRead"),
-            row=3, col=2
-        )
-    else:
-        add_no_data(3, 2, 'Partition Bytes Read Rate')
+    # Row 4: Partition Histograms
+    add_histogram_percentiles(4, 1, 'mongosync_collection_copy_partition_size', 'groupPartitionSize', 'Partition Size')
+    add_histogram_percentiles(4, 2, 'mongosync_collection_copy_copy_partition_duration', 'groupPartitionDuration', 'Partition Copy Duration')
     
-    # Row 4, Col 1: Partition Size
-    add_histogram_percentiles(4, 1, 'mongosync_collection_copy_partition_size',
-                             'groupPartitionSize', 'Partition Size')
+    # ==================== ROWS 5-6: COLLECTION COPY CLEANUP ====================
     
-    # Row 4, Col 2: Partition Copy Duration
-    add_histogram_percentiles(4, 2, 'mongosync_collection_copy_copy_partition_duration',
-                             'groupPartitionDuration', 'Partition Copy Duration')
+    # Row 5: Partitions/Docs Deleted Rate
+    add_counter_rate(5, 1, 'mongosync_collection_copy_partitions_deleted_count', 'Partitions/sec', 'groupPartitionsDeleted', 'Partitions Deleted Rate')
+    add_counter_rate(5, 2, 'mongosync_collection_copy_partition_copy_docs_deleted_count', 'Docs/sec', 'groupDocsDeleted', 'Docs Deleted Rate')
     
-    # ==================== ROWS 5-11: CEA METRICS ====================
+    # Row 6: Bytes Deleted Rate (col 2 is empty placeholder)
+    add_counter_rate(6, 1, 'mongosync_collection_copy_partition_copy_bytes_deleted_count', 'Bytes/sec', 'groupBytesDeleted', 'Bytes Deleted Rate')
+    add_no_data(6, 2, '')  # Empty placeholder
     
-    # Row 5, Col 1: Phase
-    phase_times, phase_values = collector.get_gauge_series('mongosync_phase')
-    if phase_times:
-        fig.add_trace(
-            go.Scattergl(x=phase_times, y=phase_values, mode='lines', name='Phase',
-                        legendgroup="groupPhase"),
-            row=5, col=1
-        )
-    else:
-        add_no_data(5, 1, 'Phase')
+    # ==================== ROWS 7-11: CORE REPLICATION AND PHASE + HOST LOAD ====================
     
-    # Row 5, Col 2: Lag Time
-    lag_times, lag_values = collector.get_gauge_series('mongosync_lag_time')
-    if lag_times:
-        fig.add_trace(
-            go.Scattergl(x=lag_times, y=lag_values, mode='lines', name='Lag Time (ms)',
-                        legendgroup="groupLag"),
-            row=5, col=2
-        )
-    else:
-        add_no_data(5, 2, 'Lag Time')
+    # Row 7: Phase and Lag Time
+    add_gauge(7, 1, 'mongosync_phase', 'Phase', 'groupPhase', 'Phase')
+    add_gauge(7, 2, 'mongosync_lag_time', 'Lag Time', 'groupLag', 'Lag Time')
     
-    # Row 6, Col 1: CPU Usage
-    cpu_times, cpu_values = collector.get_gauge_series('mongosync_host_cpu_usage')
-    if cpu_times:
-        fig.add_trace(
-            go.Scattergl(x=cpu_times, y=cpu_values, mode='lines', name='CPU %',
-                        legendgroup="groupCPU"),
-            row=6, col=1
-        )
-    else:
-        add_no_data(6, 1, 'CPU Usage')
+    # Row 8: CPU and Memory
+    add_gauge(8, 1, 'mongosync_host_cpu_usage', 'CPU %', 'groupCPU', 'CPU Usage')
+    add_gauge(8, 2, 'mongosync_host_memory_percent_used', 'Memory %', 'groupMemory', 'Memory Usage')
     
-    # Row 6, Col 2: Memory Usage
-    mem_times, mem_values = collector.get_gauge_series('mongosync_host_memory_percent_used')
-    if mem_times:
-        fig.add_trace(
-            go.Scattergl(x=mem_times, y=mem_values, mode='lines', name='Memory %',
-                        legendgroup="groupMemory"),
-            row=6, col=2
-        )
-    else:
-        add_no_data(6, 2, 'Memory Usage')
+    # Row 9: Ping Latencies
+    add_histogram_percentiles(9, 1, 'mongosync_src_ping_latency', 'groupSrcPing', 'Source Ping Latency')
+    add_histogram_percentiles(9, 2, 'mongosync_dst_ping_latency', 'groupDstPing', 'Destination Ping Latency')
     
-    # Row 7, Col 1: Source Ping Latency
-    add_histogram_percentiles(7, 1, 'mongosync_src_ping_latency',
-                             'groupSrcPing', 'Source Ping Latency')
+    # Row 10: Source/Destination Unavailable
+    add_gauge(10, 1, 'mongosync_src_unavailable', 'Unavailable', 'groupSrcUnavail', 'Source Unavailable')
+    add_gauge(10, 2, 'mongosync_dst_unavailable', 'Unavailable', 'groupDstUnavail', 'Destination Unavailable')
     
-    # Row 7, Col 2: Destination Ping Latency
-    add_histogram_percentiles(7, 2, 'mongosync_dst_ping_latency',
-                             'groupDstPing', 'Destination Ping Latency')
+    # Row 11: Verifier Lag and Retry Count
+    add_gauge(11, 1, 'verifier_lag_time', 'Verifier Lag', 'groupVerifierLag', 'Verifier Lag Time')
+    add_gauge(11, 2, 'mongosync_retry_count', 'Retries', 'groupRetry', 'Retry Count')
     
-    # Row 8, Col 1: Events Read Rate
-    read_rate_times, read_rate_values = collector.get_counter_rate('mongosync_cea_change_stream_reader_events_read')
-    if read_rate_times:
-        fig.add_trace(
-            go.Scattergl(x=read_rate_times, y=read_rate_values, mode='lines', name='Events Read/sec',
-                        legendgroup="groupEventsRead"),
-            row=8, col=1
-        )
-    else:
-        add_no_data(8, 1, 'Events Read Rate')
+    # ==================== ROWS 12-13: CEA READER & OVERALL ====================
     
-    # Row 8, Col 2: Events Applied Rate
-    applied_rate_times, applied_rate_values = collector.get_counter_rate('mongosync_cea_total_events_applied')
-    if applied_rate_times:
-        fig.add_trace(
-            go.Scattergl(x=applied_rate_times, y=applied_rate_values, mode='lines', name='Events Applied/sec',
-                        legendgroup="groupEventsApplied"),
-            row=8, col=2
-        )
-    else:
-        add_no_data(8, 2, 'Events Applied Rate')
+    # Row 12: Events Read/Applied Rate
+    add_counter_rate(12, 1, 'mongosync_cea_change_stream_reader_events_read', 'Events/sec', 'groupEventsRead', 'Events Read Rate')
+    add_counter_rate(12, 2, 'mongosync_cea_total_events_applied', 'Events/sec', 'groupEventsApplied', 'Events Applied Rate')
     
-    # Row 9, Col 1: CEA Destination Write Duration
-    add_histogram_percentiles(9, 1, 'mongosync_cea_destination_write_op_duration',
-                             'groupCEADstWrite', 'CEA Destination Write Duration')
+    # Row 13: Bytes Read Rate and DDL Events
+    add_counter_rate(13, 1, 'mongosync_cea_change_stream_reader_bytes_read', 'Bytes/sec', 'groupBytesRead', 'Bytes Read Rate')
+    add_counter_rate(13, 2, 'mongosync_cea_total_ddl_events_applied', 'Events/sec', 'groupDDLEvents', 'DDL Events Applied Rate')
     
-    # Row 9, Col 2: CEA Source Read Duration
-    add_histogram_percentiles(9, 2, 'mongosync_cea_source_read_op_duration',
-                             'groupCEASrcRead', 'CEA Source Read Duration')
+    # ==================== ROWS 14-15: CEA DURATIONS ====================
     
-    # Row 10, Col 1: Transaction Duration
-    add_histogram_percentiles(10, 1, 'mongosync_cea_crud_applier_txn_duration',
-                             'groupTxnDuration', 'Transaction Duration')
+    # Row 14: CEA Destination Write and Source Read Duration
+    add_histogram_percentiles(14, 1, 'mongosync_cea_destination_write_op_duration', 'groupCEADstWrite', 'CEA Destination Write Duration')
+    add_histogram_percentiles(14, 2, 'mongosync_cea_source_read_op_duration', 'groupCEASrcRead', 'CEA Source Read Duration')
     
-    # Row 10, Col 2: Transaction Size
-    add_histogram_percentiles(10, 2, 'mongosync_cea_crud_applier_txn_size',
-                             'groupTxnSize', 'Transaction Size')
+    # Row 15: Transaction Duration and Size
+    add_histogram_percentiles(15, 1, 'mongosync_cea_crud_applier_txn_duration', 'groupTxnDuration', 'Transaction Duration')
+    add_histogram_percentiles(15, 2, 'mongosync_cea_crud_applier_txn_size', 'groupTxnSize', 'Transaction Size')
     
-    # Row 11, Col 1: Retry Count
-    retry_times, retry_values = collector.get_gauge_series('mongosync_retry_count')
-    if retry_times:
-        fig.add_trace(
-            go.Scattergl(x=retry_times, y=retry_values, mode='lines', name='Retries',
-                        legendgroup="groupRetry"),
-            row=11, col=1
-        )
-    else:
-        add_no_data(11, 1, 'Retry Count')
+    # ==================== ROWS 16-22: CEA CRUD APPLIER ====================
     
-    # Row 11, Col 2: Error Counts
-    error_times, error_values = collector.get_counter_rate('mongosync_cea_crud_applier_apply_event_duration_count')
-    if error_times:
-        fig.add_trace(
-            go.Scattergl(x=error_times, y=error_values, mode='lines', name='Errors/sec',
-                        legendgroup="groupErrors"),
-            row=11, col=2
-        )
-    else:
-        add_no_data(11, 2, 'Error Counts')
+    # Row 16: Single Event Count and Single Write Duration
+    add_counter_rate(16, 1, 'mongosync_cea_crud_applier_single_count', 'Events/sec', 'groupSingleCount', 'Single Event Count Rate')
+    add_histogram_percentiles(16, 2, 'mongosync_cea_crud_applier_single_write_duration', 'groupSingleWrite', 'Single Write Duration')
     
-    # ==================== ROWS 12-14: BUFFER SERVICE ====================
+    # Row 17: Duplicate Key Errors and One-by-One Events
+    add_counter_rate(17, 1, 'mongosync_cea_crud_applier_duplicate_key_errors_count', 'Errors/sec', 'groupDupKey', 'Duplicate Key Errors Rate')
+    add_counter_rate(17, 2, 'mongosync_cea_crud_applier_one_by_one_events_count', 'Events/sec', 'groupOneByOne', 'One-by-One Events Rate')
     
-    # Row 12, Col 1: Buffer Docs Processed Rate
-    buf_docs_times, buf_docs_values = collector.get_counter_rate('mongosync_buffer_service_docs_processed_count')
-    if buf_docs_times:
-        fig.add_trace(
-            go.Scattergl(x=buf_docs_times, y=buf_docs_values, mode='lines', name='Docs/sec',
-                        legendgroup="groupBufDocs"),
-            row=12, col=1
-        )
-    else:
-        add_no_data(12, 1, 'Buffer Docs Processed Rate')
+    # Row 18: Default Errors and Refetch Duration
+    add_counter_rate(18, 1, 'mongosync_cea_crud_applier_default_error_count', 'Errors/sec', 'groupDefaultErr', 'Default Errors Rate')
+    add_histogram_percentiles(18, 2, 'mongosync_cea_crud_applier_refetch_duration', 'groupRefetch', 'Refetch Duration')
     
-    # Row 12, Col 2: Buffer Bytes Processed Rate
-    buf_bytes_times, buf_bytes_values = collector.get_counter_rate('mongosync_buffer_service_bytes_processed_count')
-    if buf_bytes_times:
-        fig.add_trace(
-            go.Scattergl(x=buf_bytes_times, y=buf_bytes_values, mode='lines', name='Bytes/sec',
-                        legendgroup="groupBufBytes"),
-            row=12, col=2
-        )
-    else:
-        add_no_data(12, 2, 'Buffer Bytes Processed Rate')
+    # Row 19: Apply Event Duration and Total CRUD Events
+    add_histogram_percentiles(19, 1, 'mongosync_cea_crud_applier_apply_event_duration', 'groupApplyEvent', 'Apply Event Duration')
+    add_counter_rate(19, 2, 'mongosync_cea_total_crud_events_applied', 'Events/sec', 'groupTotalCRUD', 'Total CRUD Events Rate')
     
-    # Row 13, Col 1: Buffer Insert Duration
-    add_histogram_percentiles(13, 1, 'mongosync_buffer_service_insert_duration',
-                             'groupBufInsertDur', 'Buffer Insert Duration')
+    # Row 20: LWS Get/Set Entry Duration
+    add_histogram_percentiles(20, 1, 'mongosync_cea_crud_applier_lws_get_entry_duration', 'groupLWSGet', 'LWS Get Entry Duration')
+    add_histogram_percentiles(20, 2, 'mongosync_cea_crud_applier_lws_set_entry_duration', 'groupLWSSet', 'LWS Set Entry Duration')
     
-    # Row 13, Col 2: Doc Buffers in Channel
-    buf_channel_times, buf_channel_values = collector.get_gauge_series('mongosync_buffer_service_doc_buffers_in_channel_count')
-    if buf_channel_times:
-        fig.add_trace(
-            go.Scattergl(x=buf_channel_times, y=buf_channel_values, mode='lines', name='Buffers',
-                        legendgroup="groupBufChannel"),
-            row=13, col=2
-        )
-    else:
-        add_no_data(13, 2, 'Doc Buffers in Channel')
+    # Row 21: Channel Utilization
+    add_gauge(21, 1, 'mongosync_cea_reader_to_dispatcher_aggregate_channel_utilization', 'Utilization', 'groupReaderDispatcher', 'Reader-Dispatcher Channel Util')
+    add_gauge(21, 2, 'mongosync_cea_dispatcher_to_processor_aggregate_channel_utilization', 'Utilization', 'groupDispatcherProcessor', 'Dispatcher-Processor Channel Util')
     
-    # Row 14, Col 1: Document Size
-    add_histogram_percentiles(14, 1, 'mongosync_buffer_service_doc_size',
-                             'groupDocSize', 'Document Size')
+    # Row 22: Spread Disparity (col 2 is empty placeholder)
+    add_gauge(22, 1, 'mongosync_cea_spread_disparity', 'Disparity', 'groupSpread', 'Spread Disparity')
+    add_no_data(22, 2, '')  # Empty placeholder
     
-    # Row 14, Col 2: Buffer Insertions Rate
-    buf_insert_times, buf_insert_values = collector.get_counter_rate('mongosync_buffer_service_insertions_count')
-    if buf_insert_times:
-        fig.add_trace(
-            go.Scattergl(x=buf_insert_times, y=buf_insert_values, mode='lines', name='Insertions/sec',
-                        legendgroup="groupBufInsertions"),
-            row=14, col=2
-        )
-    else:
-        add_no_data(14, 2, 'Buffer Insertions Rate')
+    # ==================== ROWS 23-24: HOT DOCUMENTS ====================
     
-    # ==================== ROWS 15-16: BULK INSERTER ====================
+    # Row 23: Hot Doc States Read and Refetch Duration
+    add_histogram_percentiles(23, 1, 'mongosync_hot_doc_states_read_op_duration', 'groupHotDocRead', 'Hot Doc States Read Duration')
+    add_histogram_percentiles(23, 2, 'mongosync_hot_doc_refetch_op_duration', 'groupHotDocRefetch', 'Hot Doc Refetch Duration')
     
-    # Row 15, Col 1: Bulk Inserter Docs Rate
-    bulk_docs_times, bulk_docs_values = collector.get_counter_rate('mongosync_bulk_inserter_docs_inserted_count')
-    if bulk_docs_times:
-        fig.add_trace(
-            go.Scattergl(x=bulk_docs_times, y=bulk_docs_values, mode='lines', name='Docs/sec',
-                        legendgroup="groupBulkDocs"),
-            row=15, col=1
-        )
-    else:
-        add_no_data(15, 1, 'Bulk Inserter Docs Rate')
+    # Row 24: Hot Doc Apply Duration and Events Skipped
+    add_histogram_percentiles(24, 1, 'mongosync_hot_doc_apply_op_duration', 'groupHotDocApply', 'Hot Doc Apply Duration')
+    add_counter_rate(24, 2, 'mongosync_cea_total_hot_doc_crud_events_skipped', 'Events/sec', 'groupHotDocSkipped', 'Hot Doc Events Skipped Rate')
     
-    # Row 15, Col 2: Bulk Inserter Bytes Rate
-    bulk_bytes_times, bulk_bytes_values = collector.get_counter_rate('mongosync_bulk_inserter_bytes_inserted_count')
-    if bulk_bytes_times:
-        fig.add_trace(
-            go.Scattergl(x=bulk_bytes_times, y=bulk_bytes_values, mode='lines', name='Bytes/sec',
-                        legendgroup="groupBulkBytes"),
-            row=15, col=2
-        )
-    else:
-        add_no_data(15, 2, 'Bulk Inserter Bytes Rate')
+    # ==================== ROW 25: INDEXES ====================
     
-    # Row 16, Col 1: Docs Per Batch
-    add_histogram_percentiles(16, 1, 'mongosync_bulk_inserter_docs_per_batch',
-                             'groupDocsPerBatch', 'Docs Per Batch')
+    # Row 25: Index Create Duration and Indexes Created
+    add_histogram_percentiles(25, 1, 'mongosync_index_checker_service_create_indexes_duration', 'groupIndexCreate', 'Index Create Duration')
+    add_counter_rate(25, 2, 'mongosync_index_checker_service_created_count', 'Indexes/sec', 'groupIndexesCreated', 'Indexes Created Rate')
     
-    # Row 16, Col 2: Bytes Per Batch
-    add_histogram_percentiles(16, 2, 'mongosync_bulk_inserter_bytes_per_batch',
-                             'groupBytesPerBatch', 'Bytes Per Batch')
+    # ==================== ROWS 26-28: BUFFER SERVICE ====================
     
-    # ==================== ROWS 17-19: VERIFIER ====================
+    # Row 26: Buffer Docs/Bytes Processed Rate
+    add_counter_rate(26, 1, 'mongosync_buffer_service_docs_processed_count', 'Docs/sec', 'groupBufDocs', 'Buffer Docs Processed Rate')
+    add_counter_rate(26, 2, 'mongosync_buffer_service_bytes_processed_count', 'Bytes/sec', 'groupBufBytes', 'Buffer Bytes Processed Rate')
     
-    # Row 17, Col 1: Verifier Docs Hashed (source and destination)
-    docs_hashed_times, docs_hashed_values = collector.get_gauge_series('verifier_auditor_num_docs_hashed')
-    if docs_hashed_times:
-        fig.add_trace(
-            go.Scattergl(x=docs_hashed_times, y=docs_hashed_values, mode='lines', name='Docs Hashed',
-                        legendgroup="groupDocsHashed"),
-            row=17, col=1
-        )
-    else:
-        add_no_data(17, 1, 'Verifier Docs Hashed')
+    # Row 27: Buffer Insert Duration and Doc Buffers in Channel
+    add_histogram_percentiles(27, 1, 'mongosync_buffer_service_insert_duration', 'groupBufInsertDur', 'Buffer Insert Duration')
+    add_gauge(27, 2, 'mongosync_buffer_service_doc_buffers_in_channel_count', 'Buffers', 'groupBufChannel', 'Doc Buffers in Channel')
     
-    # Row 17, Col 2: Verifier Estimated Doc Count
-    est_docs_times, est_docs_values = collector.get_gauge_series('verifier_auditor_estimated_docs_count')
-    if est_docs_times:
-        fig.add_trace(
-            go.Scattergl(x=est_docs_times, y=est_docs_values, mode='lines', name='Estimated Docs',
-                        legendgroup="groupEstDocs"),
-            row=17, col=2
-        )
-    else:
-        add_no_data(17, 2, 'Verifier Estimated Doc Count')
+    # Row 28: Document Size and Buffer Insertions Rate
+    add_histogram_percentiles(28, 1, 'mongosync_buffer_service_doc_size', 'groupDocSize', 'Document Size')
+    add_counter_rate(28, 2, 'mongosync_buffer_service_insertions_count', 'Insertions/sec', 'groupBufInsertions', 'Buffer Insertions Rate')
     
-    # Row 18, Col 1: Verifier Batch Total Time
-    add_histogram_percentiles(18, 1, 'verifier_batch_writer_handle_batch_total_time',
-                             'groupVerifierBatchTime', 'Verifier Batch Total Time')
+    # ==================== ROWS 29-30: BULK INSERTER ====================
     
-    # Row 18, Col 2: Verifier Payloads Processed
-    add_histogram_percentiles(18, 2, 'verifier_batch_writer_handle_batch_payloads_processed_total',
-                             'groupVerifierPayloads', 'Verifier Payloads Processed')
+    # Row 29: Bulk Inserter Docs/Bytes Rate
+    add_counter_rate(29, 1, 'mongosync_bulk_inserter_docs_inserted_count', 'Docs/sec', 'groupBulkDocs', 'Bulk Inserter Docs Rate')
+    add_counter_rate(29, 2, 'mongosync_bulk_inserter_bytes_inserted_count', 'Bytes/sec', 'groupBulkBytes', 'Bulk Inserter Bytes Rate')
     
-    # Row 19, Col 1: Initial Hasher Docs Rate
-    hasher_times, hasher_values = collector.get_counter_rate('verifier_initial_hasher_docs_hashed_total')
-    if hasher_times:
-        fig.add_trace(
-            go.Scattergl(x=hasher_times, y=hasher_values, mode='lines', name='Docs/sec',
-                        legendgroup="groupHasherDocs"),
-            row=19, col=1
-        )
-    else:
-        add_no_data(19, 1, 'Initial Hasher Docs Rate')
+    # Row 30: Docs Per Batch and Bytes Per Batch
+    add_histogram_percentiles(30, 1, 'mongosync_bulk_inserter_docs_per_batch', 'groupDocsPerBatch', 'Docs Per Batch')
+    add_histogram_percentiles(30, 2, 'mongosync_bulk_inserter_bytes_per_batch', 'groupBytesPerBatch', 'Bytes Per Batch')
     
-    # Row 19, Col 2: Stream Hasher Buffer Size
-    stream_buf_times, stream_buf_values = collector.get_gauge_series('verifier_stream_hasher_buffer_size')
-    if stream_buf_times:
-        fig.add_trace(
-            go.Scattergl(x=stream_buf_times, y=stream_buf_values, mode='lines', name='Buffer Size',
-                        legendgroup="groupStreamBuf"),
-            row=19, col=2
-        )
-    else:
-        add_no_data(19, 2, 'Stream Hasher Buffer Size')
+    # ==================== ROWS 31-35: VERIFIER ====================
+    
+    # Row 31: Verifier Docs Hashed and Estimated Doc Count
+    add_gauge(31, 1, 'verifier_auditor_num_docs_hashed', 'Docs Hashed', 'groupDocsHashed', 'Verifier Docs Hashed')
+    add_gauge(31, 2, 'verifier_auditor_estimated_docs_count', 'Estimated Docs', 'groupEstDocs', 'Verifier Estimated Doc Count')
+    
+    # Row 32: Scanned Collection Count and Batch Total Time
+    add_gauge(32, 1, 'verifier_auditor_scanned_collection_count', 'Collections', 'groupScannedColl', 'Scanned Collection Count')
+    add_histogram_percentiles(32, 2, 'verifier_batch_writer_handle_batch_total_time', 'groupBatchTotal', 'Batch Total Time')
+    
+    # Row 33: Batch Read Time and Batch Write Time
+    add_histogram_percentiles(33, 1, 'verifier_batch_writer_handle_batch_read_time', 'groupBatchRead', 'Batch Read Time')
+    add_histogram_percentiles(33, 2, 'verifier_batch_writer_handle_batch_write_time', 'groupBatchWrite', 'Batch Write Time')
+    
+    # Row 34: Batch Payloads Processed and Initial Hasher Docs Rate
+    add_histogram_percentiles(34, 1, 'verifier_batch_writer_handle_batch_payloads_processed_total', 'groupVerifierPayloads', 'Batch Payloads Processed')
+    add_counter_rate(34, 2, 'verifier_initial_hasher_docs_hashed_total', 'Docs/sec', 'groupHasherDocs', 'Initial Hasher Docs Rate')
+    
+    # Row 35: Stream Hasher Buffer Size (col 2 is empty placeholder)
+    add_gauge(35, 1, 'verifier_stream_hasher_buffer_size', 'Buffer Size', 'groupStreamBuf', 'Stream Hasher Buffer Size')
+    add_no_data(35, 2, '')  # Empty placeholder
     
     # Update layout
     fig.update_layout(
-        height=4275,
+        height=7875,
         width=1450,
-        title_text="Mongosync Prometheus Metrics",
+        title_text="Mongosync Metrics",
         legend_tracegroupgap=170,
         showlegend=False
     )
@@ -734,7 +645,7 @@ def create_metrics_plots(collector: MetricsCollector) -> str:
         global_max_date = max(all_times)
         
         # Synchronize X-axis across all plots
-        for row in range(1, 20):
+        for row in range(1, 36):
             for col in range(1, 3):
                 fig.update_xaxes(range=[global_min_date, global_max_date], row=row, col=col)
     
