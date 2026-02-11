@@ -317,26 +317,56 @@ def create_metrics_plots(collector: MetricsCollector) -> str:
     """
     logger.info(f"Creating metrics plots from {collector.metrics_count} metric points")
     
-    # Create subplot layout - 7 rows x 2 columns
+    # Create subplot layout - 19 rows x 2 columns
+    # Order: Collection Copy (1-4), CEA (5-11), Buffer Service (12-14), Bulk Inserter (15-16), Verifier (17-19)
     fig = make_subplots(
-        rows=7, cols=2,
+        rows=19, cols=2,
         subplot_titles=(
+            # Row 1-4: Collection Copy
+            "Docs Copied Rate (docs/sec)", "Bytes Copied Rate (bytes/sec)",
+            "Collection Copy Source Read Duration (ms)", "Collection Copy Destination Write Duration (ms)",
+            "Partitions Completed Rate", "Partition Bytes Read Rate (bytes/sec)",
+            "Partition Size (bytes)", "Partition Copy Duration (ms)",
+            # Row 5-11: CEA metrics
             "Mongosync Phase", "Lag Time (ms)",
             "Host CPU Usage (%)", "Host Memory Usage (%)",
             "Source Ping Latency (ms)", "Destination Ping Latency (ms)",
             "Events Read Rate (events/sec)", "Events Applied Rate (events/sec)",
             "CEA Destination Write Duration (ms)", "CEA Source Read Duration (ms)",
             "Transaction Duration (ms)", "Transaction Size",
-            "Retry Count", "CRUD Applier Error Counts"
+            "Retry Count", "CRUD Applier Error Counts",
+            # Row 12-14: Buffer Service
+            "Buffer Docs Processed Rate (docs/sec)", "Buffer Bytes Processed Rate (bytes/sec)",
+            "Buffer Insert Duration (ms)", "Doc Buffers in Channel",
+            "Document Size (bytes)", "Buffer Insertions Rate",
+            # Row 15-16: Bulk Inserter
+            "Bulk Inserter Docs Rate (docs/sec)", "Bulk Inserter Bytes Rate (bytes/sec)",
+            "Docs Per Batch", "Bytes Per Batch",
+            # Row 17-19: Verifier
+            "Verifier Docs Hashed", "Verifier Estimated Doc Count",
+            "Verifier Batch Total Time (ms)", "Verifier Payloads Processed",
+            "Initial Hasher Docs Rate (docs/sec)", "Stream Hasher Buffer Size"
         ),
         specs=[
-            [{}, {}],  # Row 1: Phase, Lag Time
-            [{}, {}],  # Row 2: CPU, Memory
-            [{}, {}],  # Row 3: Ping latencies
-            [{}, {}],  # Row 4: Events throughput
-            [{}, {}],  # Row 5: CEA durations
-            [{}, {}],  # Row 6: Transaction metrics
-            [{}, {}],  # Row 7: Retry count, Errors
+            [{}, {}],  # Row 1: Collection Copy Progress
+            [{}, {}],  # Row 2: Collection Copy Durations
+            [{}, {}],  # Row 3: Partition Progress
+            [{}, {}],  # Row 4: Partition Histograms
+            [{}, {}],  # Row 5: Phase, Lag Time
+            [{}, {}],  # Row 6: CPU, Memory
+            [{}, {}],  # Row 7: Ping latencies
+            [{}, {}],  # Row 8: Events throughput
+            [{}, {}],  # Row 9: CEA durations
+            [{}, {}],  # Row 10: Transaction metrics
+            [{}, {}],  # Row 11: Retry count, Errors
+            [{}, {}],  # Row 12: Buffer Service throughput
+            [{}, {}],  # Row 13: Buffer Service insert
+            [{}, {}],  # Row 14: Buffer Service doc size
+            [{}, {}],  # Row 15: Bulk Inserter throughput
+            [{}, {}],  # Row 16: Bulk Inserter batch size
+            [{}, {}],  # Row 17: Verifier auditor
+            [{}, {}],  # Row 18: Verifier batch writer
+            [{}, {}],  # Row 19: Verifier hasher
         ]
     )
     
@@ -350,182 +380,340 @@ def create_metrics_plots(collector: MetricsCollector) -> str:
         fig.update_yaxes(range=[-1, 1], row=row, col=col)
         fig.update_xaxes(range=[-1, 1], row=row, col=col)
     
-    # Row 1, Col 1: Phase
+    # Helper to add histogram percentile traces
+    def add_histogram_percentiles(row, col, base_metric_name, legend_group, no_data_label):
+        pcts = collector.get_histogram_percentiles(base_metric_name, [50, 95, 99])
+        has_data = any(len(times) > 0 for times, values in pcts.values())
+        if has_data:
+            for pct, (times, values) in pcts.items():
+                if times:
+                    fig.add_trace(
+                        go.Scattergl(x=times, y=values, mode='lines', name=f'p{int(pct)}',
+                                    legendgroup=legend_group),
+                        row=row, col=col
+                    )
+        else:
+            add_no_data(row, col, no_data_label)
+    
+    # ==================== ROWS 1-4: COLLECTION COPY ====================
+    
+    # Row 1, Col 1: Docs Copied Rate
+    docs_copied_times, docs_copied_values = collector.get_counter_rate('mongosync_collection_copy_copied_docs_count')
+    if docs_copied_times:
+        fig.add_trace(
+            go.Scattergl(x=docs_copied_times, y=docs_copied_values, mode='lines', name='Docs/sec',
+                        legendgroup="groupDocsCopied"),
+            row=1, col=1
+        )
+    else:
+        add_no_data(1, 1, 'Docs Copied Rate')
+    
+    # Row 1, Col 2: Bytes Copied Rate
+    bytes_copied_times, bytes_copied_values = collector.get_counter_rate('mongosync_collection_copy_copied_bytes_count')
+    if bytes_copied_times:
+        fig.add_trace(
+            go.Scattergl(x=bytes_copied_times, y=bytes_copied_values, mode='lines', name='Bytes/sec',
+                        legendgroup="groupBytesCopied"),
+            row=1, col=2
+        )
+    else:
+        add_no_data(1, 2, 'Bytes Copied Rate')
+    
+    # Row 2, Col 1: Collection Copy Source Read Duration
+    add_histogram_percentiles(2, 1, 'mongosync_collection_copy_source_read_op_duration', 
+                             'groupCCSourceRead', 'CC Source Read Duration')
+    
+    # Row 2, Col 2: Collection Copy Destination Write Duration
+    add_histogram_percentiles(2, 2, 'mongosync_collection_copy_destination_write_op_duration',
+                             'groupCCDestWrite', 'CC Dest Write Duration')
+    
+    # Row 3, Col 1: Partitions Completed Rate
+    partitions_times, partitions_values = collector.get_counter_rate('mongosync_collection_copy_partitions_completed_count')
+    if partitions_times:
+        fig.add_trace(
+            go.Scattergl(x=partitions_times, y=partitions_values, mode='lines', name='Partitions/sec',
+                        legendgroup="groupPartitionsCompleted"),
+            row=3, col=1
+        )
+    else:
+        add_no_data(3, 1, 'Partitions Completed Rate')
+    
+    # Row 3, Col 2: Partition Bytes Read Rate (gauge)
+    partition_bytes_times, partition_bytes_values = collector.get_gauge_series('mongosync_collection_copy_partition_copy_bytes_read_per_second')
+    if partition_bytes_times:
+        fig.add_trace(
+            go.Scattergl(x=partition_bytes_times, y=partition_bytes_values, mode='lines', name='Bytes/sec',
+                        legendgroup="groupPartitionBytesRead"),
+            row=3, col=2
+        )
+    else:
+        add_no_data(3, 2, 'Partition Bytes Read Rate')
+    
+    # Row 4, Col 1: Partition Size
+    add_histogram_percentiles(4, 1, 'mongosync_collection_copy_partition_size',
+                             'groupPartitionSize', 'Partition Size')
+    
+    # Row 4, Col 2: Partition Copy Duration
+    add_histogram_percentiles(4, 2, 'mongosync_collection_copy_copy_partition_duration',
+                             'groupPartitionDuration', 'Partition Copy Duration')
+    
+    # ==================== ROWS 5-11: CEA METRICS ====================
+    
+    # Row 5, Col 1: Phase
     phase_times, phase_values = collector.get_gauge_series('mongosync_phase')
     if phase_times:
         fig.add_trace(
             go.Scattergl(x=phase_times, y=phase_values, mode='lines', name='Phase',
                         legendgroup="groupPhase"),
-            row=1, col=1
+            row=5, col=1
         )
     else:
-        add_no_data(1, 1, 'Phase')
+        add_no_data(5, 1, 'Phase')
     
-    # Row 1, Col 2: Lag Time
+    # Row 5, Col 2: Lag Time
     lag_times, lag_values = collector.get_gauge_series('mongosync_lag_time')
     if lag_times:
         fig.add_trace(
             go.Scattergl(x=lag_times, y=lag_values, mode='lines', name='Lag Time (ms)',
                         legendgroup="groupLag"),
-            row=1, col=2
+            row=5, col=2
         )
     else:
-        add_no_data(1, 2, 'Lag Time')
+        add_no_data(5, 2, 'Lag Time')
     
-    # Row 2, Col 1: CPU Usage
+    # Row 6, Col 1: CPU Usage
     cpu_times, cpu_values = collector.get_gauge_series('mongosync_host_cpu_usage')
     if cpu_times:
         fig.add_trace(
             go.Scattergl(x=cpu_times, y=cpu_values, mode='lines', name='CPU %',
                         legendgroup="groupCPU"),
-            row=2, col=1
+            row=6, col=1
         )
     else:
-        add_no_data(2, 1, 'CPU Usage')
+        add_no_data(6, 1, 'CPU Usage')
     
-    # Row 2, Col 2: Memory Usage
+    # Row 6, Col 2: Memory Usage
     mem_times, mem_values = collector.get_gauge_series('mongosync_host_memory_percent_used')
     if mem_times:
         fig.add_trace(
             go.Scattergl(x=mem_times, y=mem_values, mode='lines', name='Memory %',
                         legendgroup="groupMemory"),
-            row=2, col=2
+            row=6, col=2
         )
     else:
-        add_no_data(2, 2, 'Memory Usage')
+        add_no_data(6, 2, 'Memory Usage')
     
-    # Row 3, Col 1: Source Ping Latency (histogram percentiles)
-    src_ping_pcts = collector.get_histogram_percentiles('mongosync_src_ping_latency', [50, 95, 99])
-    has_src_ping = any(len(times) > 0 for times, values in src_ping_pcts.values())
-    if has_src_ping:
-        for pct, (times, values) in src_ping_pcts.items():
-            if times:
-                fig.add_trace(
-                    go.Scattergl(x=times, y=values, mode='lines', name=f'p{int(pct)}',
-                                legendgroup="groupSrcPing"),
-                    row=3, col=1
-                )
-    else:
-        add_no_data(3, 1, 'Source Ping Latency')
+    # Row 7, Col 1: Source Ping Latency
+    add_histogram_percentiles(7, 1, 'mongosync_src_ping_latency',
+                             'groupSrcPing', 'Source Ping Latency')
     
-    # Row 3, Col 2: Destination Ping Latency (histogram percentiles)
-    dst_ping_pcts = collector.get_histogram_percentiles('mongosync_dst_ping_latency', [50, 95, 99])
-    has_dst_ping = any(len(times) > 0 for times, values in dst_ping_pcts.values())
-    if has_dst_ping:
-        for pct, (times, values) in dst_ping_pcts.items():
-            if times:
-                fig.add_trace(
-                    go.Scattergl(x=times, y=values, mode='lines', name=f'p{int(pct)}',
-                                legendgroup="groupDstPing"),
-                    row=3, col=2
-                )
-    else:
-        add_no_data(3, 2, 'Destination Ping Latency')
+    # Row 7, Col 2: Destination Ping Latency
+    add_histogram_percentiles(7, 2, 'mongosync_dst_ping_latency',
+                             'groupDstPing', 'Destination Ping Latency')
     
-    # Row 4, Col 1: Events Read Rate
+    # Row 8, Col 1: Events Read Rate
     read_rate_times, read_rate_values = collector.get_counter_rate('mongosync_cea_change_stream_reader_events_read')
     if read_rate_times:
         fig.add_trace(
             go.Scattergl(x=read_rate_times, y=read_rate_values, mode='lines', name='Events Read/sec',
                         legendgroup="groupEventsRead"),
-            row=4, col=1
+            row=8, col=1
         )
     else:
-        add_no_data(4, 1, 'Events Read Rate')
+        add_no_data(8, 1, 'Events Read Rate')
     
-    # Row 4, Col 2: Events Applied Rate
+    # Row 8, Col 2: Events Applied Rate
     applied_rate_times, applied_rate_values = collector.get_counter_rate('mongosync_cea_total_events_applied')
     if applied_rate_times:
         fig.add_trace(
             go.Scattergl(x=applied_rate_times, y=applied_rate_values, mode='lines', name='Events Applied/sec',
                         legendgroup="groupEventsApplied"),
-            row=4, col=2
+            row=8, col=2
         )
     else:
-        add_no_data(4, 2, 'Events Applied Rate')
+        add_no_data(8, 2, 'Events Applied Rate')
     
-    # Row 5, Col 1: CEA Destination Write Duration (histogram percentiles)
-    cea_dst_write_pcts = collector.get_histogram_percentiles('mongosync_cea_destination_write_op_duration', [50, 95, 99])
-    has_cea_dst = any(len(times) > 0 for times, values in cea_dst_write_pcts.values())
-    if has_cea_dst:
-        for pct, (times, values) in cea_dst_write_pcts.items():
-            if times:
-                fig.add_trace(
-                    go.Scattergl(x=times, y=values, mode='lines', name=f'p{int(pct)}',
-                                legendgroup="groupCEADstWrite"),
-                    row=5, col=1
-                )
-    else:
-        add_no_data(5, 1, 'CEA Destination Write Duration')
+    # Row 9, Col 1: CEA Destination Write Duration
+    add_histogram_percentiles(9, 1, 'mongosync_cea_destination_write_op_duration',
+                             'groupCEADstWrite', 'CEA Destination Write Duration')
     
-    # Row 5, Col 2: CEA Source Read Duration (histogram percentiles)
-    cea_src_read_pcts = collector.get_histogram_percentiles('mongosync_cea_source_read_op_duration', [50, 95, 99])
-    has_cea_src = any(len(times) > 0 for times, values in cea_src_read_pcts.values())
-    if has_cea_src:
-        for pct, (times, values) in cea_src_read_pcts.items():
-            if times:
-                fig.add_trace(
-                    go.Scattergl(x=times, y=values, mode='lines', name=f'p{int(pct)}',
-                                legendgroup="groupCEASrcRead"),
-                    row=5, col=2
-                )
-    else:
-        add_no_data(5, 2, 'CEA Source Read Duration')
+    # Row 9, Col 2: CEA Source Read Duration
+    add_histogram_percentiles(9, 2, 'mongosync_cea_source_read_op_duration',
+                             'groupCEASrcRead', 'CEA Source Read Duration')
     
-    # Row 6, Col 1: Transaction Duration (histogram percentiles)
-    txn_duration_pcts = collector.get_histogram_percentiles('mongosync_cea_crud_applier_txn_duration', [50, 95, 99])
-    has_txn_dur = any(len(times) > 0 for times, values in txn_duration_pcts.values())
-    if has_txn_dur:
-        for pct, (times, values) in txn_duration_pcts.items():
-            if times:
-                fig.add_trace(
-                    go.Scattergl(x=times, y=values, mode='lines', name=f'p{int(pct)}',
-                                legendgroup="groupTxnDuration"),
-                    row=6, col=1
-                )
-    else:
-        add_no_data(6, 1, 'Transaction Duration')
+    # Row 10, Col 1: Transaction Duration
+    add_histogram_percentiles(10, 1, 'mongosync_cea_crud_applier_txn_duration',
+                             'groupTxnDuration', 'Transaction Duration')
     
-    # Row 6, Col 2: Transaction Size (histogram percentiles)
-    txn_size_pcts = collector.get_histogram_percentiles('mongosync_cea_crud_applier_txn_size', [50, 95, 99])
-    has_txn_size = any(len(times) > 0 for times, values in txn_size_pcts.values())
-    if has_txn_size:
-        for pct, (times, values) in txn_size_pcts.items():
-            if times:
-                fig.add_trace(
-                    go.Scattergl(x=times, y=values, mode='lines', name=f'p{int(pct)}',
-                                legendgroup="groupTxnSize"),
-                    row=6, col=2
-                )
-    else:
-        add_no_data(6, 2, 'Transaction Size')
+    # Row 10, Col 2: Transaction Size
+    add_histogram_percentiles(10, 2, 'mongosync_cea_crud_applier_txn_size',
+                             'groupTxnSize', 'Transaction Size')
     
-    # Row 7, Col 1: Retry Count
+    # Row 11, Col 1: Retry Count
     retry_times, retry_values = collector.get_gauge_series('mongosync_retry_count')
     if retry_times:
         fig.add_trace(
             go.Scattergl(x=retry_times, y=retry_values, mode='lines', name='Retries',
                         legendgroup="groupRetry"),
-            row=7, col=1
+            row=11, col=1
         )
     else:
-        add_no_data(7, 1, 'Retry Count')
+        add_no_data(11, 1, 'Retry Count')
     
-    # Row 7, Col 2: Error Counts (from apply_event_duration with is_error=true)
-    # Get the _count metric for errors
+    # Row 11, Col 2: Error Counts
     error_times, error_values = collector.get_counter_rate('mongosync_cea_crud_applier_apply_event_duration_count')
     if error_times:
         fig.add_trace(
             go.Scattergl(x=error_times, y=error_values, mode='lines', name='Errors/sec',
                         legendgroup="groupErrors"),
-            row=7, col=2
+            row=11, col=2
         )
     else:
-        add_no_data(7, 2, 'Error Counts')
+        add_no_data(11, 2, 'Error Counts')
+    
+    # ==================== ROWS 12-14: BUFFER SERVICE ====================
+    
+    # Row 12, Col 1: Buffer Docs Processed Rate
+    buf_docs_times, buf_docs_values = collector.get_counter_rate('mongosync_buffer_service_docs_processed_count')
+    if buf_docs_times:
+        fig.add_trace(
+            go.Scattergl(x=buf_docs_times, y=buf_docs_values, mode='lines', name='Docs/sec',
+                        legendgroup="groupBufDocs"),
+            row=12, col=1
+        )
+    else:
+        add_no_data(12, 1, 'Buffer Docs Processed Rate')
+    
+    # Row 12, Col 2: Buffer Bytes Processed Rate
+    buf_bytes_times, buf_bytes_values = collector.get_counter_rate('mongosync_buffer_service_bytes_processed_count')
+    if buf_bytes_times:
+        fig.add_trace(
+            go.Scattergl(x=buf_bytes_times, y=buf_bytes_values, mode='lines', name='Bytes/sec',
+                        legendgroup="groupBufBytes"),
+            row=12, col=2
+        )
+    else:
+        add_no_data(12, 2, 'Buffer Bytes Processed Rate')
+    
+    # Row 13, Col 1: Buffer Insert Duration
+    add_histogram_percentiles(13, 1, 'mongosync_buffer_service_insert_duration',
+                             'groupBufInsertDur', 'Buffer Insert Duration')
+    
+    # Row 13, Col 2: Doc Buffers in Channel
+    buf_channel_times, buf_channel_values = collector.get_gauge_series('mongosync_buffer_service_doc_buffers_in_channel_count')
+    if buf_channel_times:
+        fig.add_trace(
+            go.Scattergl(x=buf_channel_times, y=buf_channel_values, mode='lines', name='Buffers',
+                        legendgroup="groupBufChannel"),
+            row=13, col=2
+        )
+    else:
+        add_no_data(13, 2, 'Doc Buffers in Channel')
+    
+    # Row 14, Col 1: Document Size
+    add_histogram_percentiles(14, 1, 'mongosync_buffer_service_doc_size',
+                             'groupDocSize', 'Document Size')
+    
+    # Row 14, Col 2: Buffer Insertions Rate
+    buf_insert_times, buf_insert_values = collector.get_counter_rate('mongosync_buffer_service_insertions_count')
+    if buf_insert_times:
+        fig.add_trace(
+            go.Scattergl(x=buf_insert_times, y=buf_insert_values, mode='lines', name='Insertions/sec',
+                        legendgroup="groupBufInsertions"),
+            row=14, col=2
+        )
+    else:
+        add_no_data(14, 2, 'Buffer Insertions Rate')
+    
+    # ==================== ROWS 15-16: BULK INSERTER ====================
+    
+    # Row 15, Col 1: Bulk Inserter Docs Rate
+    bulk_docs_times, bulk_docs_values = collector.get_counter_rate('mongosync_bulk_inserter_docs_inserted_count')
+    if bulk_docs_times:
+        fig.add_trace(
+            go.Scattergl(x=bulk_docs_times, y=bulk_docs_values, mode='lines', name='Docs/sec',
+                        legendgroup="groupBulkDocs"),
+            row=15, col=1
+        )
+    else:
+        add_no_data(15, 1, 'Bulk Inserter Docs Rate')
+    
+    # Row 15, Col 2: Bulk Inserter Bytes Rate
+    bulk_bytes_times, bulk_bytes_values = collector.get_counter_rate('mongosync_bulk_inserter_bytes_inserted_count')
+    if bulk_bytes_times:
+        fig.add_trace(
+            go.Scattergl(x=bulk_bytes_times, y=bulk_bytes_values, mode='lines', name='Bytes/sec',
+                        legendgroup="groupBulkBytes"),
+            row=15, col=2
+        )
+    else:
+        add_no_data(15, 2, 'Bulk Inserter Bytes Rate')
+    
+    # Row 16, Col 1: Docs Per Batch
+    add_histogram_percentiles(16, 1, 'mongosync_bulk_inserter_docs_per_batch',
+                             'groupDocsPerBatch', 'Docs Per Batch')
+    
+    # Row 16, Col 2: Bytes Per Batch
+    add_histogram_percentiles(16, 2, 'mongosync_bulk_inserter_bytes_per_batch',
+                             'groupBytesPerBatch', 'Bytes Per Batch')
+    
+    # ==================== ROWS 17-19: VERIFIER ====================
+    
+    # Row 17, Col 1: Verifier Docs Hashed (source and destination)
+    docs_hashed_times, docs_hashed_values = collector.get_gauge_series('verifier_auditor_num_docs_hashed')
+    if docs_hashed_times:
+        fig.add_trace(
+            go.Scattergl(x=docs_hashed_times, y=docs_hashed_values, mode='lines', name='Docs Hashed',
+                        legendgroup="groupDocsHashed"),
+            row=17, col=1
+        )
+    else:
+        add_no_data(17, 1, 'Verifier Docs Hashed')
+    
+    # Row 17, Col 2: Verifier Estimated Doc Count
+    est_docs_times, est_docs_values = collector.get_gauge_series('verifier_auditor_estimated_docs_count')
+    if est_docs_times:
+        fig.add_trace(
+            go.Scattergl(x=est_docs_times, y=est_docs_values, mode='lines', name='Estimated Docs',
+                        legendgroup="groupEstDocs"),
+            row=17, col=2
+        )
+    else:
+        add_no_data(17, 2, 'Verifier Estimated Doc Count')
+    
+    # Row 18, Col 1: Verifier Batch Total Time
+    add_histogram_percentiles(18, 1, 'verifier_batch_writer_handle_batch_total_time',
+                             'groupVerifierBatchTime', 'Verifier Batch Total Time')
+    
+    # Row 18, Col 2: Verifier Payloads Processed
+    add_histogram_percentiles(18, 2, 'verifier_batch_writer_handle_batch_payloads_processed_total',
+                             'groupVerifierPayloads', 'Verifier Payloads Processed')
+    
+    # Row 19, Col 1: Initial Hasher Docs Rate
+    hasher_times, hasher_values = collector.get_counter_rate('verifier_initial_hasher_docs_hashed_total')
+    if hasher_times:
+        fig.add_trace(
+            go.Scattergl(x=hasher_times, y=hasher_values, mode='lines', name='Docs/sec',
+                        legendgroup="groupHasherDocs"),
+            row=19, col=1
+        )
+    else:
+        add_no_data(19, 1, 'Initial Hasher Docs Rate')
+    
+    # Row 19, Col 2: Stream Hasher Buffer Size
+    stream_buf_times, stream_buf_values = collector.get_gauge_series('verifier_stream_hasher_buffer_size')
+    if stream_buf_times:
+        fig.add_trace(
+            go.Scattergl(x=stream_buf_times, y=stream_buf_values, mode='lines', name='Buffer Size',
+                        legendgroup="groupStreamBuf"),
+            row=19, col=2
+        )
+    else:
+        add_no_data(19, 2, 'Stream Hasher Buffer Size')
     
     # Update layout
     fig.update_layout(
-        height=1575,
+        height=4275,
         width=1450,
         title_text="Mongosync Prometheus Metrics",
         legend_tracegroupgap=170,
@@ -546,7 +734,7 @@ def create_metrics_plots(collector: MetricsCollector) -> str:
         global_max_date = max(all_times)
         
         # Synchronize X-axis across all plots
-        for row in range(1, 8):
+        for row in range(1, 20):
             for col in range(1, 3):
                 fig.update_xaxes(range=[global_min_date, global_max_date], row=row, col=col)
     
