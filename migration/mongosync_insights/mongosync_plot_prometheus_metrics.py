@@ -484,9 +484,9 @@ def create_metrics_plots(collector: MetricsCollector) -> str:
     add_counter_rate(5, 1, 'mongosync_collection_copy_partitions_deleted_count', 'Partitions/sec', 'groupPartitionsDeleted', 'Partitions Deleted Rate')
     add_counter_rate(5, 2, 'mongosync_collection_copy_partition_copy_docs_deleted_count', 'Docs/sec', 'groupDocsDeleted', 'Docs Deleted Rate')
     
-    # Row 6: Bytes Deleted Rate (col 2 is empty placeholder)
+    # Row 6: Bytes Deleted Rate (col 2 is hidden - no metric)
     add_counter_rate(6, 1, 'mongosync_collection_copy_partition_copy_bytes_deleted_count', 'Bytes/sec', 'groupBytesDeleted', 'Bytes Deleted Rate')
-    add_no_data(6, 2, '')  # Empty placeholder
+    # Col 2 hidden below in layout update
     
     # ==================== ROWS 7-11: CORE REPLICATION AND PHASE + HOST LOAD ====================
     
@@ -556,9 +556,9 @@ def create_metrics_plots(collector: MetricsCollector) -> str:
     add_gauge(21, 1, 'mongosync_cea_reader_to_dispatcher_aggregate_channel_utilization', 'Utilization', 'groupReaderDispatcher', 'Reader-Dispatcher Channel Util')
     add_gauge(21, 2, 'mongosync_cea_dispatcher_to_processor_aggregate_channel_utilization', 'Utilization', 'groupDispatcherProcessor', 'Dispatcher-Processor Channel Util')
     
-    # Row 22: Spread Disparity (col 2 is empty placeholder)
+    # Row 22: Spread Disparity (col 2 is hidden - no metric)
     add_gauge(22, 1, 'mongosync_cea_spread_disparity', 'Disparity', 'groupSpread', 'Spread Disparity')
-    add_no_data(22, 2, '')  # Empty placeholder
+    # Col 2 hidden below in layout update
     
     # ==================== ROWS 23-24: HOT DOCUMENTS ====================
     
@@ -618,9 +618,9 @@ def create_metrics_plots(collector: MetricsCollector) -> str:
     add_histogram_percentiles(34, 1, 'verifier_batch_writer_handle_batch_payloads_processed_total', 'groupVerifierPayloads', 'Batch Payloads Processed')
     add_counter_rate(34, 2, 'verifier_initial_hasher_docs_hashed_total', 'Docs/sec', 'groupHasherDocs', 'Initial Hasher Docs Rate')
     
-    # Row 35: Stream Hasher Buffer Size (col 2 is empty placeholder)
+    # Row 35: Stream Hasher Buffer Size (col 2 is hidden - no metric)
     add_gauge(35, 1, 'verifier_stream_hasher_buffer_size', 'Buffer Size', 'groupStreamBuf', 'Stream Hasher Buffer Size')
-    add_no_data(35, 2, '')  # Empty placeholder
+    # Col 2 hidden below in layout update
     
     # Update layout
     fig.update_layout(
@@ -630,6 +630,11 @@ def create_metrics_plots(collector: MetricsCollector) -> str:
         legend_tracegroupgap=170,
         showlegend=False
     )
+    
+    # Hide empty subplot cells (rows with odd number of metrics)
+    for empty_row in [6, 22, 35]:
+        fig.update_xaxes(visible=False, row=empty_row, col=2)
+        fig.update_yaxes(visible=False, row=empty_row, col=2)
     
     # Force all y-axes to start at 0
     fig.update_yaxes(rangemode='tozero')
