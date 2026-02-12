@@ -1,4 +1,4 @@
- # Mongosync Insights
+# Mongosync Insights
 
 This tool can parse the **mongosync** logs, read the **mongosync** internal database (metadata) and connect to **mongosync** progress endpoint, generating interactive plots to assist with monitoring and troubleshooting ongoing MongoDB migrations using mongosync.
 
