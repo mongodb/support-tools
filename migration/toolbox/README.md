@@ -79,12 +79,12 @@ The script supports two modes:
 
 **Offline (getMongoData):**
 ```bash
-python3 mongosync_limitations_checker_unified.py --getmongodata <file>.json
+python3 mongosync_uniqueindex_limitation_checker.py --getmongodata <file>.json
 ```
 
 **Online (MongoDB cluster):**
 ```bash
-python3 mongosync_limitations_checker_unified.py --uri "mongodb+srv://USER:PASS@host"
+python3 mongosync_uniqueindex_limitation_checker.py --uri "mongodb+srv://USER:PASS@host"
 ```
 
 For full documentation, filtering options, and examples, see [README_limitations_checker.md](README_limitations_checker.md).
