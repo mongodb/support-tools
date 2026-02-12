@@ -5,7 +5,7 @@ This section contains scripts to help before, during, and after migrations.
 This project parses **mongosync** logs and reads the internal database (metadata), generating a variety of plots to assist with monitoring and troubleshooting ongoing mongosync migrations.
 
 ## [Toolbox](toolbox)
-It contains scripts used by Migration Factory team during the Data Capture Request.
+Toolbox is a collection of helper scripts created by the Migration Factory team for data capture and analysis
 
 ### License
 
