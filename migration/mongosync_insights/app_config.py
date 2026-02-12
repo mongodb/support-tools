@@ -55,8 +55,8 @@ EXTENSION_TO_COMPRESSION = {
 }
 
 # File type patterns for identification
-# mongosync logs: mongosync.log or mongosync-* (but NOT mongosync_metrics*)
-MONGOSYNC_LOG_PATTERN = re.compile(r'^mongosync\.log$|^mongosync-(?!metrics).*', re.IGNORECASE)
+# mongosync logs: mongosync.log or mongosync-* (but NOT mongosync_metrics*) or liveimport_*
+MONGOSYNC_LOG_PATTERN = re.compile(r'^mongosync\.log$|^mongosync-(?!metrics).*|^liveimport_.*', re.IGNORECASE)
 # mongosync metrics: mongosync_metrics.log or mongosync_metrics-*
 MONGOSYNC_METRICS_PATTERN = re.compile(r'^mongosync_metrics\.log$|^mongosync_metrics-.*', re.IGNORECASE)
 
