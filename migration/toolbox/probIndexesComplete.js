@@ -18,16 +18,16 @@ for (const database of databases) {
 
         currentCollection.aggregate( [ { $indexStats: { } }, project ] ).forEach(function(index){
             
-            const indexDetail = indexes.filter(i => i.name === index.name)[0];
+            const indexDetail = indexes.find(i => i.name === index.name);
             const idxValues = Object.values(Object.assign({}, index.key));
 
-            let indexType = "common";
+            let indexType = "commom";
             if(index.name === '_id_') indexType = '[INTERNAL]';
             else if(idxValues.includes('2dsphere')) indexType = '2dsphere';
             else if(idxValues.includes("geoHaystack")) indexType = 'geoHaystack';
-            else if(indexDetail.textIndexVersion !== undefined) indexType = 'text';
-            else if(indexDetail.expireAfterSeconds !== undefined) indexType = 'TTL';
-            else if(indexDetail.partialFilterExpression !== undefined) indexType = 'Partial';
+            else if(indexDetail?.textIndexVersion !== undefined) indexType = 'text';
+            else if(indexDetail?.expireAfterSeconds !== undefined) indexType = 'TTL';
+            else if(indexDetail?.partialFilterExpression !== undefined) indexType = 'Partial';
             
             indexesUtilization.push({
                 db: database.name, 
