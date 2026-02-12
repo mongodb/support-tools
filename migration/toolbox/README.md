@@ -1,5 +1,5 @@
 # Toolbox
-Toolbox is a collection of scripts used by Migration Factory team to facilitate the Data Capture Request.
+Toolbox is a collection of helper scripts created by the Migration Factory team for data capture and analysis.
 
 ## Database and Collection size
 
