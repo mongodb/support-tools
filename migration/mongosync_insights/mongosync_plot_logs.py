@@ -319,6 +319,20 @@ def upload_file():
         times = [datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f") for item in data if 'time' in item]
         totalEventsApplied = [item['totalEventsApplied'] for item in data if 'totalEventsApplied' in item]
         lagTimeSeconds = [item['lagTimeSeconds'] for item in data if 'lagTimeSeconds' in item]
+        # Extract estimatedCopiedBytes time series from sent response entries
+        # The 'body' field is a JSON string containing progress.collectionCopy.estimatedCopiedBytes
+        estimatedCopiedBytes_series = []
+        estimatedCopiedBytes_times = []
+        for response in mongosync_sent_response:
+            try:
+                parsed_body = json.loads(response.get('body', '{}'))
+                copied = (parsed_body.get('progress') or {}).get('collectionCopy') or {}
+                copied = copied.get('estimatedCopiedBytes')
+                if copied is not None and 'time' in response:
+                    estimatedCopiedBytes_series.append(copied)
+                    estimatedCopiedBytes_times.append(datetime.strptime(response['time'][:26], "%Y-%m-%dT%H:%M:%S.%f"))
+            except (json.JSONDecodeError, TypeError, ValueError, AttributeError):
+                continue
         CollectionCopySourceRead = [float(item['CollectionCopySourceRead']['averageDurationMs']) for item in mongosync_ops_stats if 'CollectionCopySourceRead' in item and 'averageDurationMs' in item['CollectionCopySourceRead']]
         CollectionCopySourceRead_maximum = [float(item['CollectionCopySourceRead']['maximumDurationMs']) for item in mongosync_ops_stats if 'CollectionCopySourceRead' in item and 'maximumDurationMs' in item['CollectionCopySourceRead']]
         CollectionCopySourceRead_numOperations = [float(item['CollectionCopySourceRead']['numOperations']) for item in mongosync_ops_stats if 'CollectionCopySourceRead' in item and 'numOperations' in item['CollectionCopySourceRead']]        
@@ -371,6 +385,8 @@ def upload_file():
             all_times.extend(crud_rate_times)
         if partition_times:
             all_times.extend(partition_times)
+        if estimatedCopiedBytes_times:
+            all_times.extend(estimatedCopiedBytes_times)
         
         if all_times:
             global_min_date = min(all_times)
@@ -437,13 +453,14 @@ def upload_file():
 
         estimated_total_bytes, estimated_total_bytes_unit = format_byte_size(estimated_total_bytes)
         estimated_copied_bytes = convert_bytes(estimated_copied_bytes, estimated_total_bytes_unit)
+        estimatedCopiedBytes_converted = [convert_bytes(b, estimated_total_bytes_unit) for b in estimatedCopiedBytes_series]
 
         logging.info(f"Plotting")
 
         # Create a subplot for the scatter plots (tables are now in a separate tab)
         fig = make_subplots(rows=9, cols=2, subplot_titles=("Mongosync Phases", "Mongosync Phases Table",
-                                                            "Estimated Total and Copied " + estimated_total_bytes_unit, "",
-                                                            "Partitions Copied Over Time", "Total and Copied Partitions",
+                                                            "Data Copied (" + estimated_total_bytes_unit + ")", "Estimated Total and Copied " + estimated_total_bytes_unit,
+                                                            "Partitions Copied", "Total and Copied Partitions",
                                                             "Lag Time (seconds)", "Change Events Applied",
                                                             "Ping Latency (ms)", "Average Source CRUD Event Rate (Events/sec)",
                                                             "Collection Copy - Avg and Max Read time (ms)", "Collection Copy Source Reads",
@@ -451,7 +468,7 @@ def upload_file():
                                                             "CEA Source - Avg and Max Read time (ms)", "CEA Source Reads",
                                                             "CEA Destination - Avg and Max Write time (ms)", "CEA Destination Writes"),
                             specs=[ [{}, {"type": "table"}], #Mongosync Phases and Phases Table
-                                    [{}, {}], #Estimated Total and Copied + Empty
+                                    [{}, {}], #Data Copied Over Time + Estimated Total and Copied
                                     [{}, {}], #Partitions Copied and Completion %
                                     [{}, {}], #Lag Time and Events Applied
                                     [{}, {}], #Ping Latency and CRUD Event Rate
@@ -487,14 +504,22 @@ def upload_file():
                 cells=dict(values=[[], []])
             ), row=1, col=2)
 
-        # Estimated Total and Copied
-        if estimated_total_bytes > 0 or estimated_copied_bytes > 0:
-            fig.add_trace( go.Bar( name='Estimated ' + estimated_total_bytes_unit + ' to be Copied',  x=[estimated_total_bytes_unit],  y=[estimated_total_bytes], legendgroup="groupTotalCopied" ), row=2, col=1)
-            fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=2, col=1)
+        # Data Copied Over Time
+        if estimatedCopiedBytes_converted:
+            fig.add_trace(go.Scattergl(x=estimatedCopiedBytes_times, y=estimatedCopiedBytes_converted, mode='lines', name='Copied ' + estimated_total_bytes_unit, legendgroup="groupTotalCopied"), row=2, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Estimated Total and Copied',textfont=dict(size=30, color="black")), row=2, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Data Copied Over Time',textfont=dict(size=30, color="black")), row=2, col=1)
             fig.update_yaxes(range=[-1, 1], row=2, col=1)  # Center the text vertically
             fig.update_xaxes(range=[-1, 1], row=2, col=1)  # Also center horizontally
+
+        # Estimated Total and Copied
+        if estimated_total_bytes > 0 or estimated_copied_bytes > 0:
+            fig.add_trace( go.Bar( name='Estimated ' + estimated_total_bytes_unit + ' to be Copied',  x=[estimated_total_bytes_unit],  y=[estimated_total_bytes], legendgroup="groupTotalCopied" ), row=2, col=2)
+            fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=2, col=2)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Estimated Total and Copied',textfont=dict(size=30, color="black")), row=2, col=2)
+            fig.update_yaxes(range=[-1, 1], row=2, col=2)  # Center the text vertically
+            fig.update_xaxes(range=[-1, 1], row=2, col=2)  # Also center horizontally
 
         # Partitions Copied Over Time
         if partition_times:
@@ -632,6 +657,8 @@ def upload_file():
         if global_min_date and global_max_date:
             # Sync Mongosync Phases scatter plot (row 1, col 1)
             fig.update_xaxes(range=[global_min_date, global_max_date], row=1, col=1)
+            # Sync Data Copied Over Time plot (row 2, col 1)
+            fig.update_xaxes(range=[global_min_date, global_max_date], row=2, col=1)
             for row in range(3, 10):  # rows 3 through 9
                 for col in range(1, 3):  # columns 1 and 2
                     fig.update_xaxes(range=[global_min_date, global_max_date], row=row, col=col)
