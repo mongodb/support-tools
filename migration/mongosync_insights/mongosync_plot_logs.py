@@ -433,7 +433,7 @@ def upload_file():
 
         # Create a subplot for the scatter plots (tables are now in a separate tab)
         fig = make_subplots(rows=8, cols=2, subplot_titles=("Mongosync Phases", "Estimated Total and Copied " + estimated_total_bytes_unit,
-                                                            "Partitions Copied Over Time", "Partition Completion %",
+                                                            "Partitions Copied Over Time", "Total and Copied Partitions",
                                                             "Lag Time (seconds)", "Change Events Applied",
                                                             "Ping Latency (ms)", "Average Source CRUD Event Rate (Events/sec)",
                                                             "Collection Copy - Avg and Max Read time (ms)", "Collection Copy Source Reads",
@@ -479,13 +479,16 @@ def upload_file():
             fig.update_yaxes(range=[-1, 1], row=2, col=1)  # Center the text vertically
             fig.update_xaxes(range=[-1, 1], row=2, col=1)  # Also center horizontally
 
-        # Partition Completion %
+        # Total and Copied Partitions
         if partition_times:
-            fig.add_trace(go.Scattergl(x=partition_times, y=partitions_pct, mode='lines', name='Completion %', legendgroup="groupPartitions"), row=2, col=2)
+            last_copied = partitions_copied[-1]
+            last_total = partitions_total[-1]
+            fig.add_trace(go.Bar(name='Total Partitions', x=['Partitions'], y=[last_total], legendgroup="groupPartitions"), row=2, col=2)
+            fig.add_trace(go.Bar(name='Copied Partitions', x=['Partitions'], y=[last_copied], legendgroup="groupPartitions"), row=2, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Partition Completion %', textfont=dict(size=30, color="black")), row=2, col=2)
-            fig.update_yaxes(range=[-1, 1], row=2, col=2)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=2, col=2)  # Also center horizontally
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Total and Copied Partitions', textfont=dict(size=30, color="black")), row=2, col=2)
+            fig.update_yaxes(range=[-1, 1], row=2, col=2)
+            fig.update_xaxes(range=[-1, 1], row=2, col=2)
 
         # Lag Time
         if lagTimeSeconds:
