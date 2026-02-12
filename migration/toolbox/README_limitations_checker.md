@@ -39,7 +39,7 @@ Starting mongosync limitations checker (ONLINE).
 Input: mongodb+srv://...
 Limitations found: 1
 
-- mydb.users | keys=[['email', 1]] | unique=['email_unique_idx'] | non-unique=['email_idx']
+- mydb.users | keys={['email', 1]} | uniqueIndex=['email_unique_idx'] | non-uniqueIndex=['email_idx']
 
 Finishing mongosync limitations checker.
 ```
