@@ -2,7 +2,7 @@ const indexesUtilization = [];
 const excludeDatabases = ['admin', 'config', 'local']
 const byteToMB = (byte) => ((byte/1024)/1024).toFixed(2);
 
-/* This version is used to get information on only a few DBs, add them to the following line*/
+/* This version gets information for all non-system DBs. To limit it to specific DBs, edit the filter in the next line (e.g., by adding an explicit include list). */
 const databases = db.adminCommand('listDatabases').databases.filter(({ name }) => !excludeDatabases.includes(name))
 const project = { $project: {'ops': "$accesses.ops", 'accesses.since': 1, 'name': 1, 'key': 1, 'spec': 1} };
 
