@@ -21,7 +21,7 @@ for (const database of databases) {
             const indexDetail = indexes.filter(i => i.name === index.name)[0];
             const idxValues = Object.values(Object.assign({}, index.key));
 
-            let indexType = "commom";
+            let indexType = "common";
             if(index.name === '_id_') indexType = '[INTERNAL]';
             else if(idxValues.includes('2dsphere')) indexType = '2dsphere';
             else if(idxValues.includes("geoHaystack")) indexType = 'geoHaystack';
