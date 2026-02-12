@@ -67,7 +67,7 @@ mongosh "mongodb://user:password@localhost:27017" --quiet probIndexesComplete.js
 
 ## Mongosync Limitations Checker
 
-**Script:** `mongosync_limitations_checker_unified.py`
+**Script:** `mongosync_uniqueindex_limitation_checker.py`
 
 Detects a known mongosync limitation where a collection has two indexes with the exact same key pattern—one unique and one non-unique. This condition can cause mongosync to fail during migrations.
 
