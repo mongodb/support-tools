@@ -333,8 +333,15 @@ def upload_file():
         CEADestinationWrite_numOperations = [float(item['CEADestinationWrite']['numOperations']) for item in mongosync_ops_stats if 'CEADestinationWrite' in item and 'numOperations' in item['CEADestinationWrite']] 
         
         # Ping latency data (from operation stats)
-        sourcePingLatencyMs = [float(item['sourcePingLatencyMs']) for item in mongosync_ops_stats if 'sourcePingLatencyMs' in item]
-        destinationPingLatencyMs = [float(item['destinationPingLatencyMs']) for item in mongosync_ops_stats if 'destinationPingLatencyMs' in item]
+        # Note: ping latency values can be non-numeric (e.g. 'unreachable'), so we filter those out safely
+        def _safe_float(val):
+            """Safely convert a value to float, returning None for non-numeric strings like 'unreachable'."""
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return None
+        sourcePingLatencyMs = [v for v in (_safe_float(item['sourcePingLatencyMs']) for item in mongosync_ops_stats if 'sourcePingLatencyMs' in item) if v is not None]
+        destinationPingLatencyMs = [v for v in (_safe_float(item['destinationPingLatencyMs']) for item in mongosync_ops_stats if 'destinationPingLatencyMs' in item) if v is not None]
         
         # CRUD events rate data
         srcCRUDEventsPerSec = [float(item['srcCRUDEventsPerSec']) for item in mongosync_crud_rate if 'srcCRUDEventsPerSec' in item]
