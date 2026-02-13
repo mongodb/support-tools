@@ -7,7 +7,12 @@ import json
 import re
 import sys
 from collections import defaultdict
-from typing import Any, Dict, FrozenSet, Iterable, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+
+
+# Order-preserving, hashable signature for an index key pattern
+KeySig = Tuple[Tuple[str, Any], ...]
+
 
 
 # -------------------------
@@ -57,32 +62,31 @@ def ns_allowed(
 # Normalization + core logic
 # -------------------------
 
-def normalize_key_pattern(key_obj: Any) -> FrozenSet[Tuple[str, Any]]:
+def normalize_key_pattern(key_obj: Any) -> KeySig:
     """
-    Normalize key patterns into a hashable representation.
+    Normalize index key patterns into an order-preserving, hashable representation.
 
-    NOTE: Order-insensitive comparison (frozenset), matching the behavior of your original script.
+    IMPORTANT: Order matters for compound indexes in MongoDB.
     """
+
     if isinstance(key_obj, dict):
-        return frozenset(key_obj.items())
+        return tuple((str(k), v) for k, v in key_obj.items())
 
     if isinstance(key_obj, (list, tuple)):
         pairs: List[Tuple[str, Any]] = []
-        ok = True
         for item in key_obj:
             if isinstance(item, (list, tuple)) and len(item) == 2:
                 pairs.append((str(item[0]), item[1]))
             else:
-                ok = False
-                break
-        if ok:
-            return frozenset(pairs)
+                return (("<<unrecognized_key>>", str(key_obj)),)
+        return tuple(pairs)
 
+    # Last resort: try .items() (dict-like)
     try:
         items = list(key_obj.items())  # type: ignore[attr-defined]
-        return frozenset((str(k), v) for k, v in items)
+        return tuple((str(k), v) for k, v in items)
     except Exception:
-        return frozenset({("<<unrecognized_key>>", str(key_obj))})
+        return (("<<unrecognized_key>>", str(key_obj)),)
 
 
 def find_limitations(index_rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -97,7 +101,7 @@ def find_limitations(index_rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any
       }
     """
 
-    per_collection: Dict[Tuple[str, str], Dict[FrozenSet[Tuple[str, Any]], Dict[str, List[str]]]] = defaultdict(
+    per_collection: Dict[Tuple[str, str], Dict[KeySig, Dict[str, List[str]]]] = defaultdict(
         lambda: defaultdict(lambda: {"unique": [], "non_unique": []})
     )
 
@@ -124,7 +128,7 @@ def find_limitations(index_rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any
                     {
                         "database": db,
                         "collection": coll,
-                        "index_keys": sorted([list(kv) for kv in key_pattern], key=lambda x: str(x[0])),
+                        "index_keys": [list(kv) for kv in key_pattern],
                         "unique_index_names": sorted(set(buckets["unique"])),
                         "non_unique_index_names": sorted(set(buckets["non_unique"])),
                     }
