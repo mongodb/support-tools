@@ -48,7 +48,7 @@ filePaths = [...new Set(filePaths)].sort();
 // Function to process one or more JSON Lines log files
 async function processFiles(filePaths) {
   const namespaceSummary = {};
-  const eventTypesSet = new Set(); // To keep track of all event types (e.g., "insert", "update", etc.)
+  const eventTypesSet = new Set(['delete', 'insert', 'replace', 'update']);
   const MAX_LINES_PER_FILE = 5000000; // Optional safeguard for very large files
   for (const filePath of filePaths) {
     if (!suppressConsole) {
