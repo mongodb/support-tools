@@ -1,4 +1,4 @@
-## Get busiest collections seen during Collection Copy and Change Event Application (CEA) phase
+## Get Busiest Collection
 
 **Script:** `get-busiest-collections.js`
 
