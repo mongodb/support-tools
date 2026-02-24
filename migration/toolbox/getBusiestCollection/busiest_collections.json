@@ -1,0 +1,3228 @@
+[
+  {
+    "namespace": "MDM.MDM_CONSUMO",
+    "totalEvents": 1617123134,
+    "totalEventsPerType": {
+      "insert": 901771840,
+      "delete": 715351294
+    }
+  },
+  {
+    "namespace": "MDM.ORCH_SERVICE_EXECUTIONS",
+    "totalEvents": 187817517,
+    "totalEventsPerType": {
+      "insert": 15132954,
+      "update": 172684562,
+      "replace": 1
+    }
+  },
+  {
+    "namespace": "MDM.MDM_SALDOS_CARTERA_RMCA",
+    "totalEvents": 50755108,
+    "totalEventsPerType": {
+      "delete": 25999267,
+      "insert": 24755841
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CARTERA",
+    "totalEvents": 46816616,
+    "totalEventsPerType": {
+      "insert": 25169764,
+      "delete": 21646852
+    }
+  },
+  {
+    "namespace": "MDM.MDM_AUDITORIA_SERVICIOS",
+    "totalEvents": 33469960,
+    "totalEventsPerType": {
+      "insert": 33469960
+    }
+  },
+  {
+    "namespace": "MDM.MDM_VMR_OTA",
+    "totalEvents": 15155430,
+    "totalEventsPerType": {
+      "delete": 7577715,
+      "insert": 7577715
+    }
+  },
+  {
+    "namespace": "MDM.COLL_CONTROL_TRAMITES",
+    "totalEvents": 14646953,
+    "totalEventsPerType": {
+      "update": 14607712,
+      "insert": 39241
+    }
+  },
+  {
+    "namespace": "MDM.COLL_SOPORTE_ULTIMO_CICLO",
+    "totalEvents": 9316648,
+    "totalEventsPerType": {
+      "delete": 4658343,
+      "insert": 4658305
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CASAS_COBRANZA",
+    "totalEvents": 8391727,
+    "totalEventsPerType": {
+      "delete": 4201855,
+      "insert": 4189872
+    }
+  },
+  {
+    "namespace": "MDM.MDM_FIJA_AUDITORIA_WS",
+    "totalEvents": 6389447,
+    "totalEventsPerType": {
+      "insert": 4292170,
+      "delete": 2097277
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_ORDEN",
+    "totalEvents": 6067336,
+    "totalEventsPerType": {
+      "insert": 95921,
+      "replace": 60663,
+      "update": 5910703,
+      "delete": 49
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_INFO_CONSUMO",
+    "totalEvents": 5683143,
+    "totalEventsPerType": {
+      "insert": 5683143
+    }
+  },
+  {
+    "namespace": "MDM.MDM_OCS_REFILL_BASE",
+    "totalEvents": 5551908,
+    "totalEventsPerType": {
+      "delete": 2776006,
+      "insert": 2775902
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_INFO_CONSUMO_HISTORICO",
+    "totalEvents": 5298881,
+    "totalEventsPerType": {
+      "update": 5298795,
+      "insert": 86
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CLIENTE_22012026_1542",
+    "totalEvents": 5064298,
+    "totalEventsPerType": {
+      "insert": 5064298
+    }
+  },
+  {
+    "namespace": "MDM.COLL_SOPORTE_ESTADO_RX",
+    "totalEvents": 3686413,
+    "totalEventsPerType": {
+      "delete": 1842876,
+      "insert": 1843537
+    }
+  },
+  {
+    "namespace": "MDM.MDM_FACTURACION_DETALLE",
+    "totalEvents": 3357411,
+    "totalEventsPerType": {
+      "delete": 1626332,
+      "insert": 1731079
+    }
+  },
+  {
+    "namespace": "MDM.MDM_INTERACCION_CD",
+    "totalEvents": 3227806,
+    "totalEventsPerType": {
+      "insert": 2917166,
+      "update": 310640
+    }
+  },
+  {
+    "namespace": "MDM.LOG_NOTIFICACION_TRAMITES",
+    "totalEvents": 2531555,
+    "totalEventsPerType": {
+      "insert": 1570835,
+      "delete": 960720
+    }
+  },
+  {
+    "namespace": "MDM.PQR_PQR",
+    "totalEvents": 2314546,
+    "totalEventsPerType": {
+      "insert": 116477,
+      "replace": 60879,
+      "update": 2136498,
+      "delete": 692
+    }
+  },
+  {
+    "namespace": "ANALITICA.AN_AUDITORIA_SERVICIOS",
+    "totalEvents": 2111347,
+    "totalEventsPerType": {
+      "insert": 2111347
+    }
+  },
+  {
+    "namespace": "MDM.MDM_AUDITORIA_SPN1",
+    "totalEvents": 1875851,
+    "totalEventsPerType": {
+      "insert": 960692,
+      "update": 909951,
+      "replace": 5208
+    }
+  },
+  {
+    "namespace": "MDM.MDM_PAGOS_ONLINE",
+    "totalEvents": 1799394,
+    "totalEventsPerType": {
+      "insert": 131380,
+      "update": 1668014
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_AUTH_BOTSERVICES",
+    "totalEvents": 1583839,
+    "totalEventsPerType": {
+      "insert": 1583839
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.BOT_CACHING`1",
+    "totalEvents": 1557033,
+    "totalEventsPerType": {
+      "insert": 719941,
+      "delete": 837092
+    }
+  },
+  {
+    "namespace": "MDM.PQR_FALLA_MASIVA_CONTACTO",
+    "totalEvents": 1489954,
+    "totalEventsPerType": {
+      "replace": 1483873,
+      "insert": 6081
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_ORDEN_HISTORICO_ESTADOS",
+    "totalEvents": 1344542,
+    "totalEventsPerType": {
+      "insert": 1313291,
+      "replace": 31204,
+      "update": 47
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.32cdb97b-aaf9-43dc-910c-86993c4ff299",
+    "totalEvents": 1094415,
+    "totalEventsPerType": {
+      "insert": 1094415
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.9d28f034-3bf4-477d-a875-bbab8e7cb539",
+    "totalEvents": 1028486,
+    "totalEventsPerType": {
+      "insert": 1028486
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.ad35b917-3adf-4ef1-b1ca-d45d39971a27",
+    "totalEvents": 1028485,
+    "totalEventsPerType": {
+      "insert": 1028485
+    }
+  },
+  {
+    "namespace": "MDM.SN1_LOG_OPERACIONES",
+    "totalEvents": 953716,
+    "totalEventsPerType": {
+      "insert": 538487,
+      "delete": 415229
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.098fd218-f15c-467d-8d00-98d8885815cf",
+    "totalEvents": 944246,
+    "totalEventsPerType": {
+      "insert": 944246
+    }
+  },
+  {
+    "namespace": "MDM.PQR_LOG",
+    "totalEvents": 924660,
+    "totalEventsPerType": {
+      "insert": 434685,
+      "delete": 489975
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.74d226b3-06ab-4d41-af76-9d3497ae1354",
+    "totalEvents": 917923,
+    "totalEventsPerType": {
+      "insert": 917923
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.8b4320d8-c8b2-4ff0-b9f3-cdd7ebe01948",
+    "totalEvents": 912131,
+    "totalEventsPerType": {
+      "insert": 912131
+    }
+  },
+  {
+    "namespace": "MDM.COLL_TRAMITES",
+    "totalEvents": 909056,
+    "totalEventsPerType": {
+      "update": 876441,
+      "insert": 15969,
+      "delete": 16634,
+      "replace": 12
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.603eaccb-cebb-49ca-9853-a23d80f6506e",
+    "totalEvents": 907798,
+    "totalEventsPerType": {
+      "insert": 907798
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.27fb3bd4-587b-4de6-890f-531e3394e8a8",
+    "totalEvents": 892216,
+    "totalEventsPerType": {
+      "insert": 892216
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.53bcbcb6-7ffb-4751-bf77-150a54ff9289",
+    "totalEvents": 822247,
+    "totalEventsPerType": {
+      "insert": 822247
+    }
+  },
+  {
+    "namespace": "MDM.COLL_RMCA",
+    "totalEvents": 678263,
+    "totalEventsPerType": {
+      "update": 643911,
+      "insert": 34352
+    }
+  },
+  {
+    "namespace": "MDM.LOG_NOTIFICACIONES",
+    "totalEvents": 652374,
+    "totalEventsPerType": {
+      "insert": 239824,
+      "update": 6690,
+      "delete": 405860
+    }
+  },
+  {
+    "namespace": "MDM.MDM_MECNA_ARCHIVO",
+    "totalEvents": 634898,
+    "totalEventsPerType": {
+      "delete": 317452,
+      "insert": 317446
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_SERVICIO",
+    "totalEvents": 624118,
+    "totalEventsPerType": {
+      "replace": 13086,
+      "update": 608037,
+      "delete": 1431,
+      "insert": 1564
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.598fc0bb-4bf5-4342-8fe4-5b409f15af07",
+    "totalEvents": 623017,
+    "totalEventsPerType": {
+      "insert": 623017
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.199841db-e2f6-4c28-a109-7dbfb9b06d65",
+    "totalEvents": 615125,
+    "totalEventsPerType": {
+      "insert": 615125
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.e8b266ba-c170-4f01-b430-b4ad558314e0",
+    "totalEvents": 599114,
+    "totalEventsPerType": {
+      "insert": 599114
+    }
+  },
+  {
+    "namespace": "MDM.MDM_ENVIO_NOTIFICACION_PAGO",
+    "totalEvents": 597589,
+    "totalEventsPerType": {
+      "insert": 191622,
+      "update": 405967
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.b055f672-c0b5-47fa-afdc-83f697387b3d",
+    "totalEvents": 589914,
+    "totalEventsPerType": {
+      "insert": 589914
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.a87f6d82-3155-4e5e-8494-d20e12e9b9a7",
+    "totalEvents": 589196,
+    "totalEventsPerType": {
+      "insert": 589196
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.77b87b87-439b-4dab-9916-d3596010ecaa",
+    "totalEvents": 588546,
+    "totalEventsPerType": {
+      "insert": 588546
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.46458940-7462-46b4-b2ea-5a18218585cc",
+    "totalEvents": 588447,
+    "totalEventsPerType": {
+      "insert": 588447
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.75097024-c2e2-465c-9a64-dc6a250d7145",
+    "totalEvents": 572550,
+    "totalEventsPerType": {
+      "insert": 572550
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.cea7fe40-d40d-4f44-bdfe-f5e4c39a100c",
+    "totalEvents": 569225,
+    "totalEventsPerType": {
+      "insert": 569225
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.4382b4b0-59e4-4df2-aafa-1858bdafe306",
+    "totalEvents": 568893,
+    "totalEventsPerType": {
+      "insert": 568893
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.4d71ffec-1c37-45e2-8f0e-44d7d4ce7c15",
+    "totalEvents": 568451,
+    "totalEventsPerType": {
+      "insert": 568451
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.41370189-daf0-4db5-845b-616d56ea3aee",
+    "totalEvents": 567750,
+    "totalEventsPerType": {
+      "insert": 567750
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.8d89f28b-dbfa-4fcf-bad3-f3e42b247969",
+    "totalEvents": 563487,
+    "totalEventsPerType": {
+      "insert": 563487
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.a8e3035d-550d-4ff8-9f53-aeabca98e06f",
+    "totalEvents": 560562,
+    "totalEventsPerType": {
+      "insert": 560562
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.b24f8bb2-fd50-4aa5-9907-f49afa9584da",
+    "totalEvents": 555478,
+    "totalEventsPerType": {
+      "insert": 555478
+    }
+  },
+  {
+    "namespace": "MDM.INV_LOG_INVENTARIO",
+    "totalEvents": 494366,
+    "totalEventsPerType": {
+      "insert": 494366
+    }
+  },
+  {
+    "namespace": "MDM.PQR_COMUNICACIONES_COMPENSACIONES_FALLA_MASIVA",
+    "totalEvents": 494234,
+    "totalEventsPerType": {
+      "update": 491634,
+      "insert": 2600
+    }
+  },
+  {
+    "namespace": "CLOUDSECURITY.ADM_Usuarios",
+    "totalEvents": 486488,
+    "totalEventsPerType": {
+      "update": 486453,
+      "insert": 34,
+      "replace": 1
+    }
+  },
+  {
+    "namespace": "MDM.MDM_PAGOS_ONLINE_RMCA",
+    "totalEvents": 483672,
+    "totalEventsPerType": {
+      "insert": 241966,
+      "update": 241706
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.BOT_PAYMENT_GATEWAY",
+    "totalEvents": 466210,
+    "totalEventsPerType": {
+      "update": 447430,
+      "insert": 18780
+    }
+  },
+  {
+    "namespace": "MDM.COLL_LOG_OPERACIONES",
+    "totalEvents": 432308,
+    "totalEventsPerType": {
+      "update": 402430,
+      "insert": 29878
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_SERVICIO_EXTERNO",
+    "totalEvents": 424965,
+    "totalEventsPerType": {
+      "insert": 242838,
+      "delete": 182127
+    }
+  },
+  {
+    "namespace": "MDM.MDM_FACTURA_ONLINE",
+    "totalEvents": 422152,
+    "totalEventsPerType": {
+      "update": 284981,
+      "insert": 137171
+    }
+  },
+  {
+    "namespace": "MDM.PQR_DEPURACION_AGENDA",
+    "totalEvents": 389983,
+    "totalEventsPerType": {
+      "update": 383946,
+      "insert": 6037
+    }
+  },
+  {
+    "namespace": "MDM.CDI_LOG_COMM",
+    "totalEvents": 385283,
+    "totalEventsPerType": {
+      "insert": 65127,
+      "update": 320156
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.SCRAPING_PROGRAMACION_REPROCESO",
+    "totalEvents": 337438,
+    "totalEventsPerType": {
+      "insert": 603,
+      "delete": 237,
+      "update": 336598
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.SCRAPING_PROGRAMACION",
+    "totalEvents": 327144,
+    "totalEventsPerType": {
+      "update": 326486,
+      "delete": 208,
+      "insert": 450
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.63b5f04a-a39f-4531-a645-67471ce23ac9",
+    "totalEvents": 325505,
+    "totalEventsPerType": {
+      "insert": 325505
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.59128761-6c4e-4389-bb7d-a953fba39632",
+    "totalEvents": 323873,
+    "totalEventsPerType": {
+      "insert": 323873
+    }
+  },
+  {
+    "namespace": "MDM.PROM_TRAZA",
+    "totalEvents": 323571,
+    "totalEventsPerType": {
+      "insert": 121883,
+      "delete": 201688
+    }
+  },
+  {
+    "namespace": "MDM.COLL_TRAMITES_ALISTAMIENTO",
+    "totalEvents": 308322,
+    "totalEventsPerType": {
+      "update": 207094,
+      "delete": 57246,
+      "insert": 43982
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.cbe13ce7-5ead-44dd-be0e-28f01d2c1ace",
+    "totalEvents": 305129,
+    "totalEventsPerType": {
+      "insert": 305129
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.5f7fdaee-2077-437f-b6a9-732b773ddd77",
+    "totalEvents": 300829,
+    "totalEventsPerType": {
+      "insert": 300829
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_PAGOS_PROGRAMADOS",
+    "totalEvents": 297045,
+    "totalEventsPerType": {
+      "insert": 297045
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.a5cb5600-8224-4b06-9764-33cf90743416",
+    "totalEvents": 295106,
+    "totalEventsPerType": {
+      "insert": 295106
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.2ec6d1c4-a5ff-41a1-966c-3c03d57b5794",
+    "totalEvents": 291156,
+    "totalEventsPerType": {
+      "insert": 291156
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.080fdf93-2816-4575-a485-8383a5ccfd8e",
+    "totalEvents": 289882,
+    "totalEventsPerType": {
+      "insert": 289882
+    }
+  },
+  {
+    "namespace": "MDM.MDM_ORDEN",
+    "totalEvents": 280504,
+    "totalEventsPerType": {
+      "update": 278108,
+      "insert": 2381,
+      "replace": 15
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.6444d37b-ed4d-4dc6-ad54-b1d11ee3c1f2",
+    "totalEvents": 279388,
+    "totalEventsPerType": {
+      "insert": 279388
+    }
+  },
+  {
+    "namespace": "MDM.MDM_FACTURACION_DETALLE_PEND",
+    "totalEvents": 267451,
+    "totalEventsPerType": {
+      "insert": 136841,
+      "delete": 130610
+    }
+  },
+  {
+    "namespace": "MDM.MDM_SERVICIO_ACTIVO_BKPInactivaLego",
+    "totalEvents": 260388,
+    "totalEventsPerType": {
+      "insert": 260388
+    }
+  },
+  {
+    "namespace": "MDM.MDM_PORTABILIDAD_HISTORICO",
+    "totalEvents": 257167,
+    "totalEventsPerType": {
+      "insert": 255803,
+      "update": 1364
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.87daf92f-d3cc-4f7d-9b56-d81cd2d99771",
+    "totalEvents": 249512,
+    "totalEventsPerType": {
+      "insert": 249512
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.dd983a15-4a92-48ba-a5e0-5908a5a71f97",
+    "totalEvents": 231943,
+    "totalEventsPerType": {
+      "insert": 231943
+    }
+  },
+  {
+    "namespace": "MDM.GC_PAGOS",
+    "totalEvents": 231815,
+    "totalEventsPerType": {
+      "insert": 231815
+    }
+  },
+  {
+    "namespace": "MDM.INV_RECURSOS_HIS",
+    "totalEvents": 179577,
+    "totalEventsPerType": {
+      "insert": 179577
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.4a301b6f-f341-438c-ac78-186f973113e1",
+    "totalEvents": 161703,
+    "totalEventsPerType": {
+      "insert": 161703
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.68ffc445-954a-4063-8fb9-f284d8966848",
+    "totalEvents": 159656,
+    "totalEventsPerType": {
+      "insert": 159656
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.6d103e99-e10a-4fc4-8594-66cdb949fe2e",
+    "totalEvents": 158181,
+    "totalEventsPerType": {
+      "insert": 158181
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.662f9c26-1e34-4507-8b2e-028273717e5b",
+    "totalEvents": 155263,
+    "totalEventsPerType": {
+      "insert": 155263
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.237acfaa-0146-4426-a609-911c3509a2af",
+    "totalEvents": 154419,
+    "totalEventsPerType": {
+      "insert": 154419
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.b6e17a9a-c22e-4717-a35b-aa4fa8ff1ad2",
+    "totalEvents": 151095,
+    "totalEventsPerType": {
+      "insert": 151095
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.8a79e905-109b-4771-a5d8-ec141e20f343",
+    "totalEvents": 143589,
+    "totalEventsPerType": {
+      "insert": 143589
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_RECARGA",
+    "totalEvents": 142701,
+    "totalEventsPerType": {
+      "insert": 142701
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_DESENCOLAR_RECARGA",
+    "totalEvents": 142453,
+    "totalEventsPerType": {
+      "insert": 142453
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.dfe76f2a-47bf-4050-9e8c-064fb9e57019",
+    "totalEvents": 139798,
+    "totalEventsPerType": {
+      "insert": 139798
+    }
+  },
+  {
+    "namespace": "MDM.MDM_FACTURACION",
+    "totalEvents": 136816,
+    "totalEventsPerType": {
+      "insert": 136816
+    }
+  },
+  {
+    "namespace": "MDM.INV_RECURSOS",
+    "totalEvents": 131957,
+    "totalEventsPerType": {
+      "update": 131939,
+      "insert": 18
+    }
+  },
+  {
+    "namespace": "MDM.DETALLE_MDM_MOVIMIENTO_MAT_TRAN",
+    "totalEvents": 126345,
+    "totalEventsPerType": {
+      "insert": 15572,
+      "replace": 45218,
+      "update": 65555
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.de114533-3131-44ea-92db-f6d837a49c42",
+    "totalEvents": 112051,
+    "totalEventsPerType": {
+      "insert": 112051
+    }
+  },
+  {
+    "namespace": "MDM.COLL_ENVIO_PLATAFORMA_FTTX",
+    "totalEvents": 103498,
+    "totalEventsPerType": {
+      "insert": 29911,
+      "update": 73587
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_GET_SERVICES",
+    "totalEvents": 94601,
+    "totalEventsPerType": {
+      "insert": 94601
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.f7134e43-93c7-49ff-afc1-515d225502c9",
+    "totalEvents": 92937,
+    "totalEventsPerType": {
+      "insert": 92937
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.c52cc6c5-c9f0-4fe2-b2be-a1c1bb3bb22b",
+    "totalEvents": 91541,
+    "totalEventsPerType": {
+      "insert": 91541
+    }
+  },
+  {
+    "namespace": "MDM.MDM_VINCULADOS_CONVENIO",
+    "totalEvents": 91494,
+    "totalEventsPerType": {
+      "update": 6,
+      "insert": 91488
+    }
+  },
+  {
+    "namespace": "MDM.MDM_AUDITORIA_WS",
+    "totalEvents": 91479,
+    "totalEventsPerType": {
+      "insert": 91479
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_DATOS_CONTRATO_DIGITAL",
+    "totalEvents": 78214,
+    "totalEventsPerType": {
+      "update": 55448,
+      "delete": 5927,
+      "insert": 16839
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.ec27f73e-5aae-4b95-b6d5-3cd1088b164b",
+    "totalEvents": 67773,
+    "totalEventsPerType": {
+      "insert": 67773
+    }
+  },
+  {
+    "namespace": "MDM.MDM_AUDITORIA_MENSAJES_WS",
+    "totalEvents": 64437,
+    "totalEventsPerType": {
+      "insert": 64437
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.459739ca-4483-48bd-88c1-93ee46bc6e40",
+    "totalEvents": 60969,
+    "totalEventsPerType": {
+      "insert": 60969
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.4a0f7523-2122-4a49-a98b-95cc035687c3",
+    "totalEvents": 60955,
+    "totalEventsPerType": {
+      "insert": 60955
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.ae7aa22f-90a0-4b0c-ba0f-9b781ea3355d",
+    "totalEvents": 60955,
+    "totalEventsPerType": {
+      "insert": 60955
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.55280f39-68b0-4347-8a86-9604180f072b",
+    "totalEvents": 60955,
+    "totalEventsPerType": {
+      "insert": 60955
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.b5c42dc3-e07a-4f9c-8cb9-846f1de38754",
+    "totalEvents": 60320,
+    "totalEventsPerType": {
+      "insert": 60320
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.a568ffd1-90a4-45ec-9a6e-0b6c18b7740b",
+    "totalEvents": 60302,
+    "totalEventsPerType": {
+      "insert": 60302
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.05bad0b6-208a-4c70-849d-bb63bcb9b682",
+    "totalEvents": 60302,
+    "totalEventsPerType": {
+      "insert": 60302
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.93009f7f-5f22-4b69-95de-e91944a47a55",
+    "totalEvents": 60302,
+    "totalEventsPerType": {
+      "insert": 60302
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.ca2171af-acc8-4c63-a7b4-1b0300418a97",
+    "totalEvents": 59443,
+    "totalEventsPerType": {
+      "insert": 59443
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.61710ae1-e9ff-4e40-b1dd-3748fd19c38d",
+    "totalEvents": 59213,
+    "totalEventsPerType": {
+      "insert": 59213
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.ab3007de-394b-440b-8cf4-0bed1e63512f",
+    "totalEvents": 58652,
+    "totalEventsPerType": {
+      "insert": 58652
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.609e84b5-2f65-464d-9654-5db66983c104",
+    "totalEvents": 58586,
+    "totalEventsPerType": {
+      "insert": 58586
+    }
+  },
+  {
+    "namespace": "MDM.MDM_SERVICIO_ACTIVO",
+    "totalEvents": 57477,
+    "totalEventsPerType": {
+      "insert": 509,
+      "update": 56968
+    }
+  },
+  {
+    "namespace": "MDM.PAR_CONSECUTIVOS",
+    "totalEvents": 57406,
+    "totalEventsPerType": {
+      "update": 57406
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.3b59bb45-b2c8-4208-96b1-251f31de9ca8",
+    "totalEvents": 57065,
+    "totalEventsPerType": {
+      "insert": 57065
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.c50eafdb-f8cb-4d74-be59-9fcb08393fc0",
+    "totalEvents": 57044,
+    "totalEventsPerType": {
+      "insert": 57044
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.5dd66e38-cfc9-4800-8ba7-5301329782ac",
+    "totalEvents": 57042,
+    "totalEventsPerType": {
+      "insert": 57042
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.63d86e83-f9b2-49ee-a307-3c00d640b2fb",
+    "totalEvents": 57042,
+    "totalEventsPerType": {
+      "insert": 57042
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.d73ece24-d003-494a-ae83-9c4e4875a84a",
+    "totalEvents": 56256,
+    "totalEventsPerType": {
+      "insert": 56256
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.ffadeabb-66b6-4ba6-8345-8ee823c1f8f4",
+    "totalEvents": 56246,
+    "totalEventsPerType": {
+      "insert": 56246
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.dad20b8b-d29d-4eeb-a889-407b99450fa0",
+    "totalEvents": 56246,
+    "totalEventsPerType": {
+      "insert": 56246
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.bcc64597-4412-446a-b2af-2f2121a1055f",
+    "totalEvents": 56246,
+    "totalEventsPerType": {
+      "insert": 56246
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.8c4cd2f5-437c-4186-8972-5d49fa4d8545",
+    "totalEvents": 54239,
+    "totalEventsPerType": {
+      "insert": 54239
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.a6caf381-fe69-47c5-b29c-099168873cb5",
+    "totalEvents": 54231,
+    "totalEventsPerType": {
+      "insert": 54231
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.64f1e05e-e67b-4f94-a594-25647d7f1cc4",
+    "totalEvents": 54231,
+    "totalEventsPerType": {
+      "insert": 54231
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.f01331f5-2e53-40d5-8891-2897ac14197a",
+    "totalEvents": 54230,
+    "totalEventsPerType": {
+      "insert": 54230
+    }
+  },
+  {
+    "namespace": "MDM.MDM_NOTIFICACIONES_WS",
+    "totalEvents": 54127,
+    "totalEventsPerType": {
+      "replace": 54127
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.f4622479-09f1-4ed4-8ae5-04ffc35bed12",
+    "totalEvents": 53162,
+    "totalEventsPerType": {
+      "insert": 53162
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.13f3ca15-d5bd-40ff-8c8e-c6e742facc09",
+    "totalEvents": 53148,
+    "totalEventsPerType": {
+      "insert": 53148
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.58c6bb75-fb38-4ebc-bb2f-c102807bf35f",
+    "totalEvents": 53148,
+    "totalEventsPerType": {
+      "insert": 53148
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.16922793-cf6b-4b33-a200-9406ef4776cd",
+    "totalEvents": 53148,
+    "totalEventsPerType": {
+      "insert": 53148
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.eb037c32-155a-490e-b4b3-47d0ea1414e6",
+    "totalEvents": 52180,
+    "totalEventsPerType": {
+      "insert": 52180
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.6419d661-cd6f-4e53-9f9b-1f045ff7460c",
+    "totalEvents": 52171,
+    "totalEventsPerType": {
+      "insert": 52171
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.b9c1d311-14fa-4024-b24b-c93dd18be284",
+    "totalEvents": 52170,
+    "totalEventsPerType": {
+      "insert": 52170
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.6679b5c4-acd4-4f05-aaad-4284ca012c7b",
+    "totalEvents": 52169,
+    "totalEventsPerType": {
+      "insert": 52169
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.da629579-7b16-4894-b748-4cf28092ae92",
+    "totalEvents": 48496,
+    "totalEventsPerType": {
+      "insert": 48496
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.06c16083-071c-4505-bbe2-ff8bb3ffe9ee",
+    "totalEvents": 48496,
+    "totalEventsPerType": {
+      "insert": 48496
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.66eeeabc-5fb1-4eb9-abd7-dab03c300875",
+    "totalEvents": 48496,
+    "totalEventsPerType": {
+      "insert": 48496
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.bdd5b3ab-a817-420b-b69f-5d86824d174f",
+    "totalEvents": 48493,
+    "totalEventsPerType": {
+      "insert": 48493
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.21084ee4-b711-4cea-9269-7b785c2b6da9",
+    "totalEvents": 44052,
+    "totalEventsPerType": {
+      "insert": 44052
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.8442521b-a137-4005-877d-21161375bd2c",
+    "totalEvents": 44045,
+    "totalEventsPerType": {
+      "insert": 44045
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.a38acb96-dfbe-4f3f-aa38-a791479173a6",
+    "totalEvents": 44045,
+    "totalEventsPerType": {
+      "insert": 44045
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.578eb455-6562-4b28-b81a-59a835a11979",
+    "totalEvents": 44044,
+    "totalEventsPerType": {
+      "insert": 44044
+    }
+  },
+  {
+    "namespace": "MDM.MDM_INTEGRATION_MSG",
+    "totalEvents": 42618,
+    "totalEventsPerType": {
+      "insert": 42602,
+      "delete": 16
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.9b71cf97-0e45-4ea2-95b6-a68eeda1425c",
+    "totalEvents": 39696,
+    "totalEventsPerType": {
+      "insert": 39696
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_INVENTARIO",
+    "totalEvents": 39657,
+    "totalEventsPerType": {
+      "insert": 8954,
+      "replace": 22776,
+      "delete": 5317,
+      "update": 2610
+    }
+  },
+  {
+    "namespace": "MDM.CDI_INVENTARIO",
+    "totalEvents": 39341,
+    "totalEventsPerType": {
+      "insert": 4036,
+      "update": 35305
+    }
+  },
+  {
+    "namespace": "MDM.PORTAL_UNIFICADO_VERIFICACION_ACCESO",
+    "totalEvents": 38310,
+    "totalEventsPerType": {
+      "update": 38120,
+      "insert": 190
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.b3e16f2c-8077-46b9-b5b8-54c04c2a7bcf",
+    "totalEvents": 37886,
+    "totalEventsPerType": {
+      "insert": 37886
+    }
+  },
+  {
+    "namespace": "MDM.PROM_PLAN_EJECUCION",
+    "totalEvents": 33545,
+    "totalEventsPerType": {
+      "insert": 4060,
+      "replace": 28203,
+      "update": 1282
+    }
+  },
+  {
+    "namespace": "MDM.PROM_DESAGREGACION",
+    "totalEvents": 27330,
+    "totalEventsPerType": {
+      "insert": 12186,
+      "replace": 15144
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_HISTORICO_MENSAJERIA",
+    "totalEvents": 26406,
+    "totalEventsPerType": {
+      "insert": 207,
+      "replace": 26199
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.b213fae5-18ac-41d0-8fa4-ad3382049368",
+    "totalEvents": 22874,
+    "totalEventsPerType": {
+      "insert": 22874
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.87478385-46b1-40d6-886e-ba94af618bcb",
+    "totalEvents": 22536,
+    "totalEventsPerType": {
+      "insert": 22536
+    }
+  },
+  {
+    "namespace": "MDM.COLL_RESPUESTA_ASAP",
+    "totalEvents": 22324,
+    "totalEventsPerType": {
+      "insert": 22324
+    }
+  },
+  {
+    "namespace": "MDM.TMP_FIJA_ORDENES_REPRESADAS",
+    "totalEvents": 22251,
+    "totalEventsPerType": {
+      "delete": 929,
+      "insert": 1554,
+      "update": 19768
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.f746eefb-a938-4f87-a6d9-ee27b0c68531",
+    "totalEvents": 21529,
+    "totalEventsPerType": {
+      "insert": 21529
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.5c899410-2ad4-44a1-aad7-6ada97b9228d",
+    "totalEvents": 21252,
+    "totalEventsPerType": {
+      "insert": 21252
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.9bf25a04-8566-4271-a563-b94309390391",
+    "totalEvents": 20120,
+    "totalEventsPerType": {
+      "insert": 20120
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.3204b25b-646a-47f6-82c4-60542d814eed",
+    "totalEvents": 19781,
+    "totalEventsPerType": {
+      "insert": 19781
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_CONSECUTIVO",
+    "totalEvents": 19723,
+    "totalEventsPerType": {
+      "update": 19723
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.eb86e132-75ea-442a-bc26-77cd2ab9adac",
+    "totalEvents": 19344,
+    "totalEventsPerType": {
+      "insert": 19344
+    }
+  },
+  {
+    "namespace": "MDM.COLL_LOG_TRAMITES",
+    "totalEvents": 19025,
+    "totalEventsPerType": {
+      "insert": 18675,
+      "delete": 350
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CLIENTE",
+    "totalEvents": 18658,
+    "totalEventsPerType": {
+      "insert": 363,
+      "update": 18134,
+      "delete": 158,
+      "replace": 3
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.fe641536-c7ec-42ee-bc84-6f705b808859",
+    "totalEvents": 18519,
+    "totalEventsPerType": {
+      "insert": 18519
+    }
+  },
+  {
+    "namespace": "MDM.MDM_ANS_COLL_TRAMITES",
+    "totalEvents": 18504,
+    "totalEventsPerType": {
+      "insert": 18504
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.a9101a78-4a70-4157-8126-c413859e42c6",
+    "totalEvents": 17846,
+    "totalEventsPerType": {
+      "insert": 17846
+    }
+  },
+  {
+    "namespace": "MDM.MDM_PORTABILIDAD_SALIENTE_CI",
+    "totalEvents": 17549,
+    "totalEventsPerType": {
+      "update": 17276,
+      "insert": 273
+    }
+  },
+  {
+    "namespace": "MDM.CDI_ALTAS_SAP",
+    "totalEvents": 15661,
+    "totalEventsPerType": {
+      "update": 5401,
+      "insert": 10260
+    }
+  },
+  {
+    "namespace": "MDM.COLL_TRAMITES_EMPRESAS",
+    "totalEvents": 13335,
+    "totalEventsPerType": {
+      "update": 12171,
+      "delete": 586,
+      "insert": 578
+    }
+  },
+  {
+    "namespace": "MDM.MDM_MOVIMIENTO_MAT_TRAN",
+    "totalEvents": 12329,
+    "totalEventsPerType": {
+      "update": 11818,
+      "insert": 511
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_TAREAS_SOLICITUD",
+    "totalEvents": 11583,
+    "totalEventsPerType": {
+      "update": 11410,
+      "insert": 173
+    }
+  },
+  {
+    "namespace": "ANALITICA.AN_LOG_CARGUE",
+    "totalEvents": 11272,
+    "totalEventsPerType": {
+      "insert": 11272
+    }
+  },
+  {
+    "namespace": "MDM.ADM_LOG",
+    "totalEvents": 10577,
+    "totalEventsPerType": {
+      "insert": 10577
+    }
+  },
+  {
+    "namespace": "MDM.LOG_GESTOR_CUOTAS",
+    "totalEvents": 10321,
+    "totalEventsPerType": {
+      "insert": 10321
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_APROVISIONAMIENTO",
+    "totalEvents": 10289,
+    "totalEventsPerType": {
+      "update": 9407,
+      "insert": 882
+    }
+  },
+  {
+    "namespace": "ZONAG.PD_GEO_DIRECCIONES",
+    "totalEvents": 9679,
+    "totalEventsPerType": {
+      "insert": 235,
+      "update": 9444
+    }
+  },
+  {
+    "namespace": "ZONAG.PD_AUDITORIA",
+    "totalEvents": 9661,
+    "totalEventsPerType": {
+      "insert": 9661
+    }
+  },
+  {
+    "namespace": "MDM.PROM_ALTA_PROMOCION",
+    "totalEvents": 9568,
+    "totalEventsPerType": {
+      "insert": 3303,
+      "replace": 4218,
+      "update": 2047
+    }
+  },
+  {
+    "namespace": "MDM.AppSoporte_JSC_Tokens",
+    "totalEvents": 8968,
+    "totalEventsPerType": {
+      "update": 8968
+    }
+  },
+  {
+    "namespace": "CLOUDSECURITY.LOG_AUTENTICACION",
+    "totalEvents": 8030,
+    "totalEventsPerType": {
+      "insert": 8030
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_HISTORICO_MODIFICACIONES",
+    "totalEvents": 6487,
+    "totalEventsPerType": {
+      "insert": 6487
+    }
+  },
+  {
+    "namespace": "MDM.COLL_SOPORTE_ANS",
+    "totalEvents": 6148,
+    "totalEventsPerType": {
+      "insert": 3606,
+      "update": 2542
+    }
+  },
+  {
+    "namespace": "MDM.COLL_CONTROL_TRAMITES_HIST",
+    "totalEvents": 5856,
+    "totalEventsPerType": {
+      "insert": 3070,
+      "update": 2786
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_PASAGIGAS_BATCH",
+    "totalEvents": 5600,
+    "totalEventsPerType": {
+      "insert": 5600
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.MIETB_CONTADOR_AUTH",
+    "totalEvents": 5396,
+    "totalEventsPerType": {
+      "update": 5396
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_MIETB_AUTH",
+    "totalEvents": 5269,
+    "totalEventsPerType": {
+      "insert": 5269
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_HIST_REC_EXP",
+    "totalEvents": 4906,
+    "totalEventsPerType": {
+      "insert": 4906
+    }
+  },
+  {
+    "namespace": "ANALITICA.AN_EVENTOS_GESTORCONOCIMIENTO",
+    "totalEvents": 4326,
+    "totalEventsPerType": {
+      "delete": 3738,
+      "insert": 588
+    }
+  },
+  {
+    "namespace": "ANALITICA.AN_EVENTOS_GESTORCONOCIMIENTO_LOG",
+    "totalEvents": 4198,
+    "totalEventsPerType": {
+      "insert": 4198
+    }
+  },
+  {
+    "namespace": "MDM.PROM_CONTROL_BENEFICIO_FIJA",
+    "totalEvents": 3984,
+    "totalEventsPerType": {
+      "insert": 288,
+      "update": 3507,
+      "replace": 189
+    }
+  },
+  {
+    "namespace": "MDM.AppSoporte_Auditoria",
+    "totalEvents": 3970,
+    "totalEventsPerType": {
+      "insert": 3970
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_AUDITORIA_SERVICIOS",
+    "totalEvents": 3874,
+    "totalEventsPerType": {
+      "insert": 3874
+    }
+  },
+  {
+    "namespace": "MDM.MDM_PORTABILIDAD_SOLICITUDES",
+    "totalEvents": 3224,
+    "totalEventsPerType": {
+      "insert": 3224
+    }
+  },
+  {
+    "namespace": "MDM.MDM_PORTABILIDAD_CONSECUTIVOS",
+    "totalEvents": 3212,
+    "totalEventsPerType": {
+      "update": 3212
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_HISTORICO_AGENDA",
+    "totalEvents": 2952,
+    "totalEventsPerType": {
+      "insert": 2952
+    }
+  },
+  {
+    "namespace": "CLOUDSECURITY.ADM_AUDITORIA_LOGIN",
+    "totalEvents": 2606,
+    "totalEventsPerType": {
+      "insert": 2606
+    }
+  },
+  {
+    "namespace": "MDM.COLL_SOPORTE_TIPOLOGIAS_FALLA",
+    "totalEvents": 2329,
+    "totalEventsPerType": {
+      "insert": 489,
+      "update": 1840
+    }
+  },
+  {
+    "namespace": "MDM.MDM_ORDEN_SERVICIO",
+    "totalEvents": 2097,
+    "totalEventsPerType": {
+      "delete": 102,
+      "insert": 1282,
+      "update": 710,
+      "replace": 3
+    }
+  },
+  {
+    "namespace": "MDM.MDM_PI_EXCEPCIONES",
+    "totalEvents": 1924,
+    "totalEventsPerType": {
+      "insert": 1924
+    }
+  },
+  {
+    "namespace": "MDM.MDM_ORDEN_DESPACHO",
+    "totalEvents": 1810,
+    "totalEventsPerType": {
+      "update": 1679,
+      "insert": 131
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_CONSULTA_FACTURAS_PENDIENTES",
+    "totalEvents": 1598,
+    "totalEventsPerType": {
+      "insert": 1598
+    }
+  },
+  {
+    "namespace": "MDM.IVR_CONTACTO_FRECUENTE",
+    "totalEvents": 1499,
+    "totalEventsPerType": {
+      "update": 1450,
+      "insert": 49
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_MIETB_GET",
+    "totalEvents": 1430,
+    "totalEventsPerType": {
+      "insert": 1430
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_CONSECUTIVO",
+    "totalEvents": 1429,
+    "totalEventsPerType": {
+      "update": 1429
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SUPPORT_INIT",
+    "totalEvents": 1246,
+    "totalEventsPerType": {
+      "insert": 1246
+    }
+  },
+  {
+    "namespace": "MDM.TMP_FIJA_PARAMETROS",
+    "totalEvents": 1245,
+    "totalEventsPerType": {
+      "update": 1245
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_BILL_GET",
+    "totalEvents": 1234,
+    "totalEventsPerType": {
+      "insert": 1234
+    }
+  },
+  {
+    "namespace": "MDM.MDM_BIOMETRIA_TRANSACCION",
+    "totalEvents": 1218,
+    "totalEventsPerType": {
+      "update": 1107,
+      "insert": 111
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.NOTIFY_REGISTER_RETRY",
+    "totalEvents": 1193,
+    "totalEventsPerType": {
+      "insert": 418,
+      "update": 775
+    }
+  },
+  {
+    "namespace": "MDM.ORCH_ATOMICS_AMBPRD_20260205_1800",
+    "totalEvents": 1185,
+    "totalEventsPerType": {
+      "insert": 1185
+    }
+  },
+  {
+    "namespace": "MDM.ORCH_ATOMICS_AMBPRD_20260122_1800",
+    "totalEvents": 1183,
+    "totalEventsPerType": {
+      "insert": 1183
+    }
+  },
+  {
+    "namespace": "MDM.LOG_NOTIFICACIONES_PENDIENTES",
+    "totalEvents": 1140,
+    "totalEventsPerType": {
+      "update": 1140
+    }
+  },
+  {
+    "namespace": "MDM.PQR_AGENDA_TMR",
+    "totalEvents": 1135,
+    "totalEventsPerType": {
+      "update": 1071,
+      "insert": 49,
+      "replace": 15
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_CONTRATO_DIGITAL",
+    "totalEvents": 1102,
+    "totalEventsPerType": {
+      "insert": 379,
+      "replace": 723
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.DASHBOARD_COMPARTE_RECURSOS",
+    "totalEvents": 1095,
+    "totalEventsPerType": {
+      "update": 1095
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_CONSULTA_ORDENES",
+    "totalEvents": 1071,
+    "totalEventsPerType": {
+      "insert": 1071
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_MAX_AUTH",
+    "totalEvents": 1067,
+    "totalEventsPerType": {
+      "insert": 1067
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_PARAMETRO_AMBPRD_20260205_1800",
+    "totalEvents": 1062,
+    "totalEventsPerType": {
+      "insert": 1062
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_PARAMETRO_AMBPRD_20260122_1800",
+    "totalEvents": 1060,
+    "totalEventsPerType": {
+      "insert": 1060
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_PAYMENT_CREATE",
+    "totalEvents": 1018,
+    "totalEventsPerType": {
+      "insert": 1018
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_IVR_AUTH",
+    "totalEvents": 972,
+    "totalEventsPerType": {
+      "insert": 972
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_CANCELAR_AGENDA",
+    "totalEvents": 951,
+    "totalEventsPerType": {
+      "insert": 951
+    }
+  },
+  {
+    "namespace": "MDM.MDM_AUDITORIA_PORTABILIDAD_MSJ",
+    "totalEvents": 933,
+    "totalEventsPerType": {
+      "insert": 933
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_ALERTAS_NOTIFICACIONES",
+    "totalEvents": 914,
+    "totalEventsPerType": {
+      "insert": 86,
+      "update": 828
+    }
+  },
+  {
+    "namespace": "ANALITICA.AN_SERVICIO",
+    "totalEvents": 892,
+    "totalEventsPerType": {
+      "update": 892
+    }
+  },
+  {
+    "namespace": "MDM.ORCH_SERVICES_AMBPRD_20260205_1800",
+    "totalEvents": 838,
+    "totalEventsPerType": {
+      "insert": 838
+    }
+  },
+  {
+    "namespace": "MDM.ORCH_SERVICES_AMBPRD_20260122_1800",
+    "totalEvents": 836,
+    "totalEventsPerType": {
+      "insert": 836
+    }
+  },
+  {
+    "namespace": "MDM.COLL_TRAMITES_EMPRESAS_ALISTAMIENTO",
+    "totalEvents": 828,
+    "totalEventsPerType": {
+      "update": 559,
+      "insert": 269
+    }
+  },
+  {
+    "namespace": "MDM.PQR_MOVIMIENTO_ORDEN",
+    "totalEvents": 716,
+    "totalEventsPerType": {
+      "insert": 18,
+      "replace": 698
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_CONSULTA_SALDOS",
+    "totalEvents": 694,
+    "totalEventsPerType": {
+      "insert": 694
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_CONSULTAR_FACTURA",
+    "totalEvents": 678,
+    "totalEventsPerType": {
+      "insert": 678
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_CONSULTAR_PQR",
+    "totalEvents": 645,
+    "totalEventsPerType": {
+      "insert": 645
+    }
+  },
+  {
+    "namespace": "MDM.COLL_CONTROL_CICLOS",
+    "totalEvents": 640,
+    "totalEventsPerType": {
+      "insert": 640
+    }
+  },
+  {
+    "namespace": "MDM.MDM_MECNA_LOG_CONSULTA",
+    "totalEvents": 597,
+    "totalEventsPerType": {
+      "update": 597
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_GET_ORDERS",
+    "totalEvents": 583,
+    "totalEventsPerType": {
+      "insert": 583
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CUENTA_FACTURACION",
+    "totalEvents": 573,
+    "totalEventsPerType": {
+      "insert": 234,
+      "update": 338,
+      "delete": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_WHATSAPP_GET_BY_PHONE",
+    "totalEvents": 566,
+    "totalEventsPerType": {
+      "insert": 566
+    }
+  },
+  {
+    "namespace": "MDM.COLL_SOPORTE_FECHAS",
+    "totalEvents": 560,
+    "totalEventsPerType": {
+      "update": 560
+    }
+  },
+  {
+    "namespace": "MDM.MDM_LOG_TRANSACCIONAL",
+    "totalEvents": 555,
+    "totalEventsPerType": {
+      "insert": 555
+    }
+  },
+  {
+    "namespace": "MDM.COLL_LOG_OPERACIONES_ALISTAMIENTO",
+    "totalEvents": 535,
+    "totalEventsPerType": {
+      "insert": 265,
+      "update": 270
+    }
+  },
+  {
+    "namespace": "MDM.CD_RETENCION",
+    "totalEvents": 534,
+    "totalEventsPerType": {
+      "insert": 56,
+      "replace": 470,
+      "update": 8
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_GET_PQR",
+    "totalEvents": 526,
+    "totalEventsPerType": {
+      "insert": 526
+    }
+  },
+  {
+    "namespace": "MDM.COLL_SOPORTE_SOLUCIONES_LOG",
+    "totalEvents": 523,
+    "totalEventsPerType": {
+      "insert": 523
+    }
+  },
+  {
+    "namespace": "MDM.MDM_ORDEN_AUTOMATICA",
+    "totalEvents": 501,
+    "totalEventsPerType": {
+      "insert": 242,
+      "replace": 259
+    }
+  },
+  {
+    "namespace": "MDM.AUTH_APIORDENES",
+    "totalEvents": 495,
+    "totalEventsPerType": {
+      "insert": 100,
+      "delete": 395
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SOPORTE1N",
+    "totalEvents": 490,
+    "totalEventsPerType": {
+      "insert": 166,
+      "replace": 324
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_PAGO_FACTURA",
+    "totalEvents": 463,
+    "totalEventsPerType": {
+      "insert": 463
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_ANOTACION",
+    "totalEvents": 415,
+    "totalEventsPerType": {
+      "insert": 415
+    }
+  },
+  {
+    "namespace": "MDM.COLL_TRAMITES_RECHAZADOS",
+    "totalEvents": 381,
+    "totalEventsPerType": {
+      "insert": 381
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SET_TYC",
+    "totalEvents": 378,
+    "totalEventsPerType": {
+      "insert": 378
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_LINK_CAMBIAR_CONTRASENA",
+    "totalEvents": 347,
+    "totalEventsPerType": {
+      "insert": 347
+    }
+  },
+  {
+    "namespace": "MDM.CDI_MOVIMIENTO",
+    "totalEvents": 337,
+    "totalEventsPerType": {
+      "insert": 337
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.CATALOGO_COMERCIAL_PLAN",
+    "totalEvents": 325,
+    "totalEventsPerType": {
+      "delete": 238,
+      "insert": 87
+    }
+  },
+  {
+    "namespace": "MDM.MDM_VALIDACION_CLIENTE",
+    "totalEvents": 320,
+    "totalEventsPerType": {
+      "update": 269,
+      "insert": 51
+    }
+  },
+  {
+    "namespace": "MDM.MDM_LOG_FORMATOS",
+    "totalEvents": 312,
+    "totalEventsPerType": {
+      "insert": 312
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_GET_EXPENSES_v2",
+    "totalEvents": 310,
+    "totalEventsPerType": {
+      "insert": 310
+    }
+  },
+  {
+    "namespace": "ANALITICA.AN_GRUPO_CONOCIMIENTO",
+    "totalEvents": 285,
+    "totalEventsPerType": {
+      "insert": 114,
+      "update": 171
+    }
+  },
+  {
+    "namespace": "MDM.PAR_BRAS",
+    "totalEvents": 271,
+    "totalEventsPerType": {
+      "update": 271
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.CATALOGO_COMERCIAL_PROMOCION",
+    "totalEvents": 244,
+    "totalEventsPerType": {
+      "delete": 60,
+      "insert": 26,
+      "update": 158
+    }
+  },
+  {
+    "namespace": "MDM.MDM_BIOMETRIA_LOG_TRANSACCION",
+    "totalEvents": 235,
+    "totalEventsPerType": {
+      "insert": 235
+    }
+  },
+  {
+    "namespace": "MDM.MDM_ENVIO_DTV",
+    "totalEvents": 229,
+    "totalEventsPerType": {
+      "insert": 229
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.CATALOGO_COMERCIAL_SVA",
+    "totalEvents": 225,
+    "totalEventsPerType": {
+      "delete": 194,
+      "insert": 31
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SATISFACTION_SURVEY",
+    "totalEvents": 217,
+    "totalEventsPerType": {
+      "insert": 217
+    }
+  },
+  {
+    "namespace": "MDM.OFSC_EVENTOS",
+    "totalEvents": 213,
+    "totalEventsPerType": {
+      "insert": 213
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.BOT_CONSECUTIVO",
+    "totalEvents": 211,
+    "totalEventsPerType": {
+      "update": 211
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_CONSULTA_COBERTURA",
+    "totalEvents": 184,
+    "totalEventsPerType": {
+      "insert": 184
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_VIABILIDAD",
+    "totalEvents": 179,
+    "totalEventsPerType": {
+      "update": 175,
+      "insert": 4
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_ESCALAMIENTO_ORDEN",
+    "totalEvents": 179,
+    "totalEventsPerType": {
+      "replace": 148,
+      "insert": 31
+    }
+  },
+  {
+    "namespace": "MDM.PORTAL_UNIFICADO_USUARIO",
+    "totalEvents": 176,
+    "totalEventsPerType": {
+      "insert": 19,
+      "update": 153,
+      "delete": 4
+    }
+  },
+  {
+    "namespace": "MDM.MDM_QUALITY_AUDIT",
+    "totalEvents": 176,
+    "totalEventsPerType": {
+      "update": 2,
+      "insert": 174
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_REGISTRO_LIGHT_MIETB",
+    "totalEvents": 172,
+    "totalEventsPerType": {
+      "insert": 169,
+      "update": 3
+    }
+  },
+  {
+    "namespace": "MDM.MDM_BLOQUEO_ORDEN",
+    "totalEvents": 170,
+    "totalEventsPerType": {
+      "delete": 64,
+      "insert": 40,
+      "update": 66
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_BOLETA_DIGITAL",
+    "totalEvents": 166,
+    "totalEventsPerType": {
+      "replace": 103,
+      "insert": 58,
+      "update": 5
+    }
+  },
+  {
+    "namespace": "ZONAG.LOG_PETICION_PORTAL_DIRECCIONES",
+    "totalEvents": 157,
+    "totalEventsPerType": {
+      "update": 123,
+      "insert": 34
+    }
+  },
+  {
+    "namespace": "MDM.MDM_SERVICIO_RELACIONADO",
+    "totalEvents": 156,
+    "totalEventsPerType": {
+      "insert": 7,
+      "replace": 149
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_IDENTITY_VALIDATION",
+    "totalEvents": 138,
+    "totalEventsPerType": {
+      "insert": 138
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_MIETB_UPDATE_PASSWORD",
+    "totalEvents": 135,
+    "totalEventsPerType": {
+      "insert": 135
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_CREAR_PQR",
+    "totalEvents": 127,
+    "totalEventsPerType": {
+      "insert": 127
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_CONSULTA_CUPOS",
+    "totalEvents": 117,
+    "totalEventsPerType": {
+      "insert": 117
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_HOJA_VIDA",
+    "totalEvents": 115,
+    "totalEventsPerType": {
+      "insert": 53,
+      "replace": 62
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_AGENDAMIENTO_PQR",
+    "totalEvents": 113,
+    "totalEventsPerType": {
+      "insert": 113
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_SUSPENSION_RECONEXION",
+    "totalEvents": 104,
+    "totalEventsPerType": {
+      "update": 104
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.SN1_CORP_LOG",
+    "totalEvents": 101,
+    "totalEventsPerType": {
+      "insert": 52,
+      "replace": 49
+    }
+  },
+  {
+    "namespace": "MDM.PORTAL_UNIFICADO_BUZON",
+    "totalEvents": 100,
+    "totalEventsPerType": {
+      "delete": 100
+    }
+  },
+  {
+    "namespace": "MDM.AppSoporte_OrquestacionOrdenesFija",
+    "totalEvents": 100,
+    "totalEventsPerType": {
+      "insert": 100
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_PAYMENT_UPDATE",
+    "totalEvents": 92,
+    "totalEventsPerType": {
+      "insert": 92
+    }
+  },
+  {
+    "namespace": "MDM.MDM_AUDITORIA_PORTABILIDAD",
+    "totalEvents": 91,
+    "totalEventsPerType": {
+      "insert": 91
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_SERVICIO_CLIENTE",
+    "totalEvents": 90,
+    "totalEventsPerType": {
+      "update": 90
+    }
+  },
+  {
+    "namespace": "MDM.MDM_PAGOS_PROGRAMADOS_FACTURACION",
+    "totalEvents": 90,
+    "totalEventsPerType": {
+      "update": 88,
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_GET_COMPENSATIONS",
+    "totalEvents": 85,
+    "totalEventsPerType": {
+      "insert": 85
+    }
+  },
+  {
+    "namespace": "MDM.PORTAL_UNIFICADO_HISTORICO",
+    "totalEvents": 85,
+    "totalEventsPerType": {
+      "update": 69,
+      "insert": 16
+    }
+  },
+  {
+    "namespace": "MDM.MDM_FACTURACION_PDF",
+    "totalEvents": 83,
+    "totalEventsPerType": {
+      "insert": 83
+    }
+  },
+  {
+    "namespace": "CLOUDSECURITY.ADM_LOG",
+    "totalEvents": 78,
+    "totalEventsPerType": {
+      "insert": 78
+    }
+  },
+  {
+    "namespace": "MDM.AppSoporte_GestionReintentos",
+    "totalEvents": 78,
+    "totalEventsPerType": {
+      "insert": 63,
+      "update": 15
+    }
+  },
+  {
+    "namespace": "MDM.MDM_PORTABILIDAD_ENTRANTE_NEGOCIOS",
+    "totalEvents": 68,
+    "totalEventsPerType": {
+      "update": 68
+    }
+  },
+  {
+    "namespace": "MDM.MDM_VALORES_SOPORTEN1",
+    "totalEvents": 67,
+    "totalEventsPerType": {
+      "insert": 67
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_TIENDA",
+    "totalEvents": 66,
+    "totalEventsPerType": {
+      "delete": 31,
+      "insert": 35
+    }
+  },
+  {
+    "namespace": "MDM.PQR_CONTROL_ALARMAS",
+    "totalEvents": 56,
+    "totalEventsPerType": {
+      "insert": 2,
+      "update": 54
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_DUPLICADO_FACTURA",
+    "totalEvents": 54,
+    "totalEventsPerType": {
+      "insert": 54
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.FLUJO_COMERCIAL_VENTA_FIJA",
+    "totalEvents": 54,
+    "totalEventsPerType": {
+      "update": 49,
+      "insert": 5
+    }
+  },
+  {
+    "namespace": "MDM.MDM_DEVOLUCION_NUMERACION_CI_LOG",
+    "totalEvents": 52,
+    "totalEventsPerType": {
+      "insert": 52
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.FLUJO_COMERCIAL_VENTA_MOVIL",
+    "totalEvents": 49,
+    "totalEventsPerType": {
+      "insert": 15,
+      "update": 34
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_PORTALASESORES_AUDITORIA",
+    "totalEvents": 45,
+    "totalEventsPerType": {
+      "insert": 45
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_PORTALASESORES_ASESOR",
+    "totalEvents": 44,
+    "totalEventsPerType": {
+      "update": 44
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_COME_BACK",
+    "totalEvents": 43,
+    "totalEventsPerType": {
+      "insert": 43
+    }
+  },
+  {
+    "namespace": "MDM.MDM_REGISTRO_DIGITAL",
+    "totalEvents": 41,
+    "totalEventsPerType": {
+      "insert": 34,
+      "update": 7
+    }
+  },
+  {
+    "namespace": "MDM.MDM_NUMERACION_CFG",
+    "totalEvents": 41,
+    "totalEventsPerType": {
+      "update": 41
+    }
+  },
+  {
+    "namespace": "MDM.PQR_FALLA_MASIVA_NUEVO",
+    "totalEvents": 40,
+    "totalEventsPerType": {
+      "update": 37,
+      "insert": 3
+    }
+  },
+  {
+    "namespace": "MDM.CFG_SEQUENCES",
+    "totalEvents": 40,
+    "totalEventsPerType": {
+      "update": 40
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_PAYMENT_RECEIVE",
+    "totalEvents": 37,
+    "totalEventsPerType": {
+      "insert": 37
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_WHATSAPP_UPDATE",
+    "totalEvents": 36,
+    "totalEventsPerType": {
+      "insert": 36
+    }
+  },
+  {
+    "namespace": "ZONAG.PD_SECUENCIAS",
+    "totalEvents": 36,
+    "totalEventsPerType": {
+      "update": 36
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_IFRAME",
+    "totalEvents": 35,
+    "totalEventsPerType": {
+      "insert": 35
+    }
+  },
+  {
+    "namespace": "MDM.SN1_LOG",
+    "totalEvents": 34,
+    "totalEventsPerType": {
+      "insert": 32,
+      "update": 2
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.CATALOGO_COMERCIAL_SECUNDARIO",
+    "totalEvents": 34,
+    "totalEventsPerType": {
+      "delete": 33,
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "MDM.PQR_COMUNICACIONES_PQR",
+    "totalEvents": 32,
+    "totalEventsPerType": {
+      "insert": 32
+    }
+  },
+  {
+    "namespace": "MDM.MDM_PRE_OFERTA",
+    "totalEvents": 31,
+    "totalEventsPerType": {
+      "replace": 28,
+      "insert": 3
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_GET_CUSTOMER",
+    "totalEvents": 30,
+    "totalEventsPerType": {
+      "insert": 30
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_ACTUALIZAR_PQR",
+    "totalEvents": 29,
+    "totalEventsPerType": {
+      "insert": 29
+    }
+  },
+  {
+    "namespace": "ANALITICA.AN_CORREO",
+    "totalEvents": 29,
+    "totalEventsPerType": {
+      "insert": 28,
+      "update": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOG_VALIDACION",
+    "totalEvents": 27,
+    "totalEventsPerType": {
+      "update": 19,
+      "insert": 8
+    }
+  },
+  {
+    "namespace": "MDM.MDM_VALORES_RESPUESTA_FORMULARIO_RECOMENDADOR",
+    "totalEvents": 26,
+    "totalEventsPerType": {
+      "insert": 26
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_INVENTARIO",
+    "totalEvents": 25,
+    "totalEventsPerType": {
+      "update": 13,
+      "insert": 12
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.DASHBOARD_HOJA_VIDA",
+    "totalEvents": 25,
+    "totalEventsPerType": {
+      "update": 21,
+      "insert": 4
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.SCRAPING_PROGRAMACION_REPROCESO_FINALIZADO",
+    "totalEvents": 21,
+    "totalEventsPerType": {
+      "insert": 21
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_AP_SEMAFORO",
+    "totalEvents": 19,
+    "totalEventsPerType": {
+      "insert": 19
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_ACTUALIZA_PASSWORD_RED",
+    "totalEvents": 18,
+    "totalEventsPerType": {
+      "insert": 18
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_VIRTUALIZA_FACTURA",
+    "totalEvents": 17,
+    "totalEventsPerType": {
+      "insert": 17
+    }
+  },
+  {
+    "namespace": "CLOUDSECURITY.SN1_CORP_AUDIT",
+    "totalEvents": 16,
+    "totalEventsPerType": {
+      "insert": 16
+    }
+  },
+  {
+    "namespace": "MDM.LOG_VALIDACIONES_OTP_PQR",
+    "totalEvents": 16,
+    "totalEventsPerType": {
+      "insert": 15,
+      "update": 1
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CLIENTE_NOTIFICACIONES",
+    "totalEvents": 16,
+    "totalEventsPerType": {
+      "insert": 16
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_ENROLL_VALIDATION_CODE_LSIM",
+    "totalEvents": 15,
+    "totalEventsPerType": {
+      "insert": 15
+    }
+  },
+  {
+    "namespace": "MDM.PQR_Actividad_Notas",
+    "totalEvents": 15,
+    "totalEventsPerType": {
+      "insert": 15
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SALEORDER_FACTURASPENDIENTES",
+    "totalEvents": 14,
+    "totalEventsPerType": {
+      "insert": 14
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_RED_INVITADOS",
+    "totalEvents": 13,
+    "totalEventsPerType": {
+      "insert": 13
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_MOVIMIENTO",
+    "totalEvents": 13,
+    "totalEventsPerType": {
+      "insert": 13
+    }
+  },
+  {
+    "namespace": "MDM.AppSoporte_Log_Autenticacion",
+    "totalEvents": 12,
+    "totalEventsPerType": {
+      "insert": 12
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.SN1_CORP_PARAMETROS",
+    "totalEvents": 12,
+    "totalEventsPerType": {
+      "update": 12
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_MIETB_UPDATE",
+    "totalEvents": 11,
+    "totalEventsPerType": {
+      "insert": 11
+    }
+  },
+  {
+    "namespace": "MDM.CDI_PERSONAL",
+    "totalEvents": 11,
+    "totalEventsPerType": {
+      "insert": 11
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SALEORDER_ACTUALIZAR_ORDEN",
+    "totalEvents": 11,
+    "totalEventsPerType": {
+      "insert": 11
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_HISTORICO_CONTACTO_VISITA",
+    "totalEvents": 10,
+    "totalEventsPerType": {
+      "insert": 10
+    }
+  },
+  {
+    "namespace": "MDM.CDI_BODEGA",
+    "totalEvents": 10,
+    "totalEventsPerType": {
+      "insert": 10
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_FIRMAS_ACUERDOS",
+    "totalEvents": 10,
+    "totalEventsPerType": {
+      "update": 9,
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "MDM.MDM_ACTIVACION_ESIM",
+    "totalEvents": 10,
+    "totalEventsPerType": {
+      "update": 9,
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SALEORDER_VALIDATION",
+    "totalEvents": 10,
+    "totalEventsPerType": {
+      "insert": 10
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_ATDP",
+    "totalEvents": 9,
+    "totalEventsPerType": {
+      "insert": 9
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_AUDITORIA_QUIEBRESREMEDY",
+    "totalEvents": 9,
+    "totalEventsPerType": {
+      "insert": 9
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_PARAMETRO",
+    "totalEvents": 9,
+    "totalEventsPerType": {
+      "replace": 1,
+      "update": 8
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SALEORDER_OTP",
+    "totalEvents": 9,
+    "totalEventsPerType": {
+      "insert": 9
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SALEORDER_CONSULTAR_ORDEN",
+    "totalEvents": 9,
+    "totalEventsPerType": {
+      "insert": 9
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_COMPRA_BOLSA",
+    "totalEvents": 9,
+    "totalEventsPerType": {
+      "insert": 9
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_GET_RECHARGES",
+    "totalEvents": 9,
+    "totalEventsPerType": {
+      "insert": 9
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.Store_Consecutivo",
+    "totalEvents": 9,
+    "totalEventsPerType": {
+      "update": 9
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOG_TRAMITE_SVA",
+    "totalEvents": 8,
+    "totalEventsPerType": {
+      "insert": 2,
+      "update": 6
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_VALIDATION_CODE_VALIDATION_LSIM",
+    "totalEvents": 8,
+    "totalEventsPerType": {
+      "insert": 8
+    }
+  },
+  {
+    "namespace": "MDM.MDM_AUDITORIA_WORKTIME_TECNICO",
+    "totalEvents": 8,
+    "totalEventsPerType": {
+      "insert": 8
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_ENCUESTA_VISITA",
+    "totalEvents": 7,
+    "totalEventsPerType": {
+      "insert": 7
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_FLUJO_GUIADO_AUDIT",
+    "totalEvents": 7,
+    "totalEventsPerType": {
+      "insert": 7
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOG_TRAMITE_PRCH",
+    "totalEvents": 7,
+    "totalEventsPerType": {
+      "insert": 2,
+      "update": 5
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_DIRECTVGO",
+    "totalEvents": 7,
+    "totalEventsPerType": {
+      "insert": 7
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_ACTUALIZA_NOMBRE_RED",
+    "totalEvents": 7,
+    "totalEventsPerType": {
+      "insert": 7
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_LOG_FIRMA_DOCS",
+    "totalEvents": 6,
+    "totalEventsPerType": {
+      "insert": 6
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOG_CONSECUTIVO",
+    "totalEvents": 6,
+    "totalEventsPerType": {
+      "update": 6
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_ACTIVA_SIM",
+    "totalEvents": 6,
+    "totalEventsPerType": {
+      "insert": 6
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_REAGENDAMIENTO",
+    "totalEvents": 6,
+    "totalEventsPerType": {
+      "insert": 6
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SALEORDER_INIT_V1",
+    "totalEvents": 6,
+    "totalEventsPerType": {
+      "insert": 6
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_RECONEXION",
+    "totalEvents": 5,
+    "totalEventsPerType": {
+      "insert": 5
+    }
+  },
+  {
+    "namespace": "MDM.AppSoporte_Usuarios",
+    "totalEvents": 5,
+    "totalEventsPerType": {
+      "update": 5
+    }
+  },
+  {
+    "namespace": "MDM.MDM_RECIBO_ORDEN",
+    "totalEvents": 5,
+    "totalEventsPerType": {
+      "insert": 5
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_BACKLANDING",
+    "totalEvents": 5,
+    "totalEventsPerType": {
+      "insert": 5
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SALEORDER_PENDING",
+    "totalEvents": 5,
+    "totalEventsPerType": {
+      "insert": 5
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_ACTUALIZA_ESTADO_DISPOSITIVO_CONECTADO",
+    "totalEvents": 5,
+    "totalEventsPerType": {
+      "insert": 5
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_PRCH_CREATE",
+    "totalEvents": 5,
+    "totalEventsPerType": {
+      "insert": 5
+    }
+  },
+  {
+    "namespace": "MDM.PQR_LOG_ALARMAS_FALLA_MASIVA",
+    "totalEvents": 5,
+    "totalEventsPerType": {
+      "insert": 5
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_MECNA",
+    "totalEvents": 4,
+    "totalEventsPerType": {
+      "insert": 4
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_RECONEXION_SERVICE",
+    "totalEvents": 4,
+    "totalEventsPerType": {
+      "insert": 4
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_GET_WIFI",
+    "totalEvents": 4,
+    "totalEventsPerType": {
+      "insert": 4
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SET_CONTACT",
+    "totalEvents": 4,
+    "totalEventsPerType": {
+      "insert": 4
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SALEORDER_SERVICE",
+    "totalEvents": 4,
+    "totalEventsPerType": {
+      "insert": 4
+    }
+  },
+  {
+    "namespace": "MDM.LOG_ACTUALIZACION",
+    "totalEvents": 4,
+    "totalEventsPerType": {
+      "insert": 4
+    }
+  },
+  {
+    "namespace": "MDM.MDM_CD_PARAMETROS_ALT",
+    "totalEvents": 4,
+    "totalEventsPerType": {
+      "update": 4
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.DASHBOARD_PRCH",
+    "totalEvents": 3,
+    "totalEventsPerType": {
+      "update": 2,
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_REGISTRO_REDES_MIETB",
+    "totalEvents": 3,
+    "totalEventsPerType": {
+      "insert": 3
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SALEORDER_CREAR_ORDEN_LTE",
+    "totalEvents": 3,
+    "totalEventsPerType": {
+      "insert": 3
+    }
+  },
+  {
+    "namespace": "MDM.MDM_PAGOS_PROGRAMADOS_TOKEN",
+    "totalEvents": 3,
+    "totalEventsPerType": {
+      "insert": 3
+    }
+  },
+  {
+    "namespace": "MDM.MDM_MOV_LOGS",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SVA_VALIDATE",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SALEORDER_CREAR_ORDEN",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_REGISTRO_BELL_MIETB",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_DUPLICADO_CONTRATO",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_PRCH_INIT",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.c60c8686-528b-4aec-b567-c5c6d015dde1",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.SN1_CORP_ORDEN",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_PRODUCTO",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "update": 2
+    }
+  },
+  {
+    "namespace": "MDM.POL_NOTA_CREDITO_SAAW",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_SOLICITUD_ELEMENTOS_LOTE",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_WITH_OUT_DEBT",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.6d413961-deda-448f-b64c-31344a83cc8e",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_CAMBIO_PLAN",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.fca204dd-51cf-43b9-8416-7229be817cef",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.709712ba-68d6-485c-acef-1f86dc55c007",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "MDM.tmp.agg_out.9aa7ee53-23a1-4d57-aac9-726ad1805ba3",
+    "totalEvents": 2,
+    "totalEventsPerType": {
+      "insert": 2
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.BOT_ENCUESTAS",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_AGENDA_APROVISIONAMIENTO",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.SCRAPING_PROGRAMACION_REPROCESO_ANALISIS",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "MDM.PORTAL_UNIFICADO_MULTIUSUARIOS",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "MDM.MDM_INTEGRATION_PREACTIVAS_COMPLETE",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.BOT_VALIDA_CODIGO",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "CLOUDSECURITY.LOG_ASIGNACION_PERFILES",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_RESPONDER_CONFRONTA",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PORTAFOLIO.PS_GESTION_INVENTARIO_BODEGA",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "MDM.MDM_PASARELA_PAGOS_Nuevo",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SVA_CREATE",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "MDM.MDM_LOTE_PAGO_ANTICIPADO",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "MDM.CDI_ASIGNACION",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_EDICION_USUARIO_MIETB",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "MDM.MDM_INTERACCIONES",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_PASAGIGAS",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_SALEORDER_CANCELAR_ORDEN",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_CONSULTAR_CONFRONTA",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.CATALOGO_COMERCIAL_PLAN_MIGRADO",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  },
+  {
+    "namespace": "PRTL_PRO_BD.AUTOLOG_CREATE_CONTACT_PHONE",
+    "totalEvents": 1,
+    "totalEventsPerType": {
+      "insert": 1
+    }
+  }
+]
