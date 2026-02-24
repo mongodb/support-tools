@@ -90,7 +90,7 @@ python3 mongosync_uniqueindex_limitation_checker.py --uri "mongodb+srv://USER:PA
 For full documentation, filtering options, and examples, see [README_limitations_checker.md](README_limitations_checker.md).
 
 
-## Get busiest collections 
+## [Get busiest collections](getBusiestCollection)
 
 Get busiest collections seen during Collection Copy and Change Event Application (CEA) phase
 
