@@ -2,7 +2,7 @@
 
 **Script:** `get-busiest-collections.js`
 
-Gets the busiest collections in terms of writes (inserts/updates/deletes) as recorded in the mongosync logs during the CEA phase
+Gets the busiest collections in terms of writes (delete/insert/replace/update) as recorded in the mongosync logs in the CEA phase
 
 ### Usage
 
@@ -10,17 +10,20 @@ Gets the busiest collections in terms of writes (inserts/updates/deletes) as rec
 node get-busiest-collections.js </path/to/mongosynclog/files-or-directory> [--markdown] [--no-console]
 ```
 
-
 ### Example Output
 
 ```
 Namespace                        |   Total Write Ops |     delete |     insert |     update
 -------------------------------- | ----------------- | ---------- | ---------- | ----------
-db0.test2                        |             7,306 |      2,429 |      2,419 |      2,458
+db0.test2                        |            29,847 |      5,503 |      9,419 |     14,925
 db0.test5                        |             7,289 |      2,456 |      2,438 |      2,395
 db0.test1                        |             7,253 |      2,476 |      2,450 |      2,327
 db0.test4                        |             7,176 |      2,414 |      2,386 |      2,376
 db0.test3                        |             7,076 |      2,352 |      2,360 |      2,364
+...
+...
+
+Data successfully exported to "busiest_collections.json". You can open it for offline analysis.
 ```
 
 
