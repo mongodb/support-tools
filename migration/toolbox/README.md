@@ -89,6 +89,15 @@ python3 mongosync_uniqueindex_limitation_checker.py --uri "mongodb+srv://USER:PA
 
 For full documentation, filtering options, and examples, see [README_limitations_checker.md](README_limitations_checker.md).
 
+
+## [Get busiest collections](getBusiestCollection)
+
+Get busiest collections seen during Collection Copy and Change Event Application (CEA) phase
+
+**Script:** `getBusiestCollection/get-busiest-collections.js`
+
+Gets the busiest collections in terms of writes (delete/insert/replace/update) as recorded in the mongosync logs in the CEA phase
+
 ### License
 
 [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
