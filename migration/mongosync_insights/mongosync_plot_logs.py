@@ -394,6 +394,40 @@ def upload_file():
             except (json.JSONDecodeError, TypeError, ValueError, AttributeError):
                 continue
 
+        # Estimated Source Oplog Time Remaining (from replication progress logs)
+        def _parse_oplog_time_remaining_minutes(value):
+            """Convert estimatedOplogTimeRemaining string to minutes."""
+            if not value or value == "not yet checked":
+                return None
+            if value == "more than 72 hours":
+                return 72 * 60
+            if value == "less than 15 minutes":
+                return 15
+            m = re.match(r"(\d+)\s+minutes?", value)
+            if m:
+                return int(m.group(1))
+            m = re.match(r"(\d+)\s+hours?", value)
+            if m:
+                return int(m.group(1)) * 60
+            return None
+
+        oplog_remaining_times = []
+        oplog_remaining_minutes = []
+        for item in data:
+            val = _parse_oplog_time_remaining_minutes(item.get('estimatedOplogTimeRemaining'))
+            if val is not None and 'time' in item:
+                oplog_remaining_times.append(datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f"))
+                oplog_remaining_minutes.append(val)
+
+        # Event Application Rate per Second (from replication progress logs)
+        eventRatePerSecond = []
+        eventRatePerSecond_times = []
+        for item in data:
+            rate = item.get('eventApplicationRatePerSecond')
+            if rate is not None and 'time' in item:
+                eventRatePerSecond.append(float(rate))
+                eventRatePerSecond_times.append(datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f"))
+
         # Calculate global date range from all time sources for X-axis synchronization
         all_times = []
         if times:
@@ -467,10 +501,11 @@ def upload_file():
         logging.info(f"Plotting")
 
         # Create a subplot for the scatter plots (tables are now in a separate tab)
-        fig = make_subplots(rows=10, cols=2, subplot_titles=("Mongosync Phases", "Mongosync Phases Table",
+        fig = make_subplots(rows=11, cols=2, subplot_titles=("Mongosync Phases", "Mongosync Phases Table",
                                                             "Data Copied (" + estimated_total_bytes_unit + ")", "Estimated Total and Copied " + estimated_total_bytes_unit,
                                                             "Partitions Copied", "Total and Copied Partitions",
-                                                            "Lag Time (seconds)", "Change Events Applied",
+                                                            "Lag Time (seconds)", "Estimated Source Oplog Time Remaining (minutes)",
+                                                            "Change Events Applied", "Events Rate per Second",
                                                             "Index Built", "Total and Index Built",
                                                             "Ping Latency (ms)", "Average Source CRUD Event Rate (Events/sec)",
                                                             "Collection Copy - Avg and Max Read time (ms)", "Collection Copy Source Reads",
@@ -480,7 +515,8 @@ def upload_file():
                             specs=[ [{}, {"type": "table"}], #Mongosync Phases and Phases Table
                                     [{}, {}], #Data Copied Over Time + Estimated Total and Copied
                                     [{}, {}], #Partitions Copied and Completion %
-                                    [{}, {}], #Lag Time and Events Applied
+                                    [{}, {}], #Lag Time and Estimated Source Oplog Time Remaining
+                                    [{}, {}], #Change Events Applied and Events Rate per Second
                                     [{}, {}], #Index Built and Total and Index Built
                                     [{}, {}], #Ping Latency and CRUD Event Rate
                                     [{}, {}], #Collection Copy Source
@@ -561,124 +597,133 @@ def upload_file():
             fig.update_xaxes(range=[-1, 1], row=4, col=1)  # Also center horizontally
         #fig.update_yaxes(title_text="Lag Time (seconds)", row=4, col=1)
 
+        # Estimated Source Oplog Time Remaining (minutes)
+        if oplog_remaining_minutes:
+            fig.add_trace(go.Scattergl(x=oplog_remaining_times, y=oplog_remaining_minutes, mode='lines', name='Minutes Remaining', legendgroup="groupEventsAndLags"), row=4, col=2)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Oplog Time Remaining',textfont=dict(size=30, color="black")), row=4, col=2)
+            fig.update_yaxes(range=[-1, 1], row=4, col=2)
+            fig.update_xaxes(range=[-1, 1], row=4, col=2)
+
         # Total Events Applied
         if totalEventsApplied:
-            fig.add_trace(go.Scattergl(x=times, y=totalEventsApplied, mode='lines', name='Events', legendgroup="groupEventsAndLags"), row=4, col=2)
+            fig.add_trace(go.Scattergl(x=times, y=totalEventsApplied, mode='lines', name='Events', legendgroup="groupEventsAndLags"), row=5, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Change Events Applied',textfont=dict(size=30, color="black")), row=4, col=2)
-            fig.update_yaxes(range=[-1, 1], row=4, col=2)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=4, col=2)  # Also center horizontally
-        #fig.update_yaxes(title_text="Change Events Applied", row=4, col=2)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Change Events Applied',textfont=dict(size=30, color="black")), row=5, col=1)
+            fig.update_yaxes(range=[-1, 1], row=5, col=1)
+            fig.update_xaxes(range=[-1, 1], row=5, col=1)
+
+        # Events Rate per Second
+        if eventRatePerSecond:
+            fig.add_trace(go.Scattergl(x=eventRatePerSecond_times, y=eventRatePerSecond, mode='lines', name='Events/sec', legendgroup="groupEventsAndLags"), row=5, col=2)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Events Rate per Second',textfont=dict(size=30, color="black")), row=5, col=2)
+            fig.update_yaxes(range=[-1, 1], row=5, col=2)
+            fig.update_xaxes(range=[-1, 1], row=5, col=2)
 
         # Index Built Over Time
         if index_built_times:
-            fig.add_trace(go.Scattergl(x=index_built_times, y=indexes_built, mode='lines', name='Indexes Built', legendgroup="groupIndexBuilt"), row=5, col=1)
+            fig.add_trace(go.Scattergl(x=index_built_times, y=indexes_built, mode='lines', name='Indexes Built', legendgroup="groupIndexBuilt"), row=6, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Index Built', textfont=dict(size=30, color="black")), row=5, col=1)
-            fig.update_yaxes(range=[-1, 1], row=5, col=1)
-            fig.update_xaxes(range=[-1, 1], row=5, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Index Built', textfont=dict(size=30, color="black")), row=6, col=1)
+            fig.update_yaxes(range=[-1, 1], row=6, col=1)
+            fig.update_xaxes(range=[-1, 1], row=6, col=1)
 
         # Total and Index Built
         if index_built_times:
             last_built = indexes_built[-1]
             last_total = indexes_total[-1]
-            fig.add_trace(go.Bar(name='Total Indexes', x=['Indexes'], y=[last_total], legendgroup="groupIndexBuilt"), row=5, col=2)
-            fig.add_trace(go.Bar(name='Indexes Built', x=['Indexes'], y=[last_built], legendgroup="groupIndexBuilt"), row=5, col=2)
+            fig.add_trace(go.Bar(name='Total Indexes', x=['Indexes'], y=[last_total], legendgroup="groupIndexBuilt"), row=6, col=2)
+            fig.add_trace(go.Bar(name='Indexes Built', x=['Indexes'], y=[last_built], legendgroup="groupIndexBuilt"), row=6, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Total and Index Built', textfont=dict(size=30, color="black")), row=5, col=2)
-            fig.update_yaxes(range=[-1, 1], row=5, col=2)
-            fig.update_xaxes(range=[-1, 1], row=5, col=2)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Total and Index Built', textfont=dict(size=30, color="black")), row=6, col=2)
+            fig.update_yaxes(range=[-1, 1], row=6, col=2)
+            fig.update_xaxes(range=[-1, 1], row=6, col=2)
 
         # Ping Latency
         if sourcePingLatencyMs or destinationPingLatencyMs:
-            fig.add_trace(go.Scattergl(x=times, y=sourcePingLatencyMs, mode='lines', name='Source Ping (ms)', legendgroup="groupPingLatency"), row=6, col=1)
-            fig.add_trace(go.Scattergl(x=times, y=destinationPingLatencyMs, mode='lines', name='Destination Ping (ms)', legendgroup="groupPingLatency"), row=6, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=sourcePingLatencyMs, mode='lines', name='Source Ping (ms)', legendgroup="groupPingLatency"), row=7, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=destinationPingLatencyMs, mode='lines', name='Destination Ping (ms)', legendgroup="groupPingLatency"), row=7, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Ping Latency', textfont=dict(size=30, color="black")), row=6, col=1)
-            fig.update_yaxes(range=[-1, 1], row=6, col=1)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=6, col=1)  # Also center horizontally
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Ping Latency', textfont=dict(size=30, color="black")), row=7, col=1)
+            fig.update_yaxes(range=[-1, 1], row=7, col=1)
+            fig.update_xaxes(range=[-1, 1], row=7, col=1)
 
         # Average Source CRUD Event Rate
         if srcCRUDEventsPerSec:
-            fig.add_trace(go.Scattergl(x=crud_rate_times, y=srcCRUDEventsPerSec, mode='lines', name='Events/sec', legendgroup="groupCRUDRate"), row=6, col=2)
+            fig.add_trace(go.Scattergl(x=crud_rate_times, y=srcCRUDEventsPerSec, mode='lines', name='Events/sec', legendgroup="groupCRUDRate"), row=7, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CRUD Event Rate', textfont=dict(size=30, color="black")), row=6, col=2)
-            fig.update_yaxes(range=[-1, 1], row=6, col=2)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=6, col=2)  # Also center horizontally
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CRUD Event Rate', textfont=dict(size=30, color="black")), row=7, col=2)
+            fig.update_yaxes(range=[-1, 1], row=7, col=2)
+            fig.update_xaxes(range=[-1, 1], row=7, col=2)
 
         # Collection Copy Source Read
         if CollectionCopySourceRead or CollectionCopySourceRead_maximum:
-            fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCCSourceRead"), row=7, col=1)
-            fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCSourceRead"), row=7, col=1)
-            #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=7, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCCSourceRead"), row=8, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCSourceRead"), row=8, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Source Read',textfont=dict(size=30, color="black")), row=7, col=1)
-            fig.update_yaxes(range=[-1, 1], row=7, col=1)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=7, col=1)  # Also center horizontally
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Source Read',textfont=dict(size=30, color="black")), row=8, col=1)
+            fig.update_yaxes(range=[-1, 1], row=8, col=1)
+            fig.update_xaxes(range=[-1, 1], row=8, col=1)
 
         if CollectionCopySourceRead_numOperations:
-            fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCCSourceRead"), row=7, col=2)
+            fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCCSourceRead"), row=8, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Source Reads',textfont=dict(size=30, color="black")), row=7, col=2)
-
-            fig.update_yaxes(range=[-1, 1], row=7, col=2)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=7, col=2)  # Also center horizontally
-        #fig.update_yaxes(title_text="Number of Reads", secondary_y=True, row=7, col=2)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Source Reads',textfont=dict(size=30, color="black")), row=8, col=2)
+            fig.update_yaxes(range=[-1, 1], row=8, col=2)
+            fig.update_xaxes(range=[-1, 1], row=8, col=2)
 
         #Collection Copy Destination
         if CollectionCopyDestinationWrite or CollectionCopyDestinationWrite_maximum:
-            fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCCDestinationWrite"), row=8, col=1)
-            fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCDestinationWrite"), row=8, col=1)
-            #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=8, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCCDestinationWrite"), row=9, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCDestinationWrite"), row=9, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Destination Write',textfont=dict(size=30, color="black")), row=8, col=1)
-            fig.update_yaxes(range=[-1, 1], row=8, col=1)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=8, col=1)  # Also center horizontally
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Destination Write',textfont=dict(size=30, color="black")), row=9, col=1)
+            fig.update_yaxes(range=[-1, 1], row=9, col=1)
+            fig.update_xaxes(range=[-1, 1], row=9, col=1)
 
         if CollectionCopyDestinationWrite_numOperations:
-            fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite_numOperations, mode='lines', name='Writes', legendgroup="groupCCDestinationWrite"), row=8, col=2,)
+            fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite_numOperations, mode='lines', name='Writes', legendgroup="groupCCDestinationWrite"), row=9, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Destination Writes',textfont=dict(size=30, color="black")), row=8, col=2)
-            fig.update_yaxes(range=[-1, 1], row=8, col=2)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=8, col=2)  # Also center horizontally
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Destination Writes',textfont=dict(size=30, color="black")), row=9, col=2)
+            fig.update_yaxes(range=[-1, 1], row=9, col=2)
+            fig.update_xaxes(range=[-1, 1], row=9, col=2)
 
         #CEA Source
         if CEASourceRead or CEASourceRead_maximum:
-            fig.add_trace(go.Scattergl(x=times, y=CEASourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCEASourceRead"), row=9, col=1)
-            fig.add_trace(go.Scattergl(x=times, y=CEASourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEASourceRead"), row=9, col=1)
-            #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=9, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=CEASourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCEASourceRead"), row=10, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=CEASourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEASourceRead"), row=10, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Source Read',textfont=dict(size=30, color="black")), row=9, col=1)
-            fig.update_yaxes(range=[-1, 1], row=9, col=1)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=9, col=1)  # Also center horizontally
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Source Read',textfont=dict(size=30, color="black")), row=10, col=1)
+            fig.update_yaxes(range=[-1, 1], row=10, col=1)
+            fig.update_xaxes(range=[-1, 1], row=10, col=1)
 
         if CEASourceRead_numOperations:
-            fig.add_trace(go.Scattergl(x=times, y=CEASourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCEASourceRead"), row=9, col=2)
+            fig.add_trace(go.Scattergl(x=times, y=CEASourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCEASourceRead"), row=10, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Source Reads',textfont=dict(size=30, color="black")), row=9, col=2)
-            fig.update_yaxes(range=[-1, 1], row=9, col=2)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=9, col=2)  # Also center horizontally
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Source Reads',textfont=dict(size=30, color="black")), row=10, col=2)
+            fig.update_yaxes(range=[-1, 1], row=10, col=2)
+            fig.update_xaxes(range=[-1, 1], row=10, col=2)
 
         #CEA Destination
         if CEADestinationWrite or CEADestinationWrite_maximum:
-            fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCEADestinationWrite"), row=10, col=1)
-            fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEADestinationWrite"), row=10, col=1)
-            #fig.update_yaxes(title_text="Avg and Max time (ms)", secondary_y=False, row=10, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCEADestinationWrite"), row=11, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEADestinationWrite"), row=11, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Destination Write',textfont=dict(size=30, color="black")), row=10, col=1)
-            fig.update_yaxes(range=[-1, 1], row=10, col=1)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=10, col=1)  # Also center horizontally
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Destination Write',textfont=dict(size=30, color="black")), row=11, col=1)
+            fig.update_yaxes(range=[-1, 1], row=11, col=1)
+            fig.update_xaxes(range=[-1, 1], row=11, col=1)
 
         if CEADestinationWrite_numOperations:
-            fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='Writes during CEA', legendgroup="groupCEADestinationWrite"), row=10, col=2)
+            fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='Writes during CEA', legendgroup="groupCEADestinationWrite"), row=11, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Destination Writes',textfont=dict(size=30, color="black")), row=10, col=2)
-            fig.update_yaxes(range=[-1, 1], row=10, col=2)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=10, col=2)  # Also center horizontally
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Destination Writes',textfont=dict(size=30, color="black")), row=11, col=2)
+            fig.update_yaxes(range=[-1, 1], row=11, col=2)
+            fig.update_xaxes(range=[-1, 1], row=11, col=2)
 
         # Update layout
-        # 225 per plot (10 rows = 2250)
-        fig.update_layout(height=2250, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=190, showlegend=False)
+        # 225 per plot (11 rows = 2475)
+        fig.update_layout(height=2475, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=190, showlegend=False)
         
         # Force all y-axes to start at 0 for better visual comparison
         fig.update_yaxes(rangemode='tozero')
@@ -689,7 +734,7 @@ def upload_file():
             fig.update_xaxes(range=[global_min_date, global_max_date], row=1, col=1)
             # Sync Data Copied Over Time plot (row 2, col 1)
             fig.update_xaxes(range=[global_min_date, global_max_date], row=2, col=1)
-            for row in range(3, 11):  # rows 3 through 10
+            for row in range(3, 12):  # rows 3 through 11
                 for col in range(1, 3):  # columns 1 and 2
                     fig.update_xaxes(range=[global_min_date, global_max_date], row=row, col=col)
 
