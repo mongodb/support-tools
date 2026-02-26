@@ -184,7 +184,6 @@ def upload_file():
             elif current_file_type == 'logs':
                 logs_line_count += 1
             else:
-                # Unknown file type - skip
                 continue
                 
             try:
@@ -422,13 +421,10 @@ def upload_file():
         phase_transitions = ""
         # Check that mongosync_sent_response_body is a dict before searching for 'progress'  
         if isinstance(mongosync_sent_response_body, dict):
-        #if 'progress' in mongosync_sent_response_body:
-            #getting the estimated total and copied
             if 'progress' in mongosync_sent_response_body:
                 estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
                 estimated_copied_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedCopiedBytes']
 
-                #Getting the Phase Transisitons
                 try:  
                     # Try get Phase Transitions from the sent response body if it is Live Migrate
                     phase_transitions = mongosync_sent_response_body['progress']['atlasLiveMigrateMetrics']['PhaseTransitions']  
@@ -438,29 +434,22 @@ def upload_file():
 
             else:
                 logging.warning(f"Key 'progress' not found in mongosync_sent_response_body")
+
+        # If phase_transitions is not empty, plot the phase transitions as it is Live Migrate
+        if phase_transitions:
+            phase_list = [item['Phase'] for item in phase_transitions]  
+            ts_t_list = [item['Ts']['T'] for item in phase_transitions]  
+            ts_t_list_formatted = [ 
+                datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"  for t in ts_t_list 
+            ]
+        # Else get the phase transitions from the phase_transitions_json based on mongosync standalone 
+        elif phase_transitions_json:
+            phase_transitions = phase_transitions_json
             
-            # If phase_transitions is not empty, plot the phase transitions as it is Live Migrate
-            if phase_transitions:
-                phase_list = [item['Phase'] for item in phase_transitions]  
-                ts_t_list = [item['Ts']['T'] for item in phase_transitions]  
-                ts_t_list_formatted = [ 
-                    datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"  for t in ts_t_list 
-                ]
-            # Else get the phase transitions from the phase_transitions_json based on mongosync standalone 
-            else:
-                if phase_transitions_json:
-                    #print (phase_transitions_json)
-                    phase_transitions = phase_transitions_json
-                    
-                    phase_list = [item.get('message') for item in phase_transitions]  
-                    ts_t_list = [item['time'] for item in phase_transitions]  
-                    # Replace 'Z' with '+00:00' for Python < 3.11 compatibility
-                    ts_t_list_formatted = [  
-                        datetime.fromisoformat(t.replace('Z', '+00:00')).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"  
-                        for t in ts_t_list  
-                    ]  
-        else:
-            logging.warning(f"Response body is empty")
+            phase_list = [item.get('message') for item in phase_transitions]  
+            ts_t_list = [item['time'] for item in phase_transitions]  
+            # Strip timezone and preserve local time, consistent with other timestamp parsing (line 327)
+            ts_t_list_formatted = [t[:26] for t in ts_t_list]
 
         # Include phase transition times in global date range
         if phase_transitions and ts_t_list_formatted:
