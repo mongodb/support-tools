@@ -103,7 +103,8 @@ def upload_file():
             'mongosync_options': re.compile(r"Mongosync Options", re.IGNORECASE),
             'hidden_flags': re.compile(r"Mongosync HiddenFlags", re.IGNORECASE),
             'crud_events_rate': re.compile(r"Average Source CRUD events rate", re.IGNORECASE),
-            'partition_copy_progress': re.compile(r"Completed writing \d+ / \d+ partitions to destination cluster", re.IGNORECASE)
+            'partition_copy_progress': re.compile(r"Completed writing \d+ / \d+ partitions to destination cluster", re.IGNORECASE),
+            'natural_order_collections': re.compile(r"Selected for natural order collection reads", re.IGNORECASE)
         }
         
         # Load error patterns from external file
@@ -127,6 +128,7 @@ def upload_file():
         mongosync_crud_rate = []
         mongosync_partition_progress = []
         matched_errors = []
+        natural_order_collections = []
         
         # Initialize metrics collector for prometheus metrics
         metrics_collector = MetricsCollector()
@@ -223,6 +225,13 @@ def upload_file():
                 if patterns['partition_copy_progress'].search(message):
                     mongosync_partition_progress.append(json_obj)
                 
+                reason = json_obj.get('reason', '')
+                if patterns['natural_order_collections'].search(reason):
+                    db = json_obj.get('database', '')
+                    coll = json_obj.get('collection', '')
+                    if db and coll:
+                        natural_order_collections.append({'database': db, 'collection': coll})
+                
                 # Check for common error patterns
                 for ep in error_patterns:
                     if ep['pattern'].search(message):
@@ -252,6 +261,7 @@ def upload_file():
                     f"{len(phase_transitions_json)} phase transitions, {len(mongosync_opts_list)} options, "
                     f"{len(mongosync_hiddenflags)} hidden flags, {len(mongosync_crud_rate)} CRUD rate entries, "
                     f"{len(mongosync_partition_progress)} partition progress entries, "
+                    f"{len(natural_order_collections)} natural order collections, "
                     f"{len(matched_errors)} common errors")
         logging.info(f"Metrics collector: {metrics_collector.metrics_count} metric points from {metrics_collector.line_count} lines")  
         
@@ -773,6 +783,15 @@ def upload_file():
                     value = json.dumps(value, indent=2)
                 hidden_options_data.append({'key': str(key), 'value': str(value)})
 
+        # Deduplicate natural order collections
+        natural_order_data = []
+        seen_nat = set()
+        for item in natural_order_collections:
+            key = (item['database'], item['collection'])
+            if key not in seen_nat:
+                seen_nat.add(key)
+                natural_order_data.append(item)
+
         # Determine which tabs have data
         has_logs_data = logs_line_count > 0 and len(data) > 0
         has_metrics_data = metrics_collector.metrics_count > 0
@@ -783,6 +802,7 @@ def upload_file():
                              metrics_plot_json=metrics_plot_json,
                              options_data=options_data,
                              hidden_options_data=hidden_options_data,
+                             natural_order_data=natural_order_data,
                              errors_data=matched_errors,
                              has_logs_data=has_logs_data,
                              has_metrics_data=has_metrics_data)

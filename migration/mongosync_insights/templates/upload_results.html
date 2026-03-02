@@ -276,6 +276,7 @@
         {% endif %}
         {% if has_logs_data %}
         <button class="tab-btn" onclick="switchTab('options')" id="tab-options">Mongosync Options</button>
+        <button class="tab-btn" onclick="switchTab('collections')" id="tab-collections">Collections</button>
         <button class="tab-btn" onclick="switchTab('errors')" id="tab-errors">Errors and Warnings{% if errors_data %} ({{ errors_data|length }}){% endif %}</button>
         {% endif %}
     </div>
@@ -368,6 +369,41 @@
         </div>
     </div>
 
+    <div id="collections-tab" class="tab-content">
+        <div class="plot-container">
+            <div class="options-container">
+                <div class="options-table-wrapper" style="max-width: 100%; min-width: 100%;">
+                    <div class="table-header">
+                        <h3>Collections Copied in Natural Order</h3>
+                        {% if natural_order_data %}
+                        <button class="copy-btn" onclick="copyNaturalOrderAsMarkdown(this)">Copy as Markdown</button>
+                        {% endif %}
+                    </div>
+                    {% if natural_order_data %}
+                    <table class="options-table" id="natural-order-table">
+                        <thead>
+                            <tr>
+                                <th>Database</th>
+                                <th>Collection</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in natural_order_data %}
+                            <tr>
+                                <td class="key-cell">{{ item.database }}</td>
+                                <td class="value-cell">{{ item.collection }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="no-data-message">Nothing being copied in Natural Order</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="errors-tab" class="tab-content">
         <div class="plot-container">
             <div class="filter-container">
@@ -442,6 +478,7 @@ if (metricsPlot && metricsPlot.data) {
 // Store table data for Markdown conversion
 var optionsData = {{ options_data | tojson }};
 var hiddenOptionsData = {{ hidden_options_data | tojson }};
+var naturalOrderData = {{ natural_order_data | tojson }};
 var errorsData = {{ errors_data | tojson }};
 
 function switchTab(tabName) {
@@ -635,6 +672,38 @@ function copyErrorsAsMarkdown(buttonElement) {
     });
     
     // Copy to clipboard
+    navigator.clipboard.writeText(markdown).then(function() {
+        var originalText = buttonElement.textContent;
+        buttonElement.textContent = 'Copied!';
+        buttonElement.classList.add('copied');
+        
+        setTimeout(function() {
+            buttonElement.textContent = originalText;
+            buttonElement.classList.remove('copied');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Failed to copy: ', err);
+        fallbackCopyToClipboard(markdown, buttonElement);
+    });
+}
+
+function copyNaturalOrderAsMarkdown(buttonElement) {
+    if (!naturalOrderData || naturalOrderData.length === 0) {
+        return;
+    }
+    
+    var markdown = '## Collections Copied in Natural Order\n\n';
+    markdown += '| Database | Collection |\n';
+    markdown += '|----------|------------|\n';
+    
+    naturalOrderData.forEach(function(item) {
+        var collection = String(item.collection)
+            .replace(/\|/g, '\\|')
+            .replace(/\n/g, ' ');
+        
+        markdown += '| ' + item.database + ' | ' + collection + ' |\n';
+    });
+    
     navigator.clipboard.writeText(markdown).then(function() {
         var originalText = buttonElement.textContent;
         buttonElement.textContent = 'Copied!';
