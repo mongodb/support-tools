@@ -104,7 +104,8 @@ def upload_file():
             'hidden_flags': re.compile(r"Mongosync HiddenFlags", re.IGNORECASE),
             'crud_events_rate': re.compile(r"Average Source CRUD events rate", re.IGNORECASE),
             'partition_copy_progress': re.compile(r"Completed writing \d+ / \d+ partitions to destination cluster", re.IGNORECASE),
-            'natural_order_collections': re.compile(r"Selected for natural order collection reads", re.IGNORECASE)
+            'natural_order_collections': re.compile(r"Selected for natural order collection reads", re.IGNORECASE),
+            'received_request': re.compile(r"Received request", re.IGNORECASE)
         }
         
         # Load error patterns from external file
@@ -129,6 +130,7 @@ def upload_file():
         mongosync_partition_progress = []
         matched_errors = []
         natural_order_collections = []
+        mongosync_start_options = []
         
         # Initialize metrics collector for prometheus metrics
         metrics_collector = MetricsCollector()
@@ -218,6 +220,13 @@ def upload_file():
                     # Filter out time and level fields for hidden flags
                     filtered_obj = {k: v for k, v in json_obj.items() if k not in ('time', 'level')}
                     mongosync_hiddenflags.append(filtered_obj)
+                
+                if patterns['received_request'].search(message) and json_obj.get('uri') == '/api/v1/start':
+                    try:
+                        body = json.loads(json_obj.get('body', '{}'))
+                        mongosync_start_options.append(body)
+                    except (json.JSONDecodeError, TypeError):
+                        pass
                 
                 if patterns['crud_events_rate'].search(message):
                     mongosync_crud_rate.append(json_obj)
@@ -783,6 +792,14 @@ def upload_file():
                     value = json.dumps(value, indent=2)
                 hidden_options_data.append({'key': str(key), 'value': str(value)})
 
+        # Prepare start options data for HTML table
+        start_options_data = []
+        if mongosync_start_options:
+            for key, value in mongosync_start_options[0].items():
+                if isinstance(value, (dict, list)):
+                    value = json.dumps(value, indent=2)
+                start_options_data.append({'key': str(key), 'value': str(value)})
+
         # Deduplicate natural order collections
         natural_order_data = []
         seen_nat = set()
@@ -802,6 +819,7 @@ def upload_file():
                              metrics_plot_json=metrics_plot_json,
                              options_data=options_data,
                              hidden_options_data=hidden_options_data,
+                             start_options_data=start_options_data,
                              natural_order_data=natural_order_data,
                              errors_data=matched_errors,
                              has_logs_data=has_logs_data,

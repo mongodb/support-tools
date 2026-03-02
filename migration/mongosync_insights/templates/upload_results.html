@@ -365,6 +365,36 @@
                     <div class="no-data-message">No Mongosync Hidden Options found in the log file</div>
                     {% endif %}
                 </div>
+
+                <div class="options-table-wrapper">
+                    <div class="table-header">
+                        <h3>Mongosync Start Options</h3>
+                        {% if start_options_data %}
+                        <button class="copy-btn" onclick="copyTableAsMarkdown('start', this)">Copy as Markdown</button>
+                        {% endif %}
+                    </div>
+                    {% if start_options_data %}
+                    <table class="options-table" id="start-options-table">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in start_options_data %}
+                            <tr>
+                                <td class="key-cell">{{ item.key }}</td>
+                                <td class="value-cell">{{ item.value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="no-results">No matching start options found</div>
+                    {% else %}
+                    <div class="no-data-message">No Mongosync Start Options found in the log file</div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
@@ -478,6 +508,7 @@ if (metricsPlot && metricsPlot.data) {
 // Store table data for Markdown conversion
 var optionsData = {{ options_data | tojson }};
 var hiddenOptionsData = {{ hidden_options_data | tojson }};
+var startOptionsData = {{ start_options_data | tojson }};
 var naturalOrderData = {{ natural_order_data | tojson }};
 var errorsData = {{ errors_data | tojson }};
 
@@ -497,6 +528,9 @@ function copyTableAsMarkdown(tableType, buttonElement) {
     if (tableType === 'options') {
         data = optionsData;
         title = 'Mongosync Options';
+    } else if (tableType === 'start') {
+        data = startOptionsData;
+        title = 'Mongosync Start Options';
     } else {
         data = hiddenOptionsData;
         title = 'Mongosync Hidden Options';
