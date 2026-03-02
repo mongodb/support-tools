@@ -277,6 +277,7 @@
         {% if has_logs_data %}
         <button class="tab-btn" onclick="switchTab('options')" id="tab-options">Mongosync Options</button>
         <button class="tab-btn" onclick="switchTab('collections')" id="tab-collections">Collections</button>
+        <button class="tab-btn" onclick="switchTab('partitioninit')" id="tab-partitioninit">Partition Init{% if partition_init_data %} ({{ partition_init_data|length }}){% endif %}</button>
         <button class="tab-btn" onclick="switchTab('errors')" id="tab-errors">Errors and Warnings{% if errors_data %} ({{ errors_data|length }}){% endif %}</button>
         {% endif %}
     </div>
@@ -434,6 +435,63 @@
         </div>
     </div>
 
+    <div id="partitioninit-tab" class="tab-content">
+        <div class="plot-container">
+            <div class="filter-container">
+                <input type="text" id="partitioninit-filter" class="filter-input" 
+                       placeholder="Filter by collection, type, or reason..." 
+                       oninput="filterPartitionInitTable(this.value)">
+            </div>
+            <div class="options-container">
+                <div class="options-table-wrapper" style="max-width: 100%; min-width: 100%;">
+                    <div class="table-header">
+                        <h3>Partition Initialization Details</h3>
+                        {% if partition_init_data %}
+                        <button class="copy-btn" onclick="copyPartitionInitAsMarkdown(this)">Copy as Markdown</button>
+                        {% endif %}
+                    </div>
+                    {% if partition_init_data %}
+                    <table class="options-table" id="partitioninit-table">
+                        <thead>
+                            <tr>
+                                <th>Collection</th>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th>Partitions</th>
+                                <th>Doc Count</th>
+                                <th>Expected Partition Size</th>
+                                <th>Sampler</th>
+                                <th>IDs Sampled</th>
+                                <th>Init Started</th>
+                                <th>Init Duration (s)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in partition_init_data %}
+                            <tr>
+                                <td class="key-cell">{{ item.collection }}</td>
+                                <td>{{ item.type }}</td>
+                                <td>{{ item.reason }}</td>
+                                <td>{{ item.partition_count }}</td>
+                                <td>{{ item.doc_count if item.doc_count else 'N/A' }}</td>
+                                <td>{{ item.expected_partition_size }}</td>
+                                <td>{{ item.sampler }}</td>
+                                <td>{{ item.ids_sampled if item.ids_sampled else 'N/A' }}</td>
+                                <td>{{ item.init_started }}</td>
+                                <td>{{ item.duration_sec if item.duration_sec is not none else 'N/A' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="no-results" id="partitioninit-no-results">No matching partition init data found</div>
+                    {% else %}
+                    <div class="no-data-message">No partition initialization data found in the log file</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="errors-tab" class="tab-content">
         <div class="plot-container">
             <div class="filter-container">
@@ -511,6 +569,7 @@ var hiddenOptionsData = {{ hidden_options_data | tojson }};
 var startOptionsData = {{ start_options_data | tojson }};
 var naturalOrderData = {{ natural_order_data | tojson }};
 var errorsData = {{ errors_data | tojson }};
+var partitionInitData = {{ partition_init_data | tojson }};
 
 function switchTab(tabName) {
     // Update tab buttons
@@ -706,6 +765,71 @@ function copyErrorsAsMarkdown(buttonElement) {
     });
     
     // Copy to clipboard
+    navigator.clipboard.writeText(markdown).then(function() {
+        var originalText = buttonElement.textContent;
+        buttonElement.textContent = 'Copied!';
+        buttonElement.classList.add('copied');
+        
+        setTimeout(function() {
+            buttonElement.textContent = originalText;
+            buttonElement.classList.remove('copied');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Failed to copy: ', err);
+        fallbackCopyToClipboard(markdown, buttonElement);
+    });
+}
+
+function filterPartitionInitTable(searchText) {
+    var filter = searchText.toLowerCase().trim();
+    var table = document.getElementById('partitioninit-table');
+    if (!table) return;
+    
+    var rows = table.querySelectorAll('tbody tr');
+    var visibleCount = 0;
+    
+    rows.forEach(function(row) {
+        var cells = row.querySelectorAll('td');
+        var match = false;
+        
+        cells.forEach(function(cell) {
+            if (cell.textContent.toLowerCase().includes(filter)) {
+                match = true;
+            }
+        });
+        
+        if (filter === '' || match) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    var noResultsMsg = document.getElementById('partitioninit-no-results');
+    if (noResultsMsg) {
+        noResultsMsg.style.display = (visibleCount === 0 && filter !== '') ? 'block' : 'none';
+    }
+}
+
+function copyPartitionInitAsMarkdown(buttonElement) {
+    if (!partitionInitData || partitionInitData.length === 0) {
+        return;
+    }
+    
+    var markdown = '## Partition Initialization Details\n\n';
+    markdown += '| Collection | Type | Reason | Partitions | Doc Count | Expected Size | Sampler | IDs Sampled | Init Started | Duration (s) |\n';
+    markdown += '|------------|------|--------|------------|-----------|---------------|---------|-------------|--------------|-------------|\n';
+    
+    partitionInitData.forEach(function(item) {
+        var reason = String(item.reason || '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
+        var docCount = item.doc_count ? String(item.doc_count) : 'N/A';
+        var idsSampled = item.ids_sampled ? String(item.ids_sampled) : 'N/A';
+        var duration = item.duration_sec !== null ? String(item.duration_sec) : 'N/A';
+        
+        markdown += '| ' + item.collection + ' | ' + item.type + ' | ' + reason + ' | ' + item.partition_count + ' | ' + docCount + ' | ' + item.expected_partition_size + ' | ' + item.sampler + ' | ' + idsSampled + ' | ' + item.init_started + ' | ' + duration + ' |\n';
+    });
+    
     navigator.clipboard.writeText(markdown).then(function() {
         var originalText = buttonElement.textContent;
         buttonElement.textContent = 'Copied!';

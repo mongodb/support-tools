@@ -105,7 +105,11 @@ def upload_file():
             'crud_events_rate': re.compile(r"Average Source CRUD events rate", re.IGNORECASE),
             'partition_copy_progress': re.compile(r"Completed writing \d+ / \d+ partitions to destination cluster", re.IGNORECASE),
             'natural_order_collections': re.compile(r"Selected for natural order collection reads", re.IGNORECASE),
-            'received_request': re.compile(r"Received request", re.IGNORECASE)
+            'received_request': re.compile(r"Received request", re.IGNORECASE),
+            'partition_single_created': re.compile(r"Creating a single partition for whole collection", re.IGNORECASE),
+            'partition_multi_created': re.compile(r"Creating initial partitions for non-capped collection", re.IGNORECASE),
+            'partition_sampling_info': re.compile(r"Pre-sampling information", re.IGNORECASE),
+            'partition_persisted_after_sampling': re.compile(r"Persisted a new partition after sampling", re.IGNORECASE),
         }
         
         # Load error patterns from external file
@@ -131,6 +135,10 @@ def upload_file():
         matched_errors = []
         natural_order_collections = []
         mongosync_start_options = []
+        partition_single_created = []
+        partition_multi_created = []
+        partition_sampling_info = []
+        partition_persisted_after_sampling = []
         
         # Initialize metrics collector for prometheus metrics
         metrics_collector = MetricsCollector()
@@ -241,6 +249,18 @@ def upload_file():
                     if db and coll:
                         natural_order_collections.append({'database': db, 'collection': coll})
                 
+                if patterns['partition_single_created'].search(message):
+                    partition_single_created.append(json_obj)
+                
+                if patterns['partition_multi_created'].search(message):
+                    partition_multi_created.append(json_obj)
+                
+                if patterns['partition_sampling_info'].search(message):
+                    partition_sampling_info.append(json_obj)
+                
+                if patterns['partition_persisted_after_sampling'].search(message):
+                    partition_persisted_after_sampling.append(json_obj)
+                
                 # Check for common error patterns
                 for ep in error_patterns:
                     if ep['pattern'].search(message):
@@ -281,6 +301,93 @@ def upload_file():
         mongosync_crud_rate.sort(key=lambda x: x.get('time', ''))
         mongosync_partition_progress.sort(key=lambda x: x.get('time', ''))
         mongosync_sent_response.sort(key=lambda x: x.get('time', ''))
+
+        # Aggregate partition initialization data per collection
+        partition_init_data = []
+        if partition_single_created or partition_multi_created or partition_sampling_info or partition_persisted_after_sampling:
+            pi_map = {}  # keyed by (db, coll)
+
+            for item in partition_single_created:
+                db = item.get('database', '')
+                coll = item.get('collection', '')
+                key = (db, coll)
+                if key not in pi_map:
+                    pi_map[key] = {}
+                reason = item.get('reason', '')
+                pi_map[key]['type'] = 'Natural Order' if 'natural order' in reason.lower() else 'Capped'
+                pi_map[key]['reason'] = reason
+                pi_map[key]['partition_count'] = 1
+                pi_map[key]['init_started'] = item.get('time', '')
+                pi_map[key]['init_ended'] = item.get('time', '')
+                pi_map[key].setdefault('sampler', 'N/A')
+                pi_map[key].setdefault('doc_count', None)
+                pi_map[key].setdefault('expected_partition_size', None)
+                pi_map[key].setdefault('ids_sampled', None)
+
+            for item in partition_multi_created:
+                db = item.get('database', '')
+                coll = item.get('collection', '')
+                key = (db, coll)
+                if key not in pi_map:
+                    pi_map[key] = {}
+                pi_map[key]['type'] = 'Sampled (multi-partition)'
+                pi_map[key]['reason'] = 'Index sampled'
+                pi_map[key].setdefault('partition_count', 0)
+                pi_map[key]['init_started'] = item.get('time', '')
+                pi_map[key]['expected_partition_size'] = item.get('expectedSizePerPartition')
+
+            for item in partition_sampling_info:
+                db = item.get('database', '')
+                coll = item.get('collection', '')
+                key = (db, coll)
+                if key not in pi_map:
+                    pi_map[key] = {}
+                pi_map[key]['sampler'] = item.get('sampler', 'N/A')
+                pi_map[key]['doc_count'] = item.get('collectionDocCount')
+                pi_map[key]['ids_sampled'] = item.get('numIDsToSample')
+
+            for item in partition_persisted_after_sampling:
+                coll = item.get('collection', '')
+                p = item.get('partition', {})
+                ns = p.get('partition', {})
+                db = ns.get('db', '')
+                if not coll:
+                    coll = ns.get('coll', '')
+                key = (db, coll)
+                if key not in pi_map:
+                    pi_map[key] = {}
+                pi_map[key]['partition_count'] = pi_map[key].get('partition_count', 0) + 1
+                ts = item.get('time', '')
+                if ts > pi_map[key].get('init_ended', ''):
+                    pi_map[key]['init_ended'] = ts
+
+            for (db, coll), info in sorted(pi_map.items()):
+                started = info.get('init_started', '')
+                ended = info.get('init_ended', started)
+                duration_sec = None
+                if started and ended:
+                    try:
+                        t0 = datetime.strptime(started[:26], "%Y-%m-%dT%H:%M:%S.%f")
+                        t1 = datetime.strptime(ended[:26], "%Y-%m-%dT%H:%M:%S.%f")
+                        duration_sec = round((t1 - t0).total_seconds(), 2)
+                    except (ValueError, TypeError):
+                        pass
+                exp_size = info.get('expected_partition_size')
+                exp_size_display = f"{exp_size / (1024*1024):.0f} MB" if exp_size else 'N/A'
+                partition_init_data.append({
+                    'collection': f"{db}.{coll}",
+                    'type': info.get('type', 'Unknown'),
+                    'reason': info.get('reason', ''),
+                    'partition_count': info.get('partition_count', 0),
+                    'doc_count': info.get('doc_count'),
+                    'expected_partition_size': exp_size_display,
+                    'sampler': info.get('sampler', 'N/A'),
+                    'ids_sampled': info.get('ids_sampled'),
+                    'init_started': started[:26] if started else '',
+                    'init_ended': ended[:26] if ended else '',
+                    'duration_sec': duration_sec,
+                })
+            logging.info(f"Aggregated partition init data for {len(partition_init_data)} collections")
 
         # The 'body' field is also a JSON string, so parse that as well
         #mongosync_sent_response_body = json.loads(mongosync_sent_response.get('body'))
@@ -520,7 +627,7 @@ def upload_file():
         logging.info(f"Plotting")
 
         # Create a subplot for the scatter plots (tables are now in a separate tab)
-        fig = make_subplots(rows=11, cols=2, subplot_titles=("Mongosync Phases", "Mongosync Phases Table",
+        fig = make_subplots(rows=12, cols=2, subplot_titles=("Mongosync Phases", "Mongosync Phases Table",
                                                             "Data Copied (" + estimated_total_bytes_unit + ")", "Estimated Total and Copied " + estimated_total_bytes_unit,
                                                             "Partitions Copied", "Total and Copied Partitions",
                                                             "Lag Time (seconds)", "Estimated Source Oplog Time Remaining (minutes)",
@@ -530,7 +637,8 @@ def upload_file():
                                                             "Collection Copy - Avg and Max Read time (ms)", "Collection Copy Source Reads",
                                                             "Collection Copy - Avg and Max Write time (ms)", "Collection Copy Destination Writes",
                                                             "CEA Source - Avg and Max Read time (ms)", "CEA Source Reads",
-                                                            "CEA Destination - Avg and Max Write time (ms)", "CEA Destination Writes"),
+                                                            "CEA Destination - Avg and Max Write time (ms)", "CEA Destination Writes",
+                                                            "Partition Initialization Timeline", "Partition Init Summary"),
                             specs=[ [{}, {"type": "table"}], #Mongosync Phases and Phases Table
                                     [{}, {}], #Data Copied Over Time + Estimated Total and Copied
                                     [{}, {}], #Partitions Copied and Completion %
@@ -541,7 +649,8 @@ def upload_file():
                                     [{}, {}], #Collection Copy Source
                                     [{}, {}], #Collection Copy Destination
                                     [{}, {}], #CEA Source
-                                    [{}, {}] ]) #CEA Destination
+                                    [{}, {}], #CEA Destination
+                                    [{}, {"type": "table"}] ]) #Partition Init Timeline and Summary
 
         # Add traces
 
@@ -740,9 +849,56 @@ def upload_file():
             fig.update_yaxes(range=[-1, 1], row=11, col=2)
             fig.update_xaxes(range=[-1, 1], row=11, col=2)
 
+        # Partition Initialization Timeline (Row 12, Col 1) - Gantt-style horizontal bars
+        if partition_init_data:
+            pi_collections = [d['collection'] for d in partition_init_data]
+            pi_durations = [d['duration_sec'] if d['duration_sec'] is not None else 0 for d in partition_init_data]
+            pi_hover = [
+                f"Type: {d['type']}<br>Partitions: {d['partition_count']}<br>Docs: {d['doc_count'] if d['doc_count'] else 'N/A'}<br>Duration: {d['duration_sec']}s"
+                for d in partition_init_data
+            ]
+            pi_colors = []
+            for d in partition_init_data:
+                if d['type'] == 'Natural Order':
+                    pi_colors.append('#2196F3')
+                elif d['type'] == 'Capped':
+                    pi_colors.append('#FF9800')
+                else:
+                    pi_colors.append('#4CAF50')
+            fig.add_trace(go.Bar(
+                y=pi_collections, x=pi_durations, orientation='h',
+                marker=dict(color=pi_colors),
+                hovertext=pi_hover, hoverinfo='text',
+                name='Partition Init Duration',
+                legendgroup="groupPartitionInit"
+            ), row=12, col=1)
+            fig.update_xaxes(title_text="Duration (seconds)", row=12, col=1)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Partition Init Timeline', textfont=dict(size=30, color="black")), row=12, col=1)
+            fig.update_yaxes(range=[-1, 1], row=12, col=1)
+            fig.update_xaxes(range=[-1, 1], row=12, col=1)
+
+        # Partition Init Summary Table (Row 12, Col 2)
+        if partition_init_data:
+            fig.add_trace(go.Table(
+                header=dict(values=["Collection", "Type", "Partitions", "Doc Count", "Duration (s)"]),
+                cells=dict(values=[
+                    [d['collection'] for d in partition_init_data],
+                    [d['type'] for d in partition_init_data],
+                    [d['partition_count'] for d in partition_init_data],
+                    [f"{d['doc_count']:,}" if d['doc_count'] else 'N/A' for d in partition_init_data],
+                    [d['duration_sec'] if d['duration_sec'] is not None else 'N/A' for d in partition_init_data],
+                ])
+            ), row=12, col=2)
+        else:
+            fig.add_trace(go.Table(
+                header=dict(values=["Collection", "Type", "Partitions", "Doc Count", "Duration (s)"]),
+                cells=dict(values=[[], [], [], [], []])
+            ), row=12, col=2)
+
         # Update layout
-        # 225 per plot (11 rows = 2475)
-        fig.update_layout(height=2475, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=190, showlegend=False)
+        # 225 per plot (12 rows = 2700)
+        fig.update_layout(height=2700, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=190, showlegend=False)
         
         # Force all y-axes to start at 0 for better visual comparison
         fig.update_yaxes(rangemode='tozero')
@@ -822,5 +978,6 @@ def upload_file():
                              start_options_data=start_options_data,
                              natural_order_data=natural_order_data,
                              errors_data=matched_errors,
+                             partition_init_data=partition_init_data,
                              has_logs_data=has_logs_data,
                              has_metrics_data=has_metrics_data)
