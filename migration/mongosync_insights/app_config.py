@@ -10,6 +10,7 @@ import time
 import threading
 from pathlib import Path
 from functools import lru_cache
+import certifi
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError, InvalidURI
 
@@ -21,7 +22,7 @@ PORT = int(os.getenv('MI_PORT', '3030'))
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.8.0.10"
+APP_VERSION = "0.8.0.12"
 
 # File upload settings
 MAX_FILE_SIZE = int(os.getenv('MI_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
@@ -233,12 +234,13 @@ def get_mongo_client(connection_string):
             connection_string,
             maxPoolSize=CONNECTION_POOL_SIZE,
             minPoolSize=1,
-            maxIdleTimeMS=30000,  # 30 seconds
+            maxIdleTimeMS=30000,
             serverSelectionTimeoutMS=CONNECTION_TIMEOUT_MS,
             connectTimeoutMS=CONNECTION_TIMEOUT_MS,
             socketTimeoutMS=CONNECTION_TIMEOUT_MS,
             retryWrites=True,
-            retryReads=True
+            retryReads=True,
+            tlsCAFile=certifi.where()
         )
         
         # Test the connection
