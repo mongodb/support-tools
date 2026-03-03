@@ -1,7 +1,7 @@
 # Toolbox
 Toolbox is a collection of helper scripts created by the Migration Factory team for data capture and analysis.
 
-## [idChecker script](idCheker)
+## [idChecker script](idChecker)
 
 This script analyzes MongoDB collections for non-ObjectId _id types and insertion-order correlation patterns, predicting potential mongosync migration performance issues and providing optimization recommendations.
 
