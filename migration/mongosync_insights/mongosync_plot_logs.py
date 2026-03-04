@@ -389,6 +389,40 @@ def upload_file():
                 })
             logging.info(f"Aggregated partition init data for {len(partition_init_data)} collections")
 
+        # Build partition init progress time series (in-progress and completed per collection over time)
+        partition_init_progress_times = []
+        partition_init_progress_in_progress = []
+        partition_init_progress_completed = []
+        if partition_init_data:
+            init_events = []
+            for d in partition_init_data:
+                if d['init_started']:
+                    try:
+                        t0 = datetime.strptime(d['init_started'][:26], "%Y-%m-%dT%H:%M:%S.%f")
+                        init_events.append((t0, 'start'))
+                    except (ValueError, TypeError):
+                        pass
+                if d['init_ended']:
+                    try:
+                        t1 = datetime.strptime(d['init_ended'][:26], "%Y-%m-%dT%H:%M:%S.%f")
+                        init_events.append((t1, 'end'))
+                    except (ValueError, TypeError):
+                        pass
+            if init_events:
+                init_events.sort(key=lambda e: e[0])
+                in_prog = 0
+                done = 0
+                for ts, kind in init_events:
+                    if kind == 'start':
+                        in_prog += 1
+                    else:
+                        in_prog = max(0, in_prog - 1)
+                        done += 1
+                    partition_init_progress_times.append(ts)
+                    partition_init_progress_in_progress.append(in_prog)
+                    partition_init_progress_completed.append(done)
+                logging.info(f"Built partition init progress time series with {len(init_events)} events")
+
         # The 'body' field is also a JSON string, so parse that as well
         #mongosync_sent_response_body = json.loads(mongosync_sent_response.get('body'))
         mongosync_sent_response_body = None 
@@ -638,7 +672,7 @@ def upload_file():
                                                             "Collection Copy - Avg and Max Write time (ms)", "Collection Copy Destination Writes",
                                                             "CEA Source - Avg and Max Read time (ms)", "CEA Source Reads",
                                                             "CEA Destination - Avg and Max Write time (ms)", "CEA Destination Writes",
-                                                            "Partition Initialization Timeline", "Partition Init Summary"),
+                                                            "Partition Init Progress", "Partition Init Summary"),
                             specs=[ [{}, {"type": "table"}], #Mongosync Phases and Phases Table
                                     [{}, {}], #Data Copied Over Time + Estimated Total and Copied
                                     [{}, {}], #Partitions Copied and Completion %
@@ -849,32 +883,28 @@ def upload_file():
             fig.update_yaxes(range=[-1, 1], row=11, col=2)
             fig.update_xaxes(range=[-1, 1], row=11, col=2)
 
-        # Partition Initialization Timeline (Row 12, Col 1) - Gantt-style horizontal bars
-        if partition_init_data:
-            pi_collections = [d['collection'] for d in partition_init_data]
-            pi_durations = [d['duration_sec'] if d['duration_sec'] is not None else 0 for d in partition_init_data]
-            pi_hover = [
-                f"Type: {d['type']}<br>Partitions: {d['partition_count']}<br>Docs: {d['doc_count'] if d['doc_count'] else 'N/A'}<br>Duration: {d['duration_sec']}s"
-                for d in partition_init_data
-            ]
-            pi_colors = []
-            for d in partition_init_data:
-                if d['type'] == 'Natural Order':
-                    pi_colors.append('#2196F3')
-                elif d['type'] == 'Capped':
-                    pi_colors.append('#FF9800')
-                else:
-                    pi_colors.append('#4CAF50')
-            fig.add_trace(go.Bar(
-                y=pi_collections, x=pi_durations, orientation='h',
-                marker=dict(color=pi_colors),
-                hovertext=pi_hover, hoverinfo='text',
-                name='Partition Init Duration',
-                legendgroup="groupPartitionInit"
+        # Partition Init Progress (Row 12, Col 1) - collections initializing vs completed over time
+        if partition_init_progress_times:
+            total_collections = len(partition_init_data) if partition_init_data else 0
+            fig.add_trace(go.Scattergl(
+                x=partition_init_progress_times, y=partition_init_progress_in_progress,
+                mode='lines', name='In Progress', line=dict(color='#2196F3'),
+                legendgroup="groupPartitionInitProgress"
             ), row=12, col=1)
-            fig.update_xaxes(title_text="Duration (seconds)", row=12, col=1)
+            fig.add_trace(go.Scattergl(
+                x=partition_init_progress_times, y=partition_init_progress_completed,
+                mode='lines', name='Completed', line=dict(color='#4CAF50'),
+                legendgroup="groupPartitionInitProgress"
+            ), row=12, col=1)
+            if total_collections > 0:
+                fig.add_trace(go.Scattergl(
+                    x=[partition_init_progress_times[0], partition_init_progress_times[-1]],
+                    y=[total_collections, total_collections],
+                    mode='lines', name='Total Collections', line=dict(color='gray', dash='dash'),
+                    legendgroup="groupPartitionInitProgress"
+                ), row=12, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Partition Init Timeline', textfont=dict(size=30, color="black")), row=12, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Partition Init Progress', textfont=dict(size=30, color="black")), row=12, col=1)
             fig.update_yaxes(range=[-1, 1], row=12, col=1)
             fig.update_xaxes(range=[-1, 1], row=12, col=1)
 
