@@ -276,8 +276,7 @@
         {% endif %}
         {% if has_logs_data %}
         <button class="tab-btn" onclick="switchTab('options')" id="tab-options">Mongosync Options</button>
-        <button class="tab-btn" onclick="switchTab('collections')" id="tab-collections">Collections</button>
-        <button class="tab-btn" onclick="switchTab('partitioninit')" id="tab-partitioninit">Partition Init{% if partition_init_data %} ({{ partition_init_data|length }}){% endif %}</button>
+        <button class="tab-btn" onclick="switchTab('collections')" id="tab-collections">Collections and Partitions</button>
         <button class="tab-btn" onclick="switchTab('errors')" id="tab-errors">Errors and Warnings{% if errors_data %} ({{ errors_data|length }}){% endif %}</button>
         {% endif %}
     </div>
@@ -402,6 +401,11 @@
 
     <div id="collections-tab" class="tab-content">
         <div class="plot-container">
+            <div class="filter-container">
+                <input type="text" id="partitioninit-filter" class="filter-input" 
+                       placeholder="Filter by collection, type, or reason..." 
+                       oninput="filterPartitionInitTable(this.value)">
+            </div>
             <div class="options-container">
                 <div class="options-table-wrapper" style="max-width: 100%; min-width: 100%;">
                     <div class="table-header">
@@ -431,18 +435,7 @@
                     <div class="no-data-message">Nothing being copied in Natural Order</div>
                     {% endif %}
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <div id="partitioninit-tab" class="tab-content">
-        <div class="plot-container">
-            <div class="filter-container">
-                <input type="text" id="partitioninit-filter" class="filter-input" 
-                       placeholder="Filter by collection, type, or reason..." 
-                       oninput="filterPartitionInitTable(this.value)">
-            </div>
-            <div class="options-container">
                 <div class="options-table-wrapper" style="max-width: 100%; min-width: 100%;">
                     <div class="table-header">
                         <h3>Partition Initialization Details</h3>
