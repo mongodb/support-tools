@@ -257,7 +257,7 @@ if (anyNonObjectIdFound) {
     
     printjson(" ");
     printjson('=============================================================');
-    printjson('MONGOSYNC PERFORMANCE SUMMARY:/n');
+    printjson('MONGOSYNC PERFORMANCE SUMMARY:\n');
     if (problematicCollections.length > 0) {
         printjson('SLOW MIGRATION EXPECTED for ' + problematicCollections.length + ' collections:');
         var uuidCollections = [];
