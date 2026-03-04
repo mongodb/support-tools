@@ -152,12 +152,22 @@ db.getMongo().getDBNames().forEach(function (d) {
             var ids = [];
             cursor.forEach(function(doc) { ids.push(doc._id); });
 
-            if (["Int32", "Int64", "Double", "Decimal128", "Timestamp"].indexOf(typeName) !== -1) {
-                var isSeq = isSequential(ids);
+            if (["Int32", "Int64", "Double"].indexOf(typeName) !== -1) {
+                var numericIds = ids.map(function(id) {
+                    if (id && typeof id.toNumber === "function") {
+                        return id.toNumber();
+                    }
+                    return Number(id);
+                });
+                var isSeq = isSequential(numericIds);
                 result.id_types[typeName].is_sequential = isSeq;
                 if (!isSeq) {
                     result.id_types[typeName].sample_ids = ids.slice(0, 8); // Show first 8 samples
                 }
+            } else if (typeName === "Decimal128" || typeName === "Timestamp") {
+                // Ordering for these BSON wrapper types is not analyzed; mark as not applicable
+                result.id_types[typeName].is_sequential = "N/A";
+                result.id_types[typeName].sample_ids = ids.slice(0, 8); // Show first 8 samples
             } else if (typeName === "String") {
                 var isSeq = isSequentialString(ids);
                 result.id_types.String.is_sequential = isSeq;
