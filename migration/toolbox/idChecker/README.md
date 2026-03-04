@@ -130,7 +130,7 @@ The script recognizes **UUID** in two forms: string UUIDs (e.g. `"f47ac10b-58cc-
 ## File Structure
 
 ```
-mongodb_id_checker/
+migration/toolbox/idChecker/
 ├── mongodb_id_checker.js    # Main analysis script
 └── README.md               # This documentation
 ```
