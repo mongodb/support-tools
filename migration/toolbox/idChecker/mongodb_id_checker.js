@@ -111,14 +111,29 @@ db.getMongo().getDBNames().forEach(function (d) {
         };
 
         // Collection size (bytes) for prioritization; may be 0 on mongos for unsharded view
-        var collStats = collObj.stats();
-        var sizeBytes = (collStats && typeof collStats.size === 'number') ? collStats.size : 0;
+        var collStats = null;
+        var sizeBytes = 0;
+        try {
+            collStats = collObj.stats();
+            if (collStats && typeof collStats.size === 'number') {
+                sizeBytes = collStats.size;
+            }
+        } catch (e) {
+            // Views or problematic collections may cause stats() to throw; treat size as 0
+            sizeBytes = 0;
+        }
         result.collection_size_bytes = sizeBytes;
 
         // Collect counts per type first
         Object.keys(typeMap).forEach(function(typeName) {
             var typeNum = typeMap[typeName];
-            var count = collObj.countDocuments({ "_id": { $type: typeNum } });
+            var count = 0;
+            try {
+                count = collObj.countDocuments({ "_id": { $type: typeNum } });
+            } catch (e) {
+                // Some namespaces (e.g., views) may not support countDocuments; skip on error
+                count = 0;
+            }
             if (count > 0) {
                 result.id_types[typeName] = {
                     count: count,
