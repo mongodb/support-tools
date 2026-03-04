@@ -275,12 +275,8 @@ if (anyNonObjectIdFound) {
     printjson('MONGOSYNC PERFORMANCE SUMMARY:\n');
     if (problematicCollections.length > 0) {
         printjson('SLOW MIGRATION EXPECTED for ' + problematicCollections.length + ' collections:');
-        var uuidCollections = [];
         problematicCollections.forEach(function(coll) {
             printjson('   - ' + coll);
-            if (coll.indexOf('String:UUID') !== -1) {
-                uuidCollections.push(coll);
-            }
         });
         
         
