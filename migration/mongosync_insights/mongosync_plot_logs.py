@@ -939,7 +939,7 @@ def upload_file():
             fig.update_xaxes(range=[global_min_date, global_max_date], row=1, col=1)
             # Sync Data Copied Over Time plot (row 2, col 1)
             fig.update_xaxes(range=[global_min_date, global_max_date], row=2, col=1)
-            for row in range(3, 12):  # rows 3 through 11
+            for row in range(3, 13):  # rows 3 through 12
                 for col in range(1, 3):  # columns 1 and 2
                     fig.update_xaxes(range=[global_min_date, global_max_date], row=row, col=col)
 
