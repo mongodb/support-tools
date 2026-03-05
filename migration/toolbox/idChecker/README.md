@@ -92,7 +92,16 @@ MONGOSYNC PERFORMANCE SUMMARY:
 
 At the end of the run, the script prints a **`copyInNaturalOrder`** array you can use in the mongosync `/start` API. Example:
 ```json
-["db1.collection1", "db2.collection2"]
+[
+  {
+    database: 'test_id_ordering',
+    collections: [
+      'unordered_uuid',
+      'unordered_string',
+      'ordered_string'
+    ]
+  }
+]
 ```
 Use this in your start request body for granular control over which collections are copied in natural order (see mongosync 1.18 `detectRandomId` and `copyInNaturalOrder` documentation).
 
