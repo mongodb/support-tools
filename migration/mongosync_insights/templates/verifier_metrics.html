@@ -96,7 +96,7 @@
 <script>
 async function fetchVerifierData() {
     try {
-        const response = await fetch("/get_verifier_data", { method: 'POST' });
+        const response = await fetch("/get_verifier_data", { method: 'POST', credentials: 'same-origin' });
         const plotData = await response.json();
         
         if (plotData.error) {
