@@ -105,10 +105,14 @@ async function fetchVerifierData() {
             document.getElementById("error").innerHTML = `
                 <div class="error-container">
                     <h3>Connection Error</h3>
-                    <p>${plotData.error}</p>
+                    <p id="error-message"></p>
                     <p><a href="/">Go back to home</a></p>
                 </div>
             `;
+            const errorMessageElement = document.getElementById("error-message");
+            if (errorMessageElement) {
+                errorMessageElement.textContent = String(plotData.error);
+            }
             return;
         }
         
