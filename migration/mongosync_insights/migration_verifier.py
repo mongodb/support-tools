@@ -10,7 +10,6 @@ from flask import render_template
 import json
 import logging
 from pymongo.errors import PyMongoError
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
