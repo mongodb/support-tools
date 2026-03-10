@@ -282,16 +282,19 @@ def renderVerifier():
         validate_connection(TARGET_MONGO_URI)
     except InvalidURI as e:
         logger.error(f"Invalid connection string format: {e}")
+        clear_connection_cache()
         return render_template('error.html',
                             error_title="Invalid Connection String",
                             error_message="The connection string format is invalid. Please check your MongoDB connection string and try again.")
     except PyMongoError as e:
         logger.error(f"Failed to connect: {e}")
+        clear_connection_cache()
         return render_template('error.html',
                             error_title="Connection Failed",
                             error_message="Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible.")
     except Exception as e:
         logger.error(f"Unexpected error during connection validation: {e}")
+        clear_connection_cache()
         return render_template('error.html',
                             error_title="Connection Error",
                             error_message="An unexpected error occurred. Please try again.")
