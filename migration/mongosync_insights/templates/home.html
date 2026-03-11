@@ -78,12 +78,25 @@
         <img src="{{ url_for('static', filename='mongosync_metadata_progress.png') }}" width="300" alt="Mongosync Metadata Progress">
         <img src="{{ url_for('static', filename='mongosync_endpoint.png') }}" width="300" alt="Mongosync Endpoint">
     </form>
+
+    <!-- Third form: Migration Verifier -->
+    <form id="verifierForm" method="post" action="/renderVerifier" enctype="multipart/form-data" autocomplete="off">
+        <h2>Migration Verifier</h2>
+        {{ verifier_connection_string_form | safe }}
+        <label for="verifierDbName">Verifier Database Name:</label>
+        <input type="text" id="verifierDbName" name="verifierDbName" size="47" autocomplete="off"
+            placeholder="migration_verification_metadata" value="migration_verification_metadata"><br><br>
+        <input type="submit" value="Monitor Verifier">
+        <p> Click the "Monitor Verifier" button to monitor the <a href="https://github.com/mongodb-labs/migration-verifier" target="_blank">migration-verifier</a> tool progress.</p>
+        <p><small><strong>Note:</strong> Connect to the MongoDB cluster where the migration-verifier writes its metadata (typically the destination cluster).</small></p>
+        <img src="{{ url_for('static', filename='migration_verifier.png') }}" width="300" alt="Migration Verifier Dashboard">
+    </form>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function validateForm() {
+function validateMetadataForm() {
     var connField = document.getElementById('connectionString');
     var urlField = document.getElementById('progressEndpointUrl');
     
@@ -110,11 +123,34 @@ function validateForm() {
     return true;
 }
 
+function validateVerifierForm() {
+    var connField = document.getElementById('verifierConnectionString');
+    
+    // If field doesn't exist, it means env var is set (field is replaced with <p> tag)
+    var connConfigured = connField === null || connField.value.trim() !== '';
+    
+    if (!connConfigured) {
+        alert("Please provide a MongoDB Connection String for the migration verifier database.");
+        return false;
+    }
+    
+    return true;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    var form = document.getElementById('metadataForm');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            if (!validateForm()) {
+    var metadataForm = document.getElementById('metadataForm');
+    if (metadataForm) {
+        metadataForm.addEventListener('submit', function(e) {
+            if (!validateMetadataForm()) {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    var verifierForm = document.getElementById('verifierForm');
+    if (verifierForm) {
+        verifierForm.addEventListener('submit', function(e) {
+            if (!validateVerifierForm()) {
                 e.preventDefault();
             }
         });
