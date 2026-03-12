@@ -7,7 +7,7 @@ This tool can parse **mongosync** logs and metrics files, read the **mongosync**
 Mongosync Insights provides four main capabilities:
 
 1. **Log File Analysis**: Upload and parse mongosync log files to visualize migration progress, data transfer rates, performance metrics, configuration options, and detected errors
-2. **Prometheus Metrics Analysis**: Upload and parse `mongosync_metrics.log` files to visualize 40+ Prometheus-style metrics across Collection Copy, CEA, Indexes, Verifier, and more
+2. **Mongosync Metrics Analysis**: Upload and parse `mongosync_metrics.log` files to visualize 40+ mongosync metrics across Collection Copy, CEA, Indexes, Verifier, and more
 3. **Live Monitoring**: Connect directly to the **mongosync** internal database or to the **mongosync** progress endpoint for real-time monitoring of ongoing migrations with auto-refreshing dashboards
 4. **Migration Verifier Monitoring**: Connect to the database where the [migration-verifier](https://github.com/mongodb-labs/migration-verifier) tool stores its metadata to track verification progress, generation history, and mismatch details
 
@@ -109,7 +109,7 @@ Compressed files are automatically decompressed during processing. Archives (ZIP
 
 The tool automatically classifies files based on their filename:
 - **Mongosync logs** (`mongosync.log`, `mongosync-*`, `liveimport_*`) -- parsed for migration progress and events
-- **Mongosync metrics** (`mongosync_metrics.log`, `mongosync_metrics-*`) -- parsed for Prometheus-style performance metrics
+- **Mongosync metrics** (`mongosync_metrics.log`, `mongosync_metrics-*`) -- parsed for mongosync performance metrics
 
 **Results Tabs:**
 
@@ -118,12 +118,15 @@ After upload, the results are organized into tabs:
 | Tab | Description |
 |-----|-------------|
 | **Logs** | Migration progress plots: Total/Copied bytes, CEA Reads/Writes, Collection Copy Reads/Writes, Events applied, Lag Time |
-| **Metrics** | Prometheus metrics plots (when a `mongosync_metrics` file is uploaded): 40+ metrics across Collection Copy, Core Replication, CEA Reader, CEA CRUD Applier, Hot Documents, Indexes, Buffer Service, Bulk Inserter, and Verifier |
+| **Metrics** | Mongosync metrics plots (when a `mongosync_metrics` file is uploaded): 40+ metrics across Collection Copy, Core Replication, CEA Reader, CEA CRUD Applier, Hot Documents, Indexes, Buffer Service, Bulk Inserter, and Verifier |
 | **Options** | Mongosync configuration options extracted from the logs (with **Copy as Markdown** for easy sharing) |
 | **Collections** | Collection-level progress details (with **Copy as Markdown** for easy sharing) |
 | **Errors** | Detected error patterns such as oplog rollover, timeouts, verifier mismatches, and write conflicts during cutover |
 
-![Mongosync logs analyzer](images/mongosync_log_analyzer.png)
+![Mongosync Logs Tab](images/mongosync_logs_logs.png)
+![Mongosync Metrics Tab](images/mongosync_logs_metrics.png)
+![Mongosync Options Tab](images/mongosync_logs_options.png)
+![Mongosync Collections and Partitions Tab](images/mongosync_logs_collections_partitions.png)
 
 ### Option 2: Live Monitoring (Metadata)
 
