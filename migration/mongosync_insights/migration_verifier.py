@@ -621,8 +621,6 @@ def gatherVerifierMetrics(connection_string, db_name="migration_verification_met
             width=1300,
             autosize=True,
             title_text="Migration Verifier Dashboard",
-            title_x=0.5,
-            title_font=dict(size=24, color="#2c3e50"),
             showlegend=True,
             legend=dict(
                 orientation="h",

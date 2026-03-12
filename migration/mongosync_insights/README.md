@@ -196,6 +196,8 @@ This combined approach provides:
    - Namespace stats (per-namespace verification progress)
    - Collection metadata mismatches
 
+![Migration Verifier Dashboard](images/migration_verifier_dashboard.png)
+
 **Note**: The `MI_VERIFIER_CONNECTION_STRING` environment variable can be used to pre-configure the connection string. When omitted, it falls back to `MI_CONNECTION_STRING`. See **[CONFIGURATION.md](CONFIGURATION.md)** for details.
 
 ## Advanced Configuration

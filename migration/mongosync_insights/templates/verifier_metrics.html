@@ -5,13 +5,63 @@
 {% block header_title %}Migration Verifier Monitoring{% endblock %}
 
 {% block styles %}
-    #plot {
+    .tabs-container {
+        max-width: 1550px;
         margin: 0 auto;
-        max-width: 1500px;
+    }
+
+    .tab-buttons {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 0;
+        border-bottom: 2px solid #00684A;
+    }
+
+    .tab-btn {
+        padding: 12px 24px;
+        background: #e8f5f1;
+        border: none;
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        color: #00684A;
+        transition: all 0.2s ease;
+        position: relative;
+        bottom: -2px;
+    }
+
+    .tab-btn:hover {
+        background: #c8e6dc;
+    }
+
+    .tab-btn.active {
+        background: #00684A;
+        color: #fff;
+        border-bottom: 2px solid #00684A;
+    }
+
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .plot-container {
+        margin: 0 auto;
         border: 1px solid #ccc;
-        border-radius: 8px;
+        border-radius: 0 8px 8px 8px;
         background-color: #fff;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        min-height: 400px;
     }
 
     #loading {
@@ -19,45 +69,7 @@
         font-size: 18px;
         color: #666;
         margin: 50px 0;
-    }
-
-    .verifier-header {
-        text-align: center;
-        padding: 15px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        margin-bottom: 20px;
-        border-radius: 8px;
-    }
-
-    .verifier-header h2 {
-        margin: 0;
-        font-size: 24px;
-    }
-
-    .verifier-header .db-name {
-        font-size: 14px;
-        opacity: 0.9;
-        margin-top: 5px;
-    }
-
-    .status-indicator {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        margin-right: 8px;
-        animation: pulse 2s infinite;
-    }
-
-    .status-indicator.live {
-        background-color: #2ecc71;
-    }
-
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
+        padding: 50px;
     }
 
     .error-container {
@@ -76,20 +88,30 @@
     }
 
     @media (max-width: 768px) {
-        #plot {
+        .plot-container {
             width: 95%;
+        }
+
+        .tab-btn {
+            padding: 10px 16px;
+            font-size: 13px;
         }
     }
 {% endblock %}
 
 {% block content %}
-<div class="verifier-header">
-    <h2><span class="status-indicator live"></span>Migration Verifier Dashboard</h2>
-    <div class="db-name">Database: {{ db_name }}</div>
+<div class="tabs-container">
+    <div class="tab-buttons">
+        <button class="tab-btn active" id="tab-verifier">Migration Verifier Dashboard</button>
+    </div>
+    <div id="verifier-tab" class="tab-content active">
+        <div class="plot-container">
+            <div id="loading">Loading verifier metrics...</div>
+            <div id="error" style="display:none;"></div>
+            <div id="plot" style="display:none;"></div>
+        </div>
+    </div>
 </div>
-<div id="loading">Loading verifier metrics...</div>
-<div id="error" style="display:none;"></div>
-<div id="plot" style="display:none;"></div>
 {% endblock %}
 
 {% block scripts %}
@@ -144,9 +166,7 @@ setInterval(fetchVerifierData, {{ refresh_time_ms }}); // update every {{ refres
 {% endblock %}
 
 {% block footer %}
-<p style="text-align: center; color: #666;">
-    Refreshing every {{ refresh_time }} seconds - 
-    <a href="https://github.com/mongodb-labs/migration-verifier" target="_blank">Migration Verifier Docs</a> - 
-    Version {{ app_version }}
-</p>
+<p>Refreshing every {{ refresh_time }} seconds -
+    <a href="https://github.com/mongodb-labs/migration-verifier" target="_blank">Migration Verifier Docs</a> -
+    Version {{ app_version }}</p>
 {% endblock %}
