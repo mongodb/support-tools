@@ -3,7 +3,7 @@ Toolbox is a collection of helper scripts created by the Migration Factory team 
 
 ## [idChecker script](idChecker)
 
-This script analyzes MongoDB collections for non-ObjectId _id types and insertion-order correlation patterns, predicting potential mongosync migration performance issues and providing optimization recommendations.
+This script analyzes MongoDB collections for non-ObjectId _id types and insertion-order correlation patterns, predicting potential mongosync migration performance issues and providing optimization recommendations. For full documentation and examples, see [idChecker README](idChecker/README.md).
 
 ## [Database and Collection size](collectionDatabaseSizes)
 
@@ -13,29 +13,9 @@ Lists all databases and collections (excluding system databases: `admin`, `confi
 
 Collects index statistics across all user databases (excluding `admin`, `config`, `local`), reporting index name, type, uniqueness, access count, and size for each index. For full documentation and examples, see [probIndexesComplete README](probIndexesComplete/README.md).
 
-## (Mongosync Unique Index Limitations Checker)[mongosyncUniqueIndexChecker]
+## [Mongosync Unique Index Limitations Checker](mongosyncUniqueIndexChecker)
 
-**Script:** `mongosync_uniqueindex_limitation_checker.py`
-
-Detects a known mongosync limitation where a collection has two indexes with the exact same key pattern—one unique and one non-unique. This condition can cause mongosync to fail during migrations.
-
-The script supports two modes:
-- **Online mode:** Connects directly to a MongoDB cluster via connection string
-- **Offline mode:** Parses a `getMongoData` JSON file (no cluster access required)
-
-### Quick Usage
-
-**Offline (getMongoData):**
-```bash
-python3 mongosync_uniqueindex_limitation_checker.py --getmongodata <file>.json
-```
-
-**Online (MongoDB cluster):**
-```bash
-python3 mongosync_uniqueindex_limitation_checker.py --uri "mongodb+srv://USER:PASS@host"
-```
-
-For full documentation, filtering options, and examples, see [Mongosync Unique Index Limitations Checker README](mongosyncUniqueIndexChecker/README.md).
+Detects a known mongosync limitation where a collection has two indexes with the exact same key pattern—one unique and one non-unique. This condition can cause mongosync to fail during migrations. For full documentation, filtering options, and examples, see [mongosyncUniqueIndexChecker README](mongosyncUniqueIndexChecker/README.md).
 
 ### License
 
