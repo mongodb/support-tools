@@ -135,16 +135,11 @@ The script recognizes **UUID** in two forms: string UUIDs (e.g. `"f47ac10b-58cc-
 | **`is_sequential: true`** |  Efficient | Standard migration |
 | **`is_sequential: false`** | Slower | Use `copyInNaturalOrder` |
 
-
-## File Structure
-
-```
-migration/toolbox/idChecker/
-├── mongodb_id_checker.js    # Main analysis script
-└── README.md               # This documentation
-```
-
 Running this analysis on staging early in your migration planning process will save time, resources, and avoid production risks.
+
+### License
+
+[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## DISCLAIMER
 Please note: all tools/ scripts in this repo are released for use "AS IS" without any warranties of any kind, including, but not limited to their installation, use, or performance. We disclaim any and all warranties, either express or implied, including but not limited to any warranty of noninfringement, merchantability, and/ or fitness for a particular purpose. We do not warrant that the technology will meet your requirements, that the operation thereof will be uninterrupted or error-free, or that any errors will be corrected.

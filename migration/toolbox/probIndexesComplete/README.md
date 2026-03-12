@@ -46,13 +46,9 @@ mongosh "mongodb://user:password@localhost:27017" --quiet probIndexesComplete.js
 | **size** | Index size in bytes |
 | **accesses_since** | Timestamp when access tracking started |
 
-## File Structure
+### License
 
-```
-migration/toolbox/probIndexesComplete/
-├── probIndexesComplete.js    # Main analysis script
-└── README.md                 # This documentation
-```
+[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## DISCLAIMER
 Please note: all tools/ scripts in this repo are released for use "AS IS" without any warranties of any kind, including, but not limited to their installation, use, or performance. We disclaim any and all warranties, either express or implied, including but not limited to any warranty of noninfringement, merchantability, and/ or fitness for a particular purpose. We do not warrant that the technology will meet your requirements, that the operation thereof will be uninterrupted or error-free, or that any errors will be corrected.
