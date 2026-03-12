@@ -14,19 +14,6 @@ from pymongo.errors import PyMongoError
 logger = logging.getLogger(__name__)
 
 
-def get_latest_generation(db):
-    """Get the latest generation number from verification_tasks."""
-    pipeline = [
-        {"$sort": {"generation": -1}},
-        {"$limit": 1},
-        {"$project": {"generation": 1, "_id": 0}}
-    ]
-    result = list(db.verification_tasks.aggregate(pipeline))
-    if result:
-        return result[0].get("generation", 0)
-    return 0
-
-
 def get_verification_summary(db, generation):
     """Get summary of verification tasks for a generation."""
     pipeline = [
@@ -51,19 +38,6 @@ def get_verification_summary(db, generation):
         elif status == "added":
             summary["pending"] += r["count"]
     return summary
-
-
-def get_task_type_distribution(db, generation):
-    """Get distribution of task types for a generation."""
-    pipeline = [
-        {"$match": {"generation": generation}},
-        {"$group": {
-            "_id": "$type",
-            "count": {"$sum": 1}
-        }},
-        {"$sort": {"count": -1}}
-    ]
-    return list(db.verification_tasks.aggregate(pipeline))
 
 
 def get_failed_tasks(db, generation, limit=50):
@@ -105,33 +79,6 @@ def get_failed_tasks(db, generation, limit=50):
             pass  # Skip mismatch lookup if it fails
     
     return tasks
-
-
-def get_mismatches_with_details(db, generation, limit=100):
-    """Get verification tasks joined with mismatch details."""
-    pipeline = [
-        {"$match": {"generation": generation, "status": {"$in": ["failed", "mismatch"]}}},
-        {
-            "$lookup": {
-                "from": "mismatches",
-                "localField": "_id",
-                "foreignField": "task",
-                "as": "mismatch"
-            }
-        },
-        {"$unwind": {"path": "$mismatch", "preserveNullAndEmptyArrays": True}},
-        {"$limit": limit}
-    ]
-    return list(db.verification_tasks.aggregate(pipeline))
-
-
-def get_collection_mismatches(db, generation):
-    """Get collection/index metadata mismatches."""
-    return list(db.verification_tasks.find({
-        "generation": generation,
-        "status": "mismatch",
-        "type": "verifyCollection"
-    }))
 
 
 def get_namespace_stats(db, generation):
