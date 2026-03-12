@@ -111,6 +111,7 @@ SSL_KEY_PATH = os.getenv('MI_SSL_KEY', '/etc/letsencrypt/live/your-domain/privke
 # Live monitoring settings
 REFRESH_TIME = int(os.getenv('MI_REFRESH_TIME', '10'))
 CONNECTION_STRING = os.getenv('MI_CONNECTION_STRING', '')
+VERIFIER_CONNECTION_STRING = os.getenv('MI_VERIFIER_CONNECTION_STRING', '') or CONNECTION_STRING
 PROGRESS_ENDPOINT_URL = os.getenv('MI_PROGRESS_ENDPOINT_URL', '')
 
 # MongoDB settings
@@ -227,11 +228,17 @@ def get_mongo_client(connection_string):
     try:
         # Validate connection string format
         from pymongo.uri_parser import parse_uri
-        parse_uri(connection_string)
+        parsed = parse_uri(connection_string)
         
-        # Create client with connection pooling
-        client = MongoClient(
-            connection_string,
+        # Only set tlsCAFile for SRV connections (Atlas) or when TLS is explicitly enabled.
+        # Plain mongodb:// URIs to local/on-prem instances often don't use TLS.
+        uri_tls_options = parsed.get('options', {})
+        is_srv = connection_string.strip().lower().startswith('mongodb+srv://')
+        tls_explicitly_set = 'tls' in uri_tls_options or 'ssl' in uri_tls_options
+        tls_disabled = uri_tls_options.get('tls', uri_tls_options.get('ssl', True)) is False
+        use_tls_ca = is_srv or (tls_explicitly_set and not tls_disabled)
+
+        client_kwargs = dict(
             maxPoolSize=CONNECTION_POOL_SIZE,
             minPoolSize=1,
             maxIdleTimeMS=30000,
@@ -240,8 +247,12 @@ def get_mongo_client(connection_string):
             socketTimeoutMS=CONNECTION_TIMEOUT_MS,
             retryWrites=True,
             retryReads=True,
-            tlsCAFile=certifi.where()
         )
+        if use_tls_ca:
+            client_kwargs['tlsCAFile'] = certifi.where()
+
+        # Create client with connection pooling
+        client = MongoClient(connection_string, **client_kwargs)
         
         # Test the connection
         client.admin.command('ping')
@@ -378,24 +389,28 @@ class InMemorySessionStore:
     
     def update_session(self, session_id: str, data: dict) -> bool:
         """
-        Update an existing session with new data.
+        Merge new data into an existing session, preserving unmodified keys.
         
         Args:
             session_id: The session ID to update
-            data: New data to store
+            data: New data to merge into the session
             
         Returns:
-            bool: True if session was updated, False if not found
+            bool: True if session was updated, False if not found/expired
         """
         if not session_id:
             return False
             
         with self._lock:
-            if session_id in self._store:
-                self._store[session_id]['data'] = data
-                self._store[session_id]['last_accessed'] = time.time()
-                return True
-            return False
+            session = self._store.get(session_id)
+            if not session:
+                return False
+            if time.time() - session['last_accessed'] > self._timeout:
+                del self._store[session_id]
+                return False
+            session['data'].update(data)
+            session['last_accessed'] = time.time()
+            return True
     
     def delete_session(self, session_id: str) -> bool:
         """
