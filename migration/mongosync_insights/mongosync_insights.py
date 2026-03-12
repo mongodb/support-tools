@@ -2,6 +2,7 @@ import logging
 from flask import Flask, render_template, request, make_response
 from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics, gatherPartitionsMetrics, gatherEndpointMetrics
+from migration_verifier import plotVerifierMetrics, gatherVerifierMetrics
 from pymongo.errors import InvalidURI, PyMongoError
 from pymongo.uri_parser import parse_uri 
 from app_config import (
@@ -99,9 +100,19 @@ def home_page():
     else:
         progress_endpoint_form = f"<p><b>Mongosync Progress Endpoint: </b>{PROGRESS_ENDPOINT_URL}</p>"
 
+    # Migration verifier connection string form
+    if not CONNECTION_STRING:
+        verifier_connection_string_form = '''<label for="verifierConnectionString">Verifier MongoDB Connection String:</label>  
+                                    <input type="text" id="verifierConnectionString" name="verifierConnectionString" size="47" autocomplete="off"
+                                        placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/"><br><br>'''
+    else:
+        sanitized_connection = sanitize_for_display(CONNECTION_STRING)
+        verifier_connection_string_form = f"<p><b>Connecting to Verifier DB at: </b>{sanitized_connection}</p>"
+
     return render_template('home.html', 
                            connection_string_form=connection_string_form,
                            progress_endpoint_form=progress_endpoint_form,
+                           verifier_connection_string_form=verifier_connection_string_form,
                            max_file_size_gb=max_file_size_gb)
 
 
@@ -243,6 +254,94 @@ def getEndpointData():
         return {"error": "No progress endpoint URL available. Please refresh the page and re-enter your credentials."}, 400
     
     return gatherEndpointMetrics(endpoint_url)
+
+@app.route('/renderVerifier', methods=['POST'])
+def renderVerifier():
+    """Render the migration verifier monitoring page."""
+    # Get connection string from env var or form
+    if CONNECTION_STRING:
+        TARGET_MONGO_URI = CONNECTION_STRING
+    else:
+        TARGET_MONGO_URI = request.form.get('verifierConnectionString')
+        if TARGET_MONGO_URI:
+            TARGET_MONGO_URI = TARGET_MONGO_URI.strip() if TARGET_MONGO_URI.strip() else None
+
+    # Get database name from form (default: migration_verification_metadata)
+    db_name = request.form.get('verifierDbName', 'migration_verification_metadata')
+    if db_name:
+        db_name = db_name.strip() if db_name.strip() else 'migration_verification_metadata'
+
+    if not TARGET_MONGO_URI:
+        logger.error("No connection string provided for migration verifier")
+        return render_template('error.html',
+                             error_title="No Connection String",
+                             error_message="Please provide a MongoDB Connection String for the migration verifier database.")
+
+    # Test MongoDB connection
+    try:
+        validate_connection(TARGET_MONGO_URI)
+    except InvalidURI as e:
+        logger.error(f"Invalid connection string format: {e}")
+        clear_connection_cache()
+        return render_template('error.html',
+                            error_title="Invalid Connection String",
+                            error_message="The connection string format is invalid. Please check your MongoDB connection string and try again.")
+    except PyMongoError as e:
+        logger.error(f"Failed to connect: {e}")
+        clear_connection_cache()
+        return render_template('error.html',
+                            error_title="Connection Failed",
+                            error_message="Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible.")
+    except Exception as e:
+        logger.error(f"Unexpected error during connection validation: {e}")
+        clear_connection_cache()
+        return render_template('error.html',
+                            error_title="Connection Error",
+                            error_message="An unexpected error occurred. Please try again.")
+
+    # Store credentials in server-side in-memory session store
+    session_data = {
+        'verifier_connection_string': TARGET_MONGO_URI,
+        'verifier_db_name': db_name
+    }
+    session_id = session_store.create_session(session_data)
+
+    # Render the verifier metrics page
+    response = make_response(plotVerifierMetrics(db_name=db_name))
+    
+    # Set session ID in a secure cookie
+    response.set_cookie(
+        SESSION_COOKIE_NAME,
+        session_id,
+        httponly=True,
+        secure=SECURE_COOKIES,
+        samesite='Strict',
+        max_age=SESSION_TIMEOUT
+    )
+    
+    return response
+
+@app.route('/get_verifier_data', methods=['POST'])
+def getVerifierData():
+    """Get migration verifier metrics data for AJAX refresh."""
+    # Get connection string from env var or in-memory session store
+    if CONNECTION_STRING:
+        connection_string = CONNECTION_STRING
+    else:
+        session_id = request.cookies.get(SESSION_COOKIE_NAME)
+        session_data = session_store.get_session(session_id)
+        connection_string = session_data.get('verifier_connection_string')
+    
+    if not connection_string:
+        logger.error("No connection string available for verifier metrics refresh")
+        return {"error": "No connection string available. Please refresh the page and re-enter your credentials."}, 400
+    
+    # Get database name from session
+    session_id = request.cookies.get(SESSION_COOKIE_NAME)
+    session_data = session_store.get_session(session_id)
+    db_name = session_data.get('verifier_db_name', 'migration_verification_metadata')
+    
+    return gatherVerifierMetrics(connection_string, db_name)
 
 if __name__ == '__main__':
     # Log startup information

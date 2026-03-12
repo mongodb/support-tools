@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Mongosync Insights - Migration Verifier{% endblock %}
+
+{% block header_title %}Migration Verifier Monitoring{% endblock %}
+
+{% block styles %}
+    #plot {
+        margin: 0 auto;
+        max-width: 1500px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background-color: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    #loading {
+        text-align: center;
+        font-size: 18px;
+        color: #666;
+        margin: 50px 0;
+    }
+
+    .verifier-header {
+        text-align: center;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        margin-bottom: 20px;
+        border-radius: 8px;
+    }
+
+    .verifier-header h2 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .verifier-header .db-name {
+        font-size: 14px;
+        opacity: 0.9;
+        margin-top: 5px;
+    }
+
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+        animation: pulse 2s infinite;
+    }
+
+    .status-indicator.live {
+        background-color: #2ecc71;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    .error-container {
+        background-color: #fee;
+        border: 1px solid #c00;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px auto;
+        max-width: 600px;
+        text-align: center;
+    }
+
+    .error-container h3 {
+        color: #c00;
+        margin-top: 0;
+    }
+
+    @media (max-width: 768px) {
+        #plot {
+            width: 95%;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+<div class="verifier-header">
+    <h2><span class="status-indicator live"></span>Migration Verifier Dashboard</h2>
+    <div class="db-name">Database: {{ db_name }}</div>
+</div>
+<div id="loading">Loading verifier metrics...</div>
+<div id="error" style="display:none;"></div>
+<div id="plot" style="display:none;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function fetchVerifierData() {
+    try {
+        const response = await fetch("/get_verifier_data", { method: 'POST', credentials: 'same-origin' });
+        const plotData = await response.json();
+        
+        if (plotData.error) {
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("error").style.display = "block";
+            document.getElementById("error").innerHTML = `
+                <div class="error-container">
+                    <h3>Connection Error</h3>
+                    <p id="error-message"></p>
+                    <p><a href="/">Go back to home</a></p>
+                </div>
+            `;
+            const errorMessageElement = document.getElementById("error-message");
+            if (errorMessageElement) {
+                errorMessageElement.textContent = String(plotData.error);
+            }
+            return;
+        }
+        
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("error").style.display = "none";
+        document.getElementById("plot").style.display = "block";
+        Plotly.react('plot', plotData.data, plotData.layout);
+    } catch (err) {
+        console.error("Error fetching verifier data:", err);
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("error").style.display = "block";
+        document.getElementById("error").innerHTML = `
+            <div class="error-container">
+                <h3>Error Loading Data</h3>
+                <p>Failed to fetch verifier metrics. Please check your connection.</p>
+                <p><a href="/">Go back to home</a></p>
+            </div>
+        `;
+    }
+}
+
+fetchVerifierData(); // initial load
+setInterval(fetchVerifierData, {{ refresh_time_ms }}); // update every {{ refresh_time }} seconds
+</script>
+{% endblock %}
+
+{% block footer %}
+<p style="text-align: center; color: #666;">
+    Refreshing every {{ refresh_time }} seconds - 
+    <a href="https://github.com/mongodb-labs/migration-verifier" target="_blank">Migration Verifier Docs</a> - 
+    Version {{ app_version }}
+</p>
+{% endblock %}
