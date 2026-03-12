@@ -206,7 +206,7 @@ def validate_progress_endpoint_url(url):
 CONNECTION_POOL_SIZE = int(os.getenv('MI_POOL_SIZE', '10'))
 CONNECTION_TIMEOUT_MS = int(os.getenv('MI_TIMEOUT_MS', '5000'))
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=4)
 def get_mongo_client(connection_string):
     """
     Get a cached MongoDB client with connection pooling.
