@@ -100,11 +100,11 @@ def classify_file_type(filename: str) -> str:
     return None
 
 
-# Security settings
-SECURE_COOKIES = os.getenv('MI_SECURE_COOKIES', 'True').lower() == 'true'
-
 # SSL/TLS settings
 SSL_ENABLED = os.getenv('MI_SSL_ENABLED', 'False').lower() == 'true'
+
+# Security settings
+SECURE_COOKIES = os.getenv('MI_SECURE_COOKIES', str(SSL_ENABLED)).lower() == 'true'
 SSL_CERT_PATH = os.getenv('MI_SSL_CERT', '/etc/letsencrypt/live/your-domain/fullchain.pem')
 SSL_KEY_PATH = os.getenv('MI_SSL_KEY', '/etc/letsencrypt/live/your-domain/privkey.pem')
 
