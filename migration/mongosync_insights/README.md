@@ -127,6 +127,7 @@ After upload, the results are organized into tabs:
 ![Mongosync Metrics Tab](images/mongosync_logs_metrics.png)
 ![Mongosync Options Tab](images/mongosync_logs_options.png)
 ![Mongosync Collections and Partitions Tab](images/mongosync_logs_collections_partitions.png)
+![Mongosync Errors and Warnings Tab](images/mongosync_logs_errors.png)
 
 ### Option 2: Live Monitoring (Metadata)
 

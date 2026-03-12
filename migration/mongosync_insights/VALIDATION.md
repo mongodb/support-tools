@@ -1,134 +1,10 @@
-# Connection String Validation
+# Connection String Guide
 
-This document describes the connection string handling in Mongosync Insights.
+This document covers connection string best practices, security considerations, and troubleshooting for Mongosync Insights.
 
-## Overview
+## Connection String Formats
 
-Mongosync Insights uses PyMongo's built-in validation for connection strings, which provides:
-- URI format validation
-- Connection testing
-- Authentication verification
-
-## Validation Process
-
-### 1. Empty String Check
-
-The application first checks if a connection string was provided:
-
-```python
-if not TARGET_MONGO_URI or not TARGET_MONGO_URI.strip():
-    return error("Please provide a valid MongoDB connection string.")
-```
-
-### 2. PyMongo URI Parsing
-
-PyMongo's `parse_uri()` function validates the connection string format and raises `InvalidURI` if the format is invalid. This checks:
-- Proper URI scheme (`mongodb://` or `mongodb+srv://`)
-- Valid URI syntax
-- Proper host and port format
-- Valid URI components
-
-### 3. Connection Test
-
-The application attempts to connect to MongoDB using `validate_connection()`, which:
-- Creates a MongoDB client
-- Tests connectivity with a `ping` command
-- Validates authentication credentials
-- Raises `PyMongoError` if connection fails
-
-## Display Sanitization
-
-Connection strings are sanitized before display to protect credentials.
-
-### `sanitize_for_display(connection_string)`
-
-This function removes credentials from connection strings for safe display in the UI.
-
-**Example:**
-```python
-# Input
-connection_string = "mongodb+srv://user:password@cluster.mongodb.net/mydb"
-
-# Output
-sanitized = "cluster.mongodb.net:27017 (database: mydb)"
-```
-
-**Implementation:**
-- Parses the connection string to extract hosts and database
-- Escapes HTML special characters
-- Returns only non-sensitive information
-- Returns `"[Connection String Provided]"` if parsing fails
-
-## Error Handling
-
-The application provides clear error messages for common issues:
-
-### Invalid URI Format
-**Error Title:** "Invalid Connection String"  
-**Error Message:** "The connection string format is invalid. Please check your MongoDB connection string and try again."
-
-**Common causes:**
-- Incorrect URI scheme
-- Missing required components
-- Invalid characters in URI
-
-### Connection Failed
-**Error Title:** "Connection Failed"  
-**Error Message:** "Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible."
-
-**Common causes:**
-- Incorrect username or password
-- Network connectivity issues
-- Firewall blocking connection
-- MongoDB server not running
-- Incorrect host or port
-
-### Unexpected Error
-**Error Title:** "Connection Error"  
-**Error Message:** "An unexpected error occurred. Please try again."
-
-**Common causes:**
-- Timeout issues
-- DNS resolution failures
-- Unexpected server responses
-
-## Logging
-
-All connection attempts and errors are logged to `insights.log`:
-
-```
-logger.error(f"Invalid connection string format: {e}")
-logger.error(f"Failed to connect: {e}")
-logger.error(f"Unexpected error during connection validation: {e}")
-```
-
-**Note:** Connection strings with credentials are not logged to prevent credential exposure.
-
-## Security Considerations
-
-### Credential Protection
-
-1. **Never displayed:** Credentials are always removed before displaying connection information
-2. **Not logged:** Connection strings with passwords are never written to logs
-3. **Sanitized output:** Only host, port, and database name are shown in the UI
-
-### HTTPS Recommended
-
-For production deployments, always use HTTPS to protect connection strings in transit. See [HTTPS_SETUP.md](HTTPS_SETUP.md) for setup instructions.
-
-### Secure Cookies
-
-Enable secure cookies when using HTTPS:
-
-```bash
-MI_SECURE_COOKIES=true
-```
-
-This ensures session cookies are only transmitted over encrypted connections.
-
-## Connection String Best Practices
-
-### MongoDB Atlas
+### MongoDB Atlas (SRV)
 
 Use the SRV connection string format:
 
@@ -136,16 +12,11 @@ Use the SRV connection string format:
 mongodb+srv://username:password@cluster.mongodb.net/
 ```
 
-### Credentials in Environment Variables
+### Standard Connection String
 
-For production, store the connection string in an environment variable:
-
-```bash
-export MI_CONNECTION_STRING="mongodb+srv://user:pass@cluster.mongodb.net/"
-python3 mongosync_insights.py
 ```
-
-This prevents credentials from being entered through the web UI.
+mongodb://username:password@host1:27017,host2:27017/
+```
 
 ### URL Encoding
 
@@ -162,6 +33,24 @@ Example:
 # Password: p@ss:word
 mongodb://user:p%40ss%3Aword@cluster.mongodb.net/
 ```
+
+## Using Environment Variables
+
+For production, store the connection string in an environment variable to avoid entering it through the web UI:
+
+```bash
+export MI_CONNECTION_STRING="mongodb+srv://user:pass@cluster.mongodb.net/"
+python3 mongosync_insights.py
+```
+
+See [CONFIGURATION.md](CONFIGURATION.md) for all available connection-related environment variables.
+
+## Security Considerations
+
+- **Credentials are never displayed:** Connection strings are sanitized before display in the UI -- only host, port, and database name are shown
+- **Credentials are never logged:** Connection strings with passwords are not written to log files
+- **HTTPS recommended:** For production deployments, always use HTTPS to protect connection strings in transit. See [HTTPS_SETUP.md](HTTPS_SETUP.md)
+- **Secure cookies:** Enable `MI_SECURE_COOKIES=true` when using HTTPS to ensure session cookies are only transmitted over encrypted connections
 
 ## Troubleshooting
 
@@ -182,15 +71,41 @@ mongodb://user:p%40ss%3Aword@cluster.mongodb.net/
 
 ### Connection Hangs
 
-1. Check for network timeouts (default: 5 seconds)
+1. Check for network timeouts (default: 5 seconds, configurable via `MI_TIMEOUT_MS`)
 2. Verify DNS resolution for hostname
 3. Ensure no proxy blocking MongoDB traffic
 
-## Support
-
-For connection issues:
+### General Steps
 
 1. Check logs: `insights.log`
 2. Verify connection string format
 3. Test connection using MongoDB shell or Compass
 4. Review MongoDB server logs for authentication failures
+
+## Related Documentation
+
+- **[README.md](README.md)** - Getting started and installation guide
+- **[CONFIGURATION.md](CONFIGURATION.md)** - Complete environment variables reference
+- **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
+
+### License
+
+[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
+DISCLAIMER
+----------
+Please note: all tools/ scripts in this repo are released for use "AS IS" **without any warranties of any kind**,
+including, but not limited to their installation, use, or performance.  We disclaim any and all warranties, either 
+express or implied, including but not limited to any warranty of noninfringement, merchantability, and/ or fitness 
+for a particular purpose.  We do not warrant that the technology will meet your requirements, that the operation 
+thereof will be uninterrupted or error-free, or that any errors will be corrected.
+
+Any use of these scripts and tools is **at your own risk**.  There is no guarantee that they have been through 
+thorough testing in a comparable environment and we are not responsible for any damage or data loss incurred with 
+their use.
+
+You are responsible for reviewing and testing any scripts you run *thoroughly* before use in any non-testing 
+environment.
+
+Thanks,  
+The MongoDB Support Team
