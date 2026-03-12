@@ -1,7 +1,7 @@
 import plotly.graph_objects as go
 from plotly.utils import PlotlyJSONEncoder
 from plotly.subplots import make_subplots
-from flask import request, render_template
+from flask import render_template
 import json
 import logging
 import textwrap

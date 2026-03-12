@@ -13,7 +13,7 @@ import magic
 from werkzeug.utils import secure_filename
 from mongosync_plot_utils import format_byte_size, convert_bytes
 from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES, load_error_patterns, classify_file_type
-from file_decompressor import decompress_file, decompress_file_classified, is_compressed_mime_type
+from file_decompressor import decompress_file_classified, is_compressed_mime_type
 from mongosync_plot_prometheus_metrics import MetricsCollector, create_metrics_plots
 
 def upload_file():
@@ -525,7 +525,6 @@ def upload_file():
         partition_times = []
         partitions_copied = []
         partitions_total = []
-        partitions_pct = []
         partition_re = re.compile(r"Completed writing (\d+) / (\d+) partitions")
         for item in mongosync_partition_progress:
             m = partition_re.search(item.get('message', ''))
@@ -535,7 +534,6 @@ def upload_file():
                 total = int(m.group(2))
                 partitions_copied.append(copied)
                 partitions_total.append(total)
-                partitions_pct.append((copied / total * 100) if total > 0 else 0)
         
         # Extract index building progress data from sent response entries
         index_built_times = []

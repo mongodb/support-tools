@@ -4,11 +4,10 @@ from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics, gatherPartitionsMetrics, gatherEndpointMetrics
 from migration_verifier import plotVerifierMetrics, gatherVerifierMetrics
 from pymongo.errors import InvalidURI, PyMongoError
-from pymongo.uri_parser import parse_uri 
 from app_config import (
     setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, 
     REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, 
-    SECURE_COOKIES, CONNECTION_STRING, VERIFIER_CONNECTION_STRING, get_mongo_client,
+    SECURE_COOKIES, CONNECTION_STRING, VERIFIER_CONNECTION_STRING,
     PROGRESS_ENDPOINT_URL, validate_progress_endpoint_url, session_store, SESSION_TIMEOUT
 )
 from connection_validator import sanitize_for_display

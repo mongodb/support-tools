@@ -118,8 +118,6 @@ PROGRESS_ENDPOINT_URL = os.getenv('MI_PROGRESS_ENDPOINT_URL', '')
 INTERNAL_DB_NAME = os.getenv('MI_INTERNAL_DB_NAME', "mongosync_reserved_for_internal_use")
 
 # UI settings
-PLOT_WIDTH = int(os.getenv('MI_PLOT_WIDTH', '1450'))
-PLOT_HEIGHT = int(os.getenv('MI_PLOT_HEIGHT', '1800'))
 MAX_PARTITIONS_DISPLAY = int(os.getenv('MI_MAX_PARTITIONS_DISPLAY', '10'))
 
 # Error patterns file

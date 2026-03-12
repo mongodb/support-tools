@@ -56,8 +56,6 @@ All configuration can be set using `export` commands before running the applicat
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MI_MAX_PARTITIONS_DISPLAY` | `10` | Maximum partitions to display in UI |
-| `MI_PLOT_WIDTH` | `1450` | Plot width in pixels |
-| `MI_PLOT_HEIGHT` | `1800` | Plot height in pixels |
 
 ### Security Settings
 
@@ -190,9 +188,7 @@ Adjust file upload limits and plot dimensions:
 # Allow larger log files (20GB)
 export MI_MAX_FILE_SIZE=21474836480
 
-# Customize plot dimensions
-export MI_PLOT_WIDTH=1920
-export MI_PLOT_HEIGHT=2400
+# Customize UI settings
 export MI_MAX_PARTITIONS_DISPLAY=20
 
 # Run the application
