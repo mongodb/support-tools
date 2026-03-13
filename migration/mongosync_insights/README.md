@@ -1,13 +1,15 @@
 # Mongosync Insights
 
-This tool can parse the **mongosync** logs, read the **mongosync** internal database (metadata) and connect to **mongosync** progress endpoint, generating interactive plots to assist with monitoring and troubleshooting ongoing MongoDB migrations using mongosync.
+This tool can parse **mongosync** logs and metrics files, read the **mongosync** internal database (metadata), connect to the **mongosync** progress endpoint, and monitor the **migration-verifier** tool, generating interactive plots to assist with monitoring and troubleshooting ongoing MongoDB migrations.
 
 ## What Does This Tool Do?
 
-Mongosync Insights provides two main capabilities:
+Mongosync Insights provides four main capabilities:
 
-1. **Log File Analysis**: Upload and parse mongosync log files to visualize migration progress, data transfer rates, and performance metrics
-2. **Live Monitoring**: Connect directly to the **mongosync** internal database or to the **mongosync** progress endpoint for real-time monitoring of ongoing migrations with auto-refreshing dashboards
+1. **Log File Analysis**: Upload and parse mongosync log files to visualize migration progress, data transfer rates, performance metrics, configuration options, and detected errors
+2. **Mongosync Metrics Analysis**: Upload and parse `mongosync_metrics.log` files to visualize 40+ mongosync metrics across Collection Copy, CEA, Indexes, Verifier, and more
+3. **Live Monitoring**: Connect directly to the **mongosync** internal database or to the **mongosync** progress endpoint for real-time monitoring of ongoing migrations with auto-refreshing dashboards
+4. **Migration Verifier Monitoring**: Connect to the database where the [migration-verifier](https://github.com/mongodb-labs/migration-verifier) tool stores its metadata to track verification progress, generation history, and mismatch details
 
 ## Prerequisites
 
@@ -15,6 +17,7 @@ Mongosync Insights provides two main capabilities:
 - **pip**: Python package installer
 - **MongoDB Access** (for live monitoring): Connection string to the destination cluster where **mongosync** stores its metadata
 - **Progress Endpoint Access** (for live monitoring): Network access to the **mongosync** progress endpoint
+- **Migration Verifier Access** (for verifier monitoring): Connection string to the cluster where the migration-verifier writes its metadata
 
 ## Installation
 
@@ -72,7 +75,7 @@ python3 mongosync_insights.py
 
 The application will start and display:
 ```
-Starting Mongosync Insights v0.7.1.6
+Starting Mongosync Insights v0.8.0.18
 Server: 127.0.0.1:3030
 ```
 
@@ -92,24 +95,39 @@ http://localhost:3030
 1. Click the **"Browse"** or **"Choose File"** button
 2. Select your mongosync log file from your file system
 3. Click **"Open"** or **"Upload"**
-4. The application will process the log and display plots showing:
+4. The application will process the file and display results across multiple tabs
 
 **Supported File Formats:**
 - Plain text: `.log`, `.json`, `.out`
 - Compressed: `.gz`, `.zip`, `.bz2`, `.tar.gz`, `.tgz`, `.tar.bz2`
 
-Compressed files are automatically decompressed during processing, which can significantly reduce upload time for large log files.
+Compressed files are automatically decompressed during processing. Archives (ZIP/TAR) containing multiple files are also supported -- each file inside is processed independently.
 
 **Note**: Log files must be in mongosync's native **NDJSON** (Newline Delimited JSON) format. Each line should be a valid JSON object.
 
-**Metrics displayed:**
-- Total and Copied bytes
-- CEA (Change Event Application) Reads and Writes
-- Collection Copy Reads and Writes
-- Events applied
-- Lag Time
+**Automatic File Classification:**
 
-![Mongosync logs analyzer](images/mongosync_log_analyzer.png)
+The tool automatically classifies files based on their filename:
+- **Mongosync logs** (`mongosync.log`, `mongosync-*`, `liveimport_*`) -- parsed for migration progress and events
+- **Mongosync metrics** (`mongosync_metrics.log`, `mongosync_metrics-*`) -- parsed for mongosync performance metrics
+
+**Results Tabs:**
+
+After upload, the results are organized into tabs:
+
+| Tab | Description |
+|-----|-------------|
+| **Logs** | Migration progress plots: Total/Copied bytes, CEA Reads/Writes, Collection Copy Reads/Writes, Events applied, Lag Time |
+| **Metrics** | Mongosync metrics plots (when a `mongosync_metrics` file is uploaded): 40+ metrics across Collection Copy, Core Replication, CEA Reader, CEA CRUD Applier, Hot Documents, Indexes, Buffer Service, Bulk Inserter, and Verifier |
+| **Options** | Mongosync configuration options extracted from the logs (with **Copy as Markdown** for easy sharing) |
+| **Collections** | Collection-level progress details (with **Copy as Markdown** for easy sharing) |
+| **Errors** | Detected error patterns such as oplog rollover, timeouts, verifier mismatches, and write conflicts during cutover |
+
+![Mongosync Logs Tab](images/mongosync_logs_logs.png)
+![Mongosync Metrics Tab](images/mongosync_logs_metrics.png)
+![Mongosync Options Tab](images/mongosync_logs_options.png)
+![Mongosync Collections and Partitions Tab](images/mongosync_logs_collections_partitions.png)
+![Mongosync Errors and Warnings Tab](images/mongosync_logs_errors.png)
 
 ### Option 2: Live Monitoring (Metadata)
 
@@ -166,6 +184,22 @@ This combined approach provides:
 - Full metadata insights from the destination cluster (partitions, collection progress, configuration)
 - Real-time progress data from the mongosync endpoint (state, lag time, verification status)
 
+### Option 5: Migration Verifier Monitoring
+
+1. Enter the MongoDB **connection string** to the cluster where the [migration-verifier](https://github.com/mongodb-labs/migration-verifier) tool writes its metadata (typically the destination cluster)
+2. Optionally customize the **Verifier Database Name** (default: `migration_verification_metadata`)
+3. Click **"Monitor Verifier"**
+4. The page will refresh automatically every 10 seconds (configurable) showing:
+   - Generation history (Initial Verification, Recheck #1, #2, etc.)
+   - Per-generation summary with task status (completed, failed, pending, processing)
+   - Failed tasks details with mismatch information
+   - Namespace stats (per-namespace verification progress)
+   - Collection metadata mismatches
+
+![Migration Verifier Dashboard](images/migration_verifier_dashboard.png)
+
+**Note**: The `MI_VERIFIER_CONNECTION_STRING` environment variable can be used to pre-configure the connection string. When omitted, it falls back to `MI_CONNECTION_STRING`. See **[CONFIGURATION.md](CONFIGURATION.md)** for details.
+
 ## Advanced Configuration
 
 ### Environment Variables
@@ -173,10 +207,12 @@ This combined approach provides:
 Configure the application using environment variables. See **[CONFIGURATION.md](CONFIGURATION.md)** for the complete reference, including:
 
 - Server host and port settings
-- MongoDB connection strings
+- MongoDB connection strings (live monitoring and migration verifier)
 - Refresh intervals
 - Upload size limits
 - UI customization
+- Custom error patterns file
+- Security and session settings
 
 **Quick Example:**
 ```bash
@@ -209,6 +245,7 @@ For detailed guides, see:
 
 - **[CONFIGURATION.md](CONFIGURATION.md)** - Complete environment variables reference, configuration options, and MongoDB connection pooling
 - **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
+- **[VALIDATION.md](VALIDATION.md)** - Connection string validation, sanitization, and error handling
 
 ## Security Best Practices
 

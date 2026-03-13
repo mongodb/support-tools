@@ -1,7 +1,7 @@
 import plotly.graph_objects as go
 from plotly.utils import PlotlyJSONEncoder
 from plotly.subplots import make_subplots
-from flask import request, render_template
+from flask import render_template
 import json
 import logging
 import textwrap
@@ -42,10 +42,10 @@ def gatherMetrics(connection_string):
     except PyMongoError as e:
         logger.error(f"Failed to connect to target MongoDB: {e}")
         exit(1)
-    # Create a subplot for status information (3 rows)
-    fig = make_subplots(rows=3, 
+    # Create a subplot for status information (4 rows)
+    fig = make_subplots(rows=4, 
                         cols=5, 
-                        row_heights=[0.35, 0.35, 0.30],
+                        row_heights=[0.25, 0.25, 0.25, 0.25],
                         subplot_titles=("Current State", 
                                         "Current Phase",
                                         "Lag Time",
@@ -57,11 +57,14 @@ def gatherMetrics(connection_string):
                                         "Build Indexes",
                                         "Detect Random Id",
                                         "Embedded Verifier",
+
+                                        "Copy In Natural Order",
                                         
                                         "Namespace Filter - Inclusion",
                                         "Namespace Filter - Exclusion"),
                         specs=[[{}, {}, {}, {}, {}],
                                [{}, {}, {}, {}, {}],
+                               [{"type": "table", "colspan": 5}, None, None, None, None],
                                [{"type": "table", "colspan": 2}, None, None, {"type": "table", "colspan": 2}, None]]                           
                         )
 
@@ -113,11 +116,8 @@ def gatherMetrics(connection_string):
         parts.append(f"{seconds}s")
         return " ".join(parts)
 
-    def get_last_event_datetime(resume_info):
-        """Extract lastEventTs from resume info and convert to datetime."""
-        if not resume_info:
-            return None
-        lastEventTs = resume_info.get("lastEventTs")
+    def _parse_last_event_ts(lastEventTs):
+        """Convert a lastEventTs value to a timezone-aware datetime."""
         if not lastEventTs:
             return None
         if isinstance(lastEventTs, Timestamp):
@@ -125,6 +125,18 @@ def gatherMetrics(connection_string):
         elif isinstance(lastEventTs, datetime):
             return lastEventTs if lastEventTs.tzinfo else lastEventTs.replace(tzinfo=timezone.utc)
         return None
+
+    def get_last_event_datetime(resume_info):
+        """Extract lastEventTs from resume info and convert to datetime.
+        resume_info may be a dict or a list of dicts (e.g. one per shard)."""
+        if not resume_info:
+            return None
+        if isinstance(resume_info, list):
+            candidates = [_parse_last_event_ts(entry.get("lastEventTs")) for entry in resume_info if isinstance(entry, dict)]
+            valid = [dt for dt in candidates if dt is not None]
+            return max(valid) if valid else None
+        lastEventTs = resume_info.get("lastEventTs")
+        return _parse_last_event_ts(lastEventTs)
 
     lagTimeText = 'NO DATA'
     crudChangeStreamResumeInfo = vResumeData.get("crudChangeStreamResumeInfo") if vResumeData else None
@@ -223,6 +235,36 @@ def gatherMetrics(connection_string):
     fig.update_layout(xaxis10=dict(showgrid=False, zeroline=False, showticklabels=False), 
                       yaxis10=dict(showgrid=False, zeroline=False, showticklabels=False))
     
+    # Plot Copy In Natural Order table
+    copyInNaturalOrderFilter = vGlobalState.get("copyInNaturalOrderFilter") if vGlobalState else None
+
+    nat_databases = []
+    nat_collections = []
+
+    if copyInNaturalOrderFilter:
+        selectAll = copyInNaturalOrderFilter.get("selectAll", False)
+        dbsAndColls = copyInNaturalOrderFilter.get("dbsAndColls", {})
+
+        if selectAll:
+            nat_databases.append("All")
+            nat_collections.append("All databases and collections")
+        elif dbsAndColls:
+            for db, colls in dbsAndColls.items():
+                nat_databases.append(db)
+                nat_collections.append(", ".join(colls) if colls else "All collections")
+        else:
+            nat_databases.append("Info")
+            nat_collections.append("Nothing being copied in Natural Order")
+    else:
+        nat_databases.append("Info")
+        nat_collections.append("Nothing being copied in Natural Order")
+
+    fig.add_trace(go.Table(
+        header=dict(values=["Database", "Collections"], font=dict(size=12, color='black')),
+        cells=dict(values=[nat_databases, nat_collections], align=['left'], font=dict(size=10, color='darkblue')),
+        columnwidth=[1, 3]
+    ), row=3, col=1)
+
     # Helper function to format namespace filter data for table display
     def format_namespace_filter(filter_data, filter_type="inclusion"):
         """Convert namespace filter data to table columns (keys, values).
@@ -289,7 +331,7 @@ def gatherMetrics(connection_string):
         header=dict(values=["Key", "Value"], font=dict(size=12, color='black')),
         cells=dict(values=[inc_keys, inc_values], align=['left'], font=dict(size=10, color='darkblue')),
         columnwidth=[0.75, 2.5]
-    ), row=3, col=1)
+    ), row=4, col=1)
     
     # Create Exclusion Filter table
     exc_keys, exc_values = format_namespace_filter(exclusionFilter, "exclusion")
@@ -297,10 +339,10 @@ def gatherMetrics(connection_string):
         header=dict(values=["Key", "Value"], font=dict(size=12, color='black')),
         cells=dict(values=[exc_keys, exc_values], align=['left'], font=dict(size=10, color='darkblue')),
         columnwidth=[0.75, 2.5]
-    ), row=3, col=4)
+    ), row=4, col=4)
     
     # Update layout
-    fig.update_layout(height=650, width=1550, autosize=True, title_text="Mongosync Status - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
+    fig.update_layout(height=800, width=1550, autosize=True, title_text="Mongosync Status - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
     
     # Convert the figure to JSON
     plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)

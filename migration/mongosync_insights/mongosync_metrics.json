@@ -1,0 +1,605 @@
+[
+    {
+      "name": "mongosync_collection_copy_copied_docs_count",
+      "section": "Collection Copy",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "documents",
+      "title": "Docs Copied Rate",
+      "description": "Total number of documents copied during collection copy."
+    },
+    {
+      "name": "mongosync_collection_copy_copied_bytes_count",
+      "section": "Collection Copy",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "bytes",
+      "title": "Bytes Copied Rate",
+      "description": "Total number of bytes copied during collection copy."
+    },
+    {
+      "name": "mongosync_collection_copy_source_read_op_duration",
+      "section": "Collection Copy",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Source Read Duration",
+      "description": "Duration of source read operations during collection copy."
+    },
+    {
+      "name": "mongosync_collection_copy_destination_write_op_duration",
+      "section": "Collection Copy",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Destination Write Duration",
+      "description": "Duration of destination write operations during collection copy."
+    },
+    {
+      "name": "mongosync_collection_copy_partitions_completed_count",
+      "section": "Collection Copy",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "count",
+      "title": "Partitions Completed Rate",
+      "description": "Number of collection copy partitions that have completed."
+    },
+    {
+      "name": "mongosync_collection_copy_partition_copy_bytes_read_per_second",
+      "section": "Collection Copy",
+      "component": "mongosync",
+      "type": "gauge",
+      "unit": "bytes_per_second",
+      "title": "Partition Bytes Read Rate",
+      "description": "Effective read throughput (bytes per second) per collection-copy partition."
+    },
+    {
+      "name": "mongosync_collection_copy_partition_size",
+      "section": "Collection Copy",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "bytes",
+      "title": "Partition Size",
+      "description": "Distribution of partition sizes used during collection copy."
+    },
+    {
+      "name": "mongosync_collection_copy_copy_partition_duration",
+      "section": "Collection Copy",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Partition Copy Duration",
+      "description": "Duration of copying an individual partition."
+    },
+    {
+      "name": "mongosync_collection_copy_partitions_deleted_count",
+      "section": "Collection Copy",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "count",
+      "title": "Partitions Deleted Rate",
+      "description": "Number of collection-copy partitions deleted during cleanup."
+    },
+    {
+      "name": "mongosync_collection_copy_partition_copy_docs_deleted_count",
+      "section": "Collection Copy",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "documents",
+      "title": "Docs Deleted Rate",
+      "description": "Number of documents deleted when cleaning up copied partition data."
+    },
+    {
+      "name": "mongosync_collection_copy_partition_copy_bytes_deleted_count",
+      "section": "Collection Copy",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "bytes",
+      "title": "Bytes Deleted Rate",
+      "description": "Number of bytes deleted when cleaning up copied partition data."
+    },
+    {
+      "name": "mongosync_phase",
+      "section": "Core Replication",
+      "component": "mongosync",
+      "type": "gauge",
+      "unit": "enum",
+      "title": "Mongosync Phase",
+      "description": "Current high-level mongosync phase (e.g. InitializingCollectionsAndIndexes, CollectionCopy, ChangeEventApplication, Commit, Reverse)."
+    },
+    {
+      "name": "mongosync_lag_time",
+      "section": "Core Replication",
+      "component": "mongosync",
+      "type": "gauge",
+      "unit": "seconds",
+      "title": "Lag Time",
+      "description": "Replication lag in seconds between source and destination as seen by mongosync."
+    },
+    {
+      "name": "mongosync_host_cpu_usage",
+      "section": "Core Replication",
+      "component": "mongosync",
+      "type": "gauge",
+      "unit": "percent",
+      "title": "Host CPU Usage",
+      "description": "Approximate CPU usage of the host running mongosync."
+    },
+    {
+      "name": "mongosync_host_memory_percent_used",
+      "section": "Core Replication",
+      "component": "mongosync",
+      "type": "gauge",
+      "unit": "percent",
+      "title": "Host Memory Usage",
+      "description": "Approximate memory utilization of the host running mongosync."
+    },
+    {
+      "name": "mongosync_src_ping_latency",
+      "section": "Core Replication",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Source Ping Latency",
+      "description": "Distribution of ping latencies to the source cluster."
+    },
+    {
+      "name": "mongosync_dst_ping_latency",
+      "section": "Core Replication",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Destination Ping Latency",
+      "description": "Distribution of ping latencies to the destination cluster."
+    },
+    {
+      "name": "mongosync_src_unavailable",
+      "section": "Core Replication",
+      "component": "mongosync",
+      "type": "gauge",
+      "unit": "boolean",
+      "title": "Source Unavailable",
+      "description": "1 when the source cluster is considered temporarily unavailable, 0 otherwise."
+    },
+    {
+      "name": "mongosync_dst_unavailable",
+      "section": "Core Replication",
+      "component": "mongosync",
+      "type": "gauge",
+      "unit": "boolean",
+      "title": "Destination Unavailable",
+      "description": "1 when the destination cluster is considered temporarily unavailable, 0 otherwise."
+    },
+    {
+      "name": "verifier_lag_time",
+      "section": "Core Replication",
+      "component": "verifier",
+      "type": "gauge",
+      "unit": "seconds",
+      "title": "Verifier Lag Time",
+      "description": "Replication lag in seconds as observed by the verifier."
+    },
+    {
+      "name": "mongosync_retry_count",
+      "section": "Core Replication",
+      "component": "mongosync",
+      "type": "gauge",
+      "unit": "count",
+      "title": "Retry Count",
+      "description": "Total number of retry attempts performed by mongosync across operations."
+    },
+    {
+      "name": "mongosync_cea_change_stream_reader_events_read",
+      "section": "CEA Reader",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "events",
+      "title": "Events Read Rate",
+      "description": "Total number of change-stream events read from the source during CEA."
+    },
+    {
+      "name": "mongosync_cea_total_events_applied",
+      "section": "CEA Reader",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "events",
+      "title": "Events Applied Rate",
+      "description": "Total number of change events (CRUD and DDL) applied."
+    },
+    {
+      "name": "mongosync_cea_change_stream_reader_bytes_read",
+      "section": "CEA Reader",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "bytes",
+      "title": "Bytes Read Rate",
+      "description": "Total number of bytes read from the change stream during CEA."
+    },
+    {
+      "name": "mongosync_cea_total_ddl_events_applied",
+      "section": "CEA Reader",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "events",
+      "title": "DDL Events Applied Rate",
+      "description": "Total number of DDL events successfully applied."
+    },
+    {
+      "name": "mongosync_cea_destination_write_op_duration",
+      "section": "CEA Reader",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "CEA Destination Write Duration",
+      "description": "Duration of destination write operations during Change Event Application (CEA)."
+    },
+    {
+      "name": "mongosync_cea_source_read_op_duration",
+      "section": "CEA Reader",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "CEA Source Read Duration",
+      "description": "Duration of source read operations during Change Event Application (CEA)."
+    },
+    {
+      "name": "mongosync_cea_crud_applier_txn_duration",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Transaction Duration",
+      "description": "Duration of applying a single CRUD transaction."
+    },
+    {
+      "name": "mongosync_cea_crud_applier_txn_size",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "events",
+      "title": "Transaction Size",
+      "description": "Distribution of the number of events per CRUD transaction."
+    },
+    {
+      "name": "mongosync_cea_crud_applier_single_count",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "events",
+      "title": "Single Event Count Rate",
+      "description": "Number of single-event CRUD applications."
+    },
+    {
+      "name": "mongosync_cea_crud_applier_single_write_duration",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Single Write Duration",
+      "description": "Duration of individual single-event CRUD writes."
+    },
+    {
+      "name": "mongosync_cea_crud_applier_duplicate_key_errors_count",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "errors",
+      "title": "Duplicate Key Errors Rate",
+      "description": "Number of duplicate key errors encountered during CRUD application."
+    },
+    {
+      "name": "mongosync_cea_crud_applier_one_by_one_events_count",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "events",
+      "title": "One-by-One Events Rate",
+      "description": "Number of CRUD events applied one-by-one instead of batched."
+    },
+    {
+      "name": "mongosync_cea_crud_applier_default_error_count",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "errors",
+      "title": "Default Errors Rate",
+      "description": "Number of CRUD apply errors that do not fall into more specific error categories."
+    },
+    {
+      "name": "mongosync_cea_crud_applier_refetch_duration",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Refetch Duration",
+      "description": "Duration of document refetch operations performed by the CRUD applier."
+    },
+    {
+      "name": "mongosync_cea_crud_applier_apply_event_duration",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Apply Event Duration",
+      "description": "Duration of applying individual CRUD events."
+    },
+    {
+      "name": "mongosync_cea_total_crud_events_applied",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "events",
+      "title": "Total CRUD Events Rate",
+      "description": "Total number of CRUD events applied during CEA."
+    },
+    {
+      "name": "mongosync_cea_crud_applier_lws_get_entry_duration",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "LWS Get Entry Duration",
+      "description": "Duration of reading entries from the last-write-states store."
+    },
+    {
+      "name": "mongosync_cea_crud_applier_lws_set_entry_duration",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "LWS Set Entry Duration",
+      "description": "Duration of writing entries into the last-write-states store."
+    },
+    {
+      "name": "mongosync_cea_reader_to_dispatcher_aggregate_channel_utilization",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "gauge",
+      "unit": "ratio",
+      "title": "Reader-Dispatcher Channel Util",
+      "description": "Aggregate utilization of the reader-to-dispatcher channel across streams."
+    },
+    {
+      "name": "mongosync_cea_dispatcher_to_processor_aggregate_channel_utilization",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "gauge",
+      "unit": "ratio",
+      "title": "Dispatcher-Processor Channel Util",
+      "description": "Aggregate utilization of the dispatcher-to-processor channel across streams."
+    },
+    {
+      "name": "mongosync_cea_spread_disparity",
+      "section": "CEA CRUD Applier",
+      "component": "mongosync",
+      "type": "gauge",
+      "unit": "ratio",
+      "title": "Spread Disparity",
+      "description": "Disparity between busiest and least busy processors, indicating load balance quality."
+    },
+    {
+      "name": "mongosync_hot_doc_states_read_op_duration",
+      "section": "Hot Documents",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Hot Doc States Read Duration",
+      "description": "Duration of destination hot-document metadata reads during commit."
+    },
+    {
+      "name": "mongosync_hot_doc_refetch_op_duration",
+      "section": "Hot Documents",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Hot Doc Refetch Duration",
+      "description": "Duration of source reads when refetching hot documents during commit."
+    },
+    {
+      "name": "mongosync_hot_doc_apply_op_duration",
+      "section": "Hot Documents",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Hot Doc Apply Duration",
+      "description": "Duration of hot-document apply (replaceOne/delete) operations during commit."
+    },
+    {
+      "name": "mongosync_cea_total_hot_doc_crud_events_skipped",
+      "section": "Hot Documents",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "events",
+      "title": "Hot Doc Events Skipped Rate",
+      "description": "Total number of CRUD events skipped for hot documents during CEA."
+    },
+    {
+      "name": "mongosync_index_checker_service_create_indexes_duration",
+      "section": "Indexes",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Index Create Duration",
+      "description": "Duration of batched createIndexes commands issued by the Index Checker Service."
+    },
+    {
+      "name": "mongosync_index_checker_service_created_count",
+      "section": "Indexes",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "indexes",
+      "title": "Indexes Created Rate",
+      "description": "Total number of indexes created by the Index Checker Service."
+    },
+    {
+      "name": "mongosync_buffer_service_docs_processed_count",
+      "section": "Buffer Service",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "documents",
+      "title": "Buffer Docs Processed Rate",
+      "description": "Total number of documents processed through the buffer service."
+    },
+    {
+      "name": "mongosync_buffer_service_bytes_processed_count",
+      "section": "Buffer Service",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "bytes",
+      "title": "Buffer Bytes Processed Rate",
+      "description": "Total number of bytes processed through the buffer service."
+    },
+    {
+      "name": "mongosync_buffer_service_insert_duration",
+      "section": "Buffer Service",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Buffer Insert Duration",
+      "description": "Duration of buffer service insert operations."
+    },
+    {
+      "name": "mongosync_buffer_service_doc_buffers_in_channel_count",
+      "section": "Buffer Service",
+      "component": "mongosync",
+      "type": "gauge",
+      "unit": "count",
+      "title": "Doc Buffers in Channel",
+      "description": "Current number of buffered document batches in the buffer channel."
+    },
+    {
+      "name": "mongosync_buffer_service_doc_size",
+      "section": "Buffer Service",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "bytes",
+      "title": "Document Size",
+      "description": "Distribution of document sizes processed by the buffer service."
+    },
+    {
+      "name": "mongosync_buffer_service_insertions_count",
+      "section": "Buffer Service",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "count",
+      "title": "Buffer Insertions Rate",
+      "description": "Number of insert operations into the buffer service."
+    },
+    {
+      "name": "mongosync_bulk_inserter_docs_inserted_count",
+      "section": "Bulk Inserter",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "documents",
+      "title": "Bulk Inserter Docs Rate",
+      "description": "Total number of documents inserted by the bulk inserter."
+    },
+    {
+      "name": "mongosync_bulk_inserter_bytes_inserted_count",
+      "section": "Bulk Inserter",
+      "component": "mongosync",
+      "type": "counter",
+      "unit": "bytes",
+      "title": "Bulk Inserter Bytes Rate",
+      "description": "Total number of bytes inserted by the bulk inserter."
+    },
+    {
+      "name": "mongosync_bulk_inserter_docs_per_batch",
+      "section": "Bulk Inserter",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "documents",
+      "title": "Docs Per Batch",
+      "description": "Distribution of documents per bulk-insert batch."
+    },
+    {
+      "name": "mongosync_bulk_inserter_bytes_per_batch",
+      "section": "Bulk Inserter",
+      "component": "mongosync",
+      "type": "histogram",
+      "unit": "bytes",
+      "title": "Bytes Per Batch",
+      "description": "Distribution of bytes per bulk-insert batch."
+    },
+    {
+      "name": "verifier_auditor_num_docs_hashed",
+      "section": "Verifier",
+      "component": "verifier",
+      "type": "gauge",
+      "unit": "documents",
+      "title": "Verifier Docs Hashed",
+      "description": "Total number of documents hashed as tracked by the verifier auditor."
+    },
+    {
+      "name": "verifier_auditor_estimated_docs_count",
+      "section": "Verifier",
+      "component": "verifier",
+      "type": "gauge",
+      "unit": "documents",
+      "title": "Verifier Estimated Doc Count",
+      "description": "Estimated total number of documents the verifier expects to hash."
+    },
+    {
+      "name": "verifier_auditor_scanned_collection_count",
+      "section": "Verifier",
+      "component": "verifier",
+      "type": "gauge",
+      "unit": "collections",
+      "title": "Scanned Collection Count",
+      "description": "Number of collections that have completed initial hashing."
+    },
+    {
+      "name": "verifier_batch_writer_handle_batch_total_time",
+      "section": "Verifier",
+      "component": "verifier",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Batch Total Time",
+      "description": "Total time taken to handle a batch in the verifier's DB writer (read + write)."
+    },
+    {
+      "name": "verifier_batch_writer_handle_batch_read_time",
+      "section": "Verifier",
+      "component": "verifier",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Batch Read Time",
+      "description": "Time spent reading existing state for a batch in the verifier's DB writer."
+    },
+    {
+      "name": "verifier_batch_writer_handle_batch_write_time",
+      "section": "Verifier",
+      "component": "verifier",
+      "type": "histogram",
+      "unit": "milliseconds",
+      "title": "Batch Write Time",
+      "description": "Time spent writing a batch in the verifier's DB writer."
+    },
+    {
+      "name": "verifier_batch_writer_handle_batch_payloads_processed_total",
+      "section": "Verifier",
+      "component": "verifier",
+      "type": "histogram",
+      "unit": "payloads",
+      "title": "Batch Payloads Processed",
+      "description": "Number of payloads processed per batch in the verifier's DB writer."
+    },
+    {
+      "name": "verifier_initial_hasher_docs_hashed_total",
+      "section": "Verifier",
+      "component": "verifier",
+      "type": "counter",
+      "unit": "documents",
+      "title": "Initial Hasher Docs Rate",
+      "description": "Total number of documents hashed during initial hashing for all collections."
+    },
+    {
+      "name": "verifier_stream_hasher_buffer_size",
+      "section": "Verifier",
+      "component": "verifier",
+      "type": "gauge",
+      "unit": "count",
+      "title": "Stream Hasher Buffer Size",
+      "description": "Current size of the stream hasher buffer."
+    }
+  ]

@@ -10,6 +10,7 @@ import time
 import threading
 from pathlib import Path
 from functools import lru_cache
+import certifi
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError, InvalidURI
 
@@ -21,7 +22,7 @@ PORT = int(os.getenv('MI_PORT', '3030'))
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.7.1.6"
+APP_VERSION = "0.8.0.18"
 
 # File upload settings
 MAX_FILE_SIZE = int(os.getenv('MI_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
@@ -54,26 +55,99 @@ EXTENSION_TO_COMPRESSION = {
     '.tar.bz2': 'tar_bzip2'
 }
 
-# Security settings
-SECURE_COOKIES = os.getenv('MI_SECURE_COOKIES', 'True').lower() == 'true'
+# File type patterns for identification
+# mongosync logs: mongosync.log or mongosync-* (but NOT mongosync_metrics*) or liveimport_*
+MONGOSYNC_LOG_PATTERN = re.compile(r'^mongosync\.log$|^mongosync-(?!metrics).*|^liveimport_.*', re.IGNORECASE)
+# mongosync metrics: mongosync_metrics.log or mongosync_metrics-*
+MONGOSYNC_METRICS_PATTERN = re.compile(r'^mongosync_metrics\.log$|^mongosync_metrics-.*', re.IGNORECASE)
+
+
+def classify_file_type(filename: str) -> str:
+    """
+    Classify a file as mongosync logs, mongosync metrics, or unknown based on filename pattern.
+    
+    Args:
+        filename: The filename to classify (can include path, only basename is used)
+        
+    Returns:
+        'logs' for mongosync log files
+        'metrics' for mongosync metrics files
+        None for unrecognized files
+    """
+    import os
+    # Extract just the filename without path
+    basename = os.path.basename(filename)
+    
+    # Remove compression extensions to get the base name
+    # Handle compound extensions like .log.gz, .log.1.gz, etc.
+    name_without_compression = basename
+    for ext in ['.gz', '.bz2', '.zip']:
+        if name_without_compression.lower().endswith(ext):
+            name_without_compression = name_without_compression[:-len(ext)]
+    
+    # Check patterns against the name without compression extension
+    if MONGOSYNC_METRICS_PATTERN.match(name_without_compression):
+        return 'metrics'
+    elif MONGOSYNC_LOG_PATTERN.match(name_without_compression):
+        return 'logs'
+    
+    # Also check the original basename in case pattern includes extension
+    if MONGOSYNC_METRICS_PATTERN.match(basename):
+        return 'metrics'
+    elif MONGOSYNC_LOG_PATTERN.match(basename):
+        return 'logs'
+    
+    return None
+
 
 # SSL/TLS settings
 SSL_ENABLED = os.getenv('MI_SSL_ENABLED', 'False').lower() == 'true'
+
+# Security settings
+SECURE_COOKIES = os.getenv('MI_SECURE_COOKIES', str(SSL_ENABLED)).lower() == 'true'
 SSL_CERT_PATH = os.getenv('MI_SSL_CERT', '/etc/letsencrypt/live/your-domain/fullchain.pem')
 SSL_KEY_PATH = os.getenv('MI_SSL_KEY', '/etc/letsencrypt/live/your-domain/privkey.pem')
 
 # Live monitoring settings
 REFRESH_TIME = int(os.getenv('MI_REFRESH_TIME', '10'))
 CONNECTION_STRING = os.getenv('MI_CONNECTION_STRING', '')
+VERIFIER_CONNECTION_STRING = os.getenv('MI_VERIFIER_CONNECTION_STRING', '') or CONNECTION_STRING
 PROGRESS_ENDPOINT_URL = os.getenv('MI_PROGRESS_ENDPOINT_URL', '')
 
 # MongoDB settings
 INTERNAL_DB_NAME = os.getenv('MI_INTERNAL_DB_NAME', "mongosync_reserved_for_internal_use")
 
 # UI settings
-PLOT_WIDTH = int(os.getenv('MI_PLOT_WIDTH', '1450'))
-PLOT_HEIGHT = int(os.getenv('MI_PLOT_HEIGHT', '1800'))
 MAX_PARTITIONS_DISPLAY = int(os.getenv('MI_MAX_PARTITIONS_DISPLAY', '10'))
+
+# Error patterns file
+ERROR_PATTERNS_FILE = os.getenv('MI_ERROR_PATTERNS_FILE', 
+                                 os.path.join(os.path.dirname(__file__), 'error_patterns.json'))
+
+def load_error_patterns():
+    """
+    Load error patterns from external JSON file.
+    
+    Returns:
+        list: List of dictionaries with 'pattern' and 'friendly_name' keys
+    """
+    import json
+    logger = logging.getLogger(__name__)
+    
+    try:
+        with open(ERROR_PATTERNS_FILE, 'r') as f:
+            patterns = json.load(f)
+            logger.info(f"Loaded {len(patterns)} error patterns from {ERROR_PATTERNS_FILE}")
+            return patterns
+    except FileNotFoundError:
+        logger.warning(f"Error patterns file not found: {ERROR_PATTERNS_FILE}")
+        return []
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in error patterns file: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"Error loading error patterns: {e}")
+        return []
 
 def setup_logging():
     """Configure logging based on environment variables."""
@@ -132,7 +206,7 @@ def validate_progress_endpoint_url(url):
 CONNECTION_POOL_SIZE = int(os.getenv('MI_POOL_SIZE', '10'))
 CONNECTION_TIMEOUT_MS = int(os.getenv('MI_TIMEOUT_MS', '5000'))
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=4)
 def get_mongo_client(connection_string):
     """
     Get a cached MongoDB client with connection pooling.
@@ -152,20 +226,31 @@ def get_mongo_client(connection_string):
     try:
         # Validate connection string format
         from pymongo.uri_parser import parse_uri
-        parse_uri(connection_string)
+        parsed = parse_uri(connection_string)
         
-        # Create client with connection pooling
-        client = MongoClient(
-            connection_string,
+        # Only set tlsCAFile for SRV connections (Atlas) or when TLS is explicitly enabled.
+        # Plain mongodb:// URIs to local/on-prem instances often don't use TLS.
+        uri_tls_options = parsed.get('options', {})
+        is_srv = connection_string.strip().lower().startswith('mongodb+srv://')
+        tls_explicitly_set = 'tls' in uri_tls_options or 'ssl' in uri_tls_options
+        tls_disabled = uri_tls_options.get('tls', uri_tls_options.get('ssl', True)) is False
+        use_tls_ca = is_srv or (tls_explicitly_set and not tls_disabled)
+
+        client_kwargs = dict(
             maxPoolSize=CONNECTION_POOL_SIZE,
             minPoolSize=1,
-            maxIdleTimeMS=30000,  # 30 seconds
+            maxIdleTimeMS=30000,
             serverSelectionTimeoutMS=CONNECTION_TIMEOUT_MS,
             connectTimeoutMS=CONNECTION_TIMEOUT_MS,
             socketTimeoutMS=CONNECTION_TIMEOUT_MS,
             retryWrites=True,
-            retryReads=True
+            retryReads=True,
         )
+        if use_tls_ca:
+            client_kwargs['tlsCAFile'] = certifi.where()
+
+        # Create client with connection pooling
+        client = MongoClient(connection_string, **client_kwargs)
         
         # Test the connection
         client.admin.command('ping')
@@ -302,24 +387,28 @@ class InMemorySessionStore:
     
     def update_session(self, session_id: str, data: dict) -> bool:
         """
-        Update an existing session with new data.
+        Merge new data into an existing session, preserving unmodified keys.
         
         Args:
             session_id: The session ID to update
-            data: New data to store
+            data: New data to merge into the session
             
         Returns:
-            bool: True if session was updated, False if not found
+            bool: True if session was updated, False if not found/expired
         """
         if not session_id:
             return False
             
         with self._lock:
-            if session_id in self._store:
-                self._store[session_id]['data'] = data
-                self._store[session_id]['last_accessed'] = time.time()
-                return True
-            return False
+            session = self._store.get(session_id)
+            if not session:
+                return False
+            if time.time() - session['last_accessed'] > self._timeout:
+                del self._store[session_id]
+                return False
+            session['data'].update(data)
+            session['last_accessed'] = time.time()
+            return True
     
     def delete_session(self, session_id: str) -> bool:
         """

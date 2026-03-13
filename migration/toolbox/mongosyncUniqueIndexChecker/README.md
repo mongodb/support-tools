@@ -241,6 +241,10 @@ python3 mongosync_uniqueindex_limitation_checker.py \
 - The script is read-only.
 - Permission errors on specific collections are skipped.
 
+### License
+
+[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
 DISCLAIMER
 ----------
 Please note: all tools/ scripts in this repo are released for use "AS IS" **without any warranties of any kind**,

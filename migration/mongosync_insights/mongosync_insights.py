@@ -4,17 +4,23 @@ from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics, gatherPartitionsMetrics, gatherEndpointMetrics
 from migration_verifier import plotVerifierMetrics, gatherVerifierMetrics
 from pymongo.errors import InvalidURI, PyMongoError
-from pymongo.uri_parser import parse_uri 
 from app_config import (
     setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, 
     REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, 
-    SECURE_COOKIES, CONNECTION_STRING, get_mongo_client,
+    SECURE_COOKIES, CONNECTION_STRING, VERIFIER_CONNECTION_STRING,
     PROGRESS_ENDPOINT_URL, validate_progress_endpoint_url, session_store, SESSION_TIMEOUT
 )
 from connection_validator import sanitize_for_display
 
 # Cookie name for session ID
 SESSION_COOKIE_NAME = 'mi_session_id'
+
+def _store_session_data(new_data):
+    """Merge new_data into the existing session or create a fresh one."""
+    session_id = request.cookies.get(SESSION_COOKIE_NAME)
+    if session_id and session_store.update_session(session_id, new_data):
+        return session_id
+    return session_store.create_session(new_data)
 
 # Validate configuration on startup
 try:
@@ -101,12 +107,12 @@ def home_page():
         progress_endpoint_form = f"<p><b>Mongosync Progress Endpoint: </b>{PROGRESS_ENDPOINT_URL}</p>"
 
     # Migration verifier connection string form
-    if not CONNECTION_STRING:
+    if not VERIFIER_CONNECTION_STRING:
         verifier_connection_string_form = '''<label for="verifierConnectionString">Verifier MongoDB Connection String:</label>  
                                     <input type="text" id="verifierConnectionString" name="verifierConnectionString" size="47" autocomplete="off"
                                         placeholder="mongodb+srv://usr:pwd@cluster0.mongodb.net/"><br><br>'''
     else:
-        sanitized_connection = sanitize_for_display(CONNECTION_STRING)
+        sanitized_connection = sanitize_for_display(VERIFIER_CONNECTION_STRING)
         verifier_connection_string_form = f"<p><b>Connecting to Verifier DB at: </b>{sanitized_connection}</p>"
 
     return render_template('home.html', 
@@ -178,12 +184,12 @@ def renderMetrics():
                                 error_title="Connection Error",
                                 error_message="An unexpected error occurred. Please try again.")
 
-    # Store credentials in server-side in-memory session store
+    # Store credentials in server-side in-memory session store (merge into existing session)
     session_data = {
         'connection_string': TARGET_MONGO_URI,
         'endpoint_url': progress_url
     }
-    session_id = session_store.create_session(session_data)
+    session_id = _store_session_data(session_data)
 
     # Determine which tabs to show (pass only boolean flags to template, not credentials)
     has_connection_string = bool(TARGET_MONGO_URI)
@@ -259,8 +265,8 @@ def getEndpointData():
 def renderVerifier():
     """Render the migration verifier monitoring page."""
     # Get connection string from env var or form
-    if CONNECTION_STRING:
-        TARGET_MONGO_URI = CONNECTION_STRING
+    if VERIFIER_CONNECTION_STRING:
+        TARGET_MONGO_URI = VERIFIER_CONNECTION_STRING
     else:
         TARGET_MONGO_URI = request.form.get('verifierConnectionString')
         if TARGET_MONGO_URI:
@@ -299,12 +305,12 @@ def renderVerifier():
                             error_title="Connection Error",
                             error_message="An unexpected error occurred. Please try again.")
 
-    # Store credentials in server-side in-memory session store
+    # Store credentials in server-side in-memory session store (merge into existing session)
     session_data = {
         'verifier_connection_string': TARGET_MONGO_URI,
         'verifier_db_name': db_name
     }
-    session_id = session_store.create_session(session_data)
+    session_id = _store_session_data(session_data)
 
     # Render the verifier metrics page
     response = make_response(plotVerifierMetrics(db_name=db_name))
@@ -324,21 +330,18 @@ def renderVerifier():
 @app.route('/get_verifier_data', methods=['POST'])
 def getVerifierData():
     """Get migration verifier metrics data for AJAX refresh."""
-    # Get connection string from env var or in-memory session store
-    if CONNECTION_STRING:
-        connection_string = CONNECTION_STRING
+    session_id = request.cookies.get(SESSION_COOKIE_NAME)
+    session_data = session_store.get_session(session_id)
+
+    if VERIFIER_CONNECTION_STRING:
+        connection_string = VERIFIER_CONNECTION_STRING
     else:
-        session_id = request.cookies.get(SESSION_COOKIE_NAME)
-        session_data = session_store.get_session(session_id)
         connection_string = session_data.get('verifier_connection_string')
     
     if not connection_string:
         logger.error("No connection string available for verifier metrics refresh")
         return {"error": "No connection string available. Please refresh the page and re-enter your credentials."}, 400
     
-    # Get database name from session
-    session_id = request.cookies.get(SESSION_COOKIE_NAME)
-    session_data = session_store.get_session(session_id)
     db_name = session_data.get('verifier_db_name', 'migration_verification_metadata')
     
     return gatherVerifierMetrics(connection_string, db_name)

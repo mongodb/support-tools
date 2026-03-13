@@ -33,6 +33,7 @@ All configuration can be set using `export` commands before running the applicat
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MI_CONNECTION_STRING` | _(empty)_ | MongoDB connection string (optional, can be provided via UI) |
+| `MI_VERIFIER_CONNECTION_STRING` | _(falls back to `MI_CONNECTION_STRING`)_ | MongoDB connection string for the migration verifier database. When omitted, the value of `MI_CONNECTION_STRING` is used. Set this when the verifier database lives on a different cluster. |
 | `MI_INTERNAL_DB_NAME` | `mongosync_reserved_for_internal_use` | MongoDB internal database name |
 | `MI_POOL_SIZE` | `10` | MongoDB connection pool size |
 | `MI_TIMEOUT_MS` | `5000` | MongoDB connection timeout in milliseconds |
@@ -50,13 +51,17 @@ All configuration can be set using `export` commands before running the applicat
 |----------|---------|-------------|
 | `MI_MAX_FILE_SIZE` | `10737418240` | Max upload file size in bytes (10GB) |
 
+### Log Analysis Settings
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MI_ERROR_PATTERNS_FILE` | `error_patterns.json` _(same directory as the application)_ | Path to a custom error patterns JSON file used during log analysis to detect common errors (e.g., oplog rollover, timeouts, verifier mismatches) |
+
 ### UI Customization
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MI_MAX_PARTITIONS_DISPLAY` | `10` | Maximum partitions to display in UI |
-| `MI_PLOT_WIDTH` | `1450` | Plot width in pixels |
-| `MI_PLOT_HEIGHT` | `1800` | Plot height in pixels |
 
 ### Security Settings
 
@@ -67,6 +72,8 @@ All configuration can be set using `export` commands before running the applicat
 | `MI_SSL_ENABLED` | `false` | Enable HTTPS/SSL in Flask application |
 | `MI_SSL_CERT` | `/etc/letsencrypt/live/your-domain/fullchain.pem` | Path to SSL certificate file |
 | `MI_SSL_KEY` | `/etc/letsencrypt/live/your-domain/privkey.pem` | Path to SSL private key file |
+
+> **Note**: Sessions are stored **in-memory** on the server. All active sessions are lost when the application restarts. This is by design to avoid persisting sensitive data (such as connection strings) to disk.
 
 > **Note**: For detailed HTTPS setup instructions, see [HTTPS_SETUP.md](HTTPS_SETUP.md)
 >
@@ -189,14 +196,29 @@ Adjust file upload limits and plot dimensions:
 # Allow larger log files (20GB)
 export MI_MAX_FILE_SIZE=21474836480
 
-# Customize plot dimensions
-export MI_PLOT_WIDTH=1920
-export MI_PLOT_HEIGHT=2400
+# Customize UI settings
 export MI_MAX_PARTITIONS_DISPLAY=20
 
 # Run the application
 python3 mongosync_insights.py
 ```
+
+### Example 7: Migration Verifier Monitoring
+
+Pre-configure the connection string for the [migration-verifier](https://github.com/mongodb-labs/migration-verifier) database:
+
+```bash
+# Set verifier connection string (separate cluster from live monitoring)
+export MI_VERIFIER_CONNECTION_STRING="mongodb+srv://user:pass@verifier-cluster.mongodb.net/"
+
+# Or reuse the same connection string as live monitoring
+export MI_CONNECTION_STRING="mongodb+srv://user:pass@cluster.mongodb.net/"
+
+# Run the application
+python3 mongosync_insights.py
+```
+
+**Note**: When `MI_VERIFIER_CONNECTION_STRING` is not set, it falls back to `MI_CONNECTION_STRING`. Set it explicitly when the migration-verifier writes to a different cluster.
 
 ---
 
@@ -245,6 +267,7 @@ export MI_LOG_FILE=/var/log/mongosync-insights/insights.log
 
 - **[README.md](README.md)** - Getting started and installation guide
 - **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
+- **[VALIDATION.md](VALIDATION.md)** - Connection string validation, sanitization, and error handling
 
 ### License
 

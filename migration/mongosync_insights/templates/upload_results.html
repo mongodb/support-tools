@@ -5,27 +5,870 @@
 {% block header_title %}Mongosync Insights - Logs{% endblock %}
 
 {% block styles %}
+    .tabs-container {
+        max-width: 1550px;
+        margin: 0 auto;
+    }
+
+    .tab-buttons {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 0;
+        border-bottom: 2px solid #00684A;
+    }
+
+    .tab-btn {
+        padding: 12px 24px;
+        background: #e8f5f1;
+        border: none;
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        color: #00684A;
+        transition: all 0.2s ease;
+        position: relative;
+        bottom: -2px;
+    }
+
+    .tab-btn:hover {
+        background: #c8e6dc;
+    }
+
+    .tab-btn.active {
+        background: #00684A;
+        color: #fff;
+        border-bottom: 2px solid #00684A;
+    }
+
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .plot-container {
+        margin: 0 auto;
+        border: 1px solid #ccc;
+        border-radius: 0 8px 8px 8px;
+        background-color: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        min-height: 400px;
+    }
+
     #plot {
         margin: 0 auto;
         max-width: 1450px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        background-color: #fff;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .options-container {
+        padding: 20px;
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .options-table-wrapper {
+        flex: 1;
+        min-width: 400px;
+        max-width: 700px;
+    }
+
+    .options-table-wrapper > h3 {
+        color: #00684A;
+        margin-bottom: 15px;
+        font-size: 18px;
+        border-bottom: 2px solid #00684A;
+        padding-bottom: 8px;
+    }
+
+    .options-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .options-table th {
+        background-color: #00684A;
+        color: white;
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    .options-table td {
+        padding: 10px 15px;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: top;
+    }
+
+    .options-table tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .options-table .key-cell {
+        font-weight: 600;
+        color: #333;
+        width: 30%;
+        white-space: nowrap;
+    }
+
+    .options-table .value-cell {
+        color: #1a5276;
+        word-break: break-word;
+        max-width: 400px;
+        white-space: pre-wrap;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+    }
+
+    .no-data-message {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-size: 16px;
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #00684A;
+        padding-bottom: 8px;
+    }
+
+    .table-header h3 {
+        color: #00684A;
+        font-size: 18px;
+        margin: 0;
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .copy-btn {
+        padding: 6px 14px;
+        font-size: 12px;
+        background: #e8f5f1;
+        border: 1px solid #00684A;
+        border-radius: 4px;
+        color: #00684A;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+
+    .copy-btn:hover {
+        background: #00684A;
+        color: white;
+    }
+
+    .copy-btn.copied {
+        background: #28a745;
+        border-color: #28a745;
+        color: white;
+    }
+
+    .copy-btn:disabled {
+        background: #ccc;
+        border-color: #ccc;
+        color: #666;
+        cursor: not-allowed;
+    }
+
+    .filter-container {
+        width: 100%;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .filter-input {
+        width: 100%;
+        max-width: 500px;
+        padding: 12px 16px;
+        font-size: 14px;
+        border: 2px solid #00684A;
+        border-radius: 6px;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+
+    .filter-input:focus {
+        box-shadow: 0 0 8px rgba(0, 104, 74, 0.3);
+    }
+
+    .filter-input::placeholder {
+        color: #999;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+        font-style: italic;
+        display: none;
+    }
+
+    .error-row {
+        cursor: pointer;
+    }
+
+    .error-row:hover {
+        background-color: #e8f5f1 !important;
+    }
+
+    .error-detail-row {
+        display: none;
+    }
+
+    .error-detail-cell {
+        background-color: #f8f9fa;
+        padding: 15px 20px !important;
+        border-left: 4px solid #00684A;
+    }
+
+    .error-detail-cell pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        font-family: 'Courier New', monospace;
+        color: #1a5276;
     }
 
     @media (max-width: 768px) {
-        #plot {
+        .plot-container {
             width: 95%;
+        }
+        
+        .tab-btn {
+            padding: 10px 16px;
+            font-size: 13px;
+        }
+
+        .options-container {
+            flex-direction: column;
+        }
+
+        .options-table-wrapper {
+            min-width: 100%;
         }
     }
 {% endblock %}
 
 {% block content %}
-<div id="plot"></div>
+<div class="tabs-container">
+    <div class="tab-buttons">
+        {% if has_logs_data or (not has_metrics_data) %}
+        <button class="tab-btn {% if has_logs_data or (not has_metrics_data) %}active{% endif %}" onclick="switchTab('charts')" id="tab-charts">Mongosync Logs</button>
+        {% endif %}
+        {% if has_metrics_data %}
+        <button class="tab-btn {% if has_metrics_data and not has_logs_data %}active{% endif %}" onclick="switchTab('metrics')" id="tab-metrics">Mongosync Metrics</button>
+        {% endif %}
+        {% if has_logs_data %}
+        <button class="tab-btn" onclick="switchTab('options')" id="tab-options">Mongosync Options</button>
+        <button class="tab-btn" onclick="switchTab('collections')" id="tab-collections">Collections and Partitions</button>
+        <button class="tab-btn" onclick="switchTab('errors')" id="tab-errors">Errors and Warnings{% if errors_data %} ({{ errors_data|length }}){% endif %}</button>
+        {% endif %}
+    </div>
+
+    {% if has_logs_data or (not has_metrics_data) %}
+    <div id="charts-tab" class="tab-content {% if has_logs_data or (not has_metrics_data) %}active{% endif %}">
+        <div class="plot-container">
+            <div id="plot"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if has_metrics_data %}
+    <div id="metrics-tab" class="tab-content {% if has_metrics_data and not has_logs_data %}active{% endif %}">
+        <div class="plot-container">
+            <div id="metrics-plot"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if has_logs_data %}
+    <div id="options-tab" class="tab-content">
+        <div class="plot-container">
+            <div class="filter-container">
+                <input type="text" id="table-filter" class="filter-input" 
+                       placeholder="Filter by key or value..." 
+                       oninput="filterTables(this.value)">
+            </div>
+            <div class="options-container">
+                <div class="options-table-wrapper">
+                    <div class="table-header">
+                        <h3>Mongosync Options</h3>
+                        {% if options_data %}
+                        <button class="copy-btn" onclick="copyTableAsMarkdown('options', this)">Copy as Markdown</button>
+                        {% endif %}
+                    </div>
+                    {% if options_data %}
+                    <table class="options-table" id="options-table">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in options_data %}
+                            <tr>
+                                <td class="key-cell">{{ item.key }}</td>
+                                <td class="value-cell">{{ item.value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="no-results">No matching options found</div>
+                    {% else %}
+                    <div class="no-data-message">No Mongosync Options found in the log file</div>
+                    {% endif %}
+                </div>
+
+                <div class="options-table-wrapper">
+                    <div class="table-header">
+                        <h3>Mongosync Hidden Options</h3>
+                        {% if hidden_options_data %}
+                        <button class="copy-btn" onclick="copyTableAsMarkdown('hidden', this)">Copy as Markdown</button>
+                        {% endif %}
+                    </div>
+                    {% if hidden_options_data %}
+                    <table class="options-table" id="hidden-options-table">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in hidden_options_data %}
+                            <tr>
+                                <td class="key-cell">{{ item.key }}</td>
+                                <td class="value-cell">{{ item.value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="no-results">No matching hidden options found</div>
+                    {% else %}
+                    <div class="no-data-message">No Mongosync Hidden Options found in the log file</div>
+                    {% endif %}
+                </div>
+
+                <div class="options-table-wrapper">
+                    <div class="table-header">
+                        <h3>Mongosync Start Options</h3>
+                        {% if start_options_data %}
+                        <button class="copy-btn" onclick="copyTableAsMarkdown('start', this)">Copy as Markdown</button>
+                        {% endif %}
+                    </div>
+                    {% if start_options_data %}
+                    <table class="options-table" id="start-options-table">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in start_options_data %}
+                            <tr>
+                                <td class="key-cell">{{ item.key }}</td>
+                                <td class="value-cell">{{ item.value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="no-results">No matching start options found</div>
+                    {% else %}
+                    <div class="no-data-message">No Mongosync Start Options found in the log file</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="collections-tab" class="tab-content">
+        <div class="plot-container">
+            <div class="filter-container">
+                <input type="text" id="partitioninit-filter" class="filter-input" 
+                       placeholder="Filter by collection, type, or reason..." 
+                       oninput="filterPartitionInitTable(this.value)">
+            </div>
+            <div class="options-container">
+                <div class="options-table-wrapper" style="max-width: 100%; min-width: 100%;">
+                    <div class="table-header">
+                        <h3>Collections Copied in Natural Order</h3>
+                        {% if natural_order_data %}
+                        <button class="copy-btn" onclick="copyNaturalOrderAsMarkdown(this)">Copy as Markdown</button>
+                        {% endif %}
+                    </div>
+                    {% if natural_order_data %}
+                    <table class="options-table" id="natural-order-table">
+                        <thead>
+                            <tr>
+                                <th>Database</th>
+                                <th>Collection</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in natural_order_data %}
+                            <tr>
+                                <td class="key-cell">{{ item.database }}</td>
+                                <td class="value-cell">{{ item.collection }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="no-data-message">Nothing being copied in Natural Order</div>
+                    {% endif %}
+                </div>
+
+                <div class="options-table-wrapper" style="max-width: 100%; min-width: 100%;">
+                    <div class="table-header">
+                        <h3>Partition Initialization Details</h3>
+                        {% if partition_init_data %}
+                        <button class="copy-btn" onclick="copyPartitionInitAsMarkdown(this)">Copy as Markdown</button>
+                        {% endif %}
+                    </div>
+                    {% if partition_init_data %}
+                    <table class="options-table" id="partitioninit-table">
+                        <thead>
+                            <tr>
+                                <th>Collection</th>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th>Partitions</th>
+                                <th>Doc Count</th>
+                                <th>Expected Partition Size</th>
+                                <th>Sampler</th>
+                                <th>IDs Sampled</th>
+                                <th>Init Started</th>
+                                <th>Init Duration (s)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in partition_init_data %}
+                            <tr>
+                                <td class="key-cell">{{ item.collection }}</td>
+                                <td>{{ item.type }}</td>
+                                <td>{{ item.reason }}</td>
+                                <td>{{ item.partition_count }}</td>
+                                <td>{{ item.doc_count if item.doc_count else 'N/A' }}</td>
+                                <td>{{ item.expected_partition_size }}</td>
+                                <td>{{ item.sampler }}</td>
+                                <td>{{ item.ids_sampled if item.ids_sampled else 'N/A' }}</td>
+                                <td>{{ item.init_started }}</td>
+                                <td>{{ item.duration_sec if item.duration_sec is not none else 'N/A' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="no-results" id="partitioninit-no-results">No matching partition init data found</div>
+                    {% else %}
+                    <div class="no-data-message">No partition initialization data found in the log file</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="errors-tab" class="tab-content">
+        <div class="plot-container">
+            <div class="filter-container">
+                <input type="text" id="errors-filter" class="filter-input" 
+                       placeholder="Filter errors by name or message..." 
+                       oninput="filterErrorsTable(this.value)">
+            </div>
+            <div class="options-container">
+                <div class="options-table-wrapper" style="max-width: 100%; min-width: 100%;">
+                    <div class="table-header">
+                        <h3>Common Errors Found in Log</h3>
+                        {% if errors_data %}
+                        <button class="copy-btn" onclick="copyErrorsAsMarkdown(this)">Copy as Markdown</button>
+                        {% endif %}
+                    </div>
+                    {% if errors_data %}
+                    <table class="options-table" id="errors-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">Friendly Name</th>
+                                <th style="width: 20%;">Time</th>
+                                <th style="width: 10%;">Level</th>
+                                <th style="width: 55%;">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for error in errors_data %}
+                            <tr class="error-row" onclick="toggleErrorDetail('error-detail-{{ loop.index }}')">
+                                <td class="key-cell">{{ error.friendly_name }}</td>
+                                <td>{{ error.time }}</td>
+                                <td>{{ error.level }}</td>
+                                <td class="value-cell">{{ error.message }}</td>
+                            </tr>
+                            <tr id="error-detail-{{ loop.index }}" class="error-detail-row">
+                                <td colspan="4" class="error-detail-cell">
+                                    <pre>{{ error.full_log }}</pre>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="no-results" id="errors-no-results">No matching errors found</div>
+                    {% else %}
+                    <div class="no-data-message">No common errors found in the log file</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
 <script>
+// Render mongosync logs plot if data exists
+{% if plot_json %}
 var plot = {{ plot_json | safe }};
-Plotly.newPlot('plot', plot.data, plot.layout);
+if (plot && plot.data) {
+    Plotly.newPlot('plot', plot.data, plot.layout);
+}
+{% endif %}
+
+// Render Prometheus metrics plot if data exists
+{% if metrics_plot_json %}
+var metricsPlot = {{ metrics_plot_json | safe }};
+if (metricsPlot && metricsPlot.data) {
+    Plotly.newPlot('metrics-plot', metricsPlot.data, metricsPlot.layout);
+}
+{% endif %}
+
+// Store table data for Markdown conversion
+var optionsData = {{ options_data | tojson }};
+var hiddenOptionsData = {{ hidden_options_data | tojson }};
+var startOptionsData = {{ start_options_data | tojson }};
+var naturalOrderData = {{ natural_order_data | tojson }};
+var errorsData = {{ errors_data | tojson }};
+var partitionInitData = {{ partition_init_data | tojson }};
+
+function switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.getElementById(tabName + '-tab').classList.add('active');
+}
+
+function copyTableAsMarkdown(tableType, buttonElement) {
+    var data, title;
+    
+    if (tableType === 'options') {
+        data = optionsData;
+        title = 'Mongosync Options';
+    } else if (tableType === 'start') {
+        data = startOptionsData;
+        title = 'Mongosync Start Options';
+    } else {
+        data = hiddenOptionsData;
+        title = 'Mongosync Hidden Options';
+    }
+    
+    if (!data || data.length === 0) {
+        return;
+    }
+    
+    // Build Markdown table
+    var markdown = '## ' + title + '\n\n';
+    markdown += '| Key | Value |\n';
+    markdown += '|-----|-------|\n';
+    
+    data.forEach(function(item) {
+        // Escape pipe characters and replace newlines with spaces for Markdown compatibility
+        var value = String(item.value)
+            .replace(/\|/g, '\\|')
+            .replace(/\n/g, ' ');
+        
+        markdown += '| ' + item.key + ' | ' + value + ' |\n';
+    });
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(markdown).then(function() {
+        // Visual feedback
+        var originalText = buttonElement.textContent;
+        buttonElement.textContent = 'Copied!';
+        buttonElement.classList.add('copied');
+        
+        setTimeout(function() {
+            buttonElement.textContent = originalText;
+            buttonElement.classList.remove('copied');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Failed to copy: ', err);
+        // Fallback for older browsers
+        fallbackCopyToClipboard(markdown, buttonElement);
+    });
+}
+
+function fallbackCopyToClipboard(text, buttonElement) {
+    var textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        var originalText = buttonElement.textContent;
+        buttonElement.textContent = 'Copied!';
+        buttonElement.classList.add('copied');
+        
+        setTimeout(function() {
+            buttonElement.textContent = originalText;
+            buttonElement.classList.remove('copied');
+        }, 2000);
+    } catch (err) {
+        console.error('Fallback copy failed: ', err);
+        buttonElement.textContent = 'Copy failed';
+        setTimeout(function() {
+            buttonElement.textContent = 'Copy as Markdown';
+        }, 2000);
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function filterTables(searchText) {
+    var filter = searchText.toLowerCase().trim();
+    
+    // Get all table bodies
+    var tables = document.querySelectorAll('.options-table tbody');
+    
+    tables.forEach(function(tbody) {
+        var rows = tbody.querySelectorAll('tr');
+        var visibleCount = 0;
+        
+        rows.forEach(function(row) {
+            var keyCell = row.querySelector('.key-cell');
+            var valueCell = row.querySelector('.value-cell');
+            
+            if (keyCell && valueCell) {
+                var keyText = keyCell.textContent.toLowerCase();
+                var valueText = valueCell.textContent.toLowerCase();
+                
+                // Show row if filter is empty OR key/value contains the search text
+                if (filter === '' || keyText.includes(filter) || valueText.includes(filter)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+        
+        // Show/hide "no results" message for each table
+        var tableWrapper = tbody.closest('.options-table-wrapper');
+        var noResultsMsg = tableWrapper.querySelector('.no-results');
+        
+        if (noResultsMsg) {
+            if (visibleCount === 0 && filter !== '') {
+                noResultsMsg.style.display = 'block';
+            } else {
+                noResultsMsg.style.display = 'none';
+            }
+        }
+    });
+}
+
+function toggleErrorDetail(id) {
+    var detailRow = document.getElementById(id);
+    if (detailRow) {
+        detailRow.style.display = (detailRow.style.display === 'table-row') ? 'none' : 'table-row';
+    }
+}
+
+function filterErrorsTable(searchText) {
+    var filter = searchText.toLowerCase().trim();
+    var table = document.getElementById('errors-table');
+    if (!table) return;
+    
+    var rows = table.querySelectorAll('tbody tr.error-row');
+    var visibleCount = 0;
+    
+    rows.forEach(function(row) {
+        var keyCell = row.querySelector('.key-cell');
+        var valueCell = row.querySelector('.value-cell');
+        
+        var friendlyName = keyCell ? keyCell.textContent.toLowerCase() : '';
+        var message = valueCell ? valueCell.textContent.toLowerCase() : '';
+        
+        var detailRow = row.nextElementSibling;
+        
+        if (filter === '' || friendlyName.includes(filter) || message.includes(filter)) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+            // Also hide the detail row when filtering out
+            if (detailRow && detailRow.classList.contains('error-detail-row')) {
+                detailRow.style.display = 'none';
+            }
+        }
+    });
+    
+    var noResultsMsg = document.getElementById('errors-no-results');
+    if (noResultsMsg) {
+        noResultsMsg.style.display = (visibleCount === 0 && filter !== '') ? 'block' : 'none';
+    }
+}
+
+function copyErrorsAsMarkdown(buttonElement) {
+    if (!errorsData || errorsData.length === 0) {
+        return;
+    }
+    
+    // Build Markdown table
+    var markdown = '## Common Errors Found in Log\n\n';
+    markdown += '| Friendly Name | Time | Level | Message |\n';
+    markdown += '|---------------|------|-------|----------|\n';
+    
+    errorsData.forEach(function(item) {
+        var message = String(item.message)
+            .replace(/\|/g, '\\|')
+            .replace(/\n/g, ' ');
+        
+        markdown += '| ' + item.friendly_name + ' | ' + item.time + ' | ' + item.level + ' | ' + message + ' |\n';
+    });
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(markdown).then(function() {
+        var originalText = buttonElement.textContent;
+        buttonElement.textContent = 'Copied!';
+        buttonElement.classList.add('copied');
+        
+        setTimeout(function() {
+            buttonElement.textContent = originalText;
+            buttonElement.classList.remove('copied');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Failed to copy: ', err);
+        fallbackCopyToClipboard(markdown, buttonElement);
+    });
+}
+
+function filterPartitionInitTable(searchText) {
+    var filter = searchText.toLowerCase().trim();
+    var table = document.getElementById('partitioninit-table');
+    if (!table) return;
+    
+    var rows = table.querySelectorAll('tbody tr');
+    var visibleCount = 0;
+    
+    rows.forEach(function(row) {
+        var cells = row.querySelectorAll('td');
+        var match = false;
+        
+        cells.forEach(function(cell) {
+            if (cell.textContent.toLowerCase().includes(filter)) {
+                match = true;
+            }
+        });
+        
+        if (filter === '' || match) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    var noResultsMsg = document.getElementById('partitioninit-no-results');
+    if (noResultsMsg) {
+        noResultsMsg.style.display = (visibleCount === 0 && filter !== '') ? 'block' : 'none';
+    }
+}
+
+function copyPartitionInitAsMarkdown(buttonElement) {
+    if (!partitionInitData || partitionInitData.length === 0) {
+        return;
+    }
+    
+    var markdown = '## Partition Initialization Details\n\n';
+    markdown += '| Collection | Type | Reason | Partitions | Doc Count | Expected Size | Sampler | IDs Sampled | Init Started | Duration (s) |\n';
+    markdown += '|------------|------|--------|------------|-----------|---------------|---------|-------------|--------------|-------------|\n';
+    
+    partitionInitData.forEach(function(item) {
+        var reason = String(item.reason || '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
+        var docCount = item.doc_count ? String(item.doc_count) : 'N/A';
+        var idsSampled = item.ids_sampled ? String(item.ids_sampled) : 'N/A';
+        var duration = item.duration_sec !== null ? String(item.duration_sec) : 'N/A';
+        
+        markdown += '| ' + item.collection + ' | ' + item.type + ' | ' + reason + ' | ' + item.partition_count + ' | ' + docCount + ' | ' + item.expected_partition_size + ' | ' + item.sampler + ' | ' + idsSampled + ' | ' + item.init_started + ' | ' + duration + ' |\n';
+    });
+    
+    navigator.clipboard.writeText(markdown).then(function() {
+        var originalText = buttonElement.textContent;
+        buttonElement.textContent = 'Copied!';
+        buttonElement.classList.add('copied');
+        
+        setTimeout(function() {
+            buttonElement.textContent = originalText;
+            buttonElement.classList.remove('copied');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Failed to copy: ', err);
+        fallbackCopyToClipboard(markdown, buttonElement);
+    });
+}
+
+function copyNaturalOrderAsMarkdown(buttonElement) {
+    if (!naturalOrderData || naturalOrderData.length === 0) {
+        return;
+    }
+    
+    var markdown = '## Collections Copied in Natural Order\n\n';
+    markdown += '| Database | Collection |\n';
+    markdown += '|----------|------------|\n';
+    
+    naturalOrderData.forEach(function(item) {
+        var collection = String(item.collection)
+            .replace(/\|/g, '\\|')
+            .replace(/\n/g, ' ');
+        
+        markdown += '| ' + item.database + ' | ' + collection + ' |\n';
+    });
+    
+    navigator.clipboard.writeText(markdown).then(function() {
+        var originalText = buttonElement.textContent;
+        buttonElement.textContent = 'Copied!';
+        buttonElement.classList.add('copied');
+        
+        setTimeout(function() {
+            buttonElement.textContent = originalText;
+            buttonElement.classList.remove('copied');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Failed to copy: ', err);
+        fallbackCopyToClipboard(markdown, buttonElement);
+    });
+}
 </script>
 {% endblock %}
 

@@ -62,6 +62,21 @@ def ns_allowed(
 # Normalization + core logic
 # -------------------------
 
+def _coerce_extjson_value(v: Any) -> Any:
+    """Convert MongoDB Extended JSON scalars to plain Python types."""
+    if not isinstance(v, dict):
+        return v
+    if "$numberLong" in v:
+        return int(v["$numberLong"])
+    if "$numberInt" in v:
+        return int(v["$numberInt"])
+    if "$numberDouble" in v:
+        return float(v["$numberDouble"])
+    if "$numberDecimal" in v:
+        return float(v["$numberDecimal"])
+    return str(v)
+
+
 def normalize_key_pattern(key_obj: Any) -> KeySig:
     """
     Normalize index key patterns into an order-preserving, hashable representation.
@@ -70,13 +85,13 @@ def normalize_key_pattern(key_obj: Any) -> KeySig:
     """
 
     if isinstance(key_obj, dict):
-        return tuple((str(k), v) for k, v in key_obj.items())
+        return tuple((str(k), _coerce_extjson_value(v)) for k, v in key_obj.items())
 
     if isinstance(key_obj, (list, tuple)):
         pairs: List[Tuple[str, Any]] = []
         for item in key_obj:
             if isinstance(item, (list, tuple)) and len(item) == 2:
-                pairs.append((str(item[0]), item[1]))
+                pairs.append((str(item[0]), _coerce_extjson_value(item[1])))
             else:
                 return (("<<unrecognized_key>>", str(key_obj)),)
         return tuple(pairs)
@@ -84,7 +99,7 @@ def normalize_key_pattern(key_obj: Any) -> KeySig:
     # Last resort: try .items() (dict-like)
     try:
         items = list(key_obj.items())  # type: ignore[attr-defined]
-        return tuple((str(k), v) for k, v in items)
+        return tuple((str(k), _coerce_extjson_value(v)) for k, v in items)
     except Exception:
         return (("<<unrecognized_key>>", str(key_obj)),)
 

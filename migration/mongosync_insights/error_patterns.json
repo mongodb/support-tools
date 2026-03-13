@@ -1,0 +1,145 @@
+[
+      {
+        "pattern": "resume point may no longer be in the oplog",
+        "friendly_name": "Oplog rollover"
+      },
+      {
+        "pattern": "the resume token was not found",
+        "friendly_name": "Oplog rollover"
+      },
+      {
+        "pattern": "failed to run inserter service for partition",
+        "friendly_name": "timeout on dest"
+      },
+      {
+        "pattern": "timed out after attempting to execute a command on the MongoDB server",
+        "friendly_name": "timeout on dest"
+      },
+      {
+        "pattern": "verifier indicated a mismatch",
+        "friendly_name": "Verifier mismatch"
+      },
+      {
+        "pattern": "the verifier found one or more mismatches",
+        "friendly_name": "Verifier mismatch"
+      },
+      {
+        "pattern": "source cluster was modified after Mongosync final verification began",
+        "friendly_name": "Write on source during cutover"
+      },
+      {
+        "pattern": "destination indexes should not be `unique` yet",
+        "friendly_name": "Verifier: metadata failed (unique index issue)"
+      },
+      {
+        "pattern": "not authorized on shoreplanner to execute command",
+        "friendly_name": "Verifier: metadata failed (permissions issue)"
+      },
+      {
+        "pattern": "failed to update document on destination",
+        "friendly_name": "addFields update error"
+      },
+      {
+        "pattern": "namespace conflict detected",
+        "friendly_name": "Conflicting namespaces"
+      },
+      {
+        "pattern": "no documents in result",
+        "friendly_name": "Driver Error"
+      },
+      {
+        "pattern": "failed to enable index constraints",
+        "friendly_name": "Failed unique index conversion"
+      },
+      {
+        "pattern": "unique index was set on the source that is incompatible",
+        "friendly_name": "Incompatible unique index"
+      },
+      {
+        "pattern": "Index Checker Service exceeded the maximum number of index creation attempts",
+        "friendly_name": "Index creation attempts"
+      },
+      {
+        "pattern": "IndexNotFound",
+        "friendly_name": "Index not found"
+      },
+      {
+        "pattern": "turn off profiling",
+        "friendly_name": "profiling enabled"
+      },
+      {
+        "pattern": "failed to open change stream using resume token",
+        "friendly_name": "Server Error"
+      },
+      {
+        "pattern": "cluster is not sharded",
+        "friendly_name": "Sharded misconfiguration"
+      },
+      {
+        "pattern": "is a timeseries collection",
+        "friendly_name": "timeseries"
+      },
+      {
+        "pattern": "TooManyFilesOpen",
+        "friendly_name": "Too many open files"
+      },
+      {
+        "pattern": "addShardToZone",
+        "friendly_name": "Unauthorized to run addShardToZone"
+      },
+      {
+        "pattern": "IndexOptionsConflict",
+        "friendly_name": "unique and non-unique indexes"
+      },
+      {
+        "pattern": "Cannot convert the index to unique",
+        "friendly_name": "Unique index conversion"
+      },
+      {
+        "pattern": "UserWritesBlocked",
+        "friendly_name": "User writes blocked"
+      },
+      {
+        "pattern": "User writes blocked",
+        "friendly_name": "User writes blocked"
+      },
+      {
+        "pattern": "the destination cluster was modified after Mongosync final verification began",
+        "friendly_name": "Write on destination during cutover"
+      },
+      {
+        "pattern": "bulk write exception: write errors",
+        "friendly_name": "Bulk Write error (duplicate key)"
+      },
+      {
+        "pattern": "DDL events are unsupported on pre-6.0 source",
+        "friendly_name": "DDL event on source"
+      },
+      {
+        "pattern": "No indexed plans available, and running with 'notablescan'",
+        "friendly_name": "Query internal partitions error (NoQueryExecutionPlans)"
+      },
+      {
+        "pattern": "Values in the index key pattern cannot be empty strings",
+        "friendly_name": "Index creation error (empty string index)"
+      },
+      {
+        "pattern": "Must have an index compatible with the proposed shard key",
+        "friendly_name": "Dest collection sharding failure (no compatible index)"
+      },
+      {
+        "pattern": "Most source writes appear to be from $out aggregations",
+        "friendly_name": "Source writes from $out aggregations. Consider pausing workloads that run $out aggregations.",
+        "full_error_message": "Most source writes appear to be from $out aggregations. This might mean that relatively few documents are being constantly updated. Mongosync may not be able to keep pace with the source's workload."
+      },
+      {
+        "pattern": "The level of CEA parallelization for this collection is low",
+        "friendly_name": "Hot Documents",
+        "full_error_message": "The level of CEA parallelization for this collection is low. This might mean that relatively few documents are being constantly updated. Mongosync may not be able to keep pace with the source's workload."
+      },
+      {
+        "pattern": "refetched db-spec for recreating dst coll for natural scan",
+        "friendly_name": "Restart Collection Copy in natural order",
+        "full_error_message": "refetched db-spec for recreating dst coll for natural scan, collSpec: {COLLECTION DETAILS UUID {}}, isSrcDropped: XXX"
+      }
+    ]

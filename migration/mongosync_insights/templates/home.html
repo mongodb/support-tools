@@ -10,7 +10,7 @@
         display: flex;
         gap: 20px;
         justify-content: center;
-        align-items: flex-start;
+        align-items: stretch;
     }
 
     /* Style individual forms */
@@ -28,26 +28,12 @@
         font-family: Arial, sans-serif;
         margin: 0;
         padding: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
         background-color: #ffffff;
     }
 
-    /* Optional: Style images */
-    img {
-        max-width: 100%;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-    }
-
     .version-info {
-        position: absolute;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
         text-align: center;
+        padding-top: 20px;
     }
 {% endblock %}
 
@@ -64,7 +50,6 @@
         <p>Click the "Upload" button after selecting your Mongosync log file to generate migration progress plots.</p>
         <p><small><strong>Supported formats:</strong> .log, .json, .out (uncompressed) or .gz, .zip, .bz2, .tgz, .tar.gz, .tar.bz2 (compressed)<br>
         <strong>Maximum size:</strong> {{ max_file_size_gb | round(1) }} GB</small></p>
-        <img src="{{ url_for('static', filename='mongosync_log_analyzer.png') }}" width="300" alt="Mongosync Log Analyzer">
     </form>
 
     <!-- Second form: Metrics rendering -->
@@ -74,9 +59,6 @@
         {{ progress_endpoint_form | safe }}
         <input type="submit" value="Live Monitor">
         <p>Click the "Live Monitor" button to start monitoring the migration progress in real time.</p>
-        <img src="{{ url_for('static', filename='mongosync_metadata_status.png') }}" width="300" alt="Mongosync Metadata Status">
-        <img src="{{ url_for('static', filename='mongosync_metadata_progress.png') }}" width="300" alt="Mongosync Metadata Progress">
-        <img src="{{ url_for('static', filename='mongosync_endpoint.png') }}" width="300" alt="Mongosync Endpoint">
     </form>
 
     <!-- Third form: Migration Verifier -->
@@ -89,7 +71,6 @@
         <input type="submit" value="Monitor Verifier">
         <p> Click the "Monitor Verifier" button to monitor the <a href="https://github.com/mongodb-labs/migration-verifier" target="_blank">migration-verifier</a> tool progress.</p>
         <p><small><strong>Note:</strong> Connect to the MongoDB cluster where the migration-verifier writes its metadata (typically the destination cluster).</small></p>
-        <img src="{{ url_for('static', filename='migration_verifier.png') }}" width="300" alt="Migration Verifier Dashboard">
     </form>
 </div>
 {% endblock %}
