@@ -169,7 +169,25 @@ Add-Type @'
 '@
 try
 {
-   if (-not ($cert = New-Object Security.Cryptography.X509Certificates.X509Certificate2($PFXFile, $Passphrase, 'Exportable')))
+   if (Test-Path -Path $PFXFile -PathType Leaf)
+   {
+      $pfxPath = (Get-Item -Path $PFXFile).FullName
+   }
+   else
+   {
+      Write-Warning "Unable to find PFX file $PFXFile"
+      Exit
+   }
+}
+catch
+{
+   Write-Warning "Unable to acces PFX file $PFXFile"
+   Exit
+}
+
+try
+{
+   if (-not ($cert = New-Object Security.Cryptography.X509Certificates.X509Certificate2($pfxPath, $Passphrase, 'Exportable')))
    {
       Write-Warning "Unable to load certificate $PFXFile"
       Exit
