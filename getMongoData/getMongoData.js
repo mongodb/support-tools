@@ -161,7 +161,14 @@ function printShardInfo() {
                                 collDoc['unique'] = coll.unique;
 
                                 var res = configDB.chunks.aggregate(
-                                    { "$match": { ns: coll._id } },
+                                    {
+                                        "$match": {
+                                            $or: [
+                                                { ns: coll._id },
+                                                { uuid: coll.uuid }
+                                            ]
+                                        }
+                                    },
                                     { "$group": { _id: "$shard", nChunks: { "$sum": 1 } } }
                                 );
                                 // MongoDB 2.6 and above returns a cursor instead of a document
