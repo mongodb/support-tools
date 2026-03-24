@@ -21,35 +21,24 @@ Mongosync Insights provides four main capabilities:
 
 ## Installation
 
-### 1. Download the Tool
+### Option A: RPM Installation (Air-Gapped / Offline Environments)
+
+For machines without internet access, a self-contained RPM is available that bundles the Python runtime and all dependencies. No additional packages need to be installed on the target.
+
+```bash
+sudo rpm -i mongosync-insights-<version>.x86_64.rpm
+sudo systemctl start mongosync-insights
+```
+
+See **[PACKAGING.md](PACKAGING.md)** for how to build the RPM, configure, and run the service.
+
+### Option B: Manual Installation (Development / Connected Environments)
+
+#### 1. Download the Tool
 
 Download or clone the Mongosync Insights folder from this repository.
 
-### 2. Install System Dependencies
-
-Before installing Python packages, ensure **libmagic** is installed on your system (required for file type detection):
-
-**macOS:**
-```bash
-brew install libmagic
-```
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get update
-sudo apt-get install libmagic1
-```
-
-**Red Hat/CentOS/Fedora:**
-```bash
-sudo yum install file-libs
-```
-
-**Windows:**
-- Download and install from [https://github.com/nscaife/file-windows](https://github.com/nscaife/file-windows)
-- Or use: `pip install python-magic-bin` (includes precompiled libmagic)
-
-### 3. Install Python Dependencies
+#### 2. Install Python Dependencies
 
 Navigate to the directory containing the Python script and the `requirements.txt` file:
 
@@ -243,6 +232,7 @@ python3 mongosync_insights.py
 
 For detailed guides, see:
 
+- **[PACKAGING.md](PACKAGING.md)** - Build a self-contained RPM for offline/air-gapped deployment
 - **[CONFIGURATION.md](CONFIGURATION.md)** - Complete environment variables reference, configuration options, and MongoDB connection pooling
 - **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
 - **[VALIDATION.md](VALIDATION.md)** - Connection string validation, sanitization, and error handling

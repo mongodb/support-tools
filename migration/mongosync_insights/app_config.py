@@ -28,6 +28,8 @@ APP_VERSION = "0.8.0.18"
 MAX_FILE_SIZE = int(os.getenv('MI_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
 ALLOWED_EXTENSIONS = {'.log', '.json', '.out', '.gz', '.zip', '.bz2', '.tar.gz', '.tgz', '.tar.bz2'}
 ALLOWED_MIME_TYPES = [
+    'text/plain',
+    'application/json',
     'application/x-ndjson',
     'application/gzip', 'application/x-gzip',
     'application/zip', 'application/x-zip-compressed',
