@@ -162,6 +162,10 @@ SCRIPT
 
 RPM_OUTPUT="$SCRIPT_DIR/dist"
 
+# Remove .build-id symlinks that PyInstaller copies from system libraries.
+# These conflict with RHEL system packages (ncurses-libs, zlib, openssl-libs, etc.)
+find "$STAGING" -path '*/.build-id' -type d -exec rm -rf {} + 2>/dev/null || true
+
 fpm \
     -s dir \
     -t rpm \
@@ -173,6 +177,8 @@ fpm \
     --description "Mongosync Insights — MongoDB migration monitoring dashboard" \
     --url "https://github.com/mongodb/support-tools" \
     --architecture native \
+    --rpm-auto-add-directories \
+    --exclude '**/.build-id' \
     --after-install "$POST_INSTALL" \
     --before-remove "$PRE_UNINSTALL" \
     --after-remove "$POST_UNINSTALL" \
