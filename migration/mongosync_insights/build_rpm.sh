@@ -178,6 +178,7 @@ fpm \
     --url "https://github.com/mongodb/support-tools" \
     --architecture native \
     --rpm-auto-add-directories \
+    --rpm-rpmbuild-define '_build_id_links none' \
     --exclude '**/.build-id' \
     --after-install "$POST_INSTALL" \
     --before-remove "$PRE_UNINSTALL" \
