@@ -17,6 +17,15 @@ Collects index statistics across all user databases (excluding `admin`, `config`
 
 Detects a known mongosync limitation where a collection has two indexes with the exact same key pattern—one unique and one non-unique. This condition can cause mongosync to fail during migrations. For full documentation, filtering options, and examples, see [mongosyncUniqueIndexChecker README](mongosyncUniqueIndexChecker/README.md).
 
+
+## [Get busiest collections](getBusiestCollection)
+
+Get busiest collections seen during Collection Copy and Change Event Application (CEA) phase
+
+**Script:** `getBusiestCollection/get-busiest-collections.js`
+
+Gets the busiest collections in terms of writes (delete/insert/replace/update) as recorded in the mongosync logs in the CEA phase
+
 ### License
 
 [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
