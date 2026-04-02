@@ -1,0 +1,24 @@
+[Unit]
+Description=Mongosync Insights - MongoDB Migration Monitoring Dashboard
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/mongosync-insights/mongosync-insights
+WorkingDirectory=/opt/mongosync-insights
+EnvironmentFile=-/etc/mongosync-insights/env
+Restart=on-failure
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/mongosync-insights
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mongosync-insights
+
+[Install]
+WantedBy=multi-user.target

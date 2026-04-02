@@ -9,12 +9,41 @@ from dateutil import parser
 import re
 import logging
 import os
-import magic
+import mimetypes
 from werkzeug.utils import secure_filename
 from mongosync_plot_utils import format_byte_size, convert_bytes
 from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES, load_error_patterns, classify_file_type
 from file_decompressor import decompress_file_classified, is_compressed_mime_type
 from mongosync_plot_prometheus_metrics import MetricsCollector, create_metrics_plots
+
+
+def detect_mime_type(file_sample: bytes, filename: str) -> str:
+    """
+    Detect MIME type using magic bytes and file extension.
+    Pure-Python replacement for python-magic — no system libmagic needed.
+    """
+    # Check magic bytes from the file header
+    if file_sample[:2] == b'\x1f\x8b':
+        return 'application/gzip'
+    if file_sample[:4] == b'PK\x03\x04':
+        return 'application/zip'
+    if file_sample[:3] == b'BZh':
+        return 'application/x-bzip2'
+    if len(file_sample) >= 262 and file_sample[257:262] == b'ustar':
+        return 'application/x-tar'
+
+    # Fall back to extension-based detection
+    mime_type, _ = mimetypes.guess_type(filename)
+    if mime_type:
+        return mime_type
+
+    # If content looks like text, report it as text/plain
+    try:
+        file_sample.decode('utf-8')
+        return 'text/plain'
+    except UnicodeDecodeError:
+        return 'application/octet-stream'
+
 
 def upload_file():
     # Use the centralized logging configuration
@@ -67,27 +96,19 @@ def upload_file():
                                  error_title="File Too Large",
                                  error_message=f"File size ({actual_size_mb:.1f} MB) exceeds maximum allowed size ({max_size_mb:.1f} MB).")
         
-        # Check MIME type using python-magic
-        try:
-            mime = magic.Magic(mime=True)
-            file.seek(0)
-            # Read first 2KB for MIME detection (sufficient for most file types)
-            file_sample = file.read(2048)
-            file_mime_type = mime.from_buffer(file_sample)
-            file.seek(0)  # Reset to beginning
-            
-            logger.info(f"Detected MIME type: {file_mime_type}")
-            
-            if file_mime_type not in ALLOWED_MIME_TYPES:
-                logger.error(f"Invalid MIME type: {file_mime_type}. Allowed: {ALLOWED_MIME_TYPES}")
-                return render_template('error.html',
-                                     error_title="Invalid File Type",
-                                     error_message=f"File MIME type '{file_mime_type}' is not allowed. Only JSON/text files are accepted. Detected type: {file_mime_type}")
-        except Exception as e:
-            logger.error(f"Error detecting MIME type: {e}")
+        # Detect MIME type using magic bytes and file extension (no libmagic needed)
+        file.seek(0)
+        file_sample = file.read(2048)
+        file_mime_type = detect_mime_type(file_sample, filename)
+        file.seek(0)
+
+        logger.info(f"Detected MIME type: {file_mime_type}")
+
+        if file_mime_type not in ALLOWED_MIME_TYPES:
+            logger.error(f"Invalid MIME type: {file_mime_type}. Allowed: {ALLOWED_MIME_TYPES}")
             return render_template('error.html',
-                                 error_title="File Validation Error",
-                                 error_message=f"Unable to validate file type: {str(e)}")
+                                 error_title="Invalid File Type",
+                                 error_message=f"File MIME type '{file_mime_type}' is not allowed. Only JSON/text files are accepted. Detected type: {file_mime_type}")
         
         logger.info(f"File validation passed: {filename} ({file_size} bytes, {file_ext}, MIME: {file_mime_type})")
         # Optimized single-pass log parsing with streaming approach

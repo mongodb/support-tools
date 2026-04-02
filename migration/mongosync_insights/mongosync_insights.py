@@ -1,4 +1,6 @@
 import logging
+import sys
+import os
 from flask import Flask, render_template, request, make_response
 from mongosync_plot_logs import upload_file
 from mongosync_plot_metadata import plotMetrics, gatherMetrics, gatherPartitionsMetrics, gatherEndpointMetrics
@@ -32,8 +34,17 @@ except (PermissionError, ValueError) as e:
 # Setup logging
 logger = setup_logging()
 
+# Resolve base path for templates & static assets (supports PyInstaller bundles)
+if getattr(sys, 'frozen', False):
+    _base_path = sys._MEIPASS
+else:
+    _base_path = os.path.dirname(os.path.abspath(__file__))
+
 # Create a Flask app
-app = Flask(__name__, static_folder='images', static_url_path='/images')
+app = Flask(__name__,
+            template_folder=os.path.join(_base_path, 'templates'),
+            static_folder=os.path.join(_base_path, 'images'),
+            static_url_path='/images')
 
 # Configure Flask for file uploads
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
