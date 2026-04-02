@@ -124,6 +124,7 @@ cat > "$STAGING/etc/mongosync-insights/env" <<'ENVFILE'
 # MI_SSL_KEY=/etc/mongosync-insights/key.pem
 # LOG_LEVEL=INFO
 ENVFILE
+chmod 600 "$STAGING/etc/mongosync-insights/env"
 
 # ---------------------------------------------------------------------------
 # 6. Build the RPM with fpm
