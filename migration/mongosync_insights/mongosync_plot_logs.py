@@ -29,7 +29,7 @@ def detect_mime_type(file_sample: bytes, filename: str) -> str:
         return 'application/zip'
     if file_sample[:3] == b'BZh':
         return 'application/x-bzip2'
-    if len(file_sample) > 262 and file_sample[257:262] == b'ustar':
+    if len(file_sample) >= 262 and file_sample[257:262] == b'ustar':
         return 'application/x-tar'
 
     # Fall back to extension-based detection
