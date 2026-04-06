@@ -5,7 +5,6 @@
 {% block header_title %}Mongosync Insights - Logs{% endblock %}
 
 {% block styles %}
-    /* Create a container for the forms */
     .form-container {
         display: flex;
         gap: 20px;
@@ -13,47 +12,222 @@
         align-items: stretch;
     }
 
-    /* Style individual forms */
     form {
         width: 350px;
-        border: 1px solid #ccc;
+        border: 1px solid var(--mi-frame-border);
         padding: 20px;
-        border-radius: 8px;
-        background-color: #f9f9f9;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: var(--mi-radius-sm);
+        background-color: var(--mi-surface-muted);
+        box-shadow: var(--mi-shadow-sm);
+        overflow: hidden;
     }
 
-    /* Style the body of the page */
     body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #ffffff;
+        background-color: var(--mi-frame-bg);
     }
+
+    h1, h2 { color: var(--mi-text-primary); }
+    p, label, small { color: var(--mi-text-secondary); }
+    strong { color: var(--mi-text-primary); }
+    a { color: var(--mi-accent-info); }
+
+    input[type="text"], input[type="file"], select {
+        background: var(--mi-surface-muted);
+        color: var(--mi-text-primary);
+        border: 1px solid var(--mi-frame-border);
+        border-radius: 4px;
+        padding: 4px 6px;
+        max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    input[type="submit"] {
+        background: var(--mi-sidebar-bg);
+        color: #fff;
+        border: 1px solid var(--mi-sidebar-bg);
+        border-radius: 4px;
+        padding: 6px 16px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    input[type="submit"]:hover { opacity: 0.85; }
 
     .version-info {
         text-align: center;
         padding-top: 20px;
     }
+
+    .prev-analyses-divider {
+        border: none;
+        border-top: 1px solid var(--mi-frame-border);
+        margin: 16px 0 12px;
+    }
+    .prev-analyses-title {
+        font-size: 0.95em;
+        font-weight: 600;
+        color: var(--mi-text-secondary);
+        margin: 0 0 10px;
+    }
+    .prev-analyses-empty {
+        font-size: 0.85em;
+        color: var(--mi-text-secondary);
+        font-style: italic;
+    }
+    .prev-analyses-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .prev-analysis-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--mi-frame-border);
+    }
+    .prev-analysis-item:last-child { border-bottom: none; }
+    .prev-analysis-info {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .prev-analysis-name {
+        font-size: 0.88em;
+        font-weight: 600;
+        color: var(--mi-text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .prev-analysis-meta {
+        font-size: 0.78em;
+        color: var(--mi-text-secondary);
+        margin-top: 2px;
+    }
+    .prev-analysis-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-shrink: 0;
+        margin-left: 8px;
+    }
+    .prev-analysis-load {
+        font-size: 0.8em;
+        padding: 3px 10px;
+        border: 1px solid var(--mi-sidebar-bg);
+        border-radius: 4px;
+        background: var(--mi-sidebar-bg);
+        color: #fff;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .prev-analysis-load:hover { opacity: 0.85; }
+    .prev-analysis-delete {
+        font-size: 0.85em;
+        padding: 2px 6px;
+        border: none;
+        background: transparent;
+        color: var(--mi-accent-danger);
+        cursor: pointer;
+        border-radius: 3px;
+    }
+    .prev-analysis-delete:hover { background: rgba(204,68,68,0.1); color: #a00; }
+
+    .dup-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9000;
+    }
+    .dup-overlay.active { display: flex; }
+    .dup-dialog {
+        background: var(--mi-dialog-bg);
+        border: 1px solid var(--mi-frame-border);
+        border-radius: var(--mi-radius-sm);
+        box-shadow: var(--mi-shadow-md);
+        width: 420px;
+        max-width: 90vw;
+        padding: 24px;
+        text-align: center;
+    }
+    .dup-dialog h3 {
+        margin: 0 0 10px 0;
+        font-size: 16px;
+        color: var(--mi-text-primary);
+    }
+    .dup-dialog p {
+        margin: 0 0 20px 0;
+        font-size: 13px;
+        color: var(--mi-text-secondary);
+        text-align: left;
+        line-height: 1.5;
+    }
+    .dup-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+    .dup-btn {
+        padding: 7px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        border: 1px solid var(--mi-frame-border);
+    }
+    .dup-btn-primary {
+        background: var(--mi-sidebar-bg);
+        color: #fff;
+        border-color: var(--mi-sidebar-bg);
+    }
+    .dup-btn-danger {
+        background: transparent;
+        color: var(--mi-accent-danger);
+        border-color: var(--mi-accent-danger);
+    }
+    .dup-btn-cancel {
+        background: transparent;
+        color: var(--mi-text-secondary);
+    }
+
+    .verifier-note {
+        background: rgba(255, 192, 16, 0.15);
+        border: 1px solid var(--mongodb-yellow-base);
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-size: 0.85em;
+        margin-top: 12px;
+        margin-bottom: 0;
+    }
 {% endblock %}
 
 {% block content %}
 <div class="version-info">
-    <h1 style="margin-bottom: 0;">Mongosync Insights <span style="font-size:0.6em;color:#777;">v{{ app_version }}</span></h1>
+    <h1 style="margin-bottom: 0;">Mongosync Insights <span style="font-size:0.6em;color:var(--mi-text-secondary);">v{{ app_version }}</span></h1>
 </div>
 <div class="form-container">
     <!-- First form: File upload -->
-    <form method="post" action="/upload" enctype="multipart/form-data" autocomplete="off">
+    <form id="uploadLogsForm" method="post" action="/uploadLogs" enctype="multipart/form-data" autocomplete="off">
         <h2>Parse Mongosync Log File</h2>
         <input type="file" name="file" accept=".log,.json,.out,.gz,.zip,.bz2,.tar.gz,.tgz,.tar.bz2"><br><br>
         <input type="submit" value="Upload">
         <p>Click the "Upload" button after selecting your Mongosync log file to generate migration progress plots.</p>
         <p><small><strong>Supported formats:</strong> .log, .json, .out (uncompressed) or .gz, .zip, .bz2, .tgz, .tar.gz, .tar.bz2 (compressed)<br>
         <strong>Maximum size:</strong> {{ max_file_size_gb | round(1) }} GB</small></p>
+
+        <div id="previousAnalyses">
+            <hr class="prev-analyses-divider">
+            <p class="prev-analyses-title">Previous Analyses</p>
+            <div id="prevAnalysesContent">
+                <span class="prev-analyses-empty">Loading...</span>
+            </div>
+        </div>
     </form>
 
     <!-- Second form: Metrics rendering -->
-    <form id="metadataForm" method="post" action="/renderMetrics" enctype="multipart/form-data" autocomplete="off">
+    <form id="metadataForm" method="post" action="/liveMonitoring" enctype="multipart/form-data" autocomplete="off">
         <h2>Live Migration Monitoring</h2>
         {{ connection_string_form | safe }}
         {{ progress_endpoint_form | safe }}
@@ -62,7 +236,7 @@
     </form>
 
     <!-- Third form: Migration Verifier -->
-    <form id="verifierForm" method="post" action="/renderVerifier" enctype="multipart/form-data" autocomplete="off">
+    <form id="verifierForm" method="post" action="/Verifier" enctype="multipart/form-data" autocomplete="off">
         <h2>Migration Verifier</h2>
         {{ verifier_connection_string_form | safe }}
         <label for="verifierDbName">Verifier Database Name:</label>
@@ -71,7 +245,25 @@
         <input type="submit" value="Monitor Verifier">
         <p> Click the "Monitor Verifier" button to monitor the <a href="https://github.com/mongodb-labs/migration-verifier" target="_blank">migration-verifier</a> tool progress.</p>
         <p><small><strong>Note:</strong> Connect to the MongoDB cluster where the migration-verifier writes its metadata (typically the destination cluster).</small></p>
+        <p class="verifier-note">
+            <strong>Note:</strong> If verifying a migration done via mongosync, check if the
+            <a href="https://www.mongodb.com/docs/cluster-to-cluster-sync/current/reference/verification/embedded/" target="_blank">Embedded Verifier</a>
+            can be used, as it is the preferred approach for verification.
+        </p>
     </form>
+</div>
+
+<!-- Duplicate check dialog (home page) -->
+<div id="duplicateCheckOverlay" class="dup-overlay" onclick="if(event.target===this)duplicateCancel()">
+    <div class="dup-dialog">
+        <h3>Previous Analysis Found</h3>
+        <p id="duplicateCheckMsg"></p>
+        <div class="dup-actions">
+            <button class="dup-btn dup-btn-primary" onclick="duplicateLoadPrevious()">Load Previous</button>
+            <button class="dup-btn dup-btn-danger" onclick="duplicateReplace()">Replace</button>
+            <button class="dup-btn dup-btn-cancel" onclick="duplicateCancel()">Cancel</button>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -118,7 +310,164 @@ function validateVerifierForm() {
     return true;
 }
 
+function formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return '';
+    if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + ' GB';
+    if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+    if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return bytes + ' B';
+}
+
+function formatAge(hours) {
+    if (hours < 1) return 'Just now';
+    if (hours < 24) return Math.round(hours) + 'h ago';
+    return Math.round(hours / 24) + 'd ago';
+}
+
+function formatDate(isoStr) {
+    if (!isoStr) return '';
+    try {
+        var d = new Date(isoStr);
+        return d.toLocaleDateString(undefined, {month:'short', day:'numeric'}) + ', ' +
+               d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
+    } catch(e) { return ''; }
+}
+
+function loadPreviousAnalyses() {
+    var container = document.getElementById('prevAnalysesContent');
+    if (!container) return;
+
+    fetch('/list_snapshots')
+        .then(function(r) { return r.json(); })
+        .then(function(snapshots) {
+            if (!snapshots || snapshots.length === 0) {
+                container.innerHTML = '<span class="prev-analyses-empty">No saved analyses</span>';
+                return;
+            }
+            var html = '<ul class="prev-analyses-list">';
+            snapshots.forEach(function(s) {
+                var size = formatFileSize(s.source_size_bytes);
+                var date = formatDate(s.created_at);
+                var age = formatAge(s.age_hours);
+                var meta = [date, size, age].filter(Boolean).join(' \u00b7 ');
+                html += '<li class="prev-analysis-item">' +
+                    '<div class="prev-analysis-info">' +
+                        '<div class="prev-analysis-name" title="' + (s.source_filename || '') + '">' + (s.source_filename || 'Unknown') + '</div>' +
+                        '<div class="prev-analysis-meta">' + meta + '</div>' +
+                    '</div>' +
+                    '<div class="prev-analysis-actions">' +
+                        '<a class="prev-analysis-load" href="/load_snapshot/' + s.snapshot_id + '">Load</a>' +
+                        '<button class="prev-analysis-delete" title="Delete" onclick="deleteSnapshot(\'' + s.snapshot_id + '\')">\u2716</button>' +
+                    '</div>' +
+                '</li>';
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        })
+        .catch(function() {
+            container.innerHTML = '<span class="prev-analyses-empty">Failed to load saved analyses</span>';
+        });
+}
+
+function deleteSnapshot(id) {
+    if (!confirm('Delete this saved analysis?')) return;
+    fetch('/delete_snapshot/' + id, {method: 'DELETE'})
+        .then(function(r) { return r.json(); })
+        .then(function() { loadPreviousAnalyses(); })
+        .catch(function() { loadPreviousAnalyses(); });
+}
+
+/* Duplicate check on upload */
+var _dupState = { matches: [], form: null, fileInput: null };
+
+function _dupFormatAge(hours) {
+    if (hours < 1) return 'Just now';
+    if (hours < 24) return Math.round(hours) + 'h ago';
+    return Math.round(hours / 24) + 'd ago';
+}
+
+function checkDuplicateAndUpload(form, fileInput) {
+    if (!fileInput || !fileInput.files || !fileInput.files.length) return;
+    var selectedName = fileInput.files[0].name;
+    _dupState.form = form;
+    _dupState.fileInput = fileInput;
+    _dupState.matches = [];
+
+    fetch('/list_snapshots')
+        .then(function(r) { return r.json(); })
+        .then(function(snapshots) {
+            var matches = (snapshots || []).filter(function(s) {
+                return s.source_filename === selectedName;
+            });
+            if (matches.length === 0) {
+                _dupProceedUpload();
+                return;
+            }
+            _dupState.matches = matches;
+            var age = _dupFormatAge(matches[0].age_hours);
+            var msg = 'A saved analysis for <strong>"' + selectedName + '"</strong> already exists (' + age + ').'
+                + '<br><br><strong>Load Previous</strong> opens the saved session.'
+                + '<br><strong>Replace</strong> deletes the saved session and uploads the file again.';
+            document.getElementById('duplicateCheckMsg').innerHTML = msg;
+            document.getElementById('duplicateCheckOverlay').classList.add('active');
+        })
+        .catch(function() {
+            _dupProceedUpload();
+        });
+}
+
+function _dupProceedUpload() {
+    document.getElementById('duplicateCheckOverlay').classList.remove('active');
+    document.getElementById('uploadLoadingOverlay').classList.add('active');
+    _dupState.form.submit();
+}
+
+function duplicateLoadPrevious() {
+    document.getElementById('duplicateCheckOverlay').classList.remove('active');
+    if (_dupState.matches.length > 0) {
+        document.getElementById('uploadLoadingOverlay').classList.add('active');
+        window.location.href = '/load_snapshot/' + _dupState.matches[0].snapshot_id;
+    }
+}
+
+function duplicateReplace() {
+    document.getElementById('duplicateCheckOverlay').classList.remove('active');
+    document.getElementById('uploadLoadingOverlay').classList.add('active');
+    var delPromises = _dupState.matches.map(function(s) {
+        return fetch('/delete_snapshot/' + s.snapshot_id, { method: 'DELETE' }).catch(function() {});
+    });
+    Promise.all(delPromises).then(function() {
+        _dupState.form.submit();
+    });
+}
+
+function duplicateCancel() {
+    document.getElementById('duplicateCheckOverlay').classList.remove('active');
+    if (_dupState.fileInput) {
+        _dupState.fileInput.value = '';
+    }
+    _dupState.matches = [];
+    _dupState.form = null;
+    _dupState.fileInput = null;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    loadPreviousAnalyses();
+
+    var uploadLogsForm = document.getElementById('uploadLogsForm');
+    if (uploadLogsForm) {
+        uploadLogsForm.addEventListener('submit', function(e) {
+            var fileInput = this.querySelector('input[type="file"]');
+            if (!fileInput || !fileInput.files.length) {
+                e.preventDefault();
+                alert('Please select a file to upload.');
+                return;
+            }
+            e.preventDefault();
+            checkDuplicateAndUpload(this, fileInput);
+        });
+    }
+
     var metadataForm = document.getElementById('metadataForm');
     if (metadataForm) {
         metadataForm.addEventListener('submit', function(e) {

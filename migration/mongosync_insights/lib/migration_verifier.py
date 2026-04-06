@@ -142,7 +142,7 @@ def get_generation_name(gen_num):
 
 def gatherVerifierMetrics(connection_string, db_name="migration_verification_metadata"):
     """Gather all verifier metrics and create Plotly figure."""
-    from app_config import get_database
+    from .app_config import get_database
     
     try:
         db = get_database(connection_string, db_name)
@@ -654,7 +654,7 @@ def gatherVerifierMetrics(connection_string, db_name="migration_verification_met
 
 def plotVerifierMetrics(db_name="migration_verification_metadata"):
     """Render the verifier metrics template."""
-    from app_config import REFRESH_TIME
+    from .app_config import REFRESH_TIME
     
     refresh_time = REFRESH_TIME
     refresh_time_ms = str(int(refresh_time) * 1000)

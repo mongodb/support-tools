@@ -118,7 +118,7 @@
 <script>
 async function fetchVerifierData() {
     try {
-        const response = await fetch("/get_verifier_data", { method: 'POST', credentials: 'same-origin' });
+        const response = await fetch("/getVerifierData", { method: 'POST', credentials: 'same-origin' });
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Request failed');
@@ -161,12 +161,29 @@ async function fetchVerifierData() {
 }
 
 fetchVerifierData(); // initial load
-setInterval(fetchVerifierData, {{ refresh_time_ms }}); // update every {{ refresh_time }} seconds
+var _refreshMs = parseInt(sessionStorage.getItem('mi_refresh_time'), 10);
+_refreshMs = (_refreshMs > 0 ? _refreshMs * 1000 : {{ refresh_time_ms }});
+var _refreshIntervalId = setInterval(fetchVerifierData, _refreshMs);
+
+function _updateFooterRefresh(ms) {
+    var footerP = document.querySelector('footer p');
+    if (footerP) footerP.innerHTML = footerP.innerHTML.replace(/Refreshing every \d+ seconds/, 'Refreshing every ' + (ms / 1000) + ' seconds');
+}
+_updateFooterRefresh(_refreshMs);
+
+window.addEventListener('mi-refresh-changed', function(e) {
+    var newMs = e.detail.refreshSec * 1000;
+    if (newMs > 0 && newMs !== _refreshMs) {
+        clearInterval(_refreshIntervalId);
+        _refreshMs = newMs;
+        _refreshIntervalId = setInterval(fetchVerifierData, _refreshMs);
+        _updateFooterRefresh(_refreshMs);
+    }
+});
 </script>
 {% endblock %}
 
 {% block footer %}
 <p>Refreshing every {{ refresh_time }} seconds -
-    <a href="https://github.com/mongodb-labs/migration-verifier" target="_blank">Migration Verifier Docs</a> -
-    Version {{ app_version }}</p>
+    <a href="https://github.com/mongodb-labs/migration-verifier" target="_blank">Migration Verifier Docs</a></p>
 {% endblock %}

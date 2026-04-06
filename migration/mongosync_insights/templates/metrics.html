@@ -72,6 +72,32 @@
         padding: 50px;
     }
 
+    .endpoint-warnings {
+        display: none;
+        margin: 0;
+        padding: 12px 16px;
+        background-color: #fff3cd;
+        border: 1px solid #ffc107;
+        border-bottom: none;
+        border-radius: 0;
+        color: #856404;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .endpoint-warnings ul {
+        margin: 4px 0 0 0;
+        padding-left: 20px;
+    }
+
+    .endpoint-warnings li {
+        margin-bottom: 4px;
+    }
+
+    .endpoint-warnings strong {
+        color: #664d03;
+    }
+
     @media (max-width: 768px) {
         .plot-container {
             width: 95%;
@@ -114,6 +140,21 @@
 
     {% if has_endpoint_url %}
     <div id="endpoint-tab" class="tab-content {% if not has_connection_string %}active{% endif %}">
+        <div id="endpoint-warnings" class="endpoint-warnings"></div>
+        <details style="margin:12px 0;padding:10px 14px;background:#e8f4fd;border:1px solid #b8daff;border-radius:6px;font-size:0.88em;line-height:1.5;">
+            <summary style="cursor:pointer;font-weight:600;color:#004085;">About the Embedded Verifier</summary>
+            <div style="margin-top:8px;">
+                <p style="margin:0 0 8px;">
+                    The <a href="https://www.mongodb.com/docs/cluster-to-cluster-sync/current/reference/verification/embedded/" target="_blank">Embedded Verifier</a>
+                    is mongosync's built-in verification that confirms data was transferred correctly by hashing documents on both source and destination clusters.
+                </p>
+                <ul style="margin:0 0 6px;padding-left:20px;">
+                    <li><strong>Can Write: True</strong> — The definitive signal that the embedded verifier has passed and found no mismatches. Until verification completes, <em>Can Write</em> remains <em>False</em>.</li>
+                    <li><strong>Phase</strong> — Shown for source and destination independently. <em>stream hashing</em> = actively verifying documents; <em>idle</em> = not yet started or between operations.</li>
+                    <li><strong>Lag Time Seconds</strong> — How far behind the verifier is in checking documents. High values mean verification takes longer to complete after commit.</li>
+                </ul>
+            </div>
+        </details>
         <div class="plot-container">
             <div id="loading3">Loading endpoint data...</div>
             <div id="plot3" style="display:none;"></div>
@@ -157,7 +198,7 @@ function switchTab(tabName) {
 async function fetchOverviewData() {
     try {
         // No credentials sent - server reads from secure session
-        const response = await fetch("/get_metrics_data", { 
+        const response = await fetch("/getLiveMonitoring", { 
             method: 'POST',
             credentials: 'same-origin'  // Include session cookie
         });
@@ -179,7 +220,7 @@ async function fetchOverviewData() {
 async function fetchPartitionsData() {
     try {
         // No credentials sent - server reads from secure session
-        const response = await fetch("/get_partitions_data", { 
+        const response = await fetch("/getPartitionsData", { 
             method: 'POST',
             credentials: 'same-origin'  // Include session cookie
         });
@@ -200,16 +241,28 @@ async function fetchPartitionsData() {
 
 async function fetchEndpointData() {
     try {
-        // No credentials sent - server reads from secure session
-        const response = await fetch("/get_endpoint_data", { 
+        const response = await fetch("/getEndpointData", { 
             method: 'POST',
-            credentials: 'same-origin'  // Include session cookie
+            credentials: 'same-origin'
         });
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Request failed');
         }
-        const plotData = await response.json();
+        const responseData = await response.json();
+        const plotData = responseData.plot;
+        const warnings = responseData.warnings || [];
+
+        const warningsDiv = document.getElementById("endpoint-warnings");
+        if (warnings.length > 0) {
+            warningsDiv.innerHTML = "<strong>Warning:</strong><ul>" +
+                warnings.map(w => "<li>" + w + "</li>").join("") + "</ul>";
+            warningsDiv.style.display = "block";
+        } else {
+            warningsDiv.style.display = "none";
+            warningsDiv.innerHTML = "";
+        }
+
         document.getElementById("loading3").style.display = "none";
         document.getElementById("plot3").style.display = "block";
         Plotly.react('plot3', plotData.data, plotData.layout);
@@ -237,11 +290,29 @@ if (hasConnectionString) {
     fetchEndpointData();
 }
 
-// Refresh current tab periodically
-setInterval(refreshCurrentTab, {{ refresh_time_ms }});
+// Refresh current tab periodically (allow sessionStorage override)
+var _refreshMs = parseInt(sessionStorage.getItem('mi_refresh_time'), 10);
+_refreshMs = (_refreshMs > 0 ? _refreshMs * 1000 : {{ refresh_time_ms }});
+var _refreshIntervalId = setInterval(refreshCurrentTab, _refreshMs);
+
+function _updateFooterRefresh(ms) {
+    var footerP = document.querySelector('footer p');
+    if (footerP) footerP.textContent = footerP.textContent.replace(/Refreshing every \d+ seconds/, 'Refreshing every ' + (ms / 1000) + ' seconds');
+}
+_updateFooterRefresh(_refreshMs);
+
+window.addEventListener('mi-refresh-changed', function(e) {
+    var newMs = e.detail.refreshSec * 1000;
+    if (newMs > 0 && newMs !== _refreshMs) {
+        clearInterval(_refreshIntervalId);
+        _refreshMs = newMs;
+        _refreshIntervalId = setInterval(refreshCurrentTab, _refreshMs);
+        _updateFooterRefresh(_refreshMs);
+    }
+});
 </script>
 {% endblock %}
 
 {% block footer %}
-<p>Refreshing every {{ refresh_time }} seconds - Version {{ app_version }}</p>
+<p>Refreshing every {{ refresh_time }} seconds</p>
 {% endblock %}
