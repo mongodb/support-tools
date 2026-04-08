@@ -1,4 +1,4 @@
-## Get Busiest Collection
+## Get Busiest Collections
 
 **Script:** `get-busiest-collections.js`
 
