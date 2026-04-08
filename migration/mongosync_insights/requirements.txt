@@ -25,7 +25,7 @@ six==1.16.0
 requests==2.32.3
 
 # TLS Certificate Bundle
-certifi
+certifi==2026.2.25
 
 # Progress Bars
 tqdm==4.66.3
