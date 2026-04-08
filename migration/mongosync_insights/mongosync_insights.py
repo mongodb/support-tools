@@ -334,9 +334,9 @@ def getLiveMonitoring():
     
     if not connection_string:
         logger.error("No connection string available for metrics refresh")
-        return {"error": "No connection string available. Please refresh the page and re-enter your credentials."}, 400
+        return jsonify({"error": "No connection string available. Please refresh the page and re-enter your credentials."}), 400
     
-    return gatherMetrics(connection_string)
+    return jsonify(gatherMetrics(connection_string))
 
 @app.route('/getPartitionsData', methods=['POST'])
 def getPartitionsData():
@@ -350,9 +350,9 @@ def getPartitionsData():
     
     if not connection_string:
         logger.error("No connection string available for partitions data refresh")
-        return {"error": "No connection string available. Please refresh the page and re-enter your credentials."}, 400
+        return jsonify({"error": "No connection string available. Please refresh the page and re-enter your credentials."}), 400
     
-    return gatherPartitionsMetrics(connection_string)
+    return jsonify(gatherPartitionsMetrics(connection_string))
 
 @app.route('/getEndpointData', methods=['POST'])
 def getEndpointData():
@@ -366,9 +366,9 @@ def getEndpointData():
     
     if not endpoint_url:
         logger.error("No progress endpoint URL available for endpoint data refresh")
-        return {"error": "No progress endpoint URL available. Please refresh the page and re-enter your credentials."}, 400
+        return jsonify({"error": "No progress endpoint URL available. Please refresh the page and re-enter your credentials."}), 400
     
-    return gatherEndpointMetrics(endpoint_url)
+    return jsonify(gatherEndpointMetrics(endpoint_url))
 
 @app.route('/Verifier', methods=['POST'])
 def Verifier():
@@ -449,11 +449,11 @@ def getVerifierData():
     
     if not connection_string:
         logger.error("No connection string available for verifier metrics refresh")
-        return {"error": "No connection string available. Please refresh the page and re-enter your credentials."}, 400
+        return jsonify({"error": "No connection string available. Please refresh the page and re-enter your credentials."}), 400
     
     db_name = session_data.get('verifier_db_name', 'migration_verification_metadata')
     
-    return gatherVerifierMetrics(connection_string, db_name)
+    return jsonify(gatherVerifierMetrics(connection_string, db_name))
 
 if __name__ == '__main__':
     # Log startup information

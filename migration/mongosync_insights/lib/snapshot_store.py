@@ -174,7 +174,7 @@ def list_snapshots() -> list[dict]:
             basename = os.path.basename(filepath)
             suffix = basename[len(_SNAPSHOT_PREFIX):-len('.meta.json')]
             _append_snapshot_row(results, seen_ids, mtime, data, suffix)
-        except (json.JSONDecodeError, OSError, KeyError) as e:
+        except (json.JSONDecodeError, OSError) as e:
             logger.warning(f"Skipping unreadable snapshot meta {filepath}: {e}")
             continue
 
@@ -191,7 +191,7 @@ def list_snapshots() -> list[dict]:
             with open(filepath, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             _append_snapshot_row(results, seen_ids, mtime, data, sid)
-        except (json.JSONDecodeError, OSError, KeyError) as e:
+        except (json.JSONDecodeError, OSError) as e:
             logger.warning(f"Skipping unreadable legacy snapshot {filepath}: {e}")
             continue
 

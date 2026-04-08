@@ -149,10 +149,10 @@ def gatherVerifierMetrics(connection_string, db_name="migration_verification_met
         logger.info(f"Connected to verifier database: {db_name}")
     except PyMongoError as e:
         logger.error(f"Failed to connect to verifier database: {e}")
-        return json.dumps({"error": str(e)})
+        return {"error": str(e)}
     except Exception as e:
         logger.error(f"Unexpected error connecting to verifier database: {e}")
-        return json.dumps({"error": f"Connection error: {str(e)}"})
+        return {"error": f"Connection error: {str(e)}"}
 
     try:
         # Get latest generations history (limited for performance)
@@ -643,13 +643,14 @@ def gatherVerifierMetrics(connection_string, db_name="migration_verification_met
         fig.update_xaxes(title_text="Tasks", row=ns_row, col=1, title_font=dict(size=11))
         fig.update_yaxes(tickfont=dict(size=11), row=ns_row, col=1)
 
-        return json.dumps(fig, cls=PlotlyJSONEncoder)
+        plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
+        return json.loads(plot_json)
     
     except Exception as e:
         logger.error(f"Error gathering verifier metrics: {e}")
         import traceback
         logger.error(traceback.format_exc())
-        return json.dumps({"error": f"Error gathering metrics: {str(e)}"})
+        return {"error": f"Error gathering metrics: {str(e)}"}
 
 
 def plotVerifierMetrics(db_name="migration_verification_metadata"):

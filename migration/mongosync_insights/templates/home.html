@@ -377,7 +377,7 @@ function loadPreviousAnalyses() {
 
                 var loadLink = document.createElement('a');
                 loadLink.className = 'prev-analysis-load';
-                loadLink.setAttribute('href', '/load_snapshot/' + s.snapshot_id);
+                loadLink.setAttribute('href', '/load_snapshot/' + encodeURIComponent(s.snapshot_id));
                 loadLink.textContent = 'Load';
 
                 var deleteButton = document.createElement('button');
@@ -407,7 +407,7 @@ function loadPreviousAnalyses() {
 
 function deleteSnapshot(id) {
     if (!confirm('Delete this saved analysis?')) return;
-    fetch('/delete_snapshot/' + id, {method: 'DELETE'})
+    fetch('/delete_snapshot/' + encodeURIComponent(id), {method: 'DELETE'})
         .then(function(r) { return r.json(); })
         .then(function() { loadPreviousAnalyses(); })
         .catch(function() { loadPreviousAnalyses(); });
@@ -477,7 +477,7 @@ function duplicateLoadPrevious() {
     document.getElementById('duplicateCheckOverlay').classList.remove('active');
     if (_dupState.matches.length > 0) {
         document.getElementById('uploadLoadingOverlay').classList.add('active');
-        window.location.href = '/load_snapshot/' + _dupState.matches[0].snapshot_id;
+        window.location.href = '/load_snapshot/' + encodeURIComponent(_dupState.matches[0].snapshot_id);
     }
 }
 
@@ -485,7 +485,7 @@ function duplicateReplace() {
     document.getElementById('duplicateCheckOverlay').classList.remove('active');
     document.getElementById('uploadLoadingOverlay').classList.add('active');
     var delPromises = _dupState.matches.map(function(s) {
-        return fetch('/delete_snapshot/' + s.snapshot_id, { method: 'DELETE' }).catch(function() {});
+        return fetch('/delete_snapshot/' + encodeURIComponent(s.snapshot_id), { method: 'DELETE' }).catch(function() {});
     });
     Promise.all(delPromises).then(function() {
         _dupState.form.submit();

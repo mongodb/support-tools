@@ -141,20 +141,6 @@
     {% if has_endpoint_url %}
     <div id="endpoint-tab" class="tab-content {% if not has_connection_string %}active{% endif %}">
         <div id="endpoint-warnings" class="endpoint-warnings"></div>
-        <details style="margin:12px 0;padding:10px 14px;background:#e8f4fd;border:1px solid #b8daff;border-radius:6px;font-size:0.88em;line-height:1.5;">
-            <summary style="cursor:pointer;font-weight:600;color:#004085;">About the Embedded Verifier</summary>
-            <div style="margin-top:8px;">
-                <p style="margin:0 0 8px;">
-                    The <a href="https://www.mongodb.com/docs/cluster-to-cluster-sync/current/reference/verification/embedded/" target="_blank">Embedded Verifier</a>
-                    is mongosync's built-in verification that confirms data was transferred correctly by hashing documents on both source and destination clusters.
-                </p>
-                <ul style="margin:0 0 6px;padding-left:20px;">
-                    <li><strong>Can Write: True</strong> — The definitive signal that the embedded verifier has passed and found no mismatches. Until verification completes, <em>Can Write</em> remains <em>False</em>.</li>
-                    <li><strong>Phase</strong> — Shown for source and destination independently. <em>stream hashing</em> = actively verifying documents; <em>idle</em> = not yet started or between operations.</li>
-                    <li><strong>Lag Time Seconds</strong> — How far behind the verifier is in checking documents. High values mean verification takes longer to complete after commit.</li>
-                </ul>
-            </div>
-        </details>
         <div class="plot-container">
             <div id="loading3">Loading endpoint data...</div>
             <div id="plot3" style="display:none;"></div>

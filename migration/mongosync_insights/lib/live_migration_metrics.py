@@ -5,6 +5,7 @@ from flask import render_template
 import json
 import logging
 import re
+import textwrap
 import requests
 from datetime import datetime, timezone
 from bson import Timestamp
@@ -344,9 +345,9 @@ def gatherMetrics(connection_string):
     # Update layout
     fig.update_layout(height=800, width=1550, autosize=True, title_text="Mongosync Status - Timezone info: UTC", showlegend=False, plot_bgcolor="white")
     
-    # Convert the figure to JSON
+    # Convert the figure to JSON-serializable dict (same shape as jsonify expects)
     plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
-    return plot_json
+    return json.loads(plot_json)
 
 
 def gatherPartitionsMetrics(connection_string):
@@ -522,7 +523,7 @@ def gatherPartitionsMetrics(connection_string):
     )
     
     plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
-    return plot_json
+    return json.loads(plot_json)
 
 
 def gatherEndpointMetrics(endpoint_url):
@@ -926,11 +927,10 @@ def gatherEndpointMetrics(endpoint_url):
     )
     
     plot_json = json.dumps(fig, cls=PlotlyJSONEncoder)
-    result = json.dumps({
+    return {
         "plot": json.loads(plot_json),
-        "warnings": warnings_list
-    })
-    return result
+        "warnings": warnings_list,
+    }
 
 
 def plotMetrics(has_connection_string=True, has_endpoint_url=False):
