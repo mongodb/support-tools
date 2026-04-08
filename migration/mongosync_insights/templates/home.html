@@ -344,25 +344,61 @@ function loadPreviousAnalyses() {
                 container.innerHTML = '<span class="prev-analyses-empty">No saved analyses</span>';
                 return;
             }
-            var html = '<ul class="prev-analyses-list">';
+
+            var list = document.createElement('ul');
+            list.className = 'prev-analyses-list';
+
             snapshots.forEach(function(s) {
                 var size = formatFileSize(s.source_size_bytes);
                 var date = formatDate(s.created_at);
                 var age = formatAge(s.age_hours);
                 var meta = [date, size, age].filter(Boolean).join(' \u00b7 ');
-                html += '<li class="prev-analysis-item">' +
-                    '<div class="prev-analysis-info">' +
-                        '<div class="prev-analysis-name" title="' + (s.source_filename || '') + '">' + (s.source_filename || 'Unknown') + '</div>' +
-                        '<div class="prev-analysis-meta">' + meta + '</div>' +
-                    '</div>' +
-                    '<div class="prev-analysis-actions">' +
-                        '<a class="prev-analysis-load" href="/load_snapshot/' + s.snapshot_id + '">Load</a>' +
-                        '<button class="prev-analysis-delete" title="Delete" onclick="deleteSnapshot(\'' + s.snapshot_id + '\')">\u2716</button>' +
-                    '</div>' +
-                '</li>';
+
+                var item = document.createElement('li');
+                item.className = 'prev-analysis-item';
+
+                var info = document.createElement('div');
+                info.className = 'prev-analysis-info';
+
+                var name = document.createElement('div');
+                name.className = 'prev-analysis-name';
+                name.title = s.source_filename || '';
+                name.textContent = s.source_filename || 'Unknown';
+
+                var metaDiv = document.createElement('div');
+                metaDiv.className = 'prev-analysis-meta';
+                metaDiv.textContent = meta;
+
+                info.appendChild(name);
+                info.appendChild(metaDiv);
+
+                var actions = document.createElement('div');
+                actions.className = 'prev-analysis-actions';
+
+                var loadLink = document.createElement('a');
+                loadLink.className = 'prev-analysis-load';
+                loadLink.setAttribute('href', '/load_snapshot/' + s.snapshot_id);
+                loadLink.textContent = 'Load';
+
+                var deleteButton = document.createElement('button');
+                deleteButton.className = 'prev-analysis-delete';
+                deleteButton.title = 'Delete';
+                deleteButton.type = 'button';
+                deleteButton.textContent = '\u2716';
+                deleteButton.addEventListener('click', function() {
+                    deleteSnapshot(s.snapshot_id);
+                });
+
+                actions.appendChild(loadLink);
+                actions.appendChild(deleteButton);
+
+                item.appendChild(info);
+                item.appendChild(actions);
+                list.appendChild(item);
             });
-            html += '</ul>';
-            container.innerHTML = html;
+
+            container.innerHTML = '';
+            container.appendChild(list);
         })
         .catch(function() {
             container.innerHTML = '<span class="prev-analyses-empty">Failed to load saved analyses</span>';
