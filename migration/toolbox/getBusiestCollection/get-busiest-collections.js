@@ -78,6 +78,8 @@ async function processFiles(filePaths) {
         if (!suppressConsole) {
           console.warn('\x1b[33m%s\x1b[0m', `Warning: Processing of "${filePath}" stopped after ${MAX_LINES_PER_FILE} lines for safety.`);
         }
+        rl.close();
+        fileStream.destroy();
         break;
       }
 
