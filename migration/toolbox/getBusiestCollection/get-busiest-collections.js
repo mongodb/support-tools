@@ -62,6 +62,13 @@ async function processFiles(filePaths) {
       crlfDelay: Infinity,
     });
 
+    fileStream.on('error', (err) => {
+      const message = `Error reading file "${filePath}": ${err.message}`;
+      if (!suppressConsole) {
+        console.error('\x1b[31m%s\x1b[0m', message);
+      }
+      rl.close();
+    });
     let lineCounter = 0; // Count lines processed per file
 
     // Read each line of the file
@@ -71,6 +78,8 @@ async function processFiles(filePaths) {
         if (!suppressConsole) {
           console.warn('\x1b[33m%s\x1b[0m', `Warning: Processing of "${filePath}" stopped after ${MAX_LINES_PER_FILE} lines for safety.`);
         }
+        rl.close();
+        fileStream.destroy();
         break;
       }
 
@@ -112,7 +121,15 @@ async function processFiles(filePaths) {
         }
       } catch (error) {
         if (!suppressConsole) {
-          console.error('Error processing line:', line);
+          const previewLength = 80;
+          const linePreview =
+            typeof line === 'string'
+              ? line.slice(0, previewLength) + (line.length > previewLength ? '...' : '')
+              : '';
+          console.error(
+            `Error processing line ${lineCounter} in file "${filePath}".` +
+              (linePreview ? ` Line preview: ${linePreview}` : '')
+          );
           console.error('Error details:', error.message);
         }
       }

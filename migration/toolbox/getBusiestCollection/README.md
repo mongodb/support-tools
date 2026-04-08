@@ -10,16 +10,20 @@ Gets the busiest collections in terms of writes (delete/insert/replace/update) a
 node get-busiest-collections.js </path/to/mongosynclog/files-or-directory> [--markdown] [--no-console]
 ```
 
+The script expects an existing file or directory path. It does not expand wildcard/glob patterns (such as `*.log`)
+itself, so any wildcards must be expanded by your shell before invoking the script (for example, by relying on
+unquoted shell globs). On platforms or shells where patterns are not expanded automatically, pass explicit paths.
+
 ### Example Output
 
 ```
-Namespace                        |   Total Write Ops |     delete |     insert |     update
--------------------------------- | ----------------- | ---------- | ---------- | ----------
-db0.test2                        |            29,847 |      5,503 |      9,419 |     14,925
-db0.test5                        |             7,289 |      2,456 |      2,438 |      2,395
-db0.test1                        |             7,253 |      2,476 |      2,450 |      2,327
-db0.test4                        |             7,176 |      2,414 |      2,386 |      2,376
-db0.test3                        |             7,076 |      2,352 |      2,360 |      2,364
+Namespace                        |   Total Write Ops |     delete |     insert |    replace |     update
+-------------------------------- | ----------------- | ---------- | ---------- | ---------- | ----------
+db0.test2                        |            29,847 |      5,503 |      9,419 |      1,234 |     13,691
+db0.test5                        |             7,289 |      2,456 |      2,438 |        150 |      2,245
+db0.test1                        |             7,253 |      2,476 |      2,450 |        100 |      2,227
+db0.test4                        |             7,176 |      2,414 |      2,386 |        120 |      2,256
+db0.test3                        |             7,076 |      2,352 |      2,360 |        130 |      2,234
 ...
 ...
 
