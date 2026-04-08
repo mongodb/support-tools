@@ -10,6 +10,9 @@ Gets the busiest collections in terms of writes (delete/insert/replace/update) a
 node get-busiest-collections.js </path/to/mongosynclog/files-or-directory> [--markdown] [--no-console]
 ```
 
+The script expects an existing file or directory path. It does not expand wildcard/glob patterns (such as `*.log`)
+itself, so any wildcards must be expanded by your shell before invoking the script (for example, by relying on
+unquoted shell globs). On platforms or shells where patterns are not expanded automatically, pass explicit paths.
 ### Example Output
 
 ```
