@@ -255,12 +255,23 @@ async function fetchEndpointData() {
 
         const warningsDiv = document.getElementById("endpoint-warnings");
         if (warnings.length > 0) {
-            warningsDiv.innerHTML = "<strong>Warning:</strong><ul>" +
-                warnings.map(w => "<li>" + w + "</li>").join("") + "</ul>";
+            warningsDiv.replaceChildren();
+
+            const warningLabel = document.createElement("strong");
+            warningLabel.textContent = "Warning:";
+            warningsDiv.appendChild(warningLabel);
+
+            const warningsList = document.createElement("ul");
+            warnings.forEach(w => {
+                const warningItem = document.createElement("li");
+                warningItem.textContent = w;
+                warningsList.appendChild(warningItem);
+            });
+            warningsDiv.appendChild(warningsList);
             warningsDiv.style.display = "block";
         } else {
             warningsDiv.style.display = "none";
-            warningsDiv.innerHTML = "";
+            warningsDiv.replaceChildren();
         }
 
         document.getElementById("loading3").style.display = "none";
