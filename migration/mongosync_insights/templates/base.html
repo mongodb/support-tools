@@ -1,42 +1,573 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light" data-scheme="green">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Mongosync Insights{% endblock %}</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    {% include '_theme_vars.html' %}
     <style>
+        /* Page layout */
+        * { box-sizing: border-box; }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: var(--mi-font-ui);
             margin: 0;
             padding: 0;
-            background-color: #f4f4f9;
-            color: #333;
+            background-color: var(--mi-dashboard-bg);
+            color: var(--mi-text-primary);
+            display: grid;
+            grid-template-columns: 60px 1fr;
+            grid-template-rows: auto 1fr auto;
+            min-height: 100vh;
         }
 
         header {
-            background-color: #00684A;
-            color: #fff;
+            grid-column: 2;
+            background-color: var(--mi-sidebar-bg);
+            color: var(--mongodb-white);
             padding: 10px 20px;
             text-align: center;
         }
 
         main {
+            grid-column: 2;
             padding: 20px;
+            background-color: var(--mi-dashboard-bg);
         }
 
         footer {
+            grid-column: 2;
             text-align: center;
             padding: 10px;
             margin-top: 20px;
-            background-color: #00684A;
+            background-color: var(--mi-sidebar-bg);
+            color: var(--mongodb-white);
+        }
+
+        footer a { color: var(--mongodb-green-light2); }
+
+        /* Left sidebar */
+        .sidebar {
+            grid-column: 1;
+            grid-row: 1 / -1;
+            background-color: var(--mi-sidebar-bg);
+            padding: 12px 7px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            overflow: hidden;
+            z-index: 100;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .sidebar-btn {
+            width: 44px;
+            height: 44px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: var(--mi-radius-sm);
+            background-color: var(--mi-sidebar-btn-bg);
+            color: var(--mongodb-white);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 180ms ease-in-out;
+            position: relative;
+            padding: 0;
+        }
+
+        .sidebar-btn:hover {
+            background-color: var(--mi-sidebar-btn-hover);
+            transform: translateY(-1px);
+        }
+
+        .sidebar-btn:active {
+            background-color: var(--mi-sidebar-btn-active);
+            transform: translateY(0);
+        }
+
+        .sidebar-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--mongodb-white), 0 0 0 4px var(--mi-focus-ring);
+        }
+
+        .sidebar-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .sidebar-btn .tooltip {
+            position: absolute;
+            left: 55px;
+            background: var(--mi-dialog-bg);
+            color: var(--mi-text-primary);
+            border: 1px solid var(--mi-frame-border);
+            box-shadow: var(--mi-shadow-sm);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 1000;
+        }
+
+        .sidebar-btn:hover .tooltip {
+            opacity: 1;
+        }
+
+        .sidebar-divider {
+            width: 80%;
+            height: 1px;
+            background-color: rgba(255, 255, 255, 0.24);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .version-badge {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.5px;
+        }
+
+        /* Overlay shared styles */
+        .mi-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9000;
+        }
+        .mi-overlay.active { display: flex; }
+
+        /* Settings dialog */
+        .settings-dialog {
+            background: var(--mi-dialog-bg);
+            border: 1px solid var(--mi-frame-border);
+            border-radius: var(--mi-radius-md);
+            box-shadow: var(--mi-shadow-md);
+            width: 420px;
+            max-width: 90vw;
+            overflow: hidden;
+        }
+
+        .settings-dialog-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--mi-frame-border);
+        }
+
+        .settings-dialog-header h2 {
+            margin: 0;
+            font-size: 16px;
+            color: var(--mi-text-primary);
+        }
+
+        .settings-close-btn {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: var(--mi-text-secondary);
+            line-height: 1;
+            padding: 0 4px;
+        }
+        .settings-close-btn:hover { color: var(--mi-text-primary); }
+
+        .settings-body {
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .settings-row label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--mi-text-primary);
+            white-space: nowrap;
+        }
+
+        .settings-row select,
+        .settings-row input[type="number"] {
+            padding: 6px 10px;
+            border: 1px solid var(--mi-frame-border);
+            border-radius: 6px;
+            font-size: 13px;
+            background: var(--mi-surface-muted);
+            color: var(--mi-text-primary);
+            min-width: 160px;
+        }
+
+        .settings-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 18px;
+            border-top: 1px solid var(--mi-frame-border);
+        }
+
+        .settings-actions button {
+            padding: 7px 18px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--mi-frame-border);
+            transition: all 150ms;
+        }
+
+        .btn-cancel {
+            background: var(--mi-surface-muted);
+            color: var(--mi-text-primary);
+        }
+        .btn-cancel:hover { background: var(--mi-frame-header-bg); }
+
+        .btn-apply {
+            background: var(--mi-sidebar-bg);
+            color: var(--mongodb-white);
+            border-color: var(--mi-sidebar-bg);
+        }
+        .btn-apply:hover { opacity: 0.9; }
+
+        /* Confirm dialog (logout) */
+        .confirm-dialog {
+            background: var(--mi-dialog-bg);
+            border: 1px solid var(--mi-frame-border);
+            border-radius: var(--mi-radius-md);
+            box-shadow: var(--mi-shadow-md);
+            width: 360px;
+            max-width: 90vw;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .confirm-dialog h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: var(--mi-text-primary);
+        }
+
+        .confirm-dialog p {
+            margin: 0 0 20px 0;
+            font-size: 13px;
+            color: var(--mi-text-secondary);
+        }
+
+        .confirm-dialog-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .dup-check-dialog { width: 420px; }
+        .dup-check-dialog p { text-align: left; line-height: 1.5; }
+        .dup-replace-btn { border-color: #c44; color: #c44; }
+        .dup-replace-btn:hover { background: #c44; color: #fff; }
+
+        /* Credits overlay */
+        .credits-panel {
+            background: var(--mi-dialog-bg);
+            border: 1px solid var(--mi-frame-border);
+            border-radius: var(--mi-radius-md);
+            box-shadow: var(--mi-shadow-md);
+            width: 360px;
+            max-width: 90vw;
+            overflow: hidden;
+        }
+
+        .credits-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--mi-frame-border);
+        }
+
+        .credits-panel-header span {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--mi-text-primary);
+        }
+
+        .credits-panel-close {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: var(--mi-text-secondary);
+            line-height: 1;
+            padding: 0 4px;
+        }
+        .credits-panel-close:hover { color: var(--mi-text-primary); }
+
+        .credits-panel-body {
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .credits-panel-line {
+            font-size: 13px;
+            color: var(--mi-text-secondary);
+        }
+
+        .credits-panel-meta {
+            font-size: 11px;
+            color: var(--mi-text-secondary);
+            opacity: 0.8;
+        }
+
+        .credits-panel-team {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--mi-text-primary);
+            margin-bottom: 6px;
+        }
+
+        /* Upload dialog */
+        .upload-dialog {
+            background: var(--mi-dialog-bg);
+            border: 1px solid var(--mi-frame-border);
+            border-radius: var(--mi-radius-md);
+            box-shadow: var(--mi-shadow-md);
+            width: 400px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .upload-dialog-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--mi-frame-border);
+        }
+        .upload-dialog-header h2 {
+            margin: 0;
+            font-size: 16px;
+            color: var(--mi-text-primary);
+        }
+        .upload-dialog-body {
+            padding: 14px 18px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .upload-dialog-section-title {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: var(--mi-text-secondary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .upload-dialog-list {
+            min-height: 32px;
+        }
+        .upload-dialog-empty {
+            font-size: 0.85em;
+            color: var(--mi-text-secondary);
+            font-style: italic;
+        }
+        .upload-dialog-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--mi-frame-border);
+        }
+        .upload-dialog-item:last-child { border-bottom: none; }
+        .upload-dialog-item-info {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .upload-dialog-item-name {
+            font-size: 0.88em;
+            font-weight: 600;
+            color: var(--mi-text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .upload-dialog-item-meta {
+            font-size: 0.78em;
+            color: var(--mi-text-secondary);
+            margin-top: 2px;
+        }
+        .upload-dialog-item-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+        .upload-dialog-load-btn {
+            font-size: 0.8em;
+            padding: 3px 10px;
+            border: 1px solid var(--mi-accent);
+            border-radius: 4px;
+            background: var(--mi-accent);
             color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .upload-dialog-load-btn:hover { opacity: 0.85; }
+        .upload-dialog-del-btn {
+            font-size: 0.85em;
+            padding: 2px 6px;
+            border: none;
+            background: transparent;
+            color: #c44;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .upload-dialog-del-btn:hover { background: rgba(204,68,68,0.1); color: #a00; }
+        .upload-dialog-divider {
+            border: none;
+            border-top: 1px solid var(--mi-frame-border);
+            margin: 14px 0;
+        }
+        .upload-dialog-new-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            font-size: 0.9em;
+            font-weight: 600;
+            border: 1px solid var(--mi-accent);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--mi-accent);
+            cursor: pointer;
+            text-align: center;
+        }
+        .upload-dialog-new-btn:hover {
+            background: var(--mi-accent);
+            color: #fff;
+        }
+
+        /* Upload loading overlay */
+        .upload-loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        .upload-loading-overlay.active { display: flex; }
+
+        .upload-loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.25);
+            border-top: 4px solid var(--mongodb-green-base, #00ED64);
+            border-radius: 50%;
+            animation: mi-spin 0.9s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes mi-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .upload-loading-overlay h3 {
+            margin: 0 0 6px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #FFFFFF;
+        }
+
+        .upload-loading-overlay p {
+            margin: 0;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { grid-template-columns: 50px 1fr; }
+            .sidebar-btn { width: 36px; height: 36px; }
+            .sidebar-btn svg { width: 20px; height: 20px; }
+            .sidebar-btn .tooltip { display: none; }
         }
 
         {% block styles %}{% endblock %}
     </style>
 </head>
 <body>
+    <!-- Left sidebar -->
+    <nav class="sidebar">
+        <button class="sidebar-btn" id="uploadBtn" onclick="openUploadDialog()" title="Upload Log File">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            <span class="tooltip">Upload Log File</span>
+        </button>
+
+        <div class="sidebar-divider"></div>
+
+        <button class="sidebar-btn" id="settingsBtn" onclick="openSettingsDialog()" title="Settings">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span class="tooltip">Settings</span>
+        </button>
+
+        <button class="sidebar-btn" id="logoutBtn" onclick="confirmLogout()" title="Logout">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+            <span class="tooltip">Logout</span>
+        </button>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-footer">
+            <button class="sidebar-btn" id="creditsInfoBtn" onclick="openCreditsOverlay()" title="Developer Credits">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="tooltip">Developer Credits</span>
+            </button>
+        </div>
+        <span class="version-badge">v{{ app_version }}</span>
+    </nav>
+
+    <!-- Hidden upload form -->
+    <form id="sidebarUploadForm" method="post" action="/uploadLogs" enctype="multipart/form-data" style="display:none">
+        <input type="file" id="sidebarFileInput" name="file" accept=".log,.json,.out,.gz,.zip,.bz2,.tar.gz,.tgz,.tar.bz2">
+    </form>
+
     <header>
         <h1>{% block header_title %}Mongosync Insights{% endblock %}</h1>
     </header>
@@ -48,6 +579,177 @@
     <footer>
         {% block footer %}{% endblock %}
     </footer>
+
+    <!-- Settings dialog -->
+    <div id="settingsOverlay" class="mi-overlay" onclick="if(event.target===this)closeSettingsDialog()">
+        <div class="settings-dialog">
+            <div class="settings-dialog-header">
+                <h2>Mongosync Insights Settings</h2>
+                <button class="settings-close-btn" onclick="closeSettingsDialog()" title="Close">&times;</button>
+            </div>
+            <div class="settings-body">
+                <div class="settings-row">
+                    <label for="settingsRefresh">Refresh (sec):</label>
+                    <input type="number" id="settingsRefresh" min="1" max="60" value="10">
+                </div>
+                <div class="settings-row">
+                    <label for="settingsTheme">Theme:</label>
+                    <select id="settingsTheme">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="system">System (follow OS)</option>
+                    </select>
+                </div>
+                <div class="settings-row">
+                    <label for="settingsScheme">Color scheme:</label>
+                    <select id="settingsScheme">
+                        <option value="green">MongoDB Green</option>
+                        <option value="blue">Blue</option>
+                        <option value="slate">Slate</option>
+                        <option value="ocean">Ocean</option>
+                    </select>
+                </div>
+            </div>
+            <div class="settings-actions">
+                <button class="btn-cancel" onclick="closeSettingsDialog()">Cancel</button>
+                <button class="btn-apply" onclick="applySettings()">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout confirmation dialog -->
+    <div id="logoutOverlay" class="mi-overlay" onclick="if(event.target===this)closeLogoutDialog()">
+        <div class="confirm-dialog">
+            <h3>Logout</h3>
+            <p>Are you sure you want to logout? Your session will be cleared.</p>
+            <div class="confirm-dialog-actions">
+                <button class="btn-cancel" onclick="closeLogoutDialog()">Cancel</button>
+                <button class="btn-apply" onclick="doLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credits overlay -->
+    <div id="creditsOverlay" class="mi-overlay" onclick="if(event.target===this)closeCreditsOverlay()">
+        <div class="credits-panel">
+            <div class="credits-panel-header">
+                <span>Developer Credits</span>
+                <button class="credits-panel-close" onclick="closeCreditsOverlay()" title="Close">&times;</button>
+            </div>
+            <div class="credits-panel-body">
+                {% if developer_credits %}
+                <span class="credits-panel-line credits-panel-meta">{{ developer_credits.get('copyright', '') }} {{ developer_credits.get('year', '') }}</span>
+                <span class="credits-panel-line credits-panel-team">{{ developer_credits.get('team_name', '') }}</span>
+                {% for c in developer_credits.get('contributors', []) %}
+                <span class="credits-panel-line">{{ c.get('name', '') }}{% if c.get('role') %} &mdash; {{ c.get('role') }}{% endif %}</span>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload dialog overlay -->
+    <div id="uploadDialogOverlay" class="mi-overlay" onclick="if(event.target===this)closeUploadDialog()">
+        <div class="upload-dialog">
+            <div class="upload-dialog-header">
+                <h2>Upload Log File</h2>
+                <button class="settings-close-btn" onclick="closeUploadDialog()" title="Close">&times;</button>
+            </div>
+            <div class="upload-dialog-body">
+                <div class="upload-dialog-section-title">Saved Analyses</div>
+                <div id="uploadDialogSnapshots" class="upload-dialog-list">
+                    <span class="upload-dialog-empty">Loading...</span>
+                </div>
+                <hr class="upload-dialog-divider">
+                <button class="upload-dialog-new-btn" onclick="triggerNewUpload()">Upload New File</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duplicate check dialog -->
+    <div id="duplicateCheckOverlay" class="mi-overlay" onclick="if(event.target===this)duplicateCancel()">
+        <div class="confirm-dialog dup-check-dialog">
+            <h3>Previous Analysis Found</h3>
+            <p id="duplicateCheckMsg"></p>
+            <div class="confirm-dialog-actions">
+                <button class="btn-apply" onclick="duplicateLoadPrevious()">Load Previous</button>
+                <button class="btn-cancel dup-replace-btn" onclick="duplicateReplace()">Replace</button>
+                <button class="btn-cancel" onclick="duplicateCancel()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload loading overlay -->
+    <div id="uploadLoadingOverlay" class="upload-loading-overlay">
+        <div class="upload-loading-spinner"></div>
+        <h3>Processing Files...</h3>
+        <p>Parsing and analyzing data.</p>
+    </div>
+
+    <script src="/static/js/mi-snapshots.js"></script>
+    <script>
+    /* Settings dialog */
+    function openSettingsDialog() {
+        var refresh = sessionStorage.getItem('mi_refresh_time') || '10';
+        var theme = sessionStorage.getItem('mi_theme') || 'light';
+        var scheme = sessionStorage.getItem('mi_color_scheme') || 'green';
+        document.getElementById('settingsRefresh').value = refresh;
+        document.getElementById('settingsTheme').value = theme;
+        document.getElementById('settingsScheme').value = scheme;
+        document.getElementById('settingsOverlay').classList.add('active');
+    }
+
+    function closeSettingsDialog() {
+        document.getElementById('settingsOverlay').classList.remove('active');
+    }
+
+    function applySettings() {
+        var refresh = document.getElementById('settingsRefresh').value;
+        var theme = document.getElementById('settingsTheme').value;
+        var scheme = document.getElementById('settingsScheme').value;
+        sessionStorage.setItem('mi_refresh_time', refresh);
+        sessionStorage.setItem('mi_theme', theme);
+        sessionStorage.setItem('mi_color_scheme', scheme);
+        applyAppearance(theme, scheme);
+        closeSettingsDialog();
+        window.dispatchEvent(new CustomEvent('mi-refresh-changed', { detail: { refreshSec: parseInt(refresh, 10) } }));
+    }
+
+    /* Live-apply theme/scheme as user changes selects */
+    document.getElementById('settingsTheme').addEventListener('change', function() {
+        var scheme = document.getElementById('settingsScheme').value || 'green';
+        applyAppearance(this.value, scheme);
+    });
+    document.getElementById('settingsScheme').addEventListener('change', function() {
+        var theme = document.getElementById('settingsTheme').value || 'light';
+        applyAppearance(theme, this.value);
+    });
+
+    /* Logout */
+    function confirmLogout() {
+        document.getElementById('logoutOverlay').classList.add('active');
+    }
+
+    function closeLogoutDialog() {
+        document.getElementById('logoutOverlay').classList.remove('active');
+    }
+
+    function doLogout() {
+        fetch('/logout', { method: 'POST', credentials: 'same-origin' })
+            .then(function() { window.location.href = '/'; })
+            .catch(function() { window.location.href = '/'; });
+    }
+
+    /* Credits */
+    function openCreditsOverlay() {
+        document.getElementById('creditsOverlay').classList.add('active');
+    }
+
+    function closeCreditsOverlay() {
+        document.getElementById('creditsOverlay').classList.remove('active');
+    }
+
+    </script>
 
     {% block scripts %}{% endblock %}
 </body>

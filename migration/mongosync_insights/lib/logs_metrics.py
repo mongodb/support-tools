@@ -4,6 +4,8 @@ from plotly.subplots import make_subplots
 from tqdm import tqdm
 from flask import request, render_template
 import json
+import uuid as uuid_mod
+from collections import deque
 from datetime import datetime, timezone
 from dateutil import parser
 import re
@@ -11,10 +13,17 @@ import logging
 import os
 import mimetypes
 from werkzeug.utils import secure_filename
-from mongosync_plot_utils import format_byte_size, convert_bytes
-from app_config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES, load_error_patterns, classify_file_type
-from file_decompressor import decompress_file_classified, is_compressed_mime_type
-from mongosync_plot_prometheus_metrics import MetricsCollector, create_metrics_plots
+from .utils import format_byte_size, convert_bytes
+from .app_config import (
+    MAX_FILE_SIZE, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES,
+    load_error_patterns, classify_file_type,
+    LOG_VIEWER_MAX_LINES, LOG_STORE_DIR,
+)
+from .file_decompressor import decompress_file_classified, is_compressed_mime_type
+from .otel_metrics import MetricsCollector, create_metrics_plots
+from .log_store import LogStore
+from .log_store_registry import log_store_registry
+from .snapshot_store import save_snapshot
 
 
 def detect_mime_type(file_sample: bytes, filename: str) -> str:
@@ -22,7 +31,6 @@ def detect_mime_type(file_sample: bytes, filename: str) -> str:
     Detect MIME type using magic bytes and file extension.
     Pure-Python replacement for python-magic — no system libmagic needed.
     """
-    # Check magic bytes from the file header
     if file_sample[:2] == b'\x1f\x8b':
         return 'application/gzip'
     if file_sample[:4] == b'PK\x03\x04':
@@ -32,18 +40,15 @@ def detect_mime_type(file_sample: bytes, filename: str) -> str:
     if len(file_sample) >= 262 and file_sample[257:262] == b'ustar':
         return 'application/x-tar'
 
-    # Fall back to extension-based detection
     mime_type, _ = mimetypes.guess_type(filename)
     if mime_type:
         return mime_type
 
-    # If content looks like text, report it as text/plain
     try:
         file_sample.decode('utf-8')
         return 'text/plain'
     except UnicodeDecodeError:
         return 'application/octet-stream'
-
 
 def upload_file():
     # Use the centralized logging configuration
@@ -112,7 +117,7 @@ def upload_file():
         
         logger.info(f"File validation passed: {filename} ({file_size} bytes, {file_ext}, MIME: {file_mime_type})")
         # Optimized single-pass log parsing with streaming approach
-        logging.info("Starting optimized log parsing - single pass through file")
+        logger.info("Starting optimized log parsing - single pass through file")
         
         # Pre-compile all regex patterns once
         patterns = {
@@ -160,9 +165,17 @@ def upload_file():
         partition_multi_created = []
         partition_sampling_info = []
         partition_persisted_after_sampling = []
+        verifier_dst_lag_items = []
+        verifier_src_lag_items = []
         
         # Initialize metrics collector for prometheus metrics
         metrics_collector = MetricsCollector()
+        
+        # Initialize log viewer: tail buffer + SQLite store for full-text search
+        raw_log_tail = deque(maxlen=LOG_VIEWER_MAX_LINES)
+        store_id = str(uuid_mod.uuid4())
+        db_path = os.path.join(LOG_STORE_DIR, f'mi_logstore_{store_id}.db')
+        log_store = LogStore(db_path)
         
         # Single pass through the file with streaming
         line_count = 0
@@ -182,6 +195,8 @@ def upload_file():
         else:
             # For non-compressed files, classify by filename
             file_type = classify_file_type(filename)
+            if file_type is None:
+                file_type = 'logs'
             logger.info(f"Non-compressed file classified as: {file_type}")
             file_iterator = file
             use_classified = False
@@ -223,6 +238,10 @@ def upload_file():
                 # Parse JSON only once per line (for logs)
                 json_obj = json.loads(line)
                 message = json_obj.get('message', '')
+                
+                # Collect for log viewer: tail buffer + SQLite store
+                raw_log_tail.append(line)
+                log_store.insert_line(line, parsed=json_obj)
                 
                 # Apply all filters to the same parsed object
                 if patterns['replication_progress'].search(message):
@@ -282,6 +301,12 @@ def upload_file():
                 if patterns['partition_persisted_after_sampling'].search(message):
                     partition_persisted_after_sampling.append(json_obj)
                 
+                if json_obj.get('verifierDstLagTimeSeconds') is not None and 'time' in json_obj:
+                    verifier_dst_lag_items.append(json_obj)
+                
+                if json_obj.get('verifierSrcLagTimeSeconds') is not None and 'time' in json_obj:
+                    verifier_src_lag_items.append(json_obj)
+                
                 # Check for common error patterns
                 for ep in error_patterns:
                     if ep['pattern'].search(message):
@@ -297,24 +322,46 @@ def upload_file():
             except json.JSONDecodeError as e:
                 invalid_json_count += 1
                 if invalid_json_count <= 5:  # Log first 5 errors to avoid spam
-                    logging.warning(f"Invalid JSON on line {line_count}: {e}")
+                    logger.warning(f"Invalid JSON on line {line_count}: {e}")
                 # Only treat as fatal error if this is the first error AND we haven't processed any valid lines
                 if invalid_json_count == 1 and logs_line_count == 0 and metrics_line_count == 0:
-                    logging.error(f"File appears to contain invalid JSON. First error on line {line_count}: {e}")
+                    logger.error(f"File appears to contain invalid JSON. First error on line {line_count}: {e}")
                     return render_template('error.html',
                                          error_title="Invalid File Format",
                                          error_message=f"The uploaded file does not contain valid JSON format. Error on line {line_count}: {str(e)}. Please ensure you're uploading a valid mongosync log file in NDJSON format.")
         
-        logging.info(f"Processed {line_count} total lines ({logs_line_count} logs, {metrics_line_count} metrics), found {invalid_json_count} invalid JSON lines")
-        logging.info(f"Found: {len(data)} replication progress, {len(version_info_list)} version info, "
+        # Finalize log store: flush remaining buffered rows and build FTS index
+        log_store.flush()
+        if log_store.total_documents > 0:
+            log_store.build_fts_index()
+            log_store_registry.register(store_id, db_path)
+            logger.info(f"Log store ready: {log_store.total_documents} documents, store_id={store_id[:8]}...")
+        else:
+            log_store.delete()
+            store_id = ''
+        
+        logger.info(f"Processed {line_count} total lines ({logs_line_count} logs, {metrics_line_count} metrics), found {invalid_json_count} invalid JSON lines")
+        logger.info(f"Found: {len(data)} replication progress, {len(version_info_list)} version info, "
                     f"{len(mongosync_ops_stats)} operation stats, {len(mongosync_sent_response)} sent responses, "
                     f"{len(phase_transitions_json)} phase transitions, {len(mongosync_opts_list)} options, "
                     f"{len(mongosync_hiddenflags)} hidden flags, {len(mongosync_crud_rate)} CRUD rate entries, "
                     f"{len(mongosync_partition_progress)} partition progress entries, "
                     f"{len(natural_order_collections)} natural order collections, "
                     f"{len(matched_errors)} common errors")
-        logging.info(f"Metrics collector: {metrics_collector.metrics_count} metric points from {metrics_collector.line_count} lines")  
+        logger.info(f"Metrics collector: {metrics_collector.metrics_count} metric points from {metrics_collector.line_count} lines")  
         
+        has_any_log_data = (len(data) > 0 or len(version_info_list) > 0 or len(mongosync_ops_stats) > 0 or
+                            len(mongosync_sent_response) > 0 or len(phase_transitions_json) > 0 or
+                            len(mongosync_partition_progress) > 0 or len(mongosync_crud_rate) > 0)
+        has_any_metrics_data = metrics_collector.metrics_count > 0
+        if not has_any_log_data and not has_any_metrics_data:
+            logger.warning(f"No recognizable mongosync data found in {filename} ({line_count} lines processed)")
+            return render_template('error.html',
+                                 error_title="No Mongosync Data Found",
+                                 error_message=f"The file '{filename}' was processed ({line_count:,} lines) but no recognizable "
+                                               f"mongosync log entries or metrics were found. Please ensure you are uploading a "
+                                               f"valid mongosync log file (NDJSON format with standard mongosync log messages).")
+
         # Sort log data by timestamp to ensure correct chronological plot ordering
         # (archives may contain rotated log files in non-chronological order)
         data.sort(key=lambda x: x.get('time', ''))
@@ -322,6 +369,8 @@ def upload_file():
         mongosync_crud_rate.sort(key=lambda x: x.get('time', ''))
         mongosync_partition_progress.sort(key=lambda x: x.get('time', ''))
         mongosync_sent_response.sort(key=lambda x: x.get('time', ''))
+        verifier_dst_lag_items.sort(key=lambda x: x.get('time', ''))
+        verifier_src_lag_items.sort(key=lambda x: x.get('time', ''))
 
         # Aggregate partition initialization data per collection
         partition_init_data = []
@@ -408,7 +457,7 @@ def upload_file():
                     'init_ended': ended[:26] if ended else '',
                     'duration_sec': duration_sec,
                 })
-            logging.info(f"Aggregated partition init data for {len(partition_init_data)} collections")
+            logger.info(f"Aggregated partition init data for {len(partition_init_data)} collections")
 
         # Build partition init progress time series (in-progress and completed per collection over time)
         partition_init_progress_times = []
@@ -442,11 +491,9 @@ def upload_file():
                     partition_init_progress_times.append(ts)
                     partition_init_progress_in_progress.append(in_prog)
                     partition_init_progress_completed.append(done)
-                logging.info(f"Built partition init progress time series with {len(init_events)} events")
+                logger.info(f"Built partition init progress time series with {len(init_events)} events")
 
-        # The 'body' field is also a JSON string, so parse that as well
-        #mongosync_sent_response_body = json.loads(mongosync_sent_response.get('body'))
-        mongosync_sent_response_body = None 
+        mongosync_sent_response_body = None
         for response in mongosync_sent_response:
             try:  
                 parsed_body = json.loads(response['body'])
@@ -455,7 +502,7 @@ def upload_file():
                     mongosync_sent_response_body = parsed_body  
             except (json.JSONDecodeError, TypeError):  
                 mongosync_sent_response_body = None  # If parse fails, use None 
-                logging.warning(f"No message 'sent response' found in the logs") 
+                logger.warning(f"No message 'sent response' found in the logs") 
 
         # Create a string with all the version information
         if version_info_list and isinstance(version_info_list[0], dict):  
@@ -465,17 +512,17 @@ def upload_file():
             version_text = f"MongoSync Version: {version}, OS: {os_name}, Arch: {arch}"   
         else:  
             version_text = f"MongoSync Version is not available"  
-            logging.error(version_text)  
+            logger.error(version_text)  
             
 
-        logging.info(f"Extracting data")
+        logger.info(f"Extracting data")
 
         # Log if options data is empty
         if not mongosync_hiddenflags:
-            logging.info("mongosync_hiddenflags is empty")
+            logger.info("mongosync_hiddenflags is empty")
         
         if not mongosync_opts_list:
-            logging.info("mongosync_opts_list is empty")
+            logger.info("mongosync_opts_list is empty")
 
         #Getting the Timezone
         try:  
@@ -607,6 +654,12 @@ def upload_file():
                 eventRatePerSecond.append(float(rate))
                 eventRatePerSecond_times.append(datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f"))
 
+        dst_lag_times = [datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f") for item in verifier_dst_lag_items if 'time' in item]
+        verifierDstLagTimeSeconds = [item['verifierDstLagTimeSeconds'] for item in verifier_dst_lag_items if 'verifierDstLagTimeSeconds' in item]
+
+        src_lag_times = [datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f") for item in verifier_src_lag_items if 'time' in item]
+        verifierSrcLagTimeSeconds = [item['verifierSrcLagTimeSeconds'] for item in verifier_src_lag_items if 'verifierSrcLagTimeSeconds' in item]
+
         # Calculate global date range from all time sources for X-axis synchronization
         all_times = []
         if times:
@@ -619,6 +672,10 @@ def upload_file():
             all_times.extend(estimatedCopiedBytes_times)
         if index_built_times:
             all_times.extend(index_built_times)
+        if dst_lag_times:
+            all_times.extend(dst_lag_times)
+        if src_lag_times:
+            all_times.extend(src_lag_times)
         
         if all_times:
             global_min_date = min(all_times)
@@ -642,11 +699,11 @@ def upload_file():
                     # Try get Phase Transitions from the sent response body if it is Live Migrate
                     phase_transitions = mongosync_sent_response_body['progress']['atlasLiveMigrateMetrics']['PhaseTransitions']  
                 except KeyError as e:  
-                    logging.error(f"Key not found: {e}")  
+                    logger.error(f"Key not found: {e}")  
                     phase_transitions = []
 
             else:
-                logging.warning(f"Key 'progress' not found in mongosync_sent_response_body")
+                logger.warning(f"Key 'progress' not found in mongosync_sent_response_body")
 
         # If phase_transitions is not empty, plot the phase transitions as it is Live Migrate
         if phase_transitions:
@@ -677,48 +734,49 @@ def upload_file():
         estimated_copied_bytes = convert_bytes(estimated_copied_bytes, estimated_total_bytes_unit)
         estimatedCopiedBytes_converted = [convert_bytes(b, estimated_total_bytes_unit) for b in estimatedCopiedBytes_series]
 
-        logging.info(f"Plotting")
+        logger.info(f"Plotting")
 
         # Create a subplot for the scatter plots (tables are now in a separate tab)
-        fig = make_subplots(rows=12, cols=2, subplot_titles=("Mongosync Phases", "Mongosync Phases Table",
+        fig = make_subplots(rows=13, cols=2, subplot_titles=("Mongosync Phases", "Mongosync Phases Table",
+                                                            "Lag Time (seconds)", "Estimated Source Oplog Time Remaining (minutes)",
+                                                            "Ping Latency (ms)", "Average Source CRUD Event Rate (Events/sec)",
                                                             "Partition Init Progress", "Partition Init Summary",
                                                             "Data Copied (" + estimated_total_bytes_unit + ")", "Estimated Total and Copied " + estimated_total_bytes_unit,
                                                             "Partitions Copied", "Total and Copied Partitions",
-                                                            "Lag Time (seconds)", "Estimated Source Oplog Time Remaining (minutes)",
-                                                            "Change Events Applied", "Events Rate per Second",
-                                                            "Index Built", "Total and Index Built",
-                                                            "Ping Latency (ms)", "Average Source CRUD Event Rate (Events/sec)",
                                                             "Collection Copy - Avg and Max Read time (ms)", "Collection Copy Source Reads",
                                                             "Collection Copy - Avg and Max Write time (ms)", "Collection Copy Destination Writes",
+                                                            "Change Events Applied", "Events Rate per Second",
                                                             "CEA Source - Avg and Max Read time (ms)", "CEA Source Reads",
-                                                            "CEA Destination - Avg and Max Write time (ms)", "CEA Destination Writes"),
-                            specs=[ [{}, {"type": "table"}], #Mongosync Phases and Phases Table
-                                    [{}, {"type": "table"}], #Partition Init Progress and Summary
-                                    [{}, {}], #Data Copied Over Time + Estimated Total and Copied
-                                    [{}, {}], #Partitions Copied and Completion %
-                                    [{}, {}], #Lag Time and Estimated Source Oplog Time Remaining
-                                    [{}, {}], #Change Events Applied and Events Rate per Second
-                                    [{}, {}], #Index Built and Total and Index Built
-                                    [{}, {}], #Ping Latency and CRUD Event Rate
-                                    [{}, {}], #Collection Copy Source
-                                    [{}, {}], #Collection Copy Destination
-                                    [{}, {}], #CEA Source
-                                    [{}, {}] ]) #CEA Destination
+                                                            "CEA Destination - Avg and Max Write time (ms)", "CEA Destination Writes",
+                                                            "Index Built", "Total and Index Built",
+                                                            "Source Verifier Lag Time (seconds)", "Destination Verifier Lag Time (seconds)"),
+                            specs=[ [{}, {"type": "table"}], #Row 1: Mongosync Phases and Phases Table
+                                    [{}, {}], #Row 2: Lag Time and Estimated Source Oplog Time Remaining
+                                    [{}, {}], #Row 3: Ping Latency and CRUD Event Rate
+                                    [{}, {"type": "table"}], #Row 4: Partition Init Progress and Summary
+                                    [{}, {}], #Row 5: Data Copied Over Time + Estimated Total and Copied
+                                    [{}, {}], #Row 6: Partitions Copied and Completion %
+                                    [{}, {}], #Row 7: Collection Copy Source
+                                    [{}, {}], #Row 8: Collection Copy Destination
+                                    [{}, {}], #Row 9: Change Events Applied and Events Rate per Second
+                                    [{}, {}], #Row 10: CEA Source
+                                    [{}, {}], #Row 11: CEA Destination
+                                    [{}, {}], #Row 12: Index Built and Total and Index Built
+                                    [{}, {}] ]) #Row 13: Verifier Lag
 
         # Add traces
 
-        # Mongosync Phases
+        # Row 1: Mongosync Phases
         if phase_transitions:
             fig.add_trace(go.Scatter(x=ts_t_list_formatted, y=phase_list, mode='markers+text',marker=dict(color='green')), row=1, col=1)
             fig.update_yaxes(showticklabels=False, row=1, col=1)  
         else:
             fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Mongosync Phases',textfont=dict(size=30, color="black")), row=1, col=1)
-            fig.update_yaxes(range=[-1, 1], row=1, col=1)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=1, col=1)  # Also center horizontally
+            fig.update_yaxes(range=[-1, 1], row=1, col=1)
+            fig.update_xaxes(range=[-1, 1], row=1, col=1)
 
-        # Mongosync Phases Table
+        # Row 1: Mongosync Phases Table
         if phase_transitions:
-            # Pair and sort by datetime
             phase_table_data = sorted(zip(ts_t_list_formatted, phase_list), key=lambda x: x[0])
             table_dates = [row[0] for row in phase_table_data]
             table_phases = [row[1] for row in phase_table_data]
@@ -732,32 +790,65 @@ def upload_file():
                 cells=dict(values=[[], []])
             ), row=1, col=2)
 
-        # Partition Init Progress (Row 2, Col 1) - collections initializing vs completed over time
+        # Row 2: Lag Time
+        if lagTimeSeconds:
+            fig.add_trace(go.Scattergl(x=times, y=lagTimeSeconds, mode='lines', name='Seconds', legendgroup="groupEventsAndLags"), row=2, col=1)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Lag Time',textfont=dict(size=30, color="black")), row=2, col=1)
+            fig.update_yaxes(range=[-1, 1], row=2, col=1)
+            fig.update_xaxes(range=[-1, 1], row=2, col=1)
+
+        # Row 2: Estimated Source Oplog Time Remaining (minutes)
+        if oplog_remaining_minutes:
+            fig.add_trace(go.Scattergl(x=oplog_remaining_times, y=oplog_remaining_minutes, mode='lines', name='Minutes Remaining', legendgroup="groupEventsAndLags"), row=2, col=2)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Oplog Time Remaining',textfont=dict(size=30, color="black")), row=2, col=2)
+            fig.update_yaxes(range=[-1, 1], row=2, col=2)
+            fig.update_xaxes(range=[-1, 1], row=2, col=2)
+
+        # Row 3: Ping Latency
+        if sourcePingLatencyMs or destinationPingLatencyMs:
+            fig.add_trace(go.Scattergl(x=times, y=sourcePingLatencyMs, mode='lines', name='Source Ping (ms)', legendgroup="groupPingLatency"), row=3, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=destinationPingLatencyMs, mode='lines', name='Destination Ping (ms)', legendgroup="groupPingLatency"), row=3, col=1)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Ping Latency', textfont=dict(size=30, color="black")), row=3, col=1)
+            fig.update_yaxes(range=[-1, 1], row=3, col=1)
+            fig.update_xaxes(range=[-1, 1], row=3, col=1)
+
+        # Row 3: Average Source CRUD Event Rate
+        if srcCRUDEventsPerSec:
+            fig.add_trace(go.Scattergl(x=crud_rate_times, y=srcCRUDEventsPerSec, mode='lines', name='Events/sec', legendgroup="groupCRUDRate"), row=3, col=2)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CRUD Event Rate', textfont=dict(size=30, color="black")), row=3, col=2)
+            fig.update_yaxes(range=[-1, 1], row=3, col=2)
+            fig.update_xaxes(range=[-1, 1], row=3, col=2)
+
+        # Row 4: Partition Init Progress - collections initializing vs completed over time
         if partition_init_progress_times:
             total_collections = len(partition_init_data) if partition_init_data else 0
             fig.add_trace(go.Scattergl(
                 x=partition_init_progress_times, y=partition_init_progress_in_progress,
                 mode='lines', name='In Progress', line=dict(color='#2196F3'),
                 legendgroup="groupPartitionInitProgress"
-            ), row=2, col=1)
+            ), row=4, col=1)
             fig.add_trace(go.Scattergl(
                 x=partition_init_progress_times, y=partition_init_progress_completed,
                 mode='lines', name='Completed', line=dict(color='#4CAF50'),
                 legendgroup="groupPartitionInitProgress"
-            ), row=2, col=1)
+            ), row=4, col=1)
             if total_collections > 0:
                 fig.add_trace(go.Scattergl(
                     x=[partition_init_progress_times[0], partition_init_progress_times[-1]],
                     y=[total_collections, total_collections],
                     mode='lines', name='Total Collections', line=dict(color='gray', dash='dash'),
                     legendgroup="groupPartitionInitProgress"
-                ), row=2, col=1)
+                ), row=4, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Partition Init Progress', textfont=dict(size=30, color="black")), row=2, col=1)
-            fig.update_yaxes(range=[-1, 1], row=2, col=1)
-            fig.update_xaxes(range=[-1, 1], row=2, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Partition Init Progress', textfont=dict(size=30, color="black")), row=4, col=1)
+            fig.update_yaxes(range=[-1, 1], row=4, col=1)
+            fig.update_xaxes(range=[-1, 1], row=4, col=1)
 
-        # Partition Init Summary Table (Row 2, Col 2)
+        # Row 4: Partition Init Summary Table
         if partition_init_data:
             fig.add_trace(go.Table(
                 header=dict(values=["Collection", "Type", "Partitions", "Doc Count", "Duration (s)"]),
@@ -768,198 +859,209 @@ def upload_file():
                     [f"{d['doc_count']:,}" if d['doc_count'] else 'N/A' for d in partition_init_data],
                     [d['duration_sec'] if d['duration_sec'] is not None else 'N/A' for d in partition_init_data],
                 ])
-            ), row=2, col=2)
+            ), row=4, col=2)
         else:
             fig.add_trace(go.Table(
                 header=dict(values=["Collection", "Type", "Partitions", "Doc Count", "Duration (s)"]),
                 cells=dict(values=[[], [], [], [], []])
-            ), row=2, col=2)
+            ), row=4, col=2)
 
-        # Data Copied Over Time
+        # Row 5: Data Copied Over Time
         if estimatedCopiedBytes_converted:
-            fig.add_trace(go.Scattergl(x=estimatedCopiedBytes_times, y=estimatedCopiedBytes_converted, mode='lines', name='Copied ' + estimated_total_bytes_unit, legendgroup="groupTotalCopied"), row=3, col=1)
+            fig.add_trace(go.Scattergl(x=estimatedCopiedBytes_times, y=estimatedCopiedBytes_converted, mode='lines', name='Copied ' + estimated_total_bytes_unit, legendgroup="groupTotalCopied"), row=5, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Data Copied Over Time',textfont=dict(size=30, color="black")), row=3, col=1)
-            fig.update_yaxes(range=[-1, 1], row=3, col=1)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=3, col=1)  # Also center horizontally
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Data Copied Over Time',textfont=dict(size=30, color="black")), row=5, col=1)
+            fig.update_yaxes(range=[-1, 1], row=5, col=1)
+            fig.update_xaxes(range=[-1, 1], row=5, col=1)
 
-        # Estimated Total and Copied
+        # Row 5: Estimated Total and Copied
         if estimated_total_bytes > 0 or estimated_copied_bytes > 0:
-            fig.add_trace( go.Bar( name='Estimated ' + estimated_total_bytes_unit + ' to be Copied',  x=[estimated_total_bytes_unit],  y=[estimated_total_bytes], legendgroup="groupTotalCopied" ), row=3, col=2)
-            fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=3, col=2)
+            fig.add_trace( go.Bar( name='Estimated ' + estimated_total_bytes_unit + ' to be Copied',  x=[estimated_total_bytes_unit],  y=[estimated_total_bytes], legendgroup="groupTotalCopied" ), row=5, col=2)
+            fig.add_trace( go.Bar( name='Estimated Copied ' + estimated_total_bytes_unit, x=[estimated_total_bytes_unit],  y=[estimated_copied_bytes], legendgroup="groupTotalCopied"), row=5, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Estimated Total and Copied',textfont=dict(size=30, color="black")), row=3, col=2)
-            fig.update_yaxes(range=[-1, 1], row=3, col=2)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=3, col=2)  # Also center horizontally
-
-        # Partitions Copied Over Time
-        if partition_times:
-            fig.add_trace(go.Scattergl(x=partition_times, y=partitions_copied, mode='lines', name='Partitions Copied', legendgroup="groupPartitions"), row=4, col=1)
-            fig.add_trace(go.Scattergl(x=partition_times, y=partitions_total, mode='lines', name='Total Partitions', legendgroup="groupPartitions"), row=4, col=1)
-        else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Partitions Copied', textfont=dict(size=30, color="black")), row=4, col=1)
-            fig.update_yaxes(range=[-1, 1], row=4, col=1)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=4, col=1)  # Also center horizontally
-
-        # Total and Copied Partitions
-        if partition_times:
-            last_copied = partitions_copied[-1]
-            last_total = partitions_total[-1]
-            fig.add_trace(go.Bar(name='Total Partitions', x=['Partitions'], y=[last_total], legendgroup="groupPartitions"), row=4, col=2)
-            fig.add_trace(go.Bar(name='Copied Partitions', x=['Partitions'], y=[last_copied], legendgroup="groupPartitions"), row=4, col=2)
-        else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Total and Copied Partitions', textfont=dict(size=30, color="black")), row=4, col=2)
-            fig.update_yaxes(range=[-1, 1], row=4, col=2)
-            fig.update_xaxes(range=[-1, 1], row=4, col=2)
-
-        # Lag Time
-        if lagTimeSeconds:
-            fig.add_trace(go.Scattergl(x=times, y=lagTimeSeconds, mode='lines', name='Seconds', legendgroup="groupEventsAndLags"), row=5, col=1)
-        else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Lag Time',textfont=dict(size=30, color="black")), row=5, col=1)
-            fig.update_yaxes(range=[-1, 1], row=5, col=1)  # Center the text vertically
-            fig.update_xaxes(range=[-1, 1], row=5, col=1)  # Also center horizontally
-        #fig.update_yaxes(title_text="Lag Time (seconds)", row=5, col=1)
-
-        # Estimated Source Oplog Time Remaining (minutes)
-        if oplog_remaining_minutes:
-            fig.add_trace(go.Scattergl(x=oplog_remaining_times, y=oplog_remaining_minutes, mode='lines', name='Minutes Remaining', legendgroup="groupEventsAndLags"), row=5, col=2)
-        else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Oplog Time Remaining',textfont=dict(size=30, color="black")), row=5, col=2)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Estimated Total and Copied',textfont=dict(size=30, color="black")), row=5, col=2)
             fig.update_yaxes(range=[-1, 1], row=5, col=2)
             fig.update_xaxes(range=[-1, 1], row=5, col=2)
 
-        # Total Events Applied
-        if totalEventsApplied:
-            fig.add_trace(go.Scattergl(x=times, y=totalEventsApplied, mode='lines', name='Events', legendgroup="groupEventsAndLags"), row=6, col=1)
+        # Row 6: Partitions Copied Over Time
+        if partition_times:
+            fig.add_trace(go.Scattergl(x=partition_times, y=partitions_copied, mode='lines', name='Partitions Copied', legendgroup="groupPartitions"), row=6, col=1)
+            fig.add_trace(go.Scattergl(x=partition_times, y=partitions_total, mode='lines', name='Total Partitions', legendgroup="groupPartitions"), row=6, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Change Events Applied',textfont=dict(size=30, color="black")), row=6, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Partitions Copied', textfont=dict(size=30, color="black")), row=6, col=1)
             fig.update_yaxes(range=[-1, 1], row=6, col=1)
             fig.update_xaxes(range=[-1, 1], row=6, col=1)
 
-        # Events Rate per Second
-        if eventRatePerSecond:
-            fig.add_trace(go.Scattergl(x=eventRatePerSecond_times, y=eventRatePerSecond, mode='lines', name='Events/sec', legendgroup="groupEventsAndLags"), row=6, col=2)
+        # Row 6: Total and Copied Partitions
+        if partition_times:
+            last_copied = partitions_copied[-1]
+            last_total = partitions_total[-1]
+            fig.add_trace(go.Bar(name='Total Partitions', x=['Partitions'], y=[last_total], legendgroup="groupPartitions"), row=6, col=2)
+            fig.add_trace(go.Bar(name='Copied Partitions', x=['Partitions'], y=[last_copied], legendgroup="groupPartitions"), row=6, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Events Rate per Second',textfont=dict(size=30, color="black")), row=6, col=2)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Total and Copied Partitions', textfont=dict(size=30, color="black")), row=6, col=2)
             fig.update_yaxes(range=[-1, 1], row=6, col=2)
             fig.update_xaxes(range=[-1, 1], row=6, col=2)
 
-        # Index Built Over Time
-        if index_built_times:
-            fig.add_trace(go.Scattergl(x=index_built_times, y=indexes_built, mode='lines', name='Indexes Built', legendgroup="groupIndexBuilt"), row=7, col=1)
+        # Row 7: Collection Copy Source Read
+        if CollectionCopySourceRead or CollectionCopySourceRead_maximum:
+            fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCCSourceRead"), row=7, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCSourceRead"), row=7, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Index Built', textfont=dict(size=30, color="black")), row=7, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Source Read',textfont=dict(size=30, color="black")), row=7, col=1)
             fig.update_yaxes(range=[-1, 1], row=7, col=1)
             fig.update_xaxes(range=[-1, 1], row=7, col=1)
 
-        # Total and Index Built
-        if index_built_times:
-            last_built = indexes_built[-1]
-            last_total = indexes_total[-1]
-            fig.add_trace(go.Bar(name='Total Indexes', x=['Indexes'], y=[last_total], legendgroup="groupIndexBuilt"), row=7, col=2)
-            fig.add_trace(go.Bar(name='Indexes Built', x=['Indexes'], y=[last_built], legendgroup="groupIndexBuilt"), row=7, col=2)
+        # Row 7: Collection Copy Source Reads (numOperations)
+        if CollectionCopySourceRead_numOperations:
+            fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCCSourceRead"), row=7, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Total and Index Built', textfont=dict(size=30, color="black")), row=7, col=2)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Source Reads',textfont=dict(size=30, color="black")), row=7, col=2)
             fig.update_yaxes(range=[-1, 1], row=7, col=2)
             fig.update_xaxes(range=[-1, 1], row=7, col=2)
 
-        # Ping Latency
-        if sourcePingLatencyMs or destinationPingLatencyMs:
-            fig.add_trace(go.Scattergl(x=times, y=sourcePingLatencyMs, mode='lines', name='Source Ping (ms)', legendgroup="groupPingLatency"), row=8, col=1)
-            fig.add_trace(go.Scattergl(x=times, y=destinationPingLatencyMs, mode='lines', name='Destination Ping (ms)', legendgroup="groupPingLatency"), row=8, col=1)
+        # Row 8: Collection Copy Destination Write
+        if CollectionCopyDestinationWrite or CollectionCopyDestinationWrite_maximum:
+            fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCCDestinationWrite"), row=8, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCDestinationWrite"), row=8, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Ping Latency', textfont=dict(size=30, color="black")), row=8, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Destination Write',textfont=dict(size=30, color="black")), row=8, col=1)
             fig.update_yaxes(range=[-1, 1], row=8, col=1)
             fig.update_xaxes(range=[-1, 1], row=8, col=1)
 
-        # Average Source CRUD Event Rate
-        if srcCRUDEventsPerSec:
-            fig.add_trace(go.Scattergl(x=crud_rate_times, y=srcCRUDEventsPerSec, mode='lines', name='Events/sec', legendgroup="groupCRUDRate"), row=8, col=2)
+        # Row 8: Collection Copy Destination Writes (numOperations)
+        if CollectionCopyDestinationWrite_numOperations:
+            fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite_numOperations, mode='lines', name='Writes', legendgroup="groupCCDestinationWrite"), row=8, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CRUD Event Rate', textfont=dict(size=30, color="black")), row=8, col=2)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Destination Writes',textfont=dict(size=30, color="black")), row=8, col=2)
             fig.update_yaxes(range=[-1, 1], row=8, col=2)
             fig.update_xaxes(range=[-1, 1], row=8, col=2)
 
-        # Collection Copy Source Read
-        if CollectionCopySourceRead or CollectionCopySourceRead_maximum:
-            fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCCSourceRead"), row=9, col=1)
-            fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCSourceRead"), row=9, col=1)
+        # Row 9: Total Events Applied
+        if totalEventsApplied:
+            fig.add_trace(go.Scattergl(x=times, y=totalEventsApplied, mode='lines', name='Events', legendgroup="groupEventsAndLags"), row=9, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Source Read',textfont=dict(size=30, color="black")), row=9, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Change Events Applied',textfont=dict(size=30, color="black")), row=9, col=1)
             fig.update_yaxes(range=[-1, 1], row=9, col=1)
             fig.update_xaxes(range=[-1, 1], row=9, col=1)
 
-        if CollectionCopySourceRead_numOperations:
-            fig.add_trace(go.Scattergl(x=times, y=CollectionCopySourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCCSourceRead"), row=9, col=2)
+        # Row 9: Events Rate per Second
+        if eventRatePerSecond:
+            fig.add_trace(go.Scattergl(x=eventRatePerSecond_times, y=eventRatePerSecond, mode='lines', name='Events/sec', legendgroup="groupEventsAndLags"), row=9, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Source Reads',textfont=dict(size=30, color="black")), row=9, col=2)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Events Rate per Second',textfont=dict(size=30, color="black")), row=9, col=2)
             fig.update_yaxes(range=[-1, 1], row=9, col=2)
             fig.update_xaxes(range=[-1, 1], row=9, col=2)
 
-        #Collection Copy Destination
-        if CollectionCopyDestinationWrite or CollectionCopyDestinationWrite_maximum:
-            fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCCDestinationWrite"), row=10, col=1)
-            fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCCDestinationWrite"), row=10, col=1)
+        # Row 10: CEA Source Read
+        if CEASourceRead or CEASourceRead_maximum:
+            fig.add_trace(go.Scattergl(x=times, y=CEASourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCEASourceRead"), row=10, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=CEASourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEASourceRead"), row=10, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Destination Write',textfont=dict(size=30, color="black")), row=10, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Source Read',textfont=dict(size=30, color="black")), row=10, col=1)
             fig.update_yaxes(range=[-1, 1], row=10, col=1)
             fig.update_xaxes(range=[-1, 1], row=10, col=1)
 
-        if CollectionCopyDestinationWrite_numOperations:
-            fig.add_trace(go.Scattergl(x=times, y=CollectionCopyDestinationWrite_numOperations, mode='lines', name='Writes', legendgroup="groupCCDestinationWrite"), row=10, col=2)
+        # Row 10: CEA Source Reads (numOperations)
+        if CEASourceRead_numOperations:
+            fig.add_trace(go.Scattergl(x=times, y=CEASourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCEASourceRead"), row=10, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Collection Copy Destination Writes',textfont=dict(size=30, color="black")), row=10, col=2)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Source Reads',textfont=dict(size=30, color="black")), row=10, col=2)
             fig.update_yaxes(range=[-1, 1], row=10, col=2)
             fig.update_xaxes(range=[-1, 1], row=10, col=2)
 
-        #CEA Source
-        if CEASourceRead or CEASourceRead_maximum:
-            fig.add_trace(go.Scattergl(x=times, y=CEASourceRead, mode='lines', name='Average time (ms)', legendgroup="groupCEASourceRead"), row=11, col=1)
-            fig.add_trace(go.Scattergl(x=times, y=CEASourceRead_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEASourceRead"), row=11, col=1)
+        # Row 11: CEA Destination Write
+        if CEADestinationWrite or CEADestinationWrite_maximum:
+            fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCEADestinationWrite"), row=11, col=1)
+            fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEADestinationWrite"), row=11, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Source Read',textfont=dict(size=30, color="black")), row=11, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Destination Write',textfont=dict(size=30, color="black")), row=11, col=1)
             fig.update_yaxes(range=[-1, 1], row=11, col=1)
             fig.update_xaxes(range=[-1, 1], row=11, col=1)
 
-        if CEASourceRead_numOperations:
-            fig.add_trace(go.Scattergl(x=times, y=CEASourceRead_numOperations, mode='lines', name='Reads', legendgroup="groupCEASourceRead"), row=11, col=2)
+        # Row 11: CEA Destination Writes (numOperations)
+        if CEADestinationWrite_numOperations:
+            fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='Writes during CEA', legendgroup="groupCEADestinationWrite"), row=11, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Source Reads',textfont=dict(size=30, color="black")), row=11, col=2)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Destination Writes',textfont=dict(size=30, color="black")), row=11, col=2)
             fig.update_yaxes(range=[-1, 1], row=11, col=2)
             fig.update_xaxes(range=[-1, 1], row=11, col=2)
 
-        #CEA Destination
-        if CEADestinationWrite or CEADestinationWrite_maximum:
-            fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite, mode='lines', name='Average time (ms)', legendgroup="groupCEADestinationWrite"), row=12, col=1)
-            fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite_maximum, mode='lines', name='Maximum time (ms)', legendgroup="groupCEADestinationWrite"), row=12, col=1)
+        # Row 12: Index Built Over Time
+        if index_built_times:
+            fig.add_trace(go.Scattergl(x=index_built_times, y=indexes_built, mode='lines', name='Indexes Built', legendgroup="groupIndexBuilt"), row=12, col=1)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Destination Write',textfont=dict(size=30, color="black")), row=12, col=1)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Index Built', textfont=dict(size=30, color="black")), row=12, col=1)
             fig.update_yaxes(range=[-1, 1], row=12, col=1)
             fig.update_xaxes(range=[-1, 1], row=12, col=1)
 
-        if CEADestinationWrite_numOperations:
-            fig.add_trace(go.Scattergl(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='Writes during CEA', legendgroup="groupCEADestinationWrite"), row=12, col=2)
+        # Row 12: Total and Index Built
+        if index_built_times:
+            last_built = indexes_built[-1]
+            last_total = indexes_total[-1]
+            fig.add_trace(go.Bar(name='Total Indexes', x=['Indexes'], y=[last_total], legendgroup="groupIndexBuilt"), row=12, col=2)
+            fig.add_trace(go.Bar(name='Indexes Built', x=['Indexes'], y=[last_built], legendgroup="groupIndexBuilt"), row=12, col=2)
         else:
-            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='CEA Destination Writes',textfont=dict(size=30, color="black")), row=12, col=2)
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Total and Index Built', textfont=dict(size=30, color="black")), row=12, col=2)
             fig.update_yaxes(range=[-1, 1], row=12, col=2)
             fig.update_xaxes(range=[-1, 1], row=12, col=2)
 
+        # Row 13: Source Verifier Lag Time
+        if verifierSrcLagTimeSeconds:
+            fig.add_trace(go.Scattergl(x=src_lag_times, y=verifierSrcLagTimeSeconds, mode='lines', name='Source Verifier Lag Time (seconds)', legendgroup="groupVerifierLag"), row=13, col=1)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Source Verifier Lag Time', textfont=dict(size=30, color="black")), row=13, col=1)
+            fig.update_yaxes(range=[-1, 1], row=13, col=1)
+            fig.update_xaxes(range=[-1, 1], row=13, col=1)
+
+        # Row 13: Destination Verifier Lag Time
+        if verifierDstLagTimeSeconds:
+            fig.add_trace(go.Scattergl(x=dst_lag_times, y=verifierDstLagTimeSeconds, mode='lines', name='Destination Verifier Lag Time (seconds)', legendgroup="groupVerifierLag"), row=13, col=2)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Destination Verifier Lag Time', textfont=dict(size=30, color="black")), row=13, col=2)
+            fig.update_yaxes(range=[-1, 1], row=13, col=2)
+            fig.update_xaxes(range=[-1, 1], row=13, col=2)
+
         # Update layout
-        # 225 per plot (12 rows = 2700)
-        fig.update_layout(height=2700, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=190, showlegend=False)
+        # 225 per plot (13 rows = 2925)
+        fig.update_layout(height=2925, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=190, showlegend=False)
         
         # Force all y-axes to start at 0 for better visual comparison
         fig.update_yaxes(rangemode='tozero')
         
+        # Add section label annotations above each section group
+        section_labels = [
+            ("Global Migration Metrics", 'yaxis'),        # row 1
+            ("Collection Copy Metrics", 'yaxis6'),        # row 4
+            ("CEA Metrics", 'yaxis15'),                   # row 9
+            ("Indexes Metrics", 'yaxis21'),               # row 12
+            ("Verifier Metrics", 'yaxis23'),               # row 13
+        ]
+        for section_name, yaxis_key in section_labels:
+            domain = fig.layout[yaxis_key].domain
+            if domain:
+                y_pos = domain[1] + 0.012
+                fig.add_annotation(
+                    x=0.5, y=y_pos, xref='paper', yref='paper',
+                    text=f'<b>{section_name}</b>',
+                    showarrow=False,
+                    font=dict(size=11, color='#1A3C4A'),
+                    bgcolor='rgba(1, 107, 248, 0.12)',
+                    bordercolor='#016BF8',
+                    borderwidth=1,
+                    borderpad=4
+                )
+        
         # Synchronize X-axis date range across all date-based plots
+        # Tables at row 1 col 2 and row 4 col 2 are excluded (no date axis)
         if global_min_date and global_max_date:
-            # Sync Mongosync Phases scatter plot (row 1, col 1)
             fig.update_xaxes(range=[global_min_date, global_max_date], row=1, col=1)
-            # Sync Partition Init Progress plot (row 2, col 1)
-            fig.update_xaxes(range=[global_min_date, global_max_date], row=2, col=1)
-            for row in range(3, 13):  # rows 3 through 12
-                for col in range(1, 3):  # columns 1 and 2
+            for row in range(2, 4):  # rows 2-3 (both cols are charts)
+                for col in range(1, 3):
+                    fig.update_xaxes(range=[global_min_date, global_max_date], row=row, col=col)
+            fig.update_xaxes(range=[global_min_date, global_max_date], row=4, col=1)
+            for row in range(5, 14):  # rows 5-13 (both cols are charts)
+                for col in range(1, 3):
                     fig.update_xaxes(range=[global_min_date, global_max_date], row=row, col=col)
 
         fig.update_layout(
@@ -971,12 +1073,12 @@ def upload_file():
         # Convert the figure to JSON
         plot_json = json.dumps(fig, cls=PlotlyJSONEncoder) if logs_line_count > 0 else ""
 
-        logging.info(f"Render the plot in the browser")
+        logger.info(f"Render the plot in the browser")
         
         # Generate metrics plot if we have metrics data
         metrics_plot_json = ""
         if metrics_collector.metrics_count > 0:
-            logging.info(f"Creating Prometheus metrics plots")
+            logger.info(f"Creating Prometheus metrics plots")
             metrics_plot_json = create_metrics_plots(metrics_collector)
 
         # Prepare mongosync options data for HTML table
@@ -1018,15 +1120,25 @@ def upload_file():
         has_logs_data = logs_line_count > 0 and len(data) > 0
         has_metrics_data = metrics_collector.metrics_count > 0
 
-        # Render the plot in the browser
-        return render_template('upload_results.html', 
-                             plot_json=plot_json,
-                             metrics_plot_json=metrics_plot_json,
-                             options_data=options_data,
-                             hidden_options_data=hidden_options_data,
-                             start_options_data=start_options_data,
-                             natural_order_data=natural_order_data,
-                             errors_data=matched_errors,
-                             partition_init_data=partition_init_data,
-                             has_logs_data=has_logs_data,
-                             has_metrics_data=has_metrics_data)
+        template_data = {
+            'plot_json': plot_json,
+            'metrics_plot_json': metrics_plot_json,
+            'options_data': options_data,
+            'hidden_options_data': hidden_options_data,
+            'start_options_data': start_options_data,
+            'natural_order_data': natural_order_data,
+            'errors_data': matched_errors,
+            'partition_init_data': partition_init_data,
+            'has_logs_data': has_logs_data,
+            'has_metrics_data': has_metrics_data,
+            'log_viewer_lines': list(raw_log_tail),
+            'log_store_id': store_id,
+        }
+
+        snapshot_id = str(uuid_mod.uuid4())
+        try:
+            save_snapshot(snapshot_id, filename, file_size, line_count, store_id, template_data)
+        except Exception as e:
+            logger.warning(f"Failed to save snapshot: {e}")
+
+        return render_template('upload_results.html', **template_data)

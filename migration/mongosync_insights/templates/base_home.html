@@ -1,21 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light" data-scheme="green">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Mongosync Insights{% endblock %}</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    {% include '_theme_vars.html' %}
     <style>
+        * { box-sizing: border-box; }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: var(--mi-font-ui);
             margin: 0;
             padding: 0;
-            background-color: #f4f4f9;
-            color: #333;
+            background-color: var(--mi-dashboard-bg);
+            color: var(--mi-text-primary);
         }
         main {
             padding: 20px;
         }
+
+        .upload-loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        .upload-loading-overlay.active { display: flex; }
+
+        .upload-loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.25);
+            border-top: 4px solid var(--mongodb-green-base, #00ED64);
+            border-radius: 50%;
+            animation: mi-spin 0.9s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes mi-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .upload-loading-overlay h3 {
+            margin: 0 0 6px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #FFFFFF;
+        }
+
+        .upload-loading-overlay p {
+            margin: 0;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
         {% block styles %}{% endblock %}
     </style>
 </head>
@@ -28,6 +72,14 @@
         {% block footer %}{% endblock %}
     </footer>
 
+    <!-- Upload loading overlay -->
+    <div id="uploadLoadingOverlay" class="upload-loading-overlay">
+        <div class="upload-loading-spinner"></div>
+        <h3>Processing Files...</h3>
+        <p>Parsing and analyzing data.</p>
+    </div>
+
+    <script src="/static/js/mi-snapshots.js"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

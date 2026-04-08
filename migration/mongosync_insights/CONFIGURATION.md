@@ -4,7 +4,7 @@ This document explains the configuration management system for Mongosync Insight
 
 ## Prerequisites
 
-**Python 3.11+** and **libmagic** system library are required to run Mongosync Insights. See [README.md](README.md) for complete installation instructions including system dependencies.
+**Python 3.11+** is required to run Mongosync Insights. See [README.md](README.md) for complete installation instructions.
 
 ## Configuration Overview
 
@@ -34,7 +34,7 @@ All configuration can be set using `export` commands before running the applicat
 |----------|---------|-------------|
 | `MI_CONNECTION_STRING` | _(empty)_ | MongoDB connection string (optional, can be provided via UI) |
 | `MI_VERIFIER_CONNECTION_STRING` | _(falls back to `MI_CONNECTION_STRING`)_ | MongoDB connection string for the migration verifier database. When omitted, the value of `MI_CONNECTION_STRING` is used. Set this when the verifier database lives on a different cluster. |
-| `MI_INTERNAL_DB_NAME` | `mongosync_reserved_for_internal_use` | MongoDB internal database name |
+| `MI_INTERNAL_DB_NAME` | _(auto-detected)_ | MongoDB internal database name. When not set, the app auto-detects between `__mdb_internal_mongosync` (new) and `mongosync_reserved_for_internal_use` (legacy). Set this variable to override auto-detection. |
 | `MI_POOL_SIZE` | `10` | MongoDB connection pool size |
 | `MI_TIMEOUT_MS` | `5000` | MongoDB connection timeout in milliseconds |
 
@@ -55,13 +55,23 @@ All configuration can be set using `export` commands before running the applicat
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MI_ERROR_PATTERNS_FILE` | `error_patterns.json` _(same directory as the application)_ | Path to a custom error patterns JSON file used during log analysis to detect common errors (e.g., oplog rollover, timeouts, verifier mismatches) |
+| `MI_ERROR_PATTERNS_FILE` | `lib/error_patterns.json` _(auto-detected)_ | Path to a custom error patterns JSON file used during log analysis to detect common errors (e.g., oplog rollover, timeouts, verifier mismatches) |
 
 ### UI Customization
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MI_MAX_PARTITIONS_DISPLAY` | `10` | Maximum partitions to display in UI |
+
+### Log Viewer & Snapshot Settings
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MI_LOG_VIEWER_MAX_LINES` | `2000` | Maximum number of recent log lines shown in the Log Viewer tail view |
+| `MI_LOG_STORE_DIR` | System temp directory | Directory for SQLite log stores and analysis snapshot files |
+| `MI_LOG_STORE_MAX_AGE_HOURS` | `24` | TTL in hours for log store and snapshot files (based on last-access mtime) |
+
+> **Note**: By default, log store databases and snapshot files are saved to the OS temp directory (e.g., `/tmp` on Linux/macOS), which may be cleared on system reboot. Set `MI_LOG_STORE_DIR` to a persistent path (e.g., `/data/mongosync-insights/store`) to retain snapshots across restarts. Files are cleaned up automatically on app startup, on logout, and lazily on access when they exceed the configured TTL. Loading a saved snapshot resets its TTL by touching the file's modification time.
 
 ### Security Settings
 
@@ -84,7 +94,7 @@ All configuration can be set using `export` commands before running the applicat
 
 ---
 
-## 🚀 Usage Examples
+## Usage Examples
 
 ### Example 1: Basic Local Development
 
@@ -219,6 +229,24 @@ python3 mongosync_insights.py
 ```
 
 **Note**: When `MI_VERIFIER_CONNECTION_STRING` is not set, it falls back to `MI_CONNECTION_STRING`. Set it explicitly when the migration-verifier writes to a different cluster.
+
+### Example 8: Persistent Snapshots and Custom Log Viewer
+
+Configure snapshot storage location, retention period, and log viewer buffer size:
+
+```bash
+# Store snapshots in a persistent directory
+export MI_LOG_STORE_DIR=/data/mongosync-insights/store
+
+# Keep snapshots for 48 hours instead of the default 24
+export MI_LOG_STORE_MAX_AGE_HOURS=48
+
+# Show up to 5000 recent log lines in the Log Viewer tail view
+export MI_LOG_VIEWER_MAX_LINES=5000
+
+# Run the application
+python3 mongosync_insights.py
+```
 
 ---
 
