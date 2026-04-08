@@ -62,6 +62,13 @@ async function processFiles(filePaths) {
       crlfDelay: Infinity,
     });
 
+    fileStream.on('error', (err) => {
+      const message = `Error reading file "${filePath}": ${err.message}`;
+      if (!suppressConsole) {
+        console.error('\x1b[31m%s\x1b[0m', message);
+      }
+      rl.close();
+    });
     let lineCounter = 0; // Count lines processed per file
 
     // Read each line of the file
