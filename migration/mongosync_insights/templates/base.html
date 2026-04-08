@@ -773,23 +773,55 @@
                     container.innerHTML = '<span class="upload-dialog-empty">No saved analyses</span>';
                     return;
                 }
-                var html = '';
+                container.innerHTML = '';
                 snapshots.forEach(function(s) {
                     var size = _udFormatSize(s.source_size_bytes);
                     var age = _udFormatAge(s.age_hours);
                     var meta = [size, age].filter(Boolean).join(' \u00b7 ');
-                    html += '<div class="upload-dialog-item">' +
-                        '<div class="upload-dialog-item-info">' +
-                            '<div class="upload-dialog-item-name" title="' + (s.source_filename || '') + '">' + (s.source_filename || 'Unknown') + '</div>' +
-                            '<div class="upload-dialog-item-meta">' + meta + '</div>' +
-                        '</div>' +
-                        '<div class="upload-dialog-item-actions">' +
-                            '<a class="upload-dialog-load-btn" href="/load_snapshot/' + s.snapshot_id + '">Load</a>' +
-                            '<button class="upload-dialog-del-btn" title="Delete" onclick="udDeleteSnapshot(\'' + s.snapshot_id + '\')">\u2716</button>' +
-                        '</div>' +
-                    '</div>';
+                    var filename = s.source_filename || 'Unknown';
+                    var snapshotId = String(s.snapshot_id || '');
+
+                    var item = document.createElement('div');
+                    item.className = 'upload-dialog-item';
+
+                    var info = document.createElement('div');
+                    info.className = 'upload-dialog-item-info';
+
+                    var name = document.createElement('div');
+                    name.className = 'upload-dialog-item-name';
+                    name.title = s.source_filename || '';
+                    name.textContent = filename;
+
+                    var metaDiv = document.createElement('div');
+                    metaDiv.className = 'upload-dialog-item-meta';
+                    metaDiv.textContent = meta;
+
+                    info.appendChild(name);
+                    info.appendChild(metaDiv);
+
+                    var actions = document.createElement('div');
+                    actions.className = 'upload-dialog-item-actions';
+
+                    var loadLink = document.createElement('a');
+                    loadLink.className = 'upload-dialog-load-btn';
+                    loadLink.setAttribute('href', '/load_snapshot/' + encodeURIComponent(snapshotId));
+                    loadLink.textContent = 'Load';
+
+                    var deleteButton = document.createElement('button');
+                    deleteButton.className = 'upload-dialog-del-btn';
+                    deleteButton.title = 'Delete';
+                    deleteButton.textContent = '\u2716';
+                    deleteButton.addEventListener('click', function() {
+                        udDeleteSnapshot(snapshotId);
+                    });
+
+                    actions.appendChild(loadLink);
+                    actions.appendChild(deleteButton);
+
+                    item.appendChild(info);
+                    item.appendChild(actions);
+                    container.appendChild(item);
                 });
-                container.innerHTML = html;
             })
             .catch(function() {
                 container.innerHTML = '<span class="upload-dialog-empty">Failed to load</span>';
