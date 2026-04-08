@@ -441,10 +441,25 @@ function checkDuplicateAndUpload(form, fileInput) {
             }
             _dupState.matches = matches;
             var age = _dupFormatAge(matches[0].age_hours);
-            var msg = 'A saved analysis for <strong>"' + selectedName + '"</strong> already exists (' + age + ').'
-                + '<br><br><strong>Load Previous</strong> opens the saved session.'
-                + '<br><strong>Replace</strong> deletes the saved session and uploads the file again.';
-            document.getElementById('duplicateCheckMsg').innerHTML = msg;
+            var duplicateCheckMsg = document.getElementById('duplicateCheckMsg');
+            var fileNameStrong = document.createElement('strong');
+            var loadPreviousStrong = document.createElement('strong');
+            var replaceStrong = document.createElement('strong');
+
+            duplicateCheckMsg.textContent = '';
+            duplicateCheckMsg.appendChild(document.createTextNode('A saved analysis for '));
+            fileNameStrong.textContent = '"' + selectedName + '"';
+            duplicateCheckMsg.appendChild(fileNameStrong);
+            duplicateCheckMsg.appendChild(document.createTextNode(' already exists (' + age + ').'));
+            duplicateCheckMsg.appendChild(document.createElement('br'));
+            duplicateCheckMsg.appendChild(document.createElement('br'));
+            loadPreviousStrong.textContent = 'Load Previous';
+            duplicateCheckMsg.appendChild(loadPreviousStrong);
+            duplicateCheckMsg.appendChild(document.createTextNode(' opens the saved session.'));
+            duplicateCheckMsg.appendChild(document.createElement('br'));
+            replaceStrong.textContent = 'Replace';
+            duplicateCheckMsg.appendChild(replaceStrong);
+            duplicateCheckMsg.appendChild(document.createTextNode(' deletes the saved session and uploads the file again.'));
             document.getElementById('duplicateCheckOverlay').classList.add('active');
         })
         .catch(function() {
