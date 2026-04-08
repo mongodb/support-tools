@@ -24,6 +24,8 @@ a = Analysis(
         ('templates', 'templates'),
         # Static images served by Flask
         ('images', 'images'),
+        # Shared JS (served via /static/js/ route)
+        ('static', 'static'),
         # Runtime JSON next to frozen lib/ (app_config + otel_metrics resolve via __file__)
         ('lib/error_patterns.json', 'lib'),
         ('lib/mongosync_metrics.json', 'lib'),

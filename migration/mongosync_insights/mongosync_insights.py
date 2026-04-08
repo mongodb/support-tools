@@ -1,7 +1,7 @@
 import logging
 import sys
 import os
-from flask import Flask, render_template, request, make_response, jsonify
+from flask import Flask, render_template, request, make_response, jsonify, send_from_directory
 from lib.logs_metrics import upload_file
 from lib.live_migration_metrics import plotMetrics, gatherMetrics, gatherPartitionsMetrics, gatherEndpointMetrics
 from lib.migration_verifier import plotVerifierMetrics, gatherVerifierMetrics
@@ -55,6 +55,13 @@ app = Flask(__name__,
 
 # Configure Flask for file uploads
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+
+@app.route('/static/js/<path:filename>')
+def mi_static_js(filename):
+    """Serve shared JS (static_folder is reserved for /images)."""
+    return send_from_directory(os.path.join(_base_path, 'static', 'js'), filename)
+
 
 # Add security headers to all responses
 @app.after_request
