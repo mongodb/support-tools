@@ -121,7 +121,15 @@ async function processFiles(filePaths) {
         }
       } catch (error) {
         if (!suppressConsole) {
-          console.error('Error processing line:', line);
+          const previewLength = 80;
+          const linePreview =
+            typeof line === 'string'
+              ? line.slice(0, previewLength) + (line.length > previewLength ? '...' : '')
+              : '';
+          console.error(
+            `Error processing line ${lineCounter} in file "${filePath}".` +
+              (linePreview ? ` Line preview: ${linePreview}` : '')
+          );
           console.error('Error details:', error.message);
         }
       }
