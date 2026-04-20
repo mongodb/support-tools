@@ -4,6 +4,24 @@
 (function () {
     'use strict';
 
+    function _miListUrl() {
+        return (window.MI_LOGS && window.MI_LOGS.list) || '/logs/list_snapshots';
+    }
+
+    function _miLoadUrl(id) {
+        if (window.MI_LOGS && window.MI_LOGS.loadT) {
+            return window.MI_LOGS.loadT.replace('__ID__', encodeURIComponent(id));
+        }
+        return '/logs/load_snapshot/' + encodeURIComponent(id);
+    }
+
+    function _miDeleteUrl(id) {
+        if (window.MI_LOGS && window.MI_LOGS.delT) {
+            return window.MI_LOGS.delT.replace('__ID__', encodeURIComponent(id));
+        }
+        return '/logs/delete_snapshot/' + encodeURIComponent(id);
+    }
+
     function formatFileSize(bytes) {
         if (!bytes || bytes === 0) return '';
         if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + ' GB';
@@ -30,7 +48,7 @@
     }
 
     function fetchSnapshotsJson() {
-        return fetch('/list_snapshots').then(function (r) {
+        return fetch(_miListUrl()).then(function (r) {
             return r.json();
         });
     }
@@ -73,7 +91,7 @@
 
             var loadLink = document.createElement('a');
             loadLink.className = 'prev-analysis-load';
-            loadLink.setAttribute('href', '/load_snapshot/' + encodeURIComponent(s.snapshot_id));
+            loadLink.setAttribute('href', _miLoadUrl(s.snapshot_id));
             loadLink.textContent = 'Load';
 
             var deleteButton = document.createElement('button');
@@ -134,7 +152,7 @@
 
             var loadLink = document.createElement('a');
             loadLink.className = 'upload-dialog-load-btn';
-            loadLink.setAttribute('href', '/load_snapshot/' + encodeURIComponent(snapshotId));
+            loadLink.setAttribute('href', _miLoadUrl(snapshotId));
             loadLink.textContent = 'Load';
 
             var deleteButton = document.createElement('button');
@@ -183,7 +201,7 @@
 
     window.deleteSnapshot = function (id) {
         if (!confirm('Delete this saved analysis?')) return;
-        fetch('/delete_snapshot/' + encodeURIComponent(id), { method: 'DELETE' })
+        fetch(_miDeleteUrl(id), { method: 'DELETE' })
             .then(function () {
                 loadPreviousAnalyses();
             })
@@ -212,7 +230,7 @@
 
     window.udDeleteSnapshot = function (id) {
         if (!confirm('Delete this saved analysis?')) return;
-        fetch('/delete_snapshot/' + encodeURIComponent(id), { method: 'DELETE' })
+        fetch(_miDeleteUrl(id), { method: 'DELETE' })
             .then(function () {
                 openUploadDialog();
             })
@@ -285,7 +303,7 @@
         if (_dupState.matches.length > 0) {
             var loading = document.getElementById('uploadLoadingOverlay');
             if (loading) loading.classList.add('active');
-            window.location.href = '/load_snapshot/' + encodeURIComponent(_dupState.matches[0].snapshot_id);
+            window.location.href = _miLoadUrl(_dupState.matches[0].snapshot_id);
         }
     };
 
@@ -295,7 +313,7 @@
         var loading = document.getElementById('uploadLoadingOverlay');
         if (loading) loading.classList.add('active');
         var delPromises = _dupState.matches.map(function (s) {
-            return fetch('/delete_snapshot/' + encodeURIComponent(s.snapshot_id), { method: 'DELETE' }).catch(function () {});
+            return fetch(_miDeleteUrl(s.snapshot_id), { method: 'DELETE' }).catch(function () {});
         });
         Promise.all(delPromises).then(function () {
             if (_dupState.form) _dupState.form.submit();

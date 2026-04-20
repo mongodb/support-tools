@@ -329,20 +329,20 @@ def decompress_zip_classified(file_obj: BinaryIO) -> Iterator[Tuple[bytes, Optio
     with zipfile.ZipFile(file_obj, 'r') as zf:
         file_list = zf.namelist()
         logger.info(f"ZIP archive contains {len(file_list)} file(s): {file_list}")
-        
+
         for filename in file_list:
             # Skip directories
             if filename.endswith('/'):
                 continue
-            
+
             file_type = classify_file_type(filename)
             logger.info(f"Processing file from ZIP: {filename} (classified as: {file_type})")
-            
+
             # Skip files that don't match known patterns
             if file_type is None:
                 logger.warning(f"Skipping unrecognized file: {filename}")
                 continue
-            
+
             with zf.open(filename) as inner_file:
                 if filename.lower().endswith('.gz'):
                     # Nested gzip file

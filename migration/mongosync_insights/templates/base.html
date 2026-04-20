@@ -6,6 +6,13 @@
     <title>{% block title %}Mongosync Insights{% endblock %}</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     {% include '_theme_vars.html' %}
+    <script>
+    window.MI_LOGS = {
+        list: {{ url_for('logs.list_snapshots')|tojson }},
+        loadT: {{ url_for('logs.load_snapshot_view', snapshot_id='__ID__')|tojson }},
+        delT: {{ url_for('logs.delete_snapshot_view', snapshot_id='__ID__')|tojson }}
+    };
+    </script>
     <style>
         /* Page layout */
         * { box-sizing: border-box; }
@@ -564,7 +571,7 @@
     </nav>
 
     <!-- Hidden upload form -->
-    <form id="sidebarUploadForm" method="post" action="/uploadLogs" enctype="multipart/form-data" style="display:none">
+    <form id="sidebarUploadForm" method="post" action="{{ url_for('logs.upload_logs') }}" enctype="multipart/form-data" style="display:none">
         <input type="file" id="sidebarFileInput" name="file" accept=".log,.json,.out,.gz,.zip,.bz2,.tar.gz,.tgz,.tar.bz2">
     </form>
 

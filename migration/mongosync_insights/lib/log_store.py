@@ -232,6 +232,38 @@ class LogStore:
         result = self.find(query, skip=0, limit=1)
         return result['total']
 
+    def fetch_latest_raw_lines(self, limit: int) -> list[str]:
+        """
+        Return up to `limit` raw JSON lines with the newest `timestamp` values,
+        ordered ascending by time (oldest of the chunk first).
+
+        Used for the Log Viewer tail when archives concatenate members in
+        non-chronological order so a streaming deque would drop newer events.
+        """
+        if limit <= 0:
+            return []
+        self.flush()
+        cur = self._conn.execute(
+            """
+            SELECT doc FROM log_lines
+            WHERE timestamp != ''
+            ORDER BY timestamp DESC, rowid DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        rows = [r[0] for r in cur.fetchall()]
+        rows.reverse()
+        if rows:
+            return rows
+        cur = self._conn.execute(
+            "SELECT doc FROM log_lines ORDER BY rowid DESC LIMIT ?",
+            (limit,),
+        )
+        rows = [r[0] for r in cur.fetchall()]
+        rows.reverse()
+        return rows
+
     @property
     def total_documents(self) -> int:
         """Total number of documents in the store."""

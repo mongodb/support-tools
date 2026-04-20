@@ -1481,7 +1481,8 @@ function copyNaturalOrderAsMarkdown(buttonElement) {
 
 var LV_STORE_ID = {{ log_store_id | tojson }};
 var LV_INITIAL_LINES = {{ log_viewer_lines | tojson }};
-var LV_MAX_LINES = 2000;
+var LV_SERVER_MAX_LINES = {{ log_viewer_max_lines | default(2000) }};
+var LV_MAX_LINES = LV_SERVER_MAX_LINES;
 
 var lvLogLines = [];
 var lvInitialized = false;
@@ -1849,8 +1850,10 @@ function lvOnSearchInput(value) {
     }, 300);
 }
 
+var LOGS_SEARCH_URL = {{ url_for('logs.search_logs')|tojson }};
+
 function lvSearchServer(query, level, page) {
-    var url = '/search_logs?store_id=' + encodeURIComponent(LV_STORE_ID)
+    var url = LOGS_SEARCH_URL + '?store_id=' + encodeURIComponent(LV_STORE_ID)
         + '&q=' + encodeURIComponent(query)
         + '&page=' + page
         + '&per_page=' + lvPerPage;

@@ -182,7 +182,7 @@ def upload_file():
         logs_line_count = 0
         metrics_line_count = 0
         invalid_json_count = 0
-        
+
         # Reset file pointer to beginning
         file.seek(0)
         
@@ -329,17 +329,25 @@ def upload_file():
                     return render_template('error.html',
                                          error_title="Invalid File Format",
                                          error_message=f"The uploaded file does not contain valid JSON format. Error on line {line_count}: {str(e)}. Please ensure you're uploading a valid mongosync log file in NDJSON format.")
-        
+
+        log_viewer_lines_out = list(raw_log_tail)
+
         # Finalize log store: flush remaining buffered rows and build FTS index
         log_store.flush()
         if log_store.total_documents > 0:
             log_store.build_fts_index()
             log_store_registry.register(store_id, db_path)
             logger.info(f"Log store ready: {log_store.total_documents} documents, store_id={store_id[:8]}...")
+            try:
+                _chron = log_store.fetch_latest_raw_lines(LOG_VIEWER_MAX_LINES)
+                if _chron:
+                    log_viewer_lines_out = _chron
+            except Exception as _e:
+                logger.warning(f"Chronological log viewer tail fetch failed, using stream order: {_e}")
         else:
             log_store.delete()
             store_id = ''
-        
+
         logger.info(f"Processed {line_count} total lines ({logs_line_count} logs, {metrics_line_count} metrics), found {invalid_json_count} invalid JSON lines")
         logger.info(f"Found: {len(data)} replication progress, {len(version_info_list)} version info, "
                     f"{len(mongosync_ops_stats)} operation stats, {len(mongosync_sent_response)} sent responses, "
@@ -1131,7 +1139,8 @@ def upload_file():
             'partition_init_data': partition_init_data,
             'has_logs_data': has_logs_data,
             'has_metrics_data': has_metrics_data,
-            'log_viewer_lines': list(raw_log_tail),
+            'log_viewer_lines': log_viewer_lines_out,
+            'log_viewer_max_lines': LOG_VIEWER_MAX_LINES,
             'log_store_id': store_id,
         }
 
