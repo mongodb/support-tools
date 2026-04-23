@@ -190,7 +190,7 @@ def decompress_file(file_obj: BinaryIO, mime_type: str, filename: str = None) ->
     Raises:
         ValueError: If the MIME type is not a supported compressed format
     """
-    from app_config import EXTENSION_TO_COMPRESSION
+    from .app_config import EXTENSION_TO_COMPRESSION
     
     logger.info(f"Decompressing file with MIME type: {mime_type}, filename: {filename}")
     
@@ -244,7 +244,7 @@ def is_compressed_mime_type(mime_type: str) -> bool:
     Returns:
         True if the MIME type is a supported compressed format
     """
-    from app_config import COMPRESSED_MIME_TYPES
+    from .app_config import COMPRESSED_MIME_TYPES
     return mime_type in COMPRESSED_MIME_TYPES
 
 
@@ -263,7 +263,7 @@ def decompress_gzip_classified(file_obj: BinaryIO, filename: str) -> Iterator[Tu
     Yields:
         Tuples of (decompressed line as bytes, file_type string or None)
     """
-    from app_config import classify_file_type
+    from .app_config import classify_file_type
     
     file_type = classify_file_type(filename) if filename else None
     logger.info(f"Gzip file classified as: {file_type} (filename: {filename})")
@@ -285,7 +285,7 @@ def decompress_bzip2_classified(file_obj: BinaryIO, filename: str) -> Iterator[T
     Yields:
         Tuples of (decompressed line as bytes, file_type string or None)
     """
-    from app_config import classify_file_type
+    from .app_config import classify_file_type
     
     file_type = classify_file_type(filename) if filename else None
     logger.info(f"Bzip2 file classified as: {file_type} (filename: {filename})")
@@ -323,7 +323,7 @@ def decompress_zip_classified(file_obj: BinaryIO) -> Iterator[Tuple[bytes, Optio
     Yields:
         Tuples of (decompressed line as bytes, file_type string or None)
     """
-    from app_config import classify_file_type
+    from .app_config import classify_file_type
     
     file_obj.seek(0)
     with zipfile.ZipFile(file_obj, 'r') as zf:
@@ -375,7 +375,7 @@ def decompress_tar_classified(file_obj: BinaryIO, compression: str = 'gz') -> It
     Yields:
         Tuples of (decompressed line as bytes, file_type string or None)
     """
-    from app_config import classify_file_type
+    from .app_config import classify_file_type
     
     file_obj.seek(0)
     mode = f'r:{compression}'
@@ -435,7 +435,7 @@ def decompress_file_classified(file_obj: BinaryIO, mime_type: str, filename: str
     Raises:
         ValueError: If the MIME type is not a supported compressed format
     """
-    from app_config import EXTENSION_TO_COMPRESSION
+    from .app_config import EXTENSION_TO_COMPRESSION
     
     logger.info(f"Decompressing file (classified) with MIME type: {mime_type}, filename: {filename}")
     

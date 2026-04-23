@@ -1,18 +1,25 @@
 import logging
 import sys
 import os
-from flask import Flask, render_template, request, make_response
-from mongosync_plot_logs import upload_file
-from mongosync_plot_metadata import plotMetrics, gatherMetrics, gatherPartitionsMetrics, gatherEndpointMetrics
-from migration_verifier import plotVerifierMetrics, gatherVerifierMetrics
+from flask import Flask, render_template, request, make_response, jsonify, send_from_directory
+from lib.logs_metrics import upload_file
+from lib.live_migration_metrics import plotMetrics, gatherMetrics, gatherPartitionsMetrics, gatherEndpointMetrics
+from lib.migration_verifier import plotVerifierMetrics, gatherVerifierMetrics
 from pymongo.errors import InvalidURI, PyMongoError
-from app_config import (
+from lib.app_config import (
     setup_logging, validate_config, get_app_info, HOST, PORT, MAX_FILE_SIZE, 
-    REFRESH_TIME, APP_VERSION, validate_connection, clear_connection_cache, 
+    REFRESH_TIME, APP_VERSION, DEVELOPER_CREDITS, validate_connection, clear_connection_cache, 
     SECURE_COOKIES, CONNECTION_STRING, VERIFIER_CONNECTION_STRING,
-    PROGRESS_ENDPOINT_URL, validate_progress_endpoint_url, session_store, SESSION_TIMEOUT
+    PROGRESS_ENDPOINT_URL, validate_progress_endpoint_url, session_store, SESSION_TIMEOUT,
+    LOG_STORE_DIR, LOG_STORE_MAX_AGE_HOURS,
 )
-from connection_validator import sanitize_for_display
+from lib.connection_validator import sanitize_for_display
+from lib.log_store import LogStore
+from lib.log_store_registry import log_store_registry
+from lib.snapshot_store import (
+    load_snapshot, list_snapshots as get_snapshot_list,
+    delete_snapshot as remove_snapshot, cleanup_old_snapshots,
+)
 
 # Cookie name for session ID
 SESSION_COOKIE_NAME = 'mi_session_id'
@@ -48,6 +55,13 @@ app = Flask(__name__,
 
 # Configure Flask for file uploads
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+
+@app.route('/static/js/<path:filename>')
+def mi_static_js(filename):
+    """Serve shared JS (static_folder is reserved for /images)."""
+    return send_from_directory(os.path.join(_base_path, 'static', 'js'), filename)
+
 
 # Add security headers to all responses
 @app.after_request
@@ -86,7 +100,7 @@ def add_security_headers(response):
 # Make app version available to all templates
 @app.context_processor
 def inject_app_version():
-    return dict(app_version=APP_VERSION)
+    return dict(app_version=APP_VERSION, developer_credits=DEVELOPER_CREDITS)
 
 # Handle file too large error
 @app.errorhandler(413)
@@ -133,12 +147,103 @@ def home_page():
                            max_file_size_gb=max_file_size_gb)
 
 
-@app.route('/upload', methods=['POST'])
+@app.route('/logout', methods=['POST'])
+def logout():
+    session_id = request.cookies.get(SESSION_COOKIE_NAME)
+    if session_id:
+        session_store.delete_session(session_id)
+    log_store_registry.cleanup_expired()
+    cleanup_old_snapshots(LOG_STORE_DIR, LOG_STORE_MAX_AGE_HOURS)
+    response = make_response('', 200)
+    response.delete_cookie(SESSION_COOKIE_NAME)
+    return response
+
+
+@app.route('/uploadLogs', methods=['POST'])
 def uploadLogs():
     return upload_file()
 
-@app.route('/renderMetrics', methods=['POST'])
-def renderMetrics():
+@app.route('/search_logs')
+def search_logs():
+    """Full-text search across the uploaded log file via SQLite FTS5."""
+    store_id = request.args.get('store_id', '').strip()
+    if not store_id:
+        return jsonify({'error': 'Missing store_id parameter'}), 400
+
+    q = request.args.get('q', '').strip()
+    level = request.args.get('level', '').strip()
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+    except (ValueError, TypeError):
+        page = 1
+    try:
+        per_page = min(max(1, int(request.args.get('per_page', 50))), 200)
+    except (ValueError, TypeError):
+        per_page = 50
+
+    store = log_store_registry.open_store(store_id)
+    if store is None:
+        return jsonify({'error': 'Log store not found or expired'}), 404
+
+    try:
+        query = {}
+        if level:
+            query['level'] = level
+        if q:
+            query['$text'] = q
+
+        result = store.find(query, skip=(page - 1) * per_page, limit=per_page)
+        result['page'] = page
+        result['per_page'] = per_page
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Log search error: {e}")
+        return jsonify({'error': 'Search failed', 'detail': str(e)}), 500
+
+@app.route('/list_snapshots')
+def list_snapshots_route():
+    """Return JSON list of saved analysis snapshots."""
+    try:
+        snapshots = get_snapshot_list()
+        return jsonify(snapshots)
+    except Exception as e:
+        logger.error(f"Error listing snapshots: {e}")
+        return jsonify([])
+
+@app.route('/load_snapshot/<snapshot_id>')
+def load_snapshot_route(snapshot_id):
+    """Load a saved analysis snapshot and render the results page."""
+    data = load_snapshot(snapshot_id)
+    if data is None:
+        return render_template('error.html',
+                             error_title="Snapshot Not Found",
+                             error_message="The requested analysis snapshot was not found or has expired. "
+                                           "Please upload and parse the log file again.")
+
+    store_id = data.get('log_store_id', '')
+    if store_id:
+        from lib.snapshot_store import logstore_path
+        db_path = logstore_path(store_id)
+        if os.path.exists(db_path):
+            log_store_registry.register(store_id, db_path)
+
+    template_data = data.get('template_data', {})
+    return render_template('upload_results.html', **template_data)
+
+@app.route('/delete_snapshot/<snapshot_id>', methods=['DELETE'])
+def delete_snapshot_route(snapshot_id):
+    """Delete a saved analysis snapshot."""
+    deleted, store_id = remove_snapshot(snapshot_id)
+    if store_id:
+        log_store_registry.remove(store_id)
+    if deleted:
+        return jsonify({'status': 'ok'})
+    return jsonify({'error': 'Snapshot not found'}), 404
+
+
+
+@app.route('/liveMonitoring', methods=['POST'])
+def liveMonitoring():
     # Get connection string from env var or form (no caching)
     if CONNECTION_STRING:
         TARGET_MONGO_URI = CONNECTION_STRING
@@ -224,8 +329,8 @@ def renderMetrics():
     
     return response
 
-@app.route('/get_metrics_data', methods=['POST'])
-def getMetrics():
+@app.route('/getLiveMonitoring', methods=['POST'])
+def getLiveMonitoring():
     # Get connection string from env var or in-memory session store
     if CONNECTION_STRING:
         connection_string = CONNECTION_STRING
@@ -236,11 +341,11 @@ def getMetrics():
     
     if not connection_string:
         logger.error("No connection string available for metrics refresh")
-        return {"error": "No connection string available. Please refresh the page and re-enter your credentials."}, 400
+        return jsonify({"error": "No connection string available. Please refresh the page and re-enter your credentials."}), 400
     
-    return gatherMetrics(connection_string)
+    return jsonify(gatherMetrics(connection_string))
 
-@app.route('/get_partitions_data', methods=['POST'])
+@app.route('/getPartitionsData', methods=['POST'])
 def getPartitionsData():
     # Get connection string from env var or in-memory session store
     if CONNECTION_STRING:
@@ -252,11 +357,11 @@ def getPartitionsData():
     
     if not connection_string:
         logger.error("No connection string available for partitions data refresh")
-        return {"error": "No connection string available. Please refresh the page and re-enter your credentials."}, 400
+        return jsonify({"error": "No connection string available. Please refresh the page and re-enter your credentials."}), 400
     
-    return gatherPartitionsMetrics(connection_string)
+    return jsonify(gatherPartitionsMetrics(connection_string))
 
-@app.route('/get_endpoint_data', methods=['POST'])
+@app.route('/getEndpointData', methods=['POST'])
 def getEndpointData():
     # Get endpoint URL from env var or in-memory session store
     if PROGRESS_ENDPOINT_URL:
@@ -268,12 +373,12 @@ def getEndpointData():
     
     if not endpoint_url:
         logger.error("No progress endpoint URL available for endpoint data refresh")
-        return {"error": "No progress endpoint URL available. Please refresh the page and re-enter your credentials."}, 400
+        return jsonify({"error": "No progress endpoint URL available. Please refresh the page and re-enter your credentials."}), 400
     
-    return gatherEndpointMetrics(endpoint_url)
+    return jsonify(gatherEndpointMetrics(endpoint_url))
 
-@app.route('/renderVerifier', methods=['POST'])
-def renderVerifier():
+@app.route('/Verifier', methods=['POST'])
+def Verifier():
     """Render the migration verifier monitoring page."""
     # Get connection string from env var or form
     if VERIFIER_CONNECTION_STRING:
@@ -338,7 +443,7 @@ def renderVerifier():
     
     return response
 
-@app.route('/get_verifier_data', methods=['POST'])
+@app.route('/getVerifierData', methods=['POST'])
 def getVerifierData():
     """Get migration verifier metrics data for AJAX refresh."""
     session_id = request.cookies.get(SESSION_COOKIE_NAME)
@@ -351,11 +456,11 @@ def getVerifierData():
     
     if not connection_string:
         logger.error("No connection string available for verifier metrics refresh")
-        return {"error": "No connection string available. Please refresh the page and re-enter your credentials."}, 400
+        return jsonify({"error": "No connection string available. Please refresh the page and re-enter your credentials."}), 400
     
     db_name = session_data.get('verifier_db_name', 'migration_verification_metadata')
     
-    return gatherVerifierMetrics(connection_string, db_name)
+    return jsonify(gatherVerifierMetrics(connection_string, db_name))
 
 if __name__ == '__main__':
     # Log startup information
@@ -364,14 +469,17 @@ if __name__ == '__main__':
     logger.info(f"Log file: {app_info['log_file']}")
     logger.info(f"Server: {app_info['host']}:{app_info['port']}")
     
+    # Clean up expired log store DB files and snapshots from previous runs
+    LogStore.cleanup_old_stores(LOG_STORE_DIR, LOG_STORE_MAX_AGE_HOURS)
+    cleanup_old_snapshots(LOG_STORE_DIR, LOG_STORE_MAX_AGE_HOURS)
+    
     # Import SSL config
-    from app_config import SSL_ENABLED, SSL_CERT_PATH, SSL_KEY_PATH
+    from lib.app_config import SSL_ENABLED, SSL_CERT_PATH, SSL_KEY_PATH
     
     # Run the Flask app with or without SSL
     if SSL_ENABLED:
         import ssl
-        import os
-        
+
         # Verify certificate files exist
         if not os.path.exists(SSL_CERT_PATH):
             logger.error(f"SSL certificate not found: {SSL_CERT_PATH}")

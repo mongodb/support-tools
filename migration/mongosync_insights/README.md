@@ -4,12 +4,13 @@ This tool can parse **mongosync** logs and metrics files, read the **mongosync**
 
 ## What Does This Tool Do?
 
-Mongosync Insights provides four main capabilities:
+Mongosync Insights provides five main capabilities:
 
 1. **Log File Analysis**: Upload and parse mongosync log files to visualize migration progress, data transfer rates, performance metrics, configuration options, and detected errors
 2. **Mongosync Metrics Analysis**: Upload and parse `mongosync_metrics.log` files to visualize 40+ mongosync metrics across Collection Copy, CEA, Indexes, Verifier, and more
 3. **Live Monitoring**: Connect directly to the **mongosync** internal database or to the **mongosync** progress endpoint for real-time monitoring of ongoing migrations with auto-refreshing dashboards
-4. **Migration Verifier Monitoring**: Connect to the database where the [migration-verifier](https://github.com/mongodb-labs/migration-verifier) tool stores its metadata to track verification progress, generation history, and mismatch details
+4. **Combined Monitoring**: Provide both a MongoDB connection string and a progress endpoint URL to get a comprehensive view that merges metadata insights with real-time progress data
+5. **Migration Verifier Monitoring**: Connect to the database where the [migration-verifier](https://github.com/mongodb-labs/migration-verifier) tool stores its metadata to track verification progress, generation history, and mismatch details
 
 ## Prerequisites
 
@@ -64,7 +65,7 @@ python3 mongosync_insights.py
 
 The application will start and display:
 ```
-Starting Mongosync Insights v0.8.0.18
+Starting Mongosync Insights v0.8.1.14
 Server: 127.0.0.1:3030
 ```
 
@@ -79,12 +80,23 @@ http://localhost:3030
 
 ## Using Mongosync Insights
 
+### Sidebar Navigation
+
+Results pages include a left sidebar with quick-access buttons:
+
+- **Upload** — opens a dialog listing saved analyses with **Load** and **Delete** actions, plus an **"Upload New File"** button to parse a new log file
+- **Settings** — configure the live monitoring refresh interval, theme (Light, Dark, or System), and color scheme (MongoDB Green, Blue, Slate, Ocean)
+- **Logout** — clears the current session and returns to the home page
+- **Credits** — displays developer credits
+
 ### Option 1: Parsing Mongosync Log Files
 
 1. Click the **"Browse"** or **"Choose File"** button
 2. Select your mongosync log file from your file system
 3. Click **"Open"** or **"Upload"**
 4. The application will process the file and display results across multiple tabs
+
+**Duplicate Upload Detection:** If you upload a file with the same name as an existing saved analysis, a dialog will appear offering three options: **Load Previous** (open the saved session without re-parsing), **Replace** (delete the saved session and parse the file again), or **Cancel**.
 
 **Supported File Formats:**
 - Plain text: `.log`, `.json`, `.out`
@@ -111,12 +123,24 @@ After upload, the results are organized into tabs:
 | **Options** | Mongosync configuration options extracted from the logs (with **Copy as Markdown** for easy sharing) |
 | **Collections** | Collection-level progress details (with **Copy as Markdown** for easy sharing) |
 | **Errors** | Detected error patterns such as oplog rollover, timeouts, verifier mismatches, and write conflicts during cutover |
+| **Log Viewer** | Browse recent log lines with severity filtering, semantic focus, multiple view modes (Highlighted, Raw, Pretty JSON, Summary), and full-text search across the entire log file |
 
 ![Mongosync Logs Tab](images/mongosync_logs_logs.png)
 ![Mongosync Metrics Tab](images/mongosync_logs_metrics.png)
 ![Mongosync Options Tab](images/mongosync_logs_options.png)
 ![Mongosync Collections and Partitions Tab](images/mongosync_logs_collections_partitions.png)
 ![Mongosync Errors and Warnings Tab](images/mongosync_logs_errors.png)
+![Mongosync Log Viewer Tab](images/mongosync_logs_logviewer.png)
+
+#### Analysis Snapshot Persistence
+
+After parsing a log file, the analysis is automatically saved as a **snapshot** to disk. This allows you to reload a previous analysis instantly without re-parsing the original file.
+
+- The home page displays a **"Previous Analyses"** section below the upload form, listing all saved snapshots with their filename, date, file size, and age
+- Click **"Load"** to reopen a saved analysis — all tabs (plots, tables, log viewer) are restored immediately
+- Click the **delete** button to remove a snapshot you no longer need
+- Snapshots expire automatically after **24 hours** of inactivity; each time you load a snapshot, the TTL resets for another 24 hours
+- By default, snapshots are stored in the system's temp directory. Use the `MI_LOG_STORE_DIR` environment variable to set a persistent storage location. See [CONFIGURATION.md](CONFIGURATION.md) for details
 
 ### Option 2: Live Monitoring (Metadata)
 
@@ -173,6 +197,18 @@ This combined approach provides:
 - Full metadata insights from the destination cluster (partitions, collection progress, configuration)
 - Real-time progress data from the mongosync endpoint (state, lag time, verification status)
 
+#### About the Embedded Verifier
+
+The [Embedded Verifier](https://www.mongodb.com/docs/cluster-to-cluster-sync/current/reference/verification/embedded/) is mongosync's built-in verification mechanism, available since mongosync v1.9 and enabled by default. It performs document hashing on both source and destination clusters to confirm data was transferred correctly, without requiring any external tools.
+
+**Embedded Verifier field (Status tab — Option 2):** The "Embedded Verifier" field displays the `verificationmode` value from mongosync's internal metadata. Possible values: `Enabled` (default — verification is active) or `Disabled` (verification was turned off at start).
+
+**Can Write signal (Endpoint tab — Option 3):** `Can Write: True` is the definitive signal that the embedded verifier has completed successfully and found no mismatches. Until verification passes, `Can Write` remains `False`. This is the key field to watch for confirming migration correctness.
+
+**Verification phases (Endpoint tab — Option 3):** The "Embedded Verifier Status" table shows a `Phase` field for both source and destination independently. Key phases include `stream hashing` (actively hashing documents from change streams) and `idle` (not yet started or between operations).
+
+**Verifier Lag Time (Endpoint tab and uploaded metrics):** The `Lag Time Seconds` field in the verification table (and `Verifier Lag Time` in uploaded `mongosync_metrics.log` files) shows how far behind the verifier is in checking documents. High lag means verification will take longer to complete after commit. Persistently high lag may indicate the verifier cannot keep up with the write load.
+
 ### Option 5: Migration Verifier Monitoring
 
 1. Enter the MongoDB **connection string** to the cluster where the [migration-verifier](https://github.com/mongodb-labs/migration-verifier) tool writes its metadata (typically the destination cluster)
@@ -186,6 +222,31 @@ This combined approach provides:
    - Collection metadata mismatches
 
 ![Migration Verifier Dashboard](images/migration_verifier_dashboard.png)
+
+#### Important: Embedded Verifier
+
+> If verifying a migration done via mongosync, please check if the [Embedded Verifier](https://www.mongodb.com/docs/cluster-to-cluster-sync/current/reference/verification/embedded/) can be used, as it is the preferred approach for verification.
+
+#### About Migration Verifier
+
+The [migration-verifier](https://github.com/mongodb-labs/migration-verifier) is a standalone tool that validates migration correctness by comparing documents between source and destination clusters. It stores its state in a MongoDB database (default: `migration_verification_metadata`).
+
+**How it works:** The verifier operates in two phases. First, an initial check (generation 0) partitions the source data into chunks and compares documents byte-by-byte between source and destination. Then, iterative rechecks (generation 1, 2, ...) re-verify any documents that changed or failed during previous rounds. Only the **last generation's failures** are significant — earlier failures may be transient due to ongoing writes.
+
+**Key terms:**
+
+| Term | Description |
+|------|-------------|
+| **Generation** | A round of verification. Generation 0 is the initial full check; subsequent generations are rechecks of changed/failed documents. |
+| **FINAL** | Label shown on the dashboard for the last generation — only its failures indicate real mismatches. |
+| **Task statuses** | `added` (unstarted), `processing` (in-progress), `completed` (no issues), `failed` (document mismatch), `mismatch` (collection metadata mismatch). |
+
+**Metadata collections:**
+
+| Collection | Purpose |
+|------------|---------|
+| `verification_tasks` | Tracks each verification task with a generation number, status, and type (`verify` for documents, `verifyCollection` for metadata). |
+| `mismatches` | Records document-level mismatches found during verification. |
 
 **Note**: The `MI_VERIFIER_CONNECTION_STRING` environment variable can be used to pre-configure the connection string. When omitted, it falls back to `MI_CONNECTION_STRING`. See **[CONFIGURATION.md](CONFIGURATION.md)** for details.
 

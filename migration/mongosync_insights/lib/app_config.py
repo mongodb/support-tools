@@ -7,6 +7,7 @@ import re
 import logging
 import uuid
 import time
+import tempfile
 import threading
 from pathlib import Path
 from functools import lru_cache
@@ -22,7 +23,17 @@ PORT = int(os.getenv('MI_PORT', '3030'))
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.8.0.18"
+APP_VERSION = "0.8.1.14"
+
+DEVELOPER_CREDITS = {
+    "copyright": "\u00a9 MongoDB Inc.",
+    "year": "2025 - 2026",
+    "team_name": "Migration Factory TS Team",
+    "contributors": [
+        {"name": "Marcio Ribeiro", "role": "Development"},
+        {"name": "Krishna Kattumadam", "role": "Development"},
+    ],
+}
 
 # File upload settings
 MAX_FILE_SIZE = int(os.getenv('MI_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
@@ -37,6 +48,11 @@ ALLOWED_MIME_TYPES = [
     'application/x-tar',  # Tar archives
     'application/octet-stream'  # Generic binary (often used for compressed files)
 ]
+
+# Log Viewer settings
+LOG_VIEWER_MAX_LINES = int(os.getenv('MI_LOG_VIEWER_MAX_LINES', '2000'))
+LOG_STORE_DIR = os.getenv('MI_LOG_STORE_DIR', tempfile.gettempdir())
+LOG_STORE_MAX_AGE_HOURS = int(os.getenv('MI_LOG_STORE_MAX_AGE_HOURS', '24'))
 
 # Compressed file MIME types (subset of ALLOWED_MIME_TYPES)
 COMPRESSED_MIME_TYPES = {
@@ -118,6 +134,9 @@ PROGRESS_ENDPOINT_URL = os.getenv('MI_PROGRESS_ENDPOINT_URL', '')
 
 # MongoDB settings
 INTERNAL_DB_NAME = os.getenv('MI_INTERNAL_DB_NAME', "mongosync_reserved_for_internal_use")
+INTERNAL_DB_NAME_NEW = "__mdb_internal_mongosync"
+VERIFIER_SRC_NAMESPACE = "__mdb_internal_mongosync_verifier_src"
+VERIFIER_DST_NAMESPACE = "__mdb_internal_mongosync_verifier_dst"
 
 # UI settings
 MAX_PARTITIONS_DISPLAY = int(os.getenv('MI_MAX_PARTITIONS_DISPLAY', '10'))
@@ -283,6 +302,46 @@ def get_database(connection_string, database_name):
     """
     client = get_mongo_client(connection_string)
     return client[database_name]
+
+_resolved_internal_db_cache = {}
+_resolved_internal_db_lock = threading.Lock()
+
+def resolve_internal_db_name(connection_string):
+    """
+    Auto-detect which mongosync internal database name exists on the cluster.
+    
+    Checks for the new name first (__mdb_internal_mongosync), then falls back
+    to the legacy name (mongosync_reserved_for_internal_use). Results are cached
+    per connection string. The MI_INTERNAL_DB_NAME env var acts as a hard override.
+    
+    Args:
+        connection_string (str): MongoDB connection string
+        
+    Returns:
+        str: The resolved internal database name
+    """
+    if os.getenv('MI_INTERNAL_DB_NAME'):
+        return INTERNAL_DB_NAME
+
+    with _resolved_internal_db_lock:
+        if connection_string in _resolved_internal_db_cache:
+            return _resolved_internal_db_cache[connection_string]
+
+    logger = logging.getLogger(__name__)
+    try:
+        client = get_mongo_client(connection_string)
+        db_names = client.list_database_names()
+        if INTERNAL_DB_NAME_NEW in db_names:
+            resolved = INTERNAL_DB_NAME_NEW
+        else:
+            resolved = INTERNAL_DB_NAME
+        with _resolved_internal_db_lock:
+            _resolved_internal_db_cache[connection_string] = resolved
+        logger.info(f"Resolved internal DB name: {resolved}")
+        return resolved
+    except Exception as e:
+        logger.warning(f"Could not auto-detect internal DB name, using default: {e}")
+        return INTERNAL_DB_NAME
 
 def validate_connection(connection_string):
     """

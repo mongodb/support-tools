@@ -141,5 +141,19 @@
         "pattern": "refetched db-spec for recreating dst coll for natural scan",
         "friendly_name": "Restart Collection Copy in natural order",
         "full_error_message": "refetched db-spec for recreating dst coll for natural scan, collSpec: {COLLECTION DETAILS UUID {}}, isSrcDropped: XXX"
+      },
+      {
+        "pattern": "Change Event Application failed",
+        "friendly_name": "CEA failed undefined reason"
+      },
+      {
+        "pattern": "Failed to apply batch #1 for CRUD event application on the destination. Giving up on batch CRUD event application.",
+        "friendly_name": "Timeout on destination",
+        "full_error_message": "Failed to apply batch #1 for CRUD event application on the destination. Giving up on batch CRUD event application."
+      },
+      {
+        "pattern": "Got a fatal error running Mongosync",
+        "friendly_name": "Fatal error running Mongosync",
+        "full_error_message": "Got a fatal error running Mongosync"
       }
     ]

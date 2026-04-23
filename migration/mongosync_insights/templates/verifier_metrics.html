@@ -116,9 +116,29 @@
 
 {% block scripts %}
 <script>
+function showVerifierError(title, message) {
+    const err = document.getElementById("error");
+    err.replaceChildren();
+    const container = document.createElement("div");
+    container.className = "error-container";
+    const h3 = document.createElement("h3");
+    h3.textContent = title;
+    container.appendChild(h3);
+    const pMsg = document.createElement("p");
+    pMsg.textContent = message;
+    container.appendChild(pMsg);
+    const pLink = document.createElement("p");
+    const a = document.createElement("a");
+    a.href = "/";
+    a.textContent = "Go back to home";
+    pLink.appendChild(a);
+    container.appendChild(pLink);
+    err.appendChild(container);
+}
+
 async function fetchVerifierData() {
     try {
-        const response = await fetch("/get_verifier_data", { method: 'POST', credentials: 'same-origin' });
+        const response = await fetch("/getVerifierData", { method: 'POST', credentials: 'same-origin' });
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Request failed');
@@ -128,17 +148,7 @@ async function fetchVerifierData() {
         if (plotData.error) {
             document.getElementById("loading").style.display = "none";
             document.getElementById("error").style.display = "block";
-            document.getElementById("error").innerHTML = `
-                <div class="error-container">
-                    <h3>Connection Error</h3>
-                    <p id="error-message"></p>
-                    <p><a href="/">Go back to home</a></p>
-                </div>
-            `;
-            const errorMessageElement = document.getElementById("error-message");
-            if (errorMessageElement) {
-                errorMessageElement.textContent = String(plotData.error);
-            }
+            showVerifierError("Connection Error", String(plotData.error));
             return;
         }
         
@@ -150,23 +160,34 @@ async function fetchVerifierData() {
         console.error("Error fetching verifier data:", err);
         document.getElementById("loading").style.display = "none";
         document.getElementById("error").style.display = "block";
-        document.getElementById("error").innerHTML = `
-            <div class="error-container">
-                <h3>Error Loading Data</h3>
-                <p>Failed to fetch verifier metrics. Please check your connection.</p>
-                <p><a href="/">Go back to home</a></p>
-            </div>
-        `;
+        showVerifierError("Error Loading Data", "Failed to fetch verifier metrics. Please check your connection.");
     }
 }
 
 fetchVerifierData(); // initial load
-setInterval(fetchVerifierData, {{ refresh_time_ms }}); // update every {{ refresh_time }} seconds
+var _refreshMs = parseInt(sessionStorage.getItem('mi_refresh_time'), 10);
+_refreshMs = (_refreshMs > 0 ? _refreshMs * 1000 : {{ refresh_time_ms }});
+var _refreshIntervalId = setInterval(fetchVerifierData, _refreshMs);
+
+function _updateFooterRefresh(ms) {
+    var label = document.getElementById('mi-verifier-refresh-label');
+    if (label) label.textContent = 'Refreshing every ' + (ms / 1000) + ' seconds';
+}
+_updateFooterRefresh(_refreshMs);
+
+window.addEventListener('mi-refresh-changed', function(e) {
+    var newMs = e.detail.refreshSec * 1000;
+    if (newMs > 0 && newMs !== _refreshMs) {
+        clearInterval(_refreshIntervalId);
+        _refreshMs = newMs;
+        _refreshIntervalId = setInterval(fetchVerifierData, _refreshMs);
+        _updateFooterRefresh(_refreshMs);
+    }
+});
 </script>
 {% endblock %}
 
 {% block footer %}
-<p>Refreshing every {{ refresh_time }} seconds -
-    <a href="https://github.com/mongodb-labs/migration-verifier" target="_blank">Migration Verifier Docs</a> -
-    Version {{ app_version }}</p>
+<p><span id="mi-verifier-refresh-label">Refreshing every {{ refresh_time }} seconds</span> -
+    <a href="https://github.com/mongodb-labs/migration-verifier" target="_blank" rel="noopener noreferrer">Migration Verifier Docs</a></p>
 {% endblock %}
