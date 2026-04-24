@@ -143,7 +143,8 @@ def upload_file():
         error_patterns = [
             {
                 'pattern': re.compile(ep['pattern'], re.IGNORECASE),
-                'friendly_name': ep['friendly_name']
+                'friendly_name': ep['friendly_name'],
+                'recommendation': ep.get('recommendation', ''),
             }
             for ep in error_patterns_config
         ]
@@ -312,6 +313,7 @@ def upload_file():
                     if ep['pattern'].search(message):
                         matched_errors.append({
                             'friendly_name': ep['friendly_name'],
+                            'recommendation': ep['recommendation'],
                             'message': message,
                             'time': json_obj.get('time', ''),
                             'level': json_obj.get('level', ''),

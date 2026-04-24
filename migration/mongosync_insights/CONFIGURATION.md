@@ -55,7 +55,7 @@ All configuration can be set using `export` commands before running the applicat
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MI_ERROR_PATTERNS_FILE` | `lib/error_patterns.json` _(auto-detected)_ | Path to a custom error patterns JSON file used during log analysis to detect common errors (e.g., oplog rollover, timeouts, verifier mismatches) |
+| `MI_ERROR_PATTERNS_FILE` | `lib/error_patterns.json` _(auto-detected)_ | Path to a custom error patterns JSON file used during log analysis to detect common errors (e.g., oplog rollover, timeouts, verifier mismatches). Each entry may include an optional `recommendation` string, shown in the Errors tab when a line matches that pattern. |
 
 ### UI Customization
 

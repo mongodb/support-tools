@@ -150,7 +150,8 @@ def load_error_patterns():
     Load error patterns from external JSON file.
     
     Returns:
-        list: List of dictionaries with 'pattern' and 'friendly_name' keys
+        list: List of dictionaries with 'pattern' and 'friendly_name' keys, and
+        optionally 'recommendation' (string shown in the Errors tab for matches).
     """
     import json
     logger = logging.getLogger(__name__)
