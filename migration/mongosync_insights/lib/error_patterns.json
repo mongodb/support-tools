@@ -194,5 +194,11 @@
     "friendly_name": "Fatal error running Mongosync",
     "full_error_message": "Got a fatal error running Mongosync",
     "recommendation": "Got a fatal error running Mongosync is a generic top-level message emitted when mongosync hits a non-recoverable error and is about to shut down; the real cause is the labeled error and analysis data attached to that same log entry. Recommendation: find that exact line in the logs and read the preceding/embedded error details (e.g. verifier mismatch, index error, auth, oplog, etc.), fix that specific root cause using its own guidance, then rerun mongosync from scratch or from the appropriate phase."
+  },
+  {
+    "pattern": "mongosync cannot migrate into namespaces that already have shard tags configured.",
+    "friendly_name": "Shard tags already exist in destination",
+    "full_error_message": "destination namespace has preconfigured shard zone ranges (shard tags); mongosync cannot migrate into namespaces that already have shard tags configured. Please remove all shard tag ranges for any namespaces mongosync will migrate into on the destination cluster. Then restart the migration from scratch and add the desired zone ranges after the migration is COMMITTED.",
+    "recommendation": "Please remove all shard tag ranges for any namespaces mongosync will migrate into on the destination cluster. Then restart the migration from scratch and add the desired zone ranges after the migration is COMMITTED."
   }
 ]
