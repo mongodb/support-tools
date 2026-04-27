@@ -19,6 +19,11 @@ Or with authentication:
 mongosh "mongodb://user:password@localhost:27017" --quiet probIndexesComplete.js
 ```
 
+## Expected Output Files
+
+- IndexStats.csv
+- IndexStats.md
+
 ## Example Output
 
 ```
