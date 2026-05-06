@@ -682,6 +682,48 @@ def upload_file():
             except (json.JSONDecodeError, TypeError, ValueError, AttributeError):
                 continue
 
+        # progress.verification (from sent response) for embedded verifier charts
+        verif_src_scan_times = []
+        verif_src_scanned = []
+        verif_src_total_coll = []
+        verif_dst_scan_times = []
+        verif_dst_scanned = []
+        verif_dst_total_coll = []
+        verif_src_hash_times = []
+        verif_src_hashed = []
+        verif_src_estimated = []
+        verif_dst_hash_times = []
+        verif_dst_hashed = []
+        verif_dst_estimated = []
+
+        for response in mongosync_sent_response:
+            try:
+                t_raw = response.get('time')
+                if not t_raw:
+                    continue
+                t = datetime.strptime(t_raw[:26], "%Y-%m-%dT%H:%M:%S.%f")
+                parsed_body = json.loads(response.get('body', '{}'))
+                progress = parsed_body.get('progress') or {}
+                ver = progress.get('verification')
+                if not isinstance(ver, dict) or not ver:
+                    continue
+                src = ver.get('source') or {}
+                dst = ver.get('destination') or {}
+                verif_src_scan_times.append(t)
+                verif_src_scanned.append(_safe_int_catchup(src.get('scannedCollectionCount')))
+                verif_src_total_coll.append(_safe_int_catchup(src.get('totalCollectionCount')))
+                verif_dst_scan_times.append(t)
+                verif_dst_scanned.append(_safe_int_catchup(dst.get('scannedCollectionCount')))
+                verif_dst_total_coll.append(_safe_int_catchup(dst.get('totalCollectionCount')))
+                verif_src_hash_times.append(t)
+                verif_src_hashed.append(_safe_int_catchup(src.get('hashedDocumentCount')))
+                verif_src_estimated.append(_safe_int_catchup(src.get('estimatedDocumentCount')))
+                verif_dst_hash_times.append(t)
+                verif_dst_hashed.append(_safe_int_catchup(dst.get('hashedDocumentCount')))
+                verif_dst_estimated.append(_safe_int_catchup(dst.get('estimatedDocumentCount')))
+            except (json.JSONDecodeError, TypeError, ValueError, AttributeError):
+                continue
+
         # Estimated Source Oplog Time Remaining (from replication progress logs)
         def _parse_oplog_time_remaining_minutes(value):
             """Convert estimatedOplogTimeRemaining string to minutes."""
@@ -744,6 +786,14 @@ def upload_file():
             all_times.extend(src_lag_times)
         if cea_catchup_times:
             all_times.extend(cea_catchup_times)
+        if verif_src_scan_times:
+            all_times.extend(verif_src_scan_times)
+        if verif_dst_scan_times:
+            all_times.extend(verif_dst_scan_times)
+        if verif_src_hash_times:
+            all_times.extend(verif_src_hash_times)
+        if verif_dst_hash_times:
+            all_times.extend(verif_dst_hash_times)
 
         if all_times:
             global_min_date = min(all_times)
@@ -805,7 +855,7 @@ def upload_file():
         logger.info(f"Plotting")
 
         # Create a subplot for the scatter plots (tables are now in a separate tab)
-        fig = make_subplots(rows=15, cols=2, subplot_titles=("Mongosync Phases", "Mongosync Phases Table",
+        fig = make_subplots(rows=17, cols=2, subplot_titles=("Mongosync Phases", "Mongosync Phases Table",
                                                             "Lag Time (seconds)", "Estimated Source Oplog Time Remaining (minutes)",
                                                             "Ping Latency (ms)", "Average Source CRUD Event Rate (Events/sec)",
                                                             "Est. seconds to CEA catchup", "",
@@ -819,7 +869,9 @@ def upload_file():
                                                             "CEA Destination - Avg and Max Write time (ms)", "CEA Destination Writes",
                                                             "Collections finished", "Collections total / finished",
                                                             "Index Built", "Total and Index Built",
-                                                            "Source Verifier Lag Time (seconds)", "Destination Verifier Lag Time (seconds)"),
+                                                            "Source Verifier Lag Time (seconds)", "Destination Verifier Lag Time (seconds)",
+                                                            "Verification collections (source)", "Verification collections (destination)",
+                                                            "Verification document hash (source)", "Verification document hash (destination)"),
                             specs=[ [{}, {"type": "table"}], #Row 1: Mongosync Phases and Phases Table
                                     [{}, {}], #Row 2: Lag Time and Estimated Source Oplog Time Remaining
                                     [{}, {}], #Row 3: Ping Latency and CRUD Event Rate
@@ -834,7 +886,9 @@ def upload_file():
                                     [{}, {}], #Row 12: CEA Destination
                                     [{}, {}], #Row 13: Collections (time + summary bars)
                                     [{}, {}], #Row 14: Index Built and Total and Index Built
-                                    [{}, {}] ]) #Row 15: Verifier Lag
+                                    [{}, {}], #Row 15: Verifier Lag
+                                    [{}, {}], #Row 16: Verification collections
+                                    [{}, {}] ]) #Row 17: Verification document hash
 
         # Add traces
 
@@ -1196,9 +1250,41 @@ def upload_file():
             fig.update_yaxes(range=[-1, 1], row=15, col=2)
             fig.update_xaxes(range=[-1, 1], row=15, col=2)
 
+        # Row 16: Verification collection scan (source / destination)
+        if any(v is not None for v in verif_src_scanned) or any(v is not None for v in verif_src_total_coll):
+            fig.add_trace(go.Scattergl(x=verif_src_scan_times, y=verif_src_scanned, mode='lines', name='Source scanned collections', legendgroup="groupVerifierScan"), row=16, col=1)
+            fig.add_trace(go.Scattergl(x=verif_src_scan_times, y=verif_src_total_coll, mode='lines', name='Source total collections', legendgroup="groupVerifierScan"), row=16, col=1)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Verification collections (source)', textfont=dict(size=30, color="black")), row=16, col=1)
+            fig.update_yaxes(range=[-1, 1], row=16, col=1)
+            fig.update_xaxes(range=[-1, 1], row=16, col=1)
+        if any(v is not None for v in verif_dst_scanned) or any(v is not None for v in verif_dst_total_coll):
+            fig.add_trace(go.Scattergl(x=verif_dst_scan_times, y=verif_dst_scanned, mode='lines', name='Destination scanned collections', legendgroup="groupVerifierScan"), row=16, col=2)
+            fig.add_trace(go.Scattergl(x=verif_dst_scan_times, y=verif_dst_total_coll, mode='lines', name='Destination total collections', legendgroup="groupVerifierScan"), row=16, col=2)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Verification collections (destination)', textfont=dict(size=30, color="black")), row=16, col=2)
+            fig.update_yaxes(range=[-1, 1], row=16, col=2)
+            fig.update_xaxes(range=[-1, 1], row=16, col=2)
+
+        # Row 17: Verification document hash (source / destination)
+        if any(v is not None for v in verif_src_hashed) or any(v is not None for v in verif_src_estimated):
+            fig.add_trace(go.Scattergl(x=verif_src_hash_times, y=verif_src_hashed, mode='lines', name='Source hashed documents', legendgroup="groupVerifierHash"), row=17, col=1)
+            fig.add_trace(go.Scattergl(x=verif_src_hash_times, y=verif_src_estimated, mode='lines', name='Source estimated documents', legendgroup="groupVerifierHash"), row=17, col=1)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Verification document hash (source)', textfont=dict(size=30, color="black")), row=17, col=1)
+            fig.update_yaxes(range=[-1, 1], row=17, col=1)
+            fig.update_xaxes(range=[-1, 1], row=17, col=1)
+        if any(v is not None for v in verif_dst_hashed) or any(v is not None for v in verif_dst_estimated):
+            fig.add_trace(go.Scattergl(x=verif_dst_hash_times, y=verif_dst_hashed, mode='lines', name='Destination hashed documents', legendgroup="groupVerifierHash"), row=17, col=2)
+            fig.add_trace(go.Scattergl(x=verif_dst_hash_times, y=verif_dst_estimated, mode='lines', name='Destination estimated documents', legendgroup="groupVerifierHash"), row=17, col=2)
+        else:
+            fig.add_trace(go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name='Verification document hash (destination)', textfont=dict(size=30, color="black")), row=17, col=2)
+            fig.update_yaxes(range=[-1, 1], row=17, col=2)
+            fig.update_xaxes(range=[-1, 1], row=17, col=2)
+
         # Update layout
-        # 225 per plot (15 rows)
-        fig.update_layout(height=15 * 225, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=190, showlegend=False)
+        # 225 per plot (17 rows)
+        fig.update_layout(height=17 * 225, width=1450, title_text="Mongosync Replication Progress - " + version_text + " - Timezone info: " + timeZoneInfo, legend_tracegroupgap=190, showlegend=False)
         
         # Force all y-axes to start at 0 for better visual comparison
         fig.update_yaxes(rangemode='tozero')
@@ -1235,7 +1321,7 @@ def upload_file():
                     fig.update_xaxes(range=[global_min_date, global_max_date], row=row, col=col)
             fig.update_xaxes(range=[global_min_date, global_max_date], row=4, col=1)
             fig.update_xaxes(range=[global_min_date, global_max_date], row=5, col=1)
-            for row in range(6, 16):  # rows 6-15 (both cols are charts)
+            for row in range(6, 18):  # rows 6-17 (both cols are charts)
                 for col in range(1, 3):
                     fig.update_xaxes(range=[global_min_date, global_max_date], row=row, col=col)
 
