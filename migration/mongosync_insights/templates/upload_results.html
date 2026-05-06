@@ -62,6 +62,8 @@
         background-color: #fff;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         min-height: 400px;
+        /* main uses --mi-text-primary (often light); force readable text on white panels */
+        color: #222;
     }
 
     #plot,
@@ -183,13 +185,15 @@
     }
 
     .options-table th.sortable-th:hover {
-        background-color: rgba(0, 104, 74, 0.08);
+        background-color: #e8f5f1;
+        color: #00684A;
     }
 
     .options-table td {
         padding: 10px 15px;
         border-bottom: 1px solid #e0e0e0;
         vertical-align: top;
+        color: #333;
     }
 
     .options-table tr:hover {
@@ -288,6 +292,8 @@
         border-radius: 6px;
         outline: none;
         transition: all 0.2s ease;
+        color: #222;
+        background-color: #fff;
     }
 
     .filter-input:focus {
