@@ -19,6 +19,13 @@
         return true;
     }
 
+    function shardKeyIsPrefix(shardKey, indexKey) {
+        const skFields = Object.keys(shardKey);
+        const ixFields = Object.keys(indexKey);
+        if (skFields.length > ixFields.length) return false;
+        return skFields.every((f, i) => ixFields[i] === f);
+    }
+
     const shardedColls = configDB.collections.find({
         dropped: { $ne: true },
         key: { $exists: true }
@@ -65,7 +72,7 @@
 
         const candidateIndexes = indexes.filter(idx => {
             const eff = idx.collation || collDefaultCollation || null;
-            return isNonSimpleCollation(eff);
+            return isNonSimpleCollation(eff) && idx.unique && shardKeyIsPrefix(shardKey, idx.key);
         });
 
         if (candidateIndexes.length === 0) continue;

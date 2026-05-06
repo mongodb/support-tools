@@ -105,7 +105,7 @@ Exit code: `0`. **This collection is NOT affected.**
      Collation: {"locale":"en_US","strength":2}
      Result: 2 duplicate group(s) found:
 
-       Key values: {"name":"John Smith"}
+       Key values: {"customerId": 123, "name":"John Smith"}
        Count:      2
        Sample _ids: [ObjectId("665a1b..."), ObjectId("665a1c...")]
 

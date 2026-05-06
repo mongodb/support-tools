@@ -26,6 +26,13 @@
         return true;
     }
 
+    function shardKeyIsPrefix(shardKey, indexKey) {
+        const skFields = Object.keys(shardKey);
+        const ixFields = Object.keys(indexKey);
+        if (skFields.length > ixFields.length) return false;
+        return skFields.every((f, i) => ixFields[i] === f);
+    }
+
     let shardedColls = configDB.collections.find({
         dropped: { $ne: true },
         key: { $exists: true }
@@ -84,7 +91,7 @@
 
         const candidates = indexes.filter(idx => {
             const eff = idx.collation || collDefaultCollation || null;
-            return isNonSimpleCollation(eff);
+            return isNonSimpleCollation(eff) && idx.unique && shardKeyIsPrefix(shardKey, idx.key);
         });
 
         if (candidates.length === 0) continue;
@@ -108,15 +115,8 @@
             const projectSpec = { _id: 1 };
             keyFields.forEach(f => { projectSpec[f] = 1; });
 
-            const shardKeyFields = new Set(Object.keys(shardKey));
-            const suffixFields = keyFields.filter(f => !shardKeyFields.has(f));
-
             const groupId = {};
-            if (suffixFields.length > 0) {
-                suffixFields.forEach(f => { groupId[f] = "$" + f; });
-            } else {
-                keyFields.forEach(f => { groupId[f] = "$" + f; });
-            }
+            keyFields.forEach(f => { groupId[f] = "$" + f; });
 
             const pipeline = [
                 { $project: projectSpec },
