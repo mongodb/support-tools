@@ -147,7 +147,7 @@ function printShardInfo() {
                 for (k in db) {
                     if (db.hasOwnProperty(k)) doc[k] = db[k];
                 }
-                if (db.partitioned) {
+                if (db.partitioned !== false) {
                     doc['collections'] = [];
                     configDB.collections.find({
                         _id: new RegExp("^" +
