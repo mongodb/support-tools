@@ -558,7 +558,12 @@ function printDataInfo(isMongoS) {
                     // Filter out views
                     db.getSiblingDB(mydb.name).getCollectionInfos({ "type": "collection" }).forEach(function (collectionInfo) {
                         var name = collectionInfo['name'];
-                        if (!name.startsWith("system.")) {
+                        if (
+                             !name.startsWith("system.") &&
+                             !name.startsWith("replicaset") &&
+                             !name.startsWith("startup_log") &&
+                             !name.startsWith("replset")
+                         ) {
                             // Filter out the collections with the "system." prefix in all databases
                             collectionNames.push(name);
                         }
