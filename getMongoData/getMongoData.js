@@ -61,7 +61,7 @@
 //      _maxCollections is reached. Instead, the last element of the output JSON array contains an 
 //      error message.
 //  -   _printJSON outputs error messages after the JSON array is printed, instead of before. 
-var _version = "4.1.1";
+var _version = "4.1.2";
 
 (function () {
     "use strict";
