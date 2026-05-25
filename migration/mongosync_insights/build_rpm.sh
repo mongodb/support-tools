@@ -30,7 +30,7 @@ cd "$SCRIPT_DIR"
 # ---------------------------------------------------------------------------
 APP_VERSION=$(python3 -c "
 import re, pathlib
-m = re.search(r'APP_VERSION\s*=\s*\"([^\"]+)\"', pathlib.Path('app_config.py').read_text())
+m = re.search(r'APP_VERSION\s*=\s*\"([^\"]+)\"', pathlib.Path('lib/app_config.py').read_text())
 print(m.group(1))
 ")
 echo "==> Building Mongosync Insights v${APP_VERSION}"

@@ -486,7 +486,7 @@ sudo systemctl restart apache2
 | `MI_SSL_KEY` | `/etc/letsencrypt/live/your-domain/privkey.pem` | Path to SSL private key file |
 | `MI_PORT` | `3030` | Port to run the application on (use 443 for HTTPS) |
 | `MI_HOST` | `127.0.0.1` | Host to bind to (use 0.0.0.0 for all interfaces) |
-| `MI_SECURE_COOKIES` | `true` | Enable secure cookies (requires HTTPS) |
+| `MI_SECURE_COOKIES` | mirrors `MI_SSL_ENABLED` (`false` when HTTPS is off) | Enable secure cookies (set `true` when using HTTPS) |
 
 ### Example Configurations
 

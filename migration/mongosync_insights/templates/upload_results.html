@@ -247,6 +247,22 @@
         padding-bottom: 0;
     }
 
+    .errors-disclaimer {
+        margin: 0 0 16px 0;
+        padding: 12px 14px;
+        background: #f0f7f5;
+        border: 1px solid #b8ddd4;
+        border-left: 4px solid #00684A;
+        border-radius: 4px;
+        font-size: 13px;
+        line-height: 1.55;
+        color: #333;
+    }
+
+    .errors-disclaimer strong {
+        color: #00684A;
+    }
+
     .copy-btn {
         padding: 6px 14px;
         font-size: 12px;
@@ -821,6 +837,11 @@
                         <button class="copy-btn" onclick="copyErrorsAsMarkdown(this)">Copy as Markdown</button>
                         {% endif %}
                     </div>
+                    <p class="errors-disclaimer" role="note">
+                        <strong>Note:</strong>
+                        Recommendations are pattern-based hints to speed up triage, not official runbooks.
+                        Review the full log line, your mongosync version, and cluster context, and validate each step in a non-production environment before applying changes to a live migration.
+                    </p>
                     {% if errors_data %}
                     <table class="options-table" id="errors-table">
                         <thead>

@@ -166,7 +166,16 @@ def get_live_monitoring():
             }
         ), 400
 
-    return jsonify(gatherMetrics(connection_string))
+    try:
+        return jsonify(gatherMetrics(connection_string))
+    except PyMongoError as e:
+        clear_connection_cache()
+        logger.error("Live monitoring metrics failed: %s", e)
+        return jsonify(
+            {
+                "error": "Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible."
+            }
+        ), 503
 
 
 @bp.route("/getPartitionsData", methods=["POST"])
@@ -186,7 +195,16 @@ def get_partitions_data():
             }
         ), 400
 
-    return jsonify(gatherPartitionsMetrics(connection_string))
+    try:
+        return jsonify(gatherPartitionsMetrics(connection_string))
+    except PyMongoError as e:
+        clear_connection_cache()
+        logger.error("Partitions metrics failed: %s", e)
+        return jsonify(
+            {
+                "error": "Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible."
+            }
+        ), 503
 
 
 @bp.route("/getEndpointData", methods=["POST"])

@@ -118,16 +118,49 @@ def create_app():
 
 app = create_app()
 
+
+def _format_access_url(host: str, port: int, *, use_ssl: bool) -> str:
+    """Build a browser-friendly URL for the bind host/port."""
+    scheme = "https" if use_ssl else "http"
+    if host in ("0.0.0.0", ""):
+        display_host = "127.0.0.1"
+    elif host == "::":
+        display_host = "[::1]"
+    else:
+        display_host = host
+        if ":" in display_host and not display_host.startswith("["):
+            try:
+                import ipaddress
+
+                if ipaddress.ip_address(display_host).version == 6:
+                    display_host = f"[{display_host}]"
+            except ValueError:
+                pass
+    return f"{scheme}://{display_host}:{port}/"
+
+
 if __name__ == "__main__":
+    import flask.cli
+
+    flask.cli.show_server_banner = lambda *args, **kwargs: None
+
     app_info = get_app_info()
     logger.info("Starting %s v%s", app_info["name"], app_info["version"])
     logger.info("Log file: %s", app_info["log_file"])
     logger.info("Server: %s:%s", app_info["host"], app_info["port"])
 
+    from lib.app_config import SSL_CERT_PATH, SSL_ENABLED, SSL_KEY_PATH
+
+    access_url = _format_access_url(HOST, PORT, use_ssl=SSL_ENABLED)
+    logger.info("Access URL: %s", access_url)
+    print(f"\n  {app_info['name']} v{app_info['version']}", flush=True)
+    print(f"  Open in browser: {access_url}", flush=True)
+    if HOST in ("0.0.0.0", "::"):
+        print(f"  (listening on {HOST}:{PORT} — use your machine IP for remote access)", flush=True)
+    print(flush=True)
+
     LogStore.cleanup_old_stores(LOG_STORE_DIR, LOG_STORE_MAX_AGE_HOURS)
     cleanup_old_snapshots(LOG_STORE_DIR, LOG_STORE_MAX_AGE_HOURS)
-
-    from lib.app_config import SSL_CERT_PATH, SSL_ENABLED, SSL_KEY_PATH
 
     if SSL_ENABLED:
         import ssl

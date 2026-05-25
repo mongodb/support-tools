@@ -63,12 +63,14 @@ pip3 install -r requirements.txt
 python3 mongosync_insights.py
 ```
 
-The application will start and display:
+The application will print the access URL to the console, for example:
 
 ```
-Starting Mongosync Insights v0.8.1.14
-Server: 127.0.0.1:3030
+  Mongosync Insights v0.8.2.8
+  Open in browser: http://127.0.0.1:3030/
 ```
+
+Startup details are also written to `insights.log` (or the path set by `MI_LOG_FILE`).
 
 ### Access the Web Interface
 
@@ -77,8 +79,6 @@ Open your web browser and navigate to:
 ```
 http://localhost:3030
 ```
-
-Mongosync Logs Analyzer
 
 ## Using Mongosync Insights
 
@@ -313,7 +313,7 @@ For detailed guides, see:
 - **[PACKAGING.md](PACKAGING.md)** - Build a self-contained RPM for offline/air-gapped deployment
 - **[CONFIGURATION.md](CONFIGURATION.md)** - Complete environment variables reference, configuration options, and MongoDB connection pooling
 - **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
-- **[VALIDATION.md](VALIDATION.md)** - Connection string validation, sanitization, and error handling
+- **[CONNECTION_STRING.md](CONNECTION_STRING.md)** - Connection string formats, security, and troubleshooting
 - **[LOG_VERBOSITY.md](LOG_VERBOSITY.md)** - How mongosync log verbosity levels affect plot and panel coverage
 
 ## Security Best Practices
@@ -322,7 +322,7 @@ For detailed guides, see:
 - ✅ Keep SSL certificates up to date with auto-renewal
 - ✅ Use environment variables for sensitive configuration (never hardcode connection strings)
 - ✅ The application includes security headers for XSS, CSRF, and clickjacking protection
-- ✅ Secure cookies are enabled by default when using HTTPS
+- ✅ Set `MI_SECURE_COOKIES=true` (or enable `MI_SSL_ENABLED`) for secure session cookies over HTTPS
 
 ## Troubleshooting
 

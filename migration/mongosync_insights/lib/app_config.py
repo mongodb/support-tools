@@ -23,7 +23,7 @@ PORT = int(os.getenv('MI_PORT', '3030'))
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.8.2.7"
+APP_VERSION = "0.8.2.8"
 
 DEVELOPER_CREDITS = {
     "copyright": "\u00a9 MongoDB Inc.",
