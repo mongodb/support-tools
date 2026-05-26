@@ -61,7 +61,7 @@
 //      _maxCollections is reached. Instead, the last element of the output JSON array contains an 
 //      error message.
 //  -   _printJSON outputs error messages after the JSON array is printed, instead of before. 
-var _version = "4.1.1";
+var _version = "4.1.2";
 
 (function () {
     "use strict";
@@ -147,7 +147,7 @@ function printShardInfo() {
                 for (k in db) {
                     if (db.hasOwnProperty(k)) doc[k] = db[k];
                 }
-                if (db.partitioned) {
+                if (db.partitioned !== false) {
                     doc['collections'] = [];
                     configDB.collections.find({
                         _id: new RegExp("^" +
@@ -558,10 +558,23 @@ function printDataInfo(isMongoS) {
                     // Filter out views
                     db.getSiblingDB(mydb.name).getCollectionInfos({ "type": "collection" }).forEach(function (collectionInfo) {
                         var name = collectionInfo['name'];
-                        if (!name.startsWith("system.")) {
-                            // Filter out the collections with the "system." prefix in all databases
-                            collectionNames.push(name);
+
+                        // Always filter out "system." collections across all databases.
+                        if (name.startsWith("system.")) {
+                            return;
                         }
+
+                        // Filter MongoDB-internal replication metadata collections, but ONLY
+                        // in the "local" database, to avoid dropping legitimate user
+                        // collections (e.g., app.replsetEvents, app.startup_log_archive)
+                        // that happen to share a similar name in user databases.
+                        if (mydb.name === "local") {
+                            if (name === "startup_log" || name.startsWith("replset.")) {
+                                return;
+                            }
+                        }
+
+                        collectionNames.push(name);
                     })
 
                     return collectionNames;
