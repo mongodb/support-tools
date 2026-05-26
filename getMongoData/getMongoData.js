@@ -558,15 +558,23 @@ function printDataInfo(isMongoS) {
                     // Filter out views
                     db.getSiblingDB(mydb.name).getCollectionInfos({ "type": "collection" }).forEach(function (collectionInfo) {
                         var name = collectionInfo['name'];
-                        if (
-                             !name.startsWith("system.") &&
-                             !name.startsWith("replicaset") &&
-                             !name.startsWith("startup_log") &&
-                             !name.startsWith("replset")
-                         ) {
-                            // Filter out the collections with the "system." prefix in all databases
-                            collectionNames.push(name);
+
+                        // Always filter out "system." collections across all databases.
+                        if (name.startsWith("system.")) {
+                            return;
                         }
+
+                        // Filter MongoDB-internal replication metadata collections, but ONLY
+                        // in the "local" database, to avoid dropping legitimate user
+                        // collections (e.g., app.replsetEvents, app.startup_log_archive)
+                        // that happen to share a similar name in user databases.
+                        if (mydb.name === "local") {
+                            if (name === "startup_log" || name.startsWith("replset.")) {
+                                return;
+                            }
+                        }
+
+                        collectionNames.push(name);
                     })
 
                     return collectionNames;
