@@ -66,7 +66,7 @@ python3 mongosync_insights.py
 The application will print the access URL to the console, for example:
 
 ```
-  Mongosync Insights v0.8.2.8
+  Mongosync Insights v0.8.2.7
   Open in browser: http://127.0.0.1:3030/
 ```
 
