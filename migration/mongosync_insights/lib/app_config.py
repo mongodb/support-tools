@@ -23,7 +23,7 @@ PORT = int(os.getenv('MI_PORT', '3030'))
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.8.1.14"
+APP_VERSION = "0.8.2.7"
 
 DEVELOPER_CREDITS = {
     "copyright": "\u00a9 MongoDB Inc.",
@@ -150,7 +150,8 @@ def load_error_patterns():
     Load error patterns from external JSON file.
     
     Returns:
-        list: List of dictionaries with 'pattern' and 'friendly_name' keys
+        list: List of dictionaries with 'pattern' and 'friendly_name' keys, and
+        optionally 'recommendation' (string shown in the Errors tab for matches).
     """
     import json
     logger = logging.getLogger(__name__)

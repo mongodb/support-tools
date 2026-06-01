@@ -43,7 +43,7 @@ dist/mongosync-insights-<version>-1.x86_64.rpm
 Copy the RPM to the target machine (USB, SCP, etc.) and install:
 
 ```bash
-sudo rpm -i mongosync-insights-0.8.0.18-1.x86_64.rpm
+sudo rpm -i mongosync-insights-0.8.2.7-1.x86_64.rpm
 ```
 
 No internet access is required. No additional packages need to be installed.

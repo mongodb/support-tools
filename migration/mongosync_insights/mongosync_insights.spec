@@ -33,6 +33,10 @@ a = Analysis(
         (certifi_path, 'certifi'),
     ],
     hiddenimports=[
+        'blueprints',
+        'blueprints.logs',
+        'blueprints.live',
+        'lib.session_support',
         'lib.logs_metrics',
         'lib.live_migration_metrics',
         'lib.migration_verifier',

@@ -63,20 +63,22 @@ pip3 install -r requirements.txt
 python3 mongosync_insights.py
 ```
 
-The application will start and display:
+The application will print the access URL to the console, for example:
+
 ```
-Starting Mongosync Insights v0.8.1.14
-Server: 127.0.0.1:3030
+  Mongosync Insights v0.8.2.7
+  Open in browser: http://127.0.0.1:3030/
 ```
+
+Startup details are also written to `insights.log` (or the path set by `MI_LOG_FILE`).
 
 ### Access the Web Interface
 
 Open your web browser and navigate to:
+
 ```
 http://localhost:3030
 ```
-
-![Mongosync Logs Analyzer](images/mongosync_insights_home.png)
 
 ## Using Mongosync Insights
 
@@ -99,6 +101,7 @@ Results pages include a left sidebar with quick-access buttons:
 **Duplicate Upload Detection:** If you upload a file with the same name as an existing saved analysis, a dialog will appear offering three options: **Load Previous** (open the saved session without re-parsing), **Replace** (delete the saved session and parse the file again), or **Cancel**.
 
 **Supported File Formats:**
+
 - Plain text: `.log`, `.json`, `.out`
 - Compressed: `.gz`, `.zip`, `.bz2`, `.tar.gz`, `.tgz`, `.tar.bz2`
 
@@ -106,31 +109,38 @@ Compressed files are automatically decompressed during processing. Archives (ZIP
 
 **Note**: Log files must be in mongosync's native **NDJSON** (Newline Delimited JSON) format. Each line should be a valid JSON object.
 
+**Log Verbosity and Plot Coverage:**
+
+Most plots populate with mongosync's **default log level** (`info`). The only chart that requires elevated verbosity is the **Partition Init Summary** table's partition count and duration columns, which need `--verbosity 1` (`debug` level). For full coverage, start mongosync with `--verbosity 1`. See **[LOG_VERBOSITY.md](LOG_VERBOSITY.md)** for the complete breakdown.
+
 **Automatic File Classification:**
 
 The tool automatically classifies files based on their filename:
-- **Mongosync logs** (`mongosync.log`, `mongosync-*`, `liveimport_*`) -- parsed for migration progress and events
-- **Mongosync metrics** (`mongosync_metrics.log`, `mongosync_metrics-*`) -- parsed for mongosync performance metrics
+
+- **Mongosync logs** (`mongosync.log`, `mongosync-`*, `liveimport_*`) -- parsed for migration progress and events
+- **Mongosync metrics** (`mongosync_metrics.log`, `mongosync_metrics-`*) -- parsed for mongosync performance metrics
 
 **Results Tabs:**
 
 After upload, the results are organized into tabs:
 
-| Tab | Description |
-|-----|-------------|
-| **Logs** | Migration progress plots: Total/Copied bytes, CEA Reads/Writes, Collection Copy Reads/Writes, Events applied, Lag Time |
-| **Metrics** | Mongosync metrics plots (when a `mongosync_metrics` file is uploaded): 40+ metrics across Collection Copy, Core Replication, CEA Reader, CEA CRUD Applier, Hot Documents, Indexes, Buffer Service, Bulk Inserter, and Verifier |
-| **Options** | Mongosync configuration options extracted from the logs (with **Copy as Markdown** for easy sharing) |
-| **Collections** | Collection-level progress details (with **Copy as Markdown** for easy sharing) |
-| **Errors** | Detected error patterns such as oplog rollover, timeouts, verifier mismatches, and write conflicts during cutover |
-| **Log Viewer** | Browse recent log lines with severity filtering, semantic focus, multiple view modes (Highlighted, Raw, Pretty JSON, Summary), and full-text search across the entire log file |
 
-![Mongosync Logs Tab](images/mongosync_logs_logs.png)
-![Mongosync Metrics Tab](images/mongosync_logs_metrics.png)
-![Mongosync Options Tab](images/mongosync_logs_options.png)
-![Mongosync Collections and Partitions Tab](images/mongosync_logs_collections_partitions.png)
-![Mongosync Errors and Warnings Tab](images/mongosync_logs_errors.png)
-![Mongosync Log Viewer Tab](images/mongosync_logs_logviewer.png)
+| Tab             | Description                                                                                                                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Logs**        | Migration progress plots: Total/Copied bytes, CEA Reads/Writes, Collection Copy Reads/Writes, Events applied, Lag Time                                                                                                         |
+| **Metrics**     | Mongosync metrics plots (when a `mongosync_metrics` file is uploaded): 40+ metrics across Collection Copy, Core Replication, CEA Reader, CEA CRUD Applier, Hot Documents, Indexes, Buffer Service, Bulk Inserter, and Verifier |
+| **Options**     | Mongosync configuration options extracted from the logs (with **Copy as Markdown** for easy sharing)                                                                                                                           |
+| **Collections** | Collection-level progress details (with **Copy as Markdown** for easy sharing)                                                                                                                                                 |
+| **Errors**      | Detected error patterns such as oplog rollover, timeouts, verifier mismatches, and write conflicts during cutover                                                                                                              |
+| **Log Viewer**  | Browse recent log lines with severity filtering, semantic focus, multiple view modes (Highlighted, Raw, Pretty JSON, Summary), and full-text search across the entire log file                                                 |
+
+
+Mongosync Logs Tab
+Mongosync Metrics Tab
+Mongosync Options Tab
+Mongosync Collections and Partitions Tab
+Mongosync Errors and Warnings Tab
+Mongosync Log Viewer Tab
 
 #### Analysis Snapshot Persistence
 
@@ -145,55 +155,56 @@ After parsing a log file, the analysis is automatically saved as a **snapshot** 
 ### Option 2: Live Monitoring (Metadata)
 
 1. Enter the MongoDB **connection string** to your destination cluster
-   - Format: `mongodb+srv://user:password@cluster.mongodb.net/`
-   - This is where mongosync stores its internal metadata
+  - Format: `mongodb+srv://user:password@cluster.mongodb.net/`
+  - This is where mongosync stores its internal metadata
 2. Click **"Live Monitor"**
 3. The page will refresh automatically every 10 seconds (configurable) showing:
-   - State
-   - Phase
-   - Start and finish time
-   - Lag time
-   - Reversible
-   - Write Blocking Mode
-   - Build Indexes Method
-   - Detect Random ID
-   - Embedded Verifier method
-   - Namespace Filters
-   - Partitions Completed
-   - Data Copied
-   - Migration Phases
-   - Collection Progress
+  - State
+  - Phase
+  - Start and finish time
+  - Lag time
+  - Reversible
+  - Write Blocking Mode
+  - Build Indexes Method
+  - Detect Random ID
+  - Embedded Verifier method
+  - Namespace Filters
+  - Partitions Completed
+  - Data Copied
+  - Migration Phases
+  - Collection Progress
 
-![Mongosync metadata status](images/mongosync_metadata_status.png)
-![Mongosync metadata progress](images/mongosync_metadata_progress.png)
+Mongosync metadata status
+Mongosync metadata progress
 
 ### Option 3: Live Monitoring (Progress Endpoint)
 
 1. Enter the MongoDB **Progress Endpoint URL**
-   - Format: `host:port/api/v1/progress`
+  - Format: `host:port/api/v1/progress`
 2. Click **"Live Monitor"**
 3. The page will refresh automatically every 10 seconds (configurable) showing:
-   - State
-   - Lag time 
-   - Can Commit
-   - Can Write
-   - Phase
-   - Mongosync ID
-   - Coordinator ID
-   - Collection Copy progress
-   - Direction Mapping (source x destination)
-   - Source and Destination Ping Latency
-   - Events applied
-   - Verification table to compare the status between the source and the destination
-   - Verification progress based on Document Count
+  - State
+  - Lag time 
+  - Can Commit
+  - Can Write
+  - Phase
+  - Mongosync ID
+  - Coordinator ID
+  - Collection Copy progress
+  - Direction Mapping (source x destination)
+  - Source and Destination Ping Latency
+  - Events applied
+  - Verification table to compare the status between the source and the destination
+  - Verification progress based on Document Count
 
-![Mongosync Endpoint](images/mongosync_endpoint.png)
+Mongosync Endpoint
 
 ### Option 4: Combined Monitoring (Metadata + Progress Endpoint)
 
 You can provide **both** the MongoDB connection string and the Progress Endpoint URL to get a comprehensive view that combines data from both sources. Simply fill in both fields and click **"Live Monitor"**.
 
 This combined approach provides:
+
 - Full metadata insights from the destination cluster (partitions, collection progress, configuration)
 - Real-time progress data from the mongosync endpoint (state, lag time, verification status)
 
@@ -215,13 +226,13 @@ The [Embedded Verifier](https://www.mongodb.com/docs/cluster-to-cluster-sync/cur
 2. Optionally customize the **Verifier Database Name** (default: `migration_verification_metadata`)
 3. Click **"Monitor Verifier"**
 4. The page will refresh automatically every 10 seconds (configurable) showing:
-   - Generation history (Initial Verification, Recheck #1, #2, etc.)
-   - Per-generation summary with task status (completed, failed, pending, processing)
-   - Failed tasks details with mismatch information
-   - Namespace stats (per-namespace verification progress)
-   - Collection metadata mismatches
+  - Generation history (Initial Verification, Recheck #1, #2, etc.)
+  - Per-generation summary with task status (completed, failed, pending, processing)
+  - Failed tasks details with mismatch information
+  - Namespace stats (per-namespace verification progress)
+  - Collection metadata mismatches
 
-![Migration Verifier Dashboard](images/migration_verifier_dashboard.png)
+Migration Verifier Dashboard
 
 #### Important: Embedded Verifier
 
@@ -235,18 +246,22 @@ The [migration-verifier](https://github.com/mongodb-labs/migration-verifier) is 
 
 **Key terms:**
 
-| Term | Description |
-|------|-------------|
-| **Generation** | A round of verification. Generation 0 is the initial full check; subsequent generations are rechecks of changed/failed documents. |
-| **FINAL** | Label shown on the dashboard for the last generation — only its failures indicate real mismatches. |
+
+| Term              | Description                                                                                                                                        |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Generation**    | A round of verification. Generation 0 is the initial full check; subsequent generations are rechecks of changed/failed documents.                  |
+| **FINAL**         | Label shown on the dashboard for the last generation — only its failures indicate real mismatches.                                                 |
 | **Task statuses** | `added` (unstarted), `processing` (in-progress), `completed` (no issues), `failed` (document mismatch), `mismatch` (collection metadata mismatch). |
+
 
 **Metadata collections:**
 
-| Collection | Purpose |
-|------------|---------|
+
+| Collection           | Purpose                                                                                                                             |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `verification_tasks` | Tracks each verification task with a generation number, status, and type (`verify` for documents, `verifyCollection` for metadata). |
-| `mismatches` | Records document-level mismatches found during verification. |
+| `mismatches`         | Records document-level mismatches found during verification.                                                                        |
+
 
 **Note**: The `MI_VERIFIER_CONNECTION_STRING` environment variable can be used to pre-configure the connection string. When omitted, it falls back to `MI_CONNECTION_STRING`. See **[CONFIGURATION.md](CONFIGURATION.md)** for details.
 
@@ -265,6 +280,7 @@ Configure the application using environment variables. See **[CONFIGURATION.md](
 - Security and session settings
 
 **Quick Example:**
+
 ```bash
 export MI_PORT=8080
 export MI_REFRESH_TIME=5
@@ -281,6 +297,7 @@ For production deployments, enable HTTPS encryption. See **[HTTPS_SETUP.md](HTTP
 - Reverse proxy setup with Nginx/Apache (recommended)
 
 **Quick Enable HTTPS:**
+
 ```bash
 export MI_SSL_ENABLED=true
 export MI_SSL_CERT=/path/to/certificate.pem
@@ -296,7 +313,8 @@ For detailed guides, see:
 - **[PACKAGING.md](PACKAGING.md)** - Build a self-contained RPM for offline/air-gapped deployment
 - **[CONFIGURATION.md](CONFIGURATION.md)** - Complete environment variables reference, configuration options, and MongoDB connection pooling
 - **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
-- **[VALIDATION.md](VALIDATION.md)** - Connection string validation, sanitization, and error handling
+- **[CONNECTION_STRING.md](CONNECTION_STRING.md)** - Connection string formats, security, and troubleshooting
+- **[LOG_VERBOSITY.md](LOG_VERBOSITY.md)** - How mongosync log verbosity levels affect plot and panel coverage
 
 ## Security Best Practices
 
@@ -304,16 +322,18 @@ For detailed guides, see:
 - ✅ Keep SSL certificates up to date with auto-renewal
 - ✅ Use environment variables for sensitive configuration (never hardcode connection strings)
 - ✅ The application includes security headers for XSS, CSRF, and clickjacking protection
-- ✅ Secure cookies are enabled by default when using HTTPS
+- ✅ Set `MI_SECURE_COOKIES=true` (or enable `MI_SSL_ENABLED`) for secure session cookies over HTTPS
 
 ## Troubleshooting
 
 ### Plots not visible after upload
+
 - Refresh the page
 - Check the console for error messages
 - Verify the log file format is correct
 
 ### Connection failures (Live Monitoring)
+
 - Verify the connection string format and credentials
 - Ensure network connectivity to the MongoDB cluster
 - Check that the mongosync internal database exists
@@ -322,8 +342,8 @@ For detailed guides, see:
 
 [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
-DISCLAIMER
-----------
+## DISCLAIMER
+
 Please note: all tools/ scripts in this repo are released for use "AS IS" **without any warranties of any kind**,
 including, but not limited to their installation, use, or performance.  We disclaim any and all warranties, either 
 express or implied, including but not limited to any warranty of noninfringement, merchantability, and/ or fitness 

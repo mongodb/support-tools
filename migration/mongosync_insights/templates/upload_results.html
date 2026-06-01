@@ -62,6 +62,8 @@
         background-color: #fff;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         min-height: 400px;
+        /* main uses --mi-text-primary (often light); force readable text on white panels */
+        color: #222;
     }
 
     #plot,
@@ -183,13 +185,15 @@
     }
 
     .options-table th.sortable-th:hover {
-        background-color: rgba(0, 104, 74, 0.08);
+        background-color: #e8f5f1;
+        color: #00684A;
     }
 
     .options-table td {
         padding: 10px 15px;
         border-bottom: 1px solid #e0e0e0;
         vertical-align: top;
+        color: #333;
     }
 
     .options-table tr:hover {
@@ -210,6 +214,13 @@
         white-space: pre-wrap;
         font-family: 'Courier New', monospace;
         font-size: 12px;
+    }
+
+    .options-table .recommendation-cell {
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        font-size: 12px;
+        color: #333;
     }
 
     .no-data-message {
@@ -234,6 +245,22 @@
         margin: 0;
         border-bottom: none;
         padding-bottom: 0;
+    }
+
+    .errors-disclaimer {
+        margin: 0 0 16px 0;
+        padding: 12px 14px;
+        background: #f0f7f5;
+        border: 1px solid #b8ddd4;
+        border-left: 4px solid #00684A;
+        border-radius: 4px;
+        font-size: 13px;
+        line-height: 1.55;
+        color: #333;
+    }
+
+    .errors-disclaimer strong {
+        color: #00684A;
     }
 
     .copy-btn {
@@ -281,6 +308,8 @@
         border-radius: 6px;
         outline: none;
         transition: all 0.2s ease;
+        color: #222;
+        background-color: #fff;
     }
 
     .filter-input:focus {
@@ -797,7 +826,7 @@
         <div class="plot-container">
             <div class="filter-container">
                 <input type="text" id="errors-filter" class="filter-input" 
-                       placeholder="Filter errors by name or message..." 
+                       placeholder="Filter errors by name, message, or recommendation..." 
                        oninput="filterErrorsTable(this.value)">
             </div>
             <div class="options-container">
@@ -808,14 +837,20 @@
                         <button class="copy-btn" onclick="copyErrorsAsMarkdown(this)">Copy as Markdown</button>
                         {% endif %}
                     </div>
+                    <p class="errors-disclaimer" role="note">
+                        <strong>Note:</strong>
+                        Recommendations are pattern-based hints to speed up triage, not official runbooks.
+                        Review the full log line, your mongosync version, and cluster context, and validate each step in a non-production environment before applying changes to a live migration.
+                    </p>
                     {% if errors_data %}
                     <table class="options-table" id="errors-table">
                         <thead>
                             <tr>
-                                <th style="width: 15%;" class="sortable-th" data-label="Friendly Name" onclick="sortTableByColumn('errors-table', 0, 'text')" title="Click to sort">Friendly Name</th>
-                                <th style="width: 20%;" class="sortable-th" data-label="Time" onclick="sortTableByColumn('errors-table', 1, 'date')" title="Click to sort">Time</th>
-                                <th style="width: 10%;" class="sortable-th" data-label="Level" onclick="sortTableByColumn('errors-table', 2, 'text')" title="Click to sort">Level</th>
-                                <th style="width: 55%;" class="sortable-th" data-label="Message" onclick="sortTableByColumn('errors-table', 3, 'text')" title="Click to sort">Message</th>
+                                <th style="width: 14%;" class="sortable-th" data-label="Friendly Name" onclick="sortTableByColumn('errors-table', 0, 'text')" title="Click to sort">Friendly Name</th>
+                                <th style="width: 18%;" class="sortable-th" data-label="Time" onclick="sortTableByColumn('errors-table', 1, 'date')" title="Click to sort">Time</th>
+                                <th style="width: 8%;" class="sortable-th" data-label="Level" onclick="sortTableByColumn('errors-table', 2, 'text')" title="Click to sort">Level</th>
+                                <th style="width: 24%;" class="sortable-th" data-label="Recommendation" onclick="sortTableByColumn('errors-table', 3, 'text')" title="Click to sort">Recommendation</th>
+                                <th style="width: 36%;" class="sortable-th" data-label="Message" onclick="sortTableByColumn('errors-table', 4, 'text')" title="Click to sort">Message</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -824,10 +859,11 @@
                                 <td class="key-cell">{{ error.friendly_name }}</td>
                                 <td>{{ error.time }}</td>
                                 <td>{{ error.level }}</td>
+                                <td class="recommendation-cell">{{ error.recommendation or '' }}</td>
                                 <td class="value-cell">{{ error.message }}</td>
                             </tr>
                             <tr id="error-detail-{{ loop.index }}" class="error-detail-row" style="display: none;">
-                                <td colspan="4" class="error-detail-cell">
+                                <td colspan="5" class="error-detail-cell">
                                     <div class="error-detail-content">
                                         <div class="error-detail-actions">
                                             <button class="copy-btn" onclick="copyErrorLog('{{ loop.index }}', 'plain', this); event.stopPropagation();" title="Copy log line as plain text">Copy Plain Log</button>
@@ -1239,13 +1275,15 @@ function filterErrorsTable(searchText) {
     rows.forEach(function(row) {
         var keyCell = row.querySelector('.key-cell');
         var valueCell = row.querySelector('.value-cell');
+        var recCell = row.querySelector('.recommendation-cell');
         
         var friendlyName = keyCell ? keyCell.textContent.toLowerCase() : '';
         var message = valueCell ? valueCell.textContent.toLowerCase() : '';
+        var recommendation = recCell ? recCell.textContent.toLowerCase() : '';
         
         var detailRow = row.nextElementSibling;
         
-        if (filter === '' || friendlyName.includes(filter) || message.includes(filter)) {
+        if (filter === '' || friendlyName.includes(filter) || message.includes(filter) || recommendation.includes(filter)) {
             row.style.display = '';
             visibleCount++;
         } else {
@@ -1270,15 +1308,18 @@ function copyErrorsAsMarkdown(buttonElement) {
     
     // Build Markdown table
     var markdown = '## Common Errors Found in Log\n\n';
-    markdown += '| Friendly Name | Time | Level | Message |\n';
-    markdown += '|---------------|------|-------|----------|\n';
+    markdown += '| Friendly Name | Time | Level | Recommendation | Message |\n';
+    markdown += '|---------------|------|-------|----------------|----------|\n';
     
     errorsData.forEach(function(item) {
         var message = String(item.message)
             .replace(/\|/g, '\\|')
             .replace(/\n/g, ' ');
+        var recommendation = String(item.recommendation || '')
+            .replace(/\|/g, '\\|')
+            .replace(/\n/g, ' ');
         
-        markdown += '| ' + item.friendly_name + ' | ' + item.time + ' | ' + item.level + ' | ' + message + ' |\n';
+        markdown += '| ' + item.friendly_name + ' | ' + item.time + ' | ' + item.level + ' | ' + recommendation + ' | ' + message + ' |\n';
     });
     
     // Copy to clipboard
@@ -1481,7 +1522,8 @@ function copyNaturalOrderAsMarkdown(buttonElement) {
 
 var LV_STORE_ID = {{ log_store_id | tojson }};
 var LV_INITIAL_LINES = {{ log_viewer_lines | tojson }};
-var LV_MAX_LINES = 2000;
+var LV_SERVER_MAX_LINES = {{ log_viewer_max_lines | default(2000) }};
+var LV_MAX_LINES = LV_SERVER_MAX_LINES;
 
 var lvLogLines = [];
 var lvInitialized = false;
@@ -1849,8 +1891,10 @@ function lvOnSearchInput(value) {
     }, 300);
 }
 
+var LOGS_SEARCH_URL = {{ url_for('logs.search_logs')|tojson }};
+
 function lvSearchServer(query, level, page) {
-    var url = '/search_logs?store_id=' + encodeURIComponent(LV_STORE_ID)
+    var url = LOGS_SEARCH_URL + '?store_id=' + encodeURIComponent(LV_STORE_ID)
         + '&q=' + encodeURIComponent(query)
         + '&page=' + page
         + '&per_page=' + lvPerPage;

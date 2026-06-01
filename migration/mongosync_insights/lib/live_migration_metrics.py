@@ -42,7 +42,7 @@ def gatherMetrics(connection_string):
         logger.info("Connected to target MongoDB cluster using connection pooling.")
     except PyMongoError as e:
         logger.error(f"Failed to connect to target MongoDB: {e}")
-        exit(1)
+        raise
     # Create a subplot for status information (4 rows)
     fig = make_subplots(rows=4, 
                         cols=5, 
@@ -73,7 +73,7 @@ def gatherMetrics(connection_string):
     vResumeData = internalDbDst.resumeData.find_one({"_id": "coordinator"})
 
     #Plot mongosync State
-    vState = vResumeData["state"]
+    vState = vResumeData.get("state", "NO DATA") if vResumeData else "NO DATA"
     if vState == 'RUNNING':
         vColor = 'blue'
     elif vState == "IDLE":
@@ -92,7 +92,8 @@ def gatherMetrics(connection_string):
                       yaxis1=dict(showgrid=False, zeroline=False, showticklabels=False))
 
     #Plot Mongosync Phase
-    vPhase = vResumeData["syncPhase"].capitalize()
+    sync_phase = vResumeData.get("syncPhase") if vResumeData else None
+    vPhase = sync_phase.capitalize() if sync_phase else "No Data"
     wrapped_phase = "<br>".join(textwrap.wrap(str(vPhase), width=15))
     fig.add_trace(go.Scatter(x=[0], y=[0], text=[wrapped_phase], mode='text', name='Mongosync Phase',textfont=dict(size=17, color="black")), row=1, col=2)
     fig.update_layout(xaxis2=dict(showgrid=False, zeroline=False, showticklabels=False), 
@@ -364,7 +365,7 @@ def gatherPartitionsMetrics(connection_string):
         logger.info("Connected to target MongoDB for progress metrics.")
     except PyMongoError as e:
         logger.error(f"Failed to connect to target MongoDB: {e}")
-        exit(1)
+        raise
     
     # Create subplots for progress view (2x2 grid)
     fig = make_subplots(

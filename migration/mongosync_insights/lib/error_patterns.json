@@ -1,159 +1,204 @@
 [
-      {
-        "pattern": "resume point may no longer be in the oplog",
-        "friendly_name": "Oplog rollover"
-      },
-      {
-        "pattern": "the resume token was not found",
-        "friendly_name": "Oplog rollover"
-      },
-      {
-        "pattern": "failed to run inserter service for partition",
-        "friendly_name": "timeout on dest"
-      },
-      {
-        "pattern": "timed out after attempting to execute a command on the MongoDB server",
-        "friendly_name": "timeout on dest"
-      },
-      {
-        "pattern": "verifier indicated a mismatch",
-        "friendly_name": "Verifier mismatch"
-      },
-      {
-        "pattern": "the verifier found one or more mismatches",
-        "friendly_name": "Verifier mismatch"
-      },
-      {
-        "pattern": "source cluster was modified after Mongosync final verification began",
-        "friendly_name": "Write on source during cutover"
-      },
-      {
-        "pattern": "destination indexes should not be `unique` yet",
-        "friendly_name": "Verifier: metadata failed (unique index issue)"
-      },
-      {
-        "pattern": "not authorized on shoreplanner to execute command",
-        "friendly_name": "Verifier: metadata failed (permissions issue)"
-      },
-      {
-        "pattern": "failed to update document on destination",
-        "friendly_name": "addFields update error"
-      },
-      {
-        "pattern": "namespace conflict detected",
-        "friendly_name": "Conflicting namespaces"
-      },
-      {
-        "pattern": "no documents in result",
-        "friendly_name": "Driver Error"
-      },
-      {
-        "pattern": "failed to enable index constraints",
-        "friendly_name": "Failed unique index conversion"
-      },
-      {
-        "pattern": "unique index was set on the source that is incompatible",
-        "friendly_name": "Incompatible unique index"
-      },
-      {
-        "pattern": "Index Checker Service exceeded the maximum number of index creation attempts",
-        "friendly_name": "Index creation attempts"
-      },
-      {
-        "pattern": "IndexNotFound",
-        "friendly_name": "Index not found"
-      },
-      {
-        "pattern": "turn off profiling",
-        "friendly_name": "profiling enabled"
-      },
-      {
-        "pattern": "failed to open change stream using resume token",
-        "friendly_name": "Server Error"
-      },
-      {
-        "pattern": "cluster is not sharded",
-        "friendly_name": "Sharded misconfiguration"
-      },
-      {
-        "pattern": "is a timeseries collection",
-        "friendly_name": "timeseries"
-      },
-      {
-        "pattern": "TooManyFilesOpen",
-        "friendly_name": "Too many open files"
-      },
-      {
-        "pattern": "addShardToZone",
-        "friendly_name": "Unauthorized to run addShardToZone"
-      },
-      {
-        "pattern": "IndexOptionsConflict",
-        "friendly_name": "unique and non-unique indexes"
-      },
-      {
-        "pattern": "Cannot convert the index to unique",
-        "friendly_name": "Unique index conversion"
-      },
-      {
-        "pattern": "UserWritesBlocked",
-        "friendly_name": "User writes blocked"
-      },
-      {
-        "pattern": "User writes blocked",
-        "friendly_name": "User writes blocked"
-      },
-      {
-        "pattern": "the destination cluster was modified after Mongosync final verification began",
-        "friendly_name": "Write on destination during cutover"
-      },
-      {
-        "pattern": "bulk write exception: write errors",
-        "friendly_name": "Bulk Write error (duplicate key)"
-      },
-      {
-        "pattern": "DDL events are unsupported on pre-6.0 source",
-        "friendly_name": "DDL event on source"
-      },
-      {
-        "pattern": "No indexed plans available, and running with 'notablescan'",
-        "friendly_name": "Query internal partitions error (NoQueryExecutionPlans)"
-      },
-      {
-        "pattern": "Values in the index key pattern cannot be empty strings",
-        "friendly_name": "Index creation error (empty string index)"
-      },
-      {
-        "pattern": "Must have an index compatible with the proposed shard key",
-        "friendly_name": "Dest collection sharding failure (no compatible index)"
-      },
-      {
-        "pattern": "Most source writes appear to be from $out aggregations",
-        "friendly_name": "Source writes from $out aggregations. Consider pausing workloads that run $out aggregations.",
-        "full_error_message": "Most source writes appear to be from $out aggregations. This might mean that relatively few documents are being constantly updated. Mongosync may not be able to keep pace with the source's workload."
-      },
-      {
-        "pattern": "The level of CEA parallelization for this collection is low",
-        "friendly_name": "Hot Documents",
-        "full_error_message": "The level of CEA parallelization for this collection is low. This might mean that relatively few documents are being constantly updated. Mongosync may not be able to keep pace with the source's workload."
-      },
-      {
-        "pattern": "refetched db-spec for recreating dst coll for natural scan",
-        "friendly_name": "Restart Collection Copy in natural order",
-        "full_error_message": "refetched db-spec for recreating dst coll for natural scan, collSpec: {COLLECTION DETAILS UUID {}}, isSrcDropped: XXX"
-      },
-      {
-        "pattern": "Change Event Application failed",
-        "friendly_name": "CEA failed undefined reason"
-      },
-      {
-        "pattern": "Failed to apply batch #1 for CRUD event application on the destination. Giving up on batch CRUD event application.",
-        "friendly_name": "Timeout on destination",
-        "full_error_message": "Failed to apply batch #1 for CRUD event application on the destination. Giving up on batch CRUD event application."
-      },
-      {
-        "pattern": "Got a fatal error running Mongosync",
-        "friendly_name": "Fatal error running Mongosync",
-        "full_error_message": "Got a fatal error running Mongosync"
-      }
-    ]
+  {
+    "pattern": "resume point may no longer be in the oplog",
+    "friendly_name": "Oplog rollover",
+    "recommendation": "resume point may no longer be in the oplog means mongosync’s change stream fell behind and the resume token it needs has already been rolled out of the oplog, so the migration can’t continue from that point (an oplog rollover). Fix by increasing the source oplog window (and destination, if the error is from the embedded verifier), reducing write volume so mongosync can keep up, and restarting the migration from scratch with the larger oplog in place."
+  },
+  {
+    "pattern": "the resume token was not found",
+    "friendly_name": "Oplog rollover",
+    "recommendation": "the resume token was not found means mongosync’s change stream fell behind and the resume token it needs has already been rolled out of the oplog, so the migration can’t continue from that point (an oplog rollover). Fix by increasing the source oplog window (and destination, if the error is from the embedded verifier), reducing write volume so mongosync can keep up, and restarting the migration from scratch with the larger oplog in place."
+  },
+  {
+    "pattern": "failed to run inserter service for partition",
+    "friendly_name": "timeout on dest",
+    "recommendation": "failed to run inserter service for partition is a wrapper error meaning mongosync failed to insert documents for a specific partition into the destination collection; the real cause is the inner error from BufferService.RunForCollection (e.g. duplicate key, auth, network, etc.). Check the next/inner log lines for the specific insert/write error on that namespace, fix the underlying issue (e.g. resolve duplicate keys, permissions, connectivity, timeouts), then rerun the collection copy or the whole migration once the cause is addressed."
+  },
+  {
+    "pattern": "timed out after attempting to execute a command on the MongoDB server",
+    "friendly_name": "timeout on dest",
+    "recommendation": "It means mongosync issued a command to MongoDB but timed out waiting for the server’s response, usually due to server resource contention or a transient connectivity/server-selection problem on the source or destination. Recommendation: check cluster and network health (CPU/disk, scaling events, ReplicaSetNoPrimary, DNS/VPN/PE issues), then reduce load or scale up and, if needed, increase timeoutMS on the affected connection string before restarting/resuming the migration."
+  },
+  {
+    "pattern": "verifier indicated a mismatch",
+    "friendly_name": "Verifier mismatch",
+    "recommendation": "verifier indicated a mismatch means mongosync’s embedded verifier compared source and destination and found at least one data or index mismatch, so verification failed for that namespace. Check the following log lines to see which collection/keys differ, ensure there were no writes to source or destination during verification/cutover, then fix or recopy the affected collections (often by rerunning the migration/verification from scratch once the discrepancy is resolved)."
+  },
+  {
+    "pattern": "the verifier found one or more mismatches",
+    "friendly_name": "Verifier mismatch",
+    "recommendation": "the verifier found one or more mismatches means mongosync’s embedded verifier detected differences between source and destination, so commit failed and verification did not pass. Recommendation: review the verifier warn-level logs to identify the mismatched collections/keys, ensure no writes occurred on source or destination during verification, then recopy those collections or rerun the migration/verification from scratch after fixing the discrepancy."
+  },
+  {
+    "pattern": "source cluster was modified after Mongosync final verification began",
+    "friendly_name": "Write on source during cutover",
+    "recommendation": "It means that during final verification, mongosync’s change stream saw writes/DDL on the source cluster after verification started, so it aborted to avoid cutting over from a moving target. Recommendation: fully stop/block all writes and schema changes on the source before starting cutover/final verification, then rerun verification (or the migration) from scratch once the source is quiescent."
+  },
+  {
+    "pattern": "destination indexes should not be `unique` yet",
+    "friendly_name": "Verifier: metadata failed (unique index issue)",
+    "recommendation": "destination indexes should not be `unique` yet means the verifier found a destination index already marked unique instead of prepareUnique, usually because the destination cluster received writes or manual index changes during migration. Fix by stopping all writes and index changes on the destination, dropping/recreating the affected destination collection (or cluster, if needed), and rerunning the migration so mongosync can handle the unique-index conversion itself."
+  },
+  {
+    "pattern": "failed to update document on destination",
+    "friendly_name": "addFields update error",
+    "recommendation": "failed to update document on destination means mongosync tried to apply an update during change-event application, but the destination update command failed (often due to document shape issues like duplicate field names or other server write errors). Recommendation: check the full log for the underlying write error (e.g. “Document already has a field named …”), fix or clean those problematic documents on the source (remove/rename duplicates or invalid structures, or mark them as hotDocIDs/exclude), then rerun the migration or recopy the affected collection."
+  },
+  {
+    "pattern": "namespace conflict detected",
+    "friendly_name": "Conflicting namespaces",
+    "recommendation": "namespace conflict detected means mongosync tried to create/rename a collection on the destination, but a collection with that same namespace (db.collection) already exists there. Fix by dropping or renaming the conflicting collections on the destination (and ensuring no writes go to dest during migration), then restart the migration from scratch."
+  },
+  {
+    "pattern": "no documents in result",
+    "friendly_name": "Driver Error",
+    "recommendation": "In mongosync, mongo: no documents in result means a driver find/findOne/findOneAndUpdate call expected a single metadata/resume/ checkpoint document, but the query matched nothing (e.g. missing global state or resume-data doc, or a predicate that no longer matches). To fix it, read the full log line to see which document and ID are missing, then either (1) correct your config so that mongosync is pointing at the right metadata DB and all expected instances/IDs are actually started, or (2) reinitialize/restart the migration so mongosync can recreate the required metadata documents cleanly."
+  },
+  {
+    "pattern": "failed to enable index constraints",
+    "friendly_name": "Failed unique index conversion",
+    "recommendation": "failed to enable index constraints means mongosync couldn’t complete the final step of making certain destination indexes fully unique / constraint-enforced (the collMod to enable uniqueness/constraints failed), so unique index conversion did not succeed. Recommendation: inspect the next log lines for the underlying collMod error (e.g. CannotConvertIndexToUnique, legacy unique keys, or writes to the destination during commit), fix the offending index/data or stop all writes on the destination as indicated, then start a fresh migration/commit so mongosync can re-run index constraint enablement cleanly."
+  },
+  {
+    "pattern": "unique index was set on the source that is incompatible",
+    "friendly_name": "Incompatible unique index",
+    "recommendation": "It means mongosync found a unique index on the source whose key pattern is incompatible with the shard key you specified in the migration’s sharding parameters, so it aborts index modification. Recommendation: choose a shard key compatible with the existing unique index (same prefix), or drop/alter the conflicting unique index on the source and retry; if logs also mention legacy unique index keys, resync the source replica set members before rerunning the migration."
+  },
+  {
+    "pattern": "Index Checker Service exceeded the maximum number of index creation attempts",
+    "friendly_name": "Index creation attempts",
+    "recommendation": "Index Checker Service exceeded the maximum number of index creation attempts means mongosync tried to create the same index on the destination several times during commit and hit its built-in retry limit because creation kept failing for that index. Short recommendation: check the surrounding logs for the root index creation error (e.g. IndexOptionsConflict, duplicate/legacy index), fix that on the destination (drop or adjust the conflicting index / options, stop concurrent index changes), then rerun the migration/commit so index creation can succeed in a fresh run."
+  },
+  {
+    "pattern": "IndexNotFound",
+    "friendly_name": "Index not found",
+    "recommendation": "IndexNotFound in mongosync means the destination cluster returned (IndexNotFound) when mongosync tried to run collMod to modify an index (usually while enabling unique index constraints), but that index name doesn’t exist on the destination collection. Fix by reading the full log line to get the namespace and index name, then create or recreate that index on the destination with the expected name/key pattern, and rerun the migration/commit (often from scratch if it’s in the commit/index-conversion phase)."
+  },
+  {
+    "pattern": "turn off profiling",
+    "friendly_name": "profiling enabled",
+    "recommendation": "If you see errors or performance issues with profiling enabled, confirm whether profiling is intentionally on; if not required, reduce the profiling level or disable it after collecting needed diagnostics: https://www.mongodb.com/docs/manual/reference/command/profile/"
+  },
+  {
+    "pattern": "failed to open change stream using resume token",
+    "friendly_name": "Oplog rollover",
+    "recommendation": "failed to open change stream using resume token means mongosync’s change stream fell behind and the resume token it needs has already been rolled out of the oplog, so the migration can’t continue from that point (an oplog rollover). Fix by increasing the source oplog window (and destination, if the error is from the embedded verifier), reducing write volume so mongosync can keep up, and restarting the migration from scratch with the larger oplog in place."
+  },
+  {
+    "pattern": "cluster is not sharded",
+    "friendly_name": "Sharded misconfiguration",
+    "recommendation": "cluster is not sharded means mongosync expected to talk to a sharded cluster, but the node/URI you gave resolves to a non-sharded topology (e.g., replica set or direct shard host), which is an unsupported setup for that migration flow. Fix by using a supported topology and connection string: for sharded sources/destinations connect via mongos URIs, and avoid sharded→replica-set migrations entirely (only RS→RS, RS→SC, or SC→SC are supported)."
+  },
+  {
+    "pattern": "is a timeseries collection",
+    "friendly_name": "timeseries",
+    "recommendation": "If the error points to a timeseries collection, confirm it’s excluded or handled outside mongosync, since timeseries is not supported: https://www.mongodb.com/docs/mongosync/current/reference/limitations/"
+  },
+  {
+    "pattern": "TooManyFilesOpen",
+    "friendly_name": "Too many open files",
+    "recommendation": "TooManyFilesOpen means the MongoDB server (or host) hit the OS limit for open file descriptors, so mongosync’s operation/connection failed at the server side. Recommendation: increase the OS/file-descriptor limit (ulimit / systemd LimitNOFILE / equivalent) to MongoDB-recommended values for the mongod/mongos/mongosync processes and restart them; also reduce unnecessary concurrent connections/files if limits still get hit."
+  },
+  {
+    "pattern": "addShardToZone",
+    "friendly_name": "Unauthorized to run addShardToZone",
+    "recommendation": "addShardToZone in mongosync logs means it tried to run the sharding admin command addShardToZone on the destination cluster but the mongosync user is not authorized (e.g. “not authorized on admin to execute command { addShardToZone: ... }”). Fix by granting the destination user the documented mongosync minimum privileges, including the ability to update config.shards (cluster-level sharding admin / appropriate Atlas role), then rerun the migration."
+  },
+  {
+    "pattern": "IndexOptionsConflict",
+    "friendly_name": "unique and non-unique indexes",
+    "recommendation": "IndexOptionsConflict means MongoDB reported that an index with the same key pattern already exists but with different options (for mongosync specifically, this usually happens when there is both a unique and non-unique index on the same fields). Recommendation: drop either the unique or the non-unique index on the source before running mongosync, run the migration, then recreate the dropped index on both source and destination after commit if the application still needs it."
+  },
+  {
+    "pattern": "Cannot convert the index to unique",
+    "friendly_name": "Unique index conversion",
+    "recommendation": "It means mongosync tried to convert a non-unique index to unique (via collMod), but MongoDB found conflicting documents with duplicate values for that index key, so it returned CannotConvertIndexToUnique. Recommendation: use the logged violations to identify the conflicting documents, update or delete them so the indexed field is truly unique, then rerun the migration/commit so mongosync can retry the unique index conversion successfully."
+  },
+  {
+    "pattern": "UserWritesBlocked",
+    "friendly_name": "User writes blocked",
+    "recommendation": "For “user writes blocked” errors, determine whether this is intentional (cutover, maintenance) or due to disk/threshold conditions, then adjust write‑blocking or free space as appropriate."
+  },
+  {
+    "pattern": "User writes blocked",
+    "friendly_name": "User writes blocked",
+    "recommendation": "For “user writes blocked” errors, determine whether this is intentional (cutover, maintenance) or due to disk/threshold conditions, then adjust write‑blocking or free space as appropriate."
+  },
+  {
+    "pattern": "the destination cluster was modified after Mongosync final verification began",
+    "friendly_name": "Write on destination during cutover",
+    "recommendation": "the destination cluster was modified after Mongosync final verification began means mongosync’s final verification/change stream saw writes or DDL on the destination cluster after verification started, so it aborted to avoid cutting over to a moving target. Recommendation: fully stop/block all writes and schema/index changes on the destination before starting cutover/final verification, then rerun verification (or the migration) from scratch once the destination is quiescent."
+  },
+  {
+    "pattern": "bulk write exception: write errors",
+    "friendly_name": "Bulk Write error (duplicate key)",
+    "recommendation": "bulk write exception: write errors means a bulk insert/update batch to the destination failed, and the server returned one or more write errors—most commonly a duplicate key violating a unique index. Recommendation: check the following log lines for the specific write error code/message (e.g. duplicate key 11000), fix the underlying data/index issue on source/destination, then rerun the affected collection copy or migration."
+  },
+  {
+    "pattern": "DDL events are unsupported on pre-6.0 source",
+    "friendly_name": "DDL event on source",
+    "recommendation": "DDL events are unsupported on pre-6.0 source means a DDL change (create/drop/rename/index) happened on a source cluster running < 6.0, which mongosync cannot handle, so it treats this as a fatal, non-transient error. Short recommendation: delete the migrated data on the destination and restart the migration from scratch, and ensure no DDL runs on the pre-6.0 source during migration (or upgrade the source to 6.0+ if you need DDL support)."
+  },
+  {
+    "pattern": "No indexed plans available, and running with 'notablescan'",
+    "friendly_name": "Query internal partitions error (NoQueryExecutionPlans)",
+    "recommendation": "If mongosync hits “NoQueryExecutionPlans” or notablescan issues, check whether “Require Indexes for All Queries” (notablescan) is enabled and temporarily disable or adjust it for the migration if appropriate."
+  },
+  {
+    "pattern": "Values in the index key pattern cannot be empty strings",
+    "friendly_name": "Index creation error (empty string index)",
+    "recommendation": "It means MongoDB rejected an index create/modify operation because the index key pattern contains an empty-string value, which is not allowed (e.g. { a: \"\" }). Recommendation: identify the failing index in the surrounding logs, fix its definition so all key pattern values are valid (e.g. 1, -1, \"hashed\", \"2dsphere\", etc., but not \"\"), then rerun the index creation and the mongosync step/migration."
+  },
+  {
+    "pattern": "Must have an index compatible with the proposed shard key",
+    "friendly_name": "Dest collection sharding failure (no compatible index)",
+    "recommendation": "It means the destination collection doesn’t have any index whose key pattern is compatible with the shard key mongosync is trying to use when sharding the collection, so the server rejects the operation with Must have an index compatible with the proposed shard key. Recommendation: Create on the destination a proper index that starts with the shard key fields and meets shard-key rules (non-partial, non-sparse, simple collation, correct directions / hashed where needed), then rerun the migration/commit so mongosync can successfully shard the collection."
+  },
+  {
+    "pattern": "Most source writes appear to be from $out aggregations",
+    "friendly_name": "Source writes from $out aggregations. Consider pausing workloads that run $out aggregations.",
+    "full_error_message": "Most source writes appear to be from $out aggregations. This might mean that relatively few documents are being constantly updated. Mongosync may not be able to keep pace with the source's workload.",
+    "recommendation": "For hot‑document or $out workload warnings, assess skewed write patterns, consider throttling or rescheduling heavy aggregations, and verify CEA parallelism isn’t saturated: https://knowledge.corp.mongodb.com/article/000022720"
+  },
+  {
+    "pattern": "The level of CEA parallelization for this collection is low",
+    "friendly_name": "Hot Documents",
+    "full_error_message": "The level of CEA parallelization for this collection is low. This might mean that relatively few documents are being constantly updated. Mongosync may not be able to keep pace with the source's workload.",
+    "recommendation": "For hot‑document or $out workload warnings, assess skewed write patterns, consider throttling or rescheduling heavy aggregations, and verify CEA parallelism isn’t saturated: https://knowledge.corp.mongodb.com/article/000022720"
+  },
+  {
+    "pattern": "refetched db-spec for recreating dst coll for natural scan",
+    "friendly_name": "Dropped collection to restart Collection Copy in natural order",
+    "full_error_message": "refetched db-spec for recreating dst coll for natural scan, collSpec: {COLLECTION DETAILS UUID {}}, isSrcDropped: XXX",
+    "recommendation": "refetched db-spec for recreating dst coll for natural scan is a debug message meaning mongosync is restarting collection copy for that namespace in natural (collection) order: it drops the existing destination collection and recreates it from the source spec before re-copying all documents. This isn’t a fatal error by itself, but if you see it repeatedly you should avoid interruptions/timeouts during collection copy (increase timeouts, reduce load, stabilize network)"
+  },
+  {
+    "pattern": "Using extraLongTimeoutDstClient in MaybeDeletePartitionOnDestination with timeout of",
+    "friendly_name": "Deleting documents to restart Collection Copy in natural order",
+    "full_error_message": "Using extraLongTimeoutDstClient in MaybeDeletePartitionOnDestination with timeout of",
+    "recommendation": "That log means mongosync is retrying a natural-order partition and is running a potentially large deleteMany on the destination with an extra-long timeout to clear partially copied data. If you see this often on large collections, reduce interruptions/timeouts during collection copy (stabilize network, increase server timeouts, avoid restarts)"
+  },
+  {
+    "pattern": "Change Event Application failed",
+    "friendly_name": "CEA failed undefined reason",
+    "recommendation": "Change Event Application failed means mongosync’s change event application phase (CEA) hit an error while applying change-stream events (inserts/updates/deletes) to the destination; this is a wrapper around the real underlying error. Short recommendation: inspect the following log lines for the specific inner error (e.g. resume token/oplog issue, write/duplicate-key error, auth or timeout), fix that root cause on the relevant cluster, then rerun change event application (typically by restarting the migration/commit)."
+  },
+  {
+    "pattern": "Failed to apply batch #1 for CRUD event application on the destination. Giving up on batch CRUD event application.",
+    "friendly_name": "Timeout on destination",
+    "full_error_message": "Failed to apply batch #1 for CRUD event application on the destination. Giving up on batch CRUD event application.",
+    "recommendation": "Failed to apply batch #1 for CRUD event application on the destination. Giving up on batch CRUD event application. means a CEA transaction applying a batch of CRUD events to the destination failed with a non-retriable error, so mongosync stopped batch application for that batch (typically a timeout/lock or other dest write error). Recommendation: check the surrounding log lines for the inner destination error (e.g. timeout, lock timeout, TooManyFilesOpen, auth), fix that cluster/timeout/permission issue, then rerun CEA / restart the migration once the destination is healthy."
+  },
+  {
+    "pattern": "Got a fatal error running Mongosync",
+    "friendly_name": "Fatal error running Mongosync",
+    "full_error_message": "Got a fatal error running Mongosync",
+    "recommendation": "Got a fatal error running Mongosync is a generic top-level message emitted when mongosync hits a non-recoverable error and is about to shut down; the real cause is the labeled error and analysis data attached to that same log entry. Recommendation: find that exact line in the logs and read the preceding/embedded error details (e.g. verifier mismatch, index error, auth, oplog, etc.), fix that specific root cause using its own guidance, then rerun mongosync from scratch or from the appropriate phase."
+  },
+  {
+    "pattern": "mongosync cannot migrate into namespaces that already have shard tags configured.",
+    "friendly_name": "Shard tags already exist in destination",
+    "full_error_message": "destination namespace has preconfigured shard zone ranges (shard tags); mongosync cannot migrate into namespaces that already have shard tags configured. Please remove all shard tag ranges for any namespaces mongosync will migrate into on the destination cluster. Then restart the migration from scratch and add the desired zone ranges after the migration is COMMITTED.",
+    "recommendation": "Please remove all shard tag ranges for any namespaces mongosync will migrate into on the destination cluster. Then restart the migration from scratch and add the desired zone ranges after the migration is COMMITTED."
+  }
+]

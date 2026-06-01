@@ -116,6 +116,8 @@
 
 {% block scripts %}
 <script>
+const MI_LIVE = { verifier: {{ url_for('live.get_verifier_data')|tojson }} };
+const MI_HUB = {{ url_for('hub')|tojson }};
 function showVerifierError(title, message) {
     const err = document.getElementById("error");
     err.replaceChildren();
@@ -129,7 +131,7 @@ function showVerifierError(title, message) {
     container.appendChild(pMsg);
     const pLink = document.createElement("p");
     const a = document.createElement("a");
-    a.href = "/";
+    a.href = MI_HUB;
     a.textContent = "Go back to home";
     pLink.appendChild(a);
     container.appendChild(pLink);
@@ -138,7 +140,7 @@ function showVerifierError(title, message) {
 
 async function fetchVerifierData() {
     try {
-        const response = await fetch("/getVerifierData", { method: 'POST', credentials: 'same-origin' });
+        const response = await fetch(MI_LIVE.verifier, { method: 'POST', credentials: 'same-origin' });
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Request failed');

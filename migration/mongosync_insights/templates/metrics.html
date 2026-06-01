@@ -154,6 +154,11 @@
 <script>
 // Configuration flags only - credentials are stored securely in server-side session
 // No sensitive data (connection strings, URLs) is exposed to the client
+const MI_LIVE = {
+    overview: {{ url_for('live.get_live_monitoring')|tojson }},
+    partitions: {{ url_for('live.get_partitions_data')|tojson }},
+    endpoint: {{ url_for('live.get_endpoint_data')|tojson }}
+};
 const hasConnectionString = {{ has_connection_string|tojson }};
 const hasEndpointUrl = {{ has_endpoint_url|tojson }};
 
@@ -184,7 +189,7 @@ function switchTab(tabName) {
 async function fetchOverviewData() {
     try {
         // No credentials sent - server reads from secure session
-        const response = await fetch("/getLiveMonitoring", { 
+        const response = await fetch(MI_LIVE.overview, { 
             method: 'POST',
             credentials: 'same-origin'  // Include session cookie
         });
@@ -206,7 +211,7 @@ async function fetchOverviewData() {
 async function fetchPartitionsData() {
     try {
         // No credentials sent - server reads from secure session
-        const response = await fetch("/getPartitionsData", { 
+        const response = await fetch(MI_LIVE.partitions, { 
             method: 'POST',
             credentials: 'same-origin'  // Include session cookie
         });
@@ -227,7 +232,7 @@ async function fetchPartitionsData() {
 
 async function fetchEndpointData() {
     try {
-        const response = await fetch("/getEndpointData", { 
+        const response = await fetch(MI_LIVE.endpoint, { 
             method: 'POST',
             credentials: 'same-origin'
         });

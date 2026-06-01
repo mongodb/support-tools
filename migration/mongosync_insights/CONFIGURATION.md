@@ -55,7 +55,7 @@ All configuration can be set using `export` commands before running the applicat
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MI_ERROR_PATTERNS_FILE` | `lib/error_patterns.json` _(auto-detected)_ | Path to a custom error patterns JSON file used during log analysis to detect common errors (e.g., oplog rollover, timeouts, verifier mismatches) |
+| `MI_ERROR_PATTERNS_FILE` | `lib/error_patterns.json` _(auto-detected)_ | Path to a custom error patterns JSON file used during log analysis to detect common errors (e.g., oplog rollover, timeouts, verifier mismatches). Each entry may include an optional `recommendation` string, shown in the Errors tab when a line matches that pattern. |
 
 ### UI Customization
 
@@ -77,7 +77,7 @@ All configuration can be set using `export` commands before running the applicat
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MI_SECURE_COOKIES` | `true` | Enable secure cookies (requires HTTPS) |
+| `MI_SECURE_COOKIES` | mirrors `MI_SSL_ENABLED` (`false` when HTTPS is off) | Enable secure cookies (set `true` when using HTTPS) |
 | `MI_SESSION_TIMEOUT` | `3600` | Session timeout in seconds (1 hour default) |
 | `MI_SSL_ENABLED` | `false` | Enable HTTPS/SSL in Flask application |
 | `MI_SSL_CERT` | `/etc/letsencrypt/live/your-domain/fullchain.pem` | Path to SSL certificate file |
@@ -90,7 +90,7 @@ All configuration can be set using `export` commands before running the applicat
 
 ### Connection String Validation
 
-> **Note**: For connection string handling information, see [VALIDATION.md](VALIDATION.md)
+> **Note**: For connection string handling information, see [CONNECTION_STRING.md](CONNECTION_STRING.md)
 
 ---
 
@@ -295,7 +295,7 @@ export MI_LOG_FILE=/var/log/mongosync-insights/insights.log
 
 - **[README.md](README.md)** - Getting started and installation guide
 - **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
-- **[VALIDATION.md](VALIDATION.md)** - Connection string validation, sanitization, and error handling
+- **[CONNECTION_STRING.md](CONNECTION_STRING.md)** - Connection string formats, security, and troubleshooting
 
 ### License
 
