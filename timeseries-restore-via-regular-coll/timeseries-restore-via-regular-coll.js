@@ -120,12 +120,25 @@ function tryRepairBucket(bucket, dbObj, srcBucketsColl, tmpRepairTsColl, tsColl,
         hasTransientError = false;
         const session = dbObj.getMongo().startSession({retryWrites: true});
         try {
-            session.startTransaction();
+            session.startTransaction({writeConcern: {w: "majority"}});
             session.getDatabase(dbName).getCollection("system.buckets." + tsColl)
                    .insertMany(repairedBuckets);
             session.getDatabase(dbName).getCollection(srcBucketsColl)
                    .deleteOne({_id: bucketId});
-            session.commitTransaction();
+
+            while (true) {
+                try {
+                    session.commitTransaction();
+                    break;
+                } catch (commitErr) {
+                    if (commitErr.hasOwnProperty('errorLabels') &&
+                        commitErr.errorLabels.includes('UnknownTransactionCommitResult')) {
+                        print('Encountered an unknown commit result. Retrying commit.');
+                        continue;
+                    }
+                    throw commitErr;
+                }
+            }
         } catch (e) {
             try { session.abortTransaction(); } catch (_) {}
             if (e.hasOwnProperty('errorLabels') && e.errorLabels.includes('TransientTransactionError')) {
