@@ -77,18 +77,20 @@ function repairBucketByReinsertMeasurements(bucketId, srcColl, tsColl, tempColl,
   }
 
   // Insert measurements into the temporary timeseries collection in one batch.
-  // Retry if any errors are encountered.
-  let retryTempInsert;
-  do {
-    retryTempInsert = false;
+  // Retry a bounded number of times to avoid hanging on permanent errors.
+  const maxTempInsertRetries = 5;
+  for (let attempt = 1; ; attempt++) {
     try {
       tempTimeseriesBucketsColl.deleteMany({});
       tempTimeseriesColl.insertMany(measurements);
+      break;
     } catch (e) {
+      if (attempt >= maxTempInsertRetries) {
+        throw new Error(`Temporary insert failed after ${maxTempInsertRetries} attempts: ${e}`);
+      }
       print('An error occurred during internal insert, retrying. Error: ' + e);
-      retryTempInsert = true;
     }
-  } while (retryTempInsert);
+  }
 
   // Insert the repaired buckets into the target timeseries collection's bucket
   // store inside a transaction.  Retry on transient errors.
