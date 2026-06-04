@@ -175,6 +175,19 @@ function runCopyWithRepair(dbObj, srcBucketsColl, tsColl, tmpRepairTsColl, badBu
     batchSize = (batchSize !== undefined) ? batchSize : 1000;
     const dbName = dbObj.getName();
 
+    // Safety: ensure namespaces are distinct and callers pass logical collection names.
+    const names = [srcBucketsColl, tsColl, tmpRepairTsColl, badBucketsColl];
+    if (new Set(names).size !== names.length) {
+        throw new Error(`Collection names must be distinct. Got: ${names.join(", ")}`);
+    }
+    for (const n of names) {
+        if (typeof n !== "string" || n.length === 0) {
+            throw new Error(`Collection name must be a non-empty string. Got: ${JSON.stringify(n)}`);
+        }
+        if (n.startsWith("system.buckets.")) {
+            throw new Error("Pass logical collection names only (do not include the 'system.buckets.' prefix).");
+        }
+    }
     // Validate that the target collection exists and is a timeseries collection,
     // and fetch its options for use in the unpack/out specs.
     const tsInfoArr = dbObj.getCollectionInfos({name: tsColl});
