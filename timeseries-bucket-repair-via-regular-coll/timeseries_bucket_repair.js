@@ -32,7 +32,8 @@ function verifyAndSetupCollsAndGetTSOptions(tsColl, tempColl) {
         tsOptions.timeField != tempOptions.timeField ||
         tsOptions.metaField != tempOptions.metaField ||
         tsOptions.granularity != tempOptions.granularity ||
-        tsOptions.bucketMaxSpanSeconds != tempOptions.bucketMaxSpanSeconds) {
+        tsOptions.bucketMaxSpanSeconds != tempOptions.bucketMaxSpanSeconds ||
+        tsOptions.bucketRoundingSeconds != tempOptions.bucketRoundingSeconds) {
       throw new Error(
           `Temp collection "${tempColl}" exists but has unexpected options. ` +
           `Please specify a different temporary namespace.`);
