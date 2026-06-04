@@ -106,7 +106,19 @@ function repairBucketByReinsertMeasurements(bucketId, srcColl, tsColl, tempColl,
       const bucketDocs = tempTimeseriesBucketsColl.find().toArray();
       sessionBucketColl.insertMany(bucketDocs);
 
-      session.commitTransaction();
+      while (true) {
+        try {
+          session.commitTransaction();
+          break;
+        } catch (commitErr) {
+          if (commitErr.hasOwnProperty('errorLabels') &&
+              commitErr.errorLabels.includes('UnknownTransactionCommitResult')) {
+            print('Encountered an unknown commit result. Retrying commit.');
+            continue;
+          }
+          throw commitErr;
+        }
+      }
     } catch (e) {
       if (!shouldRetryTxnOnTransientError(e)) {
         throw e;
