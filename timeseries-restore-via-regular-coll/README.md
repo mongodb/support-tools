@@ -2,7 +2,7 @@
 
 ## Warning
 
-The scripts provided here are best run by those experienced with MongoDB, ideally with guidance from MongoDB Technical Support. They are provided without warranty or guarantee of any kind (see disclaimer below). If you do not have access to MongoDB Technical Support, consider reaching out to our community at [community.mongodb.com](community.mongodb.com) to ask questions.
+The scripts provided here are best run by those experienced with MongoDB, ideally with guidance from MongoDB Technical Support. They are provided without warranty or guarantee of any kind. If you do not have access to MongoDB Technical Support, consider reaching out to our community at [community.mongodb.com](https://community.mongodb.com) to ask questions.
 
 Some adaptation of these scripts may be required for your use-case.
 
