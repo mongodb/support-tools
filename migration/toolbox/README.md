@@ -26,6 +26,10 @@ Get busiest collections seen during Collection Copy and Change Event Application
 
 Gets the busiest collections in terms of writes (delete/insert/replace/update) as recorded in the mongosync logs in the CEA phase
 
+## [Planner Settings Checker](plannerSettingsChecker)
+
+Audits query planner customizations across all databases and collections, reporting only the namespaces where a setting is present. Supports two modes: `indexFilters` (legacy `planCacheListFilters`, all versions) and `querySettings` (the `$querySettings` aggregation, MongoDB 8.0+). Useful as a pre-migration check so planner customizations can be reviewed and re-created on the destination. For full documentation and examples, see [plannerSettingsChecker README](plannerSettingsChecker/README.md).
+
 ### License
 
 [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
