@@ -79,7 +79,7 @@ if (typeof _mode === "undefined") {
 
         // Use nameOnly to avoid scanning collection metadata; only the name and
         // type are needed here, both of which are still returned in this mode.
-        database.getCollectionInfos({ "type": "collection" }, {nameOnly:true}).forEach(function (collectionInfo) {
+        database.getCollectionInfos({ "type": "collection" }, { "nameOnly": true }).forEach(function (collectionInfo) {
             var name = collectionInfo.name;
 
             if (name.indexOf("system.") === 0) {
