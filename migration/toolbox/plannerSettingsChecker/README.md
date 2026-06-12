@@ -7,10 +7,10 @@ identified, reviewed, and (where appropriate) re-created on the destination clus
 
 It runs in one of two modes:
 
-| Mode            | Mechanism                         | Applies to                                   |
-| --------------- | --------------------------------- | -------------------------------------------- |
-| `indexFilters`  | `planCacheListFilters` command    | Legacy index filters (all supported versions)|
-| `querySettings` | `$querySettings` aggregation stage | Query settings (**MongoDB 8.0+**)           |
+| Mode | Mechanism | Applies to |
+| --- | --- | --- |
+| `indexFilters` | `planCacheListFilters` command | Legacy index filters (all supported versions) |
+| `querySettings` | `$querySettings` aggregation stage | Query settings (**MongoDB 8.0+**) |
 
 > **Why both?** Index filters are the legacy mechanism for constraining the query
 > planner. Query settings are their modern, persistent replacement introduced in
@@ -47,7 +47,7 @@ results.
   "generatedAt": "2026-06-11T00:00:00.000Z",
   "host": "cluster0-shard-00-00.example.mongodb.net:27017",
   "mode": "indexFilters",
-  "summary": { "collectionsWithIndexFilters": 1 },
+  "summary": { "collectionsWithIndexFilters": 1, "errorCount": 0 },
   "results": [
     {
       "db": "mydb",
@@ -57,7 +57,8 @@ results.
       "indexFilterCount": 1,
       "indexFilters": [ { "query": { "email": 1 }, "indexes": [ { "email": 1 } ] } ]
     }
-  ]
+  ],
+  "errors": []
 }
 ```
 

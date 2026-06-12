@@ -188,7 +188,20 @@ if (typeof _mode === "undefined") {
     function collectIndexFilters() {
         var allResults = [];
         var errors = [];
-        var dbs = db.getMongo().getDBs();
+        var dbs;
+
+        try {
+            dbs = db.getMongo().getDBs();
+        } catch (e) {
+            // Surface a top-level failure (for example, insufficient privileges
+            // to list databases) instead of aborting the script, so a JSON
+            // report is still produced.
+            errors.push({
+                scope: "listDatabases",
+                error: e.message
+            });
+            return { results: allResults, errors: errors };
+        }
 
         if (!dbs.databases) {
             return { results: allResults, errors: errors };
@@ -291,8 +304,8 @@ if (typeof _mode === "undefined") {
     function printUsageAndExit() {
         print("");
         print("Usage:");
-        print("  mongosh --quiet --eval 'var _mode=\"indexFilters\"' get-planner-settings.js");
-        print("  mongosh --quiet --eval 'var _mode=\"querySettings\"' get-planner-settings.js");
+        print("  mongosh \"<connection-string>\" --quiet --eval 'var _mode=\"indexFilters\"' get-planner-settings.js");
+        print("  mongosh \"<connection-string>\" --quiet --eval 'var _mode=\"querySettings\"' get-planner-settings.js");
         print("");
         print("Valid _mode values:");
         print("  indexFilters");
