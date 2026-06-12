@@ -23,11 +23,16 @@
  *     MongoDB 8.0+ and cluster-admin level privileges.
  */
 
+// Mode constants, defined once and reused for defaulting, validation,
+// branching, usage text, and documentation references to prevent drift.
+var MODE_INDEX_FILTERS = "indexFilters";
+var MODE_QUERY_SETTINGS = "querySettings";
+
 // Resolve the mode BEFORE entering the strict-mode IIFE. Assigning to an
 // undeclared identifier inside "use strict" throws a ReferenceError, so the
 // default must be established here.
 if (typeof _mode === "undefined") {
-    var _mode = "indexFilters";
+    var _mode = MODE_INDEX_FILTERS;
 }
 
 (function () {
@@ -51,6 +56,13 @@ if (typeof _mode === "undefined") {
             if (uri) {
                 var withoutScheme = uri.replace(/^mongodb(\+srv)?:\/\//, "");
                 var hostPart = withoutScheme.split("/")[0].split("?")[0];
+
+                // Strip any userinfo ("username:password@") so connection-string
+                // credentials are never echoed into the report.
+                if (hostPart.indexOf("@") !== -1) {
+                    hostPart = hostPart.substring(hostPart.lastIndexOf("@") + 1);
+                }
+
                 if (hostPart) {
                     return hostPart;
                 }
@@ -162,11 +174,30 @@ if (typeof _mode === "undefined") {
                     // The $querySettings output describes the namespace via the
                     // command shape: the database is in "$db" and the collection
                     // is the value of the command name (find/aggregate/etc.).
-                    var collection = rq.find || rq.aggregate || rq.count ||
-                        rq.distinct || rq.update || rq["delete"] || rq.findAndModify;
+                    var commandKeys = [
+                        "find", "aggregate", "count", "distinct",
+                        "update", "delete", "findAndModify"
+                    ];
+                    var commandName = null;
+                    var target = null;
 
-                    if (typeof collection === "string") {
-                        ns = rq["$db"] + "." + collection;
+                    for (var i = 0; i < commandKeys.length; i++) {
+                        if (Object.prototype.hasOwnProperty.call(rq, commandKeys[i])) {
+                            commandName = commandKeys[i];
+                            target = rq[commandName];
+                            break;
+                        }
+                    }
+
+                    if (typeof target === "string") {
+                        ns = rq["$db"] + "." + target;
+                    } else if (commandName) {
+                        // Some commands target a database rather than a named
+                        // collection (for example, a collectionless aggregate
+                        // where "aggregate" is 1). Keep the database actionable
+                        // and note the command type instead of dropping to
+                        // "unknown".
+                        ns = rq["$db"] + ".<" + commandName + ">";
                     }
                 }
             }
@@ -304,21 +335,21 @@ if (typeof _mode === "undefined") {
     function printUsageAndExit() {
         print("");
         print("Usage:");
-        print("  mongosh \"<connection-string>\" --quiet --eval 'var _mode=\"indexFilters\"' get-planner-settings.js");
-        print("  mongosh \"<connection-string>\" --quiet --eval 'var _mode=\"querySettings\"' get-planner-settings.js");
+        print("  mongosh \"<connection-string>\" --quiet --eval 'var _mode=\"" + MODE_INDEX_FILTERS + "\"' get-planner-settings.js");
+        print("  mongosh \"<connection-string>\" --quiet --eval 'var _mode=\"" + MODE_QUERY_SETTINGS + "\"' get-planner-settings.js");
         print("");
         print("Valid _mode values:");
-        print("  indexFilters");
-        print("  querySettings");
+        print("  " + MODE_INDEX_FILTERS);
+        print("  " + MODE_QUERY_SETTINGS);
         quit(1);
     }
 
-    if (_mode !== "indexFilters" && _mode !== "querySettings") {
+    if (_mode !== MODE_INDEX_FILTERS && _mode !== MODE_QUERY_SETTINGS) {
         print("Invalid _mode: " + _mode);
         printUsageAndExit();
     }
 
-    if (_mode === "indexFilters") {
+    if (_mode === MODE_INDEX_FILTERS) {
         var indexFilterResults = collectIndexFilters();
 
         printjson({
