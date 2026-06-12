@@ -11,6 +11,8 @@ import json
 import logging
 from pymongo.errors import PyMongoError
 
+from .plot_theme import apply_mi_theme, theme_tokens
+
 logger = logging.getLogger(__name__)
 
 
@@ -140,7 +142,7 @@ def get_generation_name(gen_num):
         return f"Recheck #{gen_num}"
 
 
-def gatherVerifierMetrics(connection_string, db_name="migration_verification_metadata"):
+def gather_verifier_metrics(connection_string, db_name="migration_verification_metadata"):
     """Gather all verifier metrics and create Plotly figure."""
     from .app_config import get_database
     
@@ -615,27 +617,26 @@ def gatherVerifierMetrics(connection_string, db_name="migration_verification_met
         failed_height = max(0, (max_failed - 10) * 25)
         total_height = min(2200, base_height + ns_height + failed_height)
         
-        # Update layout
-        fig.update_layout(
+        tokens = theme_tokens(dark=False)
+        apply_mi_theme(
+            fig,
+            title="Migration Verifier Dashboard",
             height=total_height,
             width=1300,
-            autosize=True,
-            title_text="Migration Verifier Dashboard",
             showlegend=True,
+            autosize=True,
+            barmode='stack',
+            margin=dict(t=70, b=70, l=220, r=30),
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
                 y=-0.03,
                 xanchor="center",
                 x=0.5,
-                bgcolor="rgba(255,255,255,0.9)",
-                bordercolor="#ddd",
-                borderwidth=1
+                bgcolor=tokens["legend_bg"],
+                bordercolor=tokens["legend_border"],
+                borderwidth=1,
             ),
-            barmode='stack',
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-            margin=dict(t=70, b=70, l=220, r=30)
         )
         
         # Update axes for namespace bar chart
@@ -653,7 +654,7 @@ def gatherVerifierMetrics(connection_string, db_name="migration_verification_met
         return {"error": f"Error gathering metrics: {str(e)}"}
 
 
-def plotVerifierMetrics(db_name="migration_verification_metadata"):
+def plot_verifier_metrics(db_name="migration_verification_metadata"):
     """Render the verifier metrics template."""
     from .app_config import REFRESH_TIME
     

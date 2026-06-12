@@ -4,604 +4,14 @@
 
 {% block header_title %}Mongosync Insights - Logs{% endblock %}
 
-{% block styles %}
-    .tabs-container {
-        max-width: 1550px;
-        margin: 0 auto;
-    }
-
-    .tab-buttons {
-        display: flex;
-        gap: 4px;
-        margin-bottom: 0;
-        border-bottom: 2px solid #00684A;
-    }
-
-    .tab-btn {
-        padding: 12px 24px;
-        background: #e8f5f1;
-        border: none;
-        border-radius: 8px 8px 0 0;
-        cursor: pointer;
-        font-size: 15px;
-        font-weight: 600;
-        color: #00684A;
-        transition: all 0.2s ease;
-        position: relative;
-        bottom: -2px;
-    }
-
-    .tab-btn:hover {
-        background: #c8e6dc;
-    }
-
-    .tab-btn.active {
-        background: #00684A;
-        color: #fff;
-        border-bottom: 2px solid #00684A;
-    }
-
-    .tab-content {
-        display: none;
-        animation: fadeIn 0.3s ease;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .plot-container {
-        margin: 0 auto;
-        border: 1px solid #ccc;
-        border-radius: 0 8px 8px 8px;
-        background-color: #fff;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        min-height: 400px;
-        /* main uses --mi-text-primary (often light); force readable text on white panels */
-        color: #222;
-    }
-
-    #plot,
-    #metrics-plot {
-        margin: 0 auto;
-        max-width: 1450px;
-        position: relative;
-    }
-
-    .chart-info-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 20;
-    }
-
-    .chart-info-badge {
-        position: absolute;
-        width: 18px;
-        height: 18px;
-        border-radius: 999px;
-        border: 1px solid #ccc;
-        background: #fff;
-        color: #666;
-        font-size: 11px;
-        font-weight: 700;
-        line-height: 16px;
-        text-align: center;
-        cursor: pointer;
-        pointer-events: auto;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-        padding: 0;
-    }
-
-    .chart-info-badge:hover {
-        border-color: #00684A;
-        color: #00684A;
-    }
-
-    .chart-info-tooltip {
-        position: absolute;
-        min-width: 180px;
-        max-width: 280px;
-        background: #fff;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        padding: 8px 10px;
-        font-size: 12px;
-        color: #555;
-        pointer-events: auto;
-        z-index: 21;
-    }
-
-    .chart-info-tooltip-title {
-        margin: 0 0 6px 0;
-        font-weight: 700;
-        font-size: 12px;
-        color: #00684A;
-    }
-
-    .chart-info-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin: 2px 0;
-    }
-
-    .chart-info-swatch {
-        width: 11px;
-        height: 11px;
-        border-radius: 2px;
-        border: 1px solid rgba(0, 0, 0, 0.15);
-        flex-shrink: 0;
-    }
-
-    .options-container {
-        padding: 20px;
-        display: flex;
-        gap: 30px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .options-table-wrapper {
-        flex: 1;
-        min-width: 400px;
-        max-width: 700px;
-    }
-
-    .options-table-wrapper > h3 {
-        color: #00684A;
-        margin-bottom: 15px;
-        font-size: 18px;
-        border-bottom: 2px solid #00684A;
-        padding-bottom: 8px;
-    }
-
-    .options-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-    }
-
-    .options-table th {
-        background-color: #00684A;
-        color: white;
-        padding: 12px 15px;
-        text-align: left;
-        font-weight: 600;
-    }
-
-    .options-table th.sortable-th {
-        cursor: pointer;
-        user-select: none;
-    }
-
-    .options-table th.sortable-th:hover {
-        background-color: #e8f5f1;
-        color: #00684A;
-    }
-
-    .options-table td {
-        padding: 10px 15px;
-        border-bottom: 1px solid #e0e0e0;
-        vertical-align: top;
-        color: #333;
-    }
-
-    .options-table tr:hover {
-        background-color: #f5f5f5;
-    }
-
-    .options-table .key-cell {
-        font-weight: 600;
-        color: #333;
-        width: 30%;
-        white-space: nowrap;
-    }
-
-    .options-table .value-cell {
-        color: #1a5276;
-        word-break: break-word;
-        max-width: 400px;
-        white-space: pre-wrap;
-        font-family: 'Courier New', monospace;
-        font-size: 12px;
-    }
-
-    .options-table .recommendation-cell {
-        word-break: break-word;
-        overflow-wrap: anywhere;
-        font-size: 12px;
-        color: #333;
-    }
-
-    .no-data-message {
-        text-align: center;
-        padding: 40px;
-        color: #666;
-        font-size: 16px;
-    }
-
-    .table-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-        border-bottom: 2px solid #00684A;
-        padding-bottom: 8px;
-    }
-
-    .table-header h3 {
-        color: #00684A;
-        font-size: 18px;
-        margin: 0;
-        border-bottom: none;
-        padding-bottom: 0;
-    }
-
-    .errors-disclaimer {
-        margin: 0 0 16px 0;
-        padding: 12px 14px;
-        background: #f0f7f5;
-        border: 1px solid #b8ddd4;
-        border-left: 4px solid #00684A;
-        border-radius: 4px;
-        font-size: 13px;
-        line-height: 1.55;
-        color: #333;
-    }
-
-    .errors-disclaimer strong {
-        color: #00684A;
-    }
-
-    .copy-btn {
-        padding: 6px 14px;
-        font-size: 12px;
-        background: #e8f5f1;
-        border: 1px solid #00684A;
-        border-radius: 4px;
-        color: #00684A;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-weight: 500;
-    }
-
-    .copy-btn:hover {
-        background: #00684A;
-        color: white;
-    }
-
-    .copy-btn.copied {
-        background: #28a745;
-        border-color: #28a745;
-        color: white;
-    }
-
-    .copy-btn:disabled {
-        background: #ccc;
-        border-color: #ccc;
-        color: #666;
-        cursor: not-allowed;
-    }
-
-    .filter-container {
-        width: 100%;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-
-    .filter-input {
-        width: 100%;
-        max-width: 500px;
-        padding: 12px 16px;
-        font-size: 14px;
-        border: 2px solid #00684A;
-        border-radius: 6px;
-        outline: none;
-        transition: all 0.2s ease;
-        color: #222;
-        background-color: #fff;
-    }
-
-    .filter-input:focus {
-        box-shadow: 0 0 8px rgba(0, 104, 74, 0.3);
-    }
-
-    .filter-input::placeholder {
-        color: #999;
-    }
-
-    .no-results {
-        text-align: center;
-        padding: 20px;
-        color: #666;
-        font-style: italic;
-        display: none;
-    }
-
-    .error-row {
-        cursor: pointer;
-    }
-
-    .error-row:hover {
-        background-color: #e8f5f1 !important;
-    }
-
-    .error-detail-row {
-        display: none;
-    }
-
-    .error-detail-cell {
-        background-color: #f8f9fa;
-        padding: 15px 20px !important;
-        border-left: 4px solid #00684A;
-    }
-
-    .error-detail-content {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .error-detail-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .error-detail-actions .copy-btn {
-        padding: 8px 14px;
-        font-size: 12px;
-        border: 1px solid #00684A;
-        background-color: #fff;
-        color: #00684A;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .error-detail-actions .copy-btn:hover {
-        background-color: #00684A;
-        color: #fff;
-        transform: translateY(-2px);
-        box-shadow: 0 2px 8px rgba(0, 104, 74, 0.2);
-    }
-
-    .error-detail-cell pre {
-        white-space: pre-wrap;
-        word-break: break-word;
-        margin: 0;
-        font-size: 12px;
-        font-family: 'Courier New', monospace;
-        color: #1a5276;
-        background-color: #fff;
-        padding: 12px;
-        border-radius: 4px;
-        border: 1px solid #ddd;
-        max-height: 400px;
-        overflow-y: auto;
-    }
-
-    @media (max-width: 768px) {
-        .plot-container {
-            width: 95%;
-        }
-        
-        .tab-btn {
-            padding: 10px 16px;
-            font-size: 13px;
-        }
-
-        .options-container {
-            flex-direction: column;
-        }
-
-        .options-table-wrapper {
-            min-width: 100%;
-        }
-    }
-
-    /* ===== Log Viewer Panel ===== */
-    .lv-panel {
-        display: flex;
-        flex-direction: column;
-        height: 75vh;
-        min-height: 400px;
-        border: 1px solid #3a3a3a;
-        border-radius: 6px;
-        overflow: hidden;
-        background: #1e1e1e;
-    }
-
-    .lv-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 8px 12px;
-        background: #2a2a2a;
-        border-bottom: 1px solid #3a3a3a;
-    }
-
-    .lv-header-left {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .lv-header-right {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .lv-title {
-        font-weight: 600;
-        font-size: 14px;
-        color: #e0e0e0;
-        white-space: nowrap;
-    }
-
-    .lv-label {
-        font-size: 11px;
-        color: #888;
-        white-space: nowrap;
-    }
-
-    .lv-severity-filter, .lv-tools { display: flex; align-items: center; gap: 6px; }
-    .lv-severity-buttons, .lv-view-mode, .lv-semantic-filter { display: flex; gap: 3px; align-items: center; }
-
-    .lv-sev-btn, .lv-mode-btn, .lv-focus-btn {
-        padding: 2px 8px;
-        font-size: 11px;
-        border: 1px solid #555;
-        border-radius: 4px;
-        background: transparent;
-        color: #aaa;
-        cursor: pointer;
-        transition: all 0.15s;
-    }
-    .lv-sev-btn:hover, .lv-mode-btn:hover, .lv-focus-btn:hover { background: #3a3a3a; color: #ddd; }
-    .lv-sev-btn.active { background: #444; color: #fff; border-color: #888; }
-    .lv-mode-btn.active { background: #00684A; color: #fff; border-color: #00684A; }
-    .lv-focus-btn.active { background: #c9820a; color: #fff; border-color: #c9820a; }
-
-    .lv-sev-btn.info.active { border-color: #4a9; }
-    .lv-sev-btn.debug.active { border-color: #6a8; }
-    .lv-sev-btn.trace.active { border-color: #888; }
-    .lv-sev-btn.warn.active { border-color: #e8a735; }
-    .lv-sev-btn.error.active { border-color: #e84040; }
-    .lv-sev-btn.fatal.active { border-color: #d42; background: #5a1a1a; }
-    .lv-sev-btn.panic.active { border-color: #f0f; background: #5a1a3a; }
-
-    .lv-search {
-        padding: 4px 8px;
-        font-size: 12px;
-        border: 1px solid #555;
-        border-radius: 4px;
-        background: #1e1e1e;
-        color: #e0e0e0;
-        width: 180px;
-    }
-
-    .lv-line-count {
-        font-size: 11px;
-        color: #888;
-        white-space: nowrap;
-    }
-
-    .lv-action-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 28px;
-        height: 28px;
-        background: transparent;
-        border: 1px solid #555;
-        border-radius: 4px;
-        color: #aaa;
-        cursor: pointer;
-    }
-    .lv-action-btn:hover { background: #3a3a3a; color: #ddd; }
-
-    .lv-viewer {
-        flex: 1;
-        overflow-y: auto;
-        font-family: 'Source Code Pro', Menlo, Consolas, monospace;
-        font-size: 12px;
-        line-height: 1.5;
-        padding: 10px;
-        background: #1e1e1e;
-        color: #e0e0e0;
-    }
-
-    .lv-placeholder {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: #888;
-        gap: 12px;
-    }
-
-    .lv-log-line {
-        white-space: pre-wrap;
-        word-break: break-all;
-        margin: 0;
-        padding: 2px 0;
-    }
-    .lv-log-line.pretty { white-space: pre; word-break: normal; }
-    .lv-log-line.summary { white-space: normal; word-break: break-word; font-family: inherit; font-size: 12px; }
-
-    .lv-log-line.error-line { background: rgba(232,64,64,0.12); }
-    .lv-log-line.warn-line { background: rgba(232,167,53,0.10); }
-    .lv-log-line.phase-line { background: rgba(0,104,74,0.12); }
-
-    /* Syntax highlighting */
-    .lv-log-line .timestamp { color: #7ec8e3; }
-    .lv-log-line .phase { color: #4ade80; font-weight: 600; }
-    .lv-log-line .level-error { color: #ef4444; font-weight: 600; }
-    .lv-log-line .level-warn { color: #eab308; font-weight: 600; }
-    .lv-log-line .level-info { color: #38bdf8; }
-    .lv-log-line .level-debug { color: #a78bfa; }
-    .lv-log-line .level-trace { color: #888; }
-    .lv-log-line .json-bracket { color: #888; }
-    .lv-log-line .json-comma { color: #888; }
-    .lv-log-line .json-colon { color: #888; }
-    .lv-log-line .json-key { color: #7dd3fc; }
-    .lv-log-line .json-string { color: #86efac; }
-    .lv-log-line .json-number { color: #93c5fd; }
-    .lv-log-line .boolean-true { color: #4ade80; }
-    .lv-log-line .boolean-false { color: #fb923c; }
-    .lv-log-line .db-name { color: #67e8f9; }
-    .lv-log-line .metric-value { color: #c084fc; }
-    .lv-log-line .duration-avg { color: #38bdf8; }
-    .lv-log-line .duration-max { color: #fb923c; }
-    .lv-log-line .operation-count { color: #4ade80; }
-    .lv-log-line .field-state { color: #f472b6; }
-    .lv-log-line .field-cancommit { color: #2dd4bf; }
-    .lv-log-line .field-lagtime { color: #facc15; }
-    .lv-log-line .field-estimated-total { color: #86efac; }
-    .lv-log-line .field-estimated-copied { color: #6ee7b7; }
-    .lv-log-line .invalid-json-badge { display: inline-block; background: #7f1d1d; color: #fca5a5; padding: 0 4px; border-radius: 3px; font-size: 10px; margin-right: 4px; }
-
-    /* Pagination */
-    .lv-pagination {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 12px;
-        background: #2a2a2a;
-        border-top: 1px solid #3a3a3a;
-    }
-    .lv-page-btn {
-        padding: 4px 12px;
-        font-size: 12px;
-        border: 1px solid #555;
-        border-radius: 4px;
-        background: transparent;
-        color: #ccc;
-        cursor: pointer;
-    }
-    .lv-page-btn:hover:not(:disabled) { background: #3a3a3a; }
-    .lv-page-btn:disabled { opacity: 0.4; cursor: default; }
-    .lv-page-btn.lv-back-to-tail { border-color: #00684A; color: #4ade80; }
-    .lv-page-info, .lv-page-total { font-size: 12px; color: #888; }
+{% block head_links %}
+    <link rel="preload" href="https://assets.mongodb-cdn.com/mms/static/font/EuclidCircularA-Regular-WebXL.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://assets.mongodb-cdn.com/mms/static/font/EuclidCircularA-Semibold-WebXL.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/static/css/mi-upload-results.css">
 {% endblock %}
 
 {% block content %}
+<div class="ur-main">
 <div class="tabs-container">
     <div class="tab-buttons">
         {% if has_logs_data or (not has_metrics_data) %}
@@ -642,6 +52,13 @@
                        placeholder="Filter by key or value..." 
                        oninput="filterTables(this.value)">
             </div>
+            {% if not options_data and not hidden_options_data and not start_options_data %}
+            <div class="options-info-banner">
+                <strong>Some option panels are empty.</strong>
+                Mongosync Options and Hidden Options are logged at startup; Start Options are logged when <code>/api/v1/start</code> is called.
+                Re-upload including the initialization log and the log from when the migration was started (often earlier rotated files).
+            </div>
+            {% endif %}
             <div class="options-container">
                 <div class="options-table-wrapper">
                     <div class="table-header">
@@ -669,7 +86,10 @@
                     </table>
                     <div class="no-results">No matching options found</div>
                     {% else %}
-                    <div class="no-data-message">No Mongosync Options found in the log file</div>
+                    <div class="no-data-message">
+                        <p class="no-data-title">Not available in this log file</p>
+                        <p class="no-data-hint">Logged once at mongosync startup. Include the initialization log (often the earliest rotated file) if you need these settings.</p>
+                    </div>
                     {% endif %}
                 </div>
 
@@ -699,7 +119,10 @@
                     </table>
                     <div class="no-results">No matching hidden options found</div>
                     {% else %}
-                    <div class="no-data-message">No Mongosync Hidden Options found in the log file</div>
+                    <div class="no-data-message">
+                        <p class="no-data-title">Not available in this log file</p>
+                        <p class="no-data-hint">Hidden flags are logged once at startup. Include the initialization log if you need to review them.</p>
+                    </div>
                     {% endif %}
                 </div>
 
@@ -729,7 +152,10 @@
                     </table>
                     <div class="no-results">No matching start options found</div>
                     {% else %}
-                    <div class="no-data-message">No Mongosync Start Options found in the log file</div>
+                    <div class="no-data-message">
+                        <p class="no-data-title">Not available in this log file</p>
+                        <p class="no-data-hint">No <code>/api/v1/start</code> request found. Include the log from when the migration was started.</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -953,6 +379,7 @@
     </div>
     {% endif %}
 </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -1096,9 +523,12 @@ function bindInfoOverlayEvents(plotElId) {
 {% if plot_json %}
 var plot = {{ plot_json | safe }};
 if (plot && plot.data) {
-    Plotly.newPlot('plot', plot.data, plot.layout);
-    buildInfoOverlay('plot');
-    bindInfoOverlayEvents('plot');
+    miRenderPlot('plot', plot, {
+        onRendered: function(elId) {
+            buildInfoOverlay(elId);
+            bindInfoOverlayEvents(elId);
+        }
+    });
 }
 {% endif %}
 
@@ -1106,9 +536,12 @@ if (plot && plot.data) {
 {% if metrics_plot_json %}
 var metricsPlot = {{ metrics_plot_json | safe }};
 if (metricsPlot && metricsPlot.data) {
-    Plotly.newPlot('metrics-plot', metricsPlot.data, metricsPlot.layout);
-    buildInfoOverlay('metrics-plot');
-    bindInfoOverlayEvents('metrics-plot');
+    miRenderPlot('metrics-plot', metricsPlot, {
+        onRendered: function(elId) {
+            buildInfoOverlay(elId);
+            bindInfoOverlayEvents(elId);
+        }
+    });
 }
 {% endif %}
 
@@ -1585,7 +1018,7 @@ function lvMatchesSemanticFilters(line, parsed) {
     var lvl = parsed ? (parsed.level || '') : '';
     if (lvSemanticFilters.errors && /error|fatal|panic/i.test(lvl)) return true;
     if (lvSemanticFilters.warnings && /warn/i.test(lvl)) return true;
-    if (lvSemanticFilters.phases && /phase.*transition|Starting.*phase|Commit handler/i.test(msg)) return true;
+    if (lvSemanticFilters.phases && /phase.*transition|Starting.*phase|Commit handler|Updating the in-memory phase/i.test(msg)) return true;
     if (lvSemanticFilters.opStats && /Operation duration stats/i.test(msg)) return true;
     return false;
 }

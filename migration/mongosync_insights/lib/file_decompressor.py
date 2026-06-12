@@ -175,65 +175,6 @@ def get_file_extension(filename: str) -> str:
     return os.path.splitext(filename)[1].lower()
 
 
-def decompress_file(file_obj: BinaryIO, mime_type: str, filename: str = None) -> Iterator[bytes]:
-    """
-    Decompress a file based on its MIME type and return an iterator over lines.
-    
-    Args:
-        file_obj: File-like object to decompress
-        mime_type: Detected MIME type of the file
-        filename: Original filename (used for extension-based detection when MIME is octet-stream or tar)
-        
-    Returns:
-        Iterator yielding decompressed lines as bytes
-        
-    Raises:
-        ValueError: If the MIME type is not a supported compressed format
-    """
-    from .app_config import EXTENSION_TO_COMPRESSION
-    
-    logger.info(f"Decompressing file with MIME type: {mime_type}, filename: {filename}")
-    
-    # Get file extension for tar archive detection
-    ext = get_file_extension(filename) if filename else None
-    compression_type = EXTENSION_TO_COMPRESSION.get(ext) if ext else None
-    
-    # Check for tar archives first (by extension, since MIME detection may vary)
-    if compression_type == 'tar_gzip':
-        logger.info(f"Using tar+gzip decompression based on file extension: {ext}")
-        return decompress_tar(file_obj, compression='gz')
-    elif compression_type == 'tar_bzip2':
-        logger.info(f"Using tar+bzip2 decompression based on file extension: {ext}")
-        return decompress_tar(file_obj, compression='bz2')
-    
-    # Handle by MIME type
-    if mime_type in ('application/gzip', 'application/x-gzip'):
-        return decompress_gzip(file_obj)
-    elif mime_type in ('application/zip', 'application/x-zip-compressed'):
-        return decompress_zip(file_obj)
-    elif mime_type == 'application/x-bzip2':
-        return decompress_bzip2(file_obj)
-    elif mime_type == 'application/x-tar':
-        # Plain tar with gzip compression (common for tar.gz detected as x-tar)
-        logger.info("Using tar+gzip decompression for application/x-tar")
-        return decompress_tar(file_obj, compression='gz')
-    elif mime_type == 'application/octet-stream' and filename:
-        # Fallback to extension-based detection for generic binary files
-        if compression_type == 'gzip':
-            logger.info(f"Using gzip decompression based on file extension: {ext}")
-            return decompress_gzip(file_obj)
-        elif compression_type == 'zip':
-            logger.info(f"Using zip decompression based on file extension: {ext}")
-            return decompress_zip(file_obj)
-        elif compression_type == 'bzip2':
-            logger.info(f"Using bzip2 decompression based on file extension: {ext}")
-            return decompress_bzip2(file_obj)
-        else:
-            raise ValueError(f"Cannot determine compression type for octet-stream file with extension: {ext}")
-    else:
-        raise ValueError(f"Unsupported compressed MIME type: {mime_type}")
-
-
 def is_compressed_mime_type(mime_type: str) -> bool:
     """
     Check if a MIME type represents a compressed file format.

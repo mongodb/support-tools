@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light" data-scheme="green">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Mongosync Insights{% endblock %}</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
     {% include '_theme_vars.html' %}
+    {% include '_plotly_theme.html' %}
     <script>
     window.MI_LOGS = {
         list: {{ url_for('logs.list_snapshots')|tojson }},
@@ -105,6 +106,18 @@
         .sidebar-btn svg {
             width: 24px;
             height: 24px;
+        }
+
+        #themeToggleBtn .theme-icon-sun {
+            display: none;
+        }
+
+        [data-theme="dark"] #themeToggleBtn .theme-icon-moon {
+            display: none;
+        }
+
+        [data-theme="dark"] #themeToggleBtn .theme-icon-sun {
+            display: block;
         }
 
         .sidebar-btn .tooltip {
@@ -531,6 +544,7 @@
 
         {% block styles %}{% endblock %}
     </style>
+    {% block head_links %}{% endblock %}
 </head>
 <body>
     <!-- Left sidebar -->
@@ -562,6 +576,15 @@
         <div class="sidebar-divider"></div>
 
         <div class="sidebar-footer">
+            <button type="button" class="sidebar-btn" id="themeToggleBtn" onclick="toggleMiTheme()" aria-pressed="false" title="Switch to dark mode">
+                <svg class="theme-icon theme-icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                </svg>
+                <svg class="theme-icon theme-icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                <span class="tooltip">Dark mode</span>
+            </button>
             <button class="sidebar-btn" id="creditsInfoBtn" onclick="openCreditsOverlay()" title="Developer Credits">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -607,15 +630,6 @@
                         <option value="light">Light</option>
                         <option value="dark">Dark</option>
                         <option value="system">System (follow OS)</option>
-                    </select>
-                </div>
-                <div class="settings-row">
-                    <label for="settingsScheme">Color scheme:</label>
-                    <select id="settingsScheme">
-                        <option value="green">MongoDB Green</option>
-                        <option value="blue">Blue</option>
-                        <option value="slate">Slate</option>
-                        <option value="ocean">Ocean</option>
                     </select>
                 </div>
             </div>
@@ -702,10 +716,8 @@
     function openSettingsDialog() {
         var refresh = sessionStorage.getItem('mi_refresh_time') || '10';
         var theme = sessionStorage.getItem('mi_theme') || 'light';
-        var scheme = sessionStorage.getItem('mi_color_scheme') || 'green';
         document.getElementById('settingsRefresh').value = refresh;
         document.getElementById('settingsTheme').value = theme;
-        document.getElementById('settingsScheme').value = scheme;
         document.getElementById('settingsOverlay').classList.add('active');
     }
 
@@ -716,23 +728,16 @@
     function applySettings() {
         var refresh = document.getElementById('settingsRefresh').value;
         var theme = document.getElementById('settingsTheme').value;
-        var scheme = document.getElementById('settingsScheme').value;
         sessionStorage.setItem('mi_refresh_time', refresh);
         sessionStorage.setItem('mi_theme', theme);
-        sessionStorage.setItem('mi_color_scheme', scheme);
-        applyAppearance(theme, scheme);
+        applyAppearance(theme);
         closeSettingsDialog();
         window.dispatchEvent(new CustomEvent('mi-refresh-changed', { detail: { refreshSec: parseInt(refresh, 10) } }));
     }
 
-    /* Live-apply theme/scheme as user changes selects */
+    /* Live-apply theme as user changes select */
     document.getElementById('settingsTheme').addEventListener('change', function() {
-        var scheme = document.getElementById('settingsScheme').value || 'green';
-        applyAppearance(this.value, scheme);
-    });
-    document.getElementById('settingsScheme').addEventListener('change', function() {
-        var theme = document.getElementById('settingsTheme').value || 'light';
-        applyAppearance(theme, this.value);
+        applyAppearance(this.value);
     });
 
     /* Logout */

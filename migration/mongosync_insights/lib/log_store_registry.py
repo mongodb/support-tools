@@ -10,7 +10,9 @@ import threading
 import time
 from typing import Optional
 
+from .app_config import LOG_STORE_DIR, LOG_STORE_MAX_AGE_HOURS
 from .log_store import LogStore
+from .store_paths import validate_store_id
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +31,11 @@ class LogStoreRegistry:
 
     def register(self, store_id: str, db_path: str):
         """Register a store_id -> db_path mapping."""
+        validate_store_id(store_id)
+        base = os.path.realpath(LOG_STORE_DIR)
+        resolved = os.path.realpath(db_path)
+        if resolved != base and not resolved.startswith(base + os.sep):
+            raise ValueError(f'db_path must be under LOG_STORE_DIR: {db_path!r}')
         with self._lock:
             self._entries[store_id] = {
                 'db_path': db_path,
@@ -36,19 +43,6 @@ class LogStoreRegistry:
                 'store': None,
             }
         logger.debug(f"Registered log store {store_id[:8]}... -> {db_path}")
-
-    def get_path(self, store_id: str) -> Optional[str]:
-        """Get the db_path for a store_id, or None if not found/expired."""
-        if not store_id:
-            return None
-        with self._lock:
-            entry = self._entries.get(store_id)
-            if not entry:
-                return None
-            if time.time() - entry['created_at'] > self._ttl:
-                self._remove_entry(store_id)
-                return None
-            return entry['db_path']
 
     def open_store(self, store_id: str) -> Optional[LogStore]:
         """
@@ -112,16 +106,10 @@ class LogStoreRegistry:
             if expired:
                 logger.info(f"Cleaned up {len(expired)} expired log store(s)")
 
-    def remove_all(self):
-        """Remove all registered stores (used during shutdown)."""
-        with self._lock:
-            for sid in list(self._entries.keys()):
-                self._remove_entry(sid)
-
     def count(self) -> int:
         """Number of currently registered stores."""
         with self._lock:
             return len(self._entries)
 
 
-log_store_registry = LogStoreRegistry()
+log_store_registry = LogStoreRegistry(default_ttl=LOG_STORE_MAX_AGE_HOURS * 3600)

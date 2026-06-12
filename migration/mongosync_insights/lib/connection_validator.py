@@ -9,11 +9,6 @@ from pymongo.uri_parser import parse_uri
 logger = logging.getLogger(__name__)
 
 
-class ConnectionValidationError(Exception):
-    """Custom exception for connection validation errors."""
-    pass
-
-
 def sanitize_for_display(connection_string):
     """
     Sanitize connection string for safe HTML display.

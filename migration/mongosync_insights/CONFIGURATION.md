@@ -10,12 +10,16 @@ This document explains the configuration management system for Mongosync Insight
 
 Mongosync Insights is configured entirely through **environment variables**. No configuration files are used.
 
+For the **Migration Monitoring** dashboard (progress endpoint, metadata fallback, index building, embedded verifier), see **[MIGRATION_MONITORING.md](MIGRATION_MONITORING.md)**.
+
 ### **Configuration Priority**
 
 1. **Environment Variables** (highest priority)
 2. **Default Values** (lowest priority)
 
 All configuration can be set using `export` commands before running the application, or through your system's environment configuration.
+
+Invalid numeric environment variables or an unrecognized `LOG_LEVEL` cause immediate startup failure with a descriptive error message.
 
 ## Environment Variables Reference
 
@@ -36,14 +40,15 @@ All configuration can be set using `export` commands before running the applicat
 | `MI_VERIFIER_CONNECTION_STRING` | _(falls back to `MI_CONNECTION_STRING`)_ | MongoDB connection string for the migration verifier database. When omitted, the value of `MI_CONNECTION_STRING` is used. Set this when the verifier database lives on a different cluster. |
 | `MI_INTERNAL_DB_NAME` | _(auto-detected)_ | MongoDB internal database name. When not set, the app auto-detects between `__mdb_internal_mongosync` (new) and `mongosync_reserved_for_internal_use` (legacy). Set this variable to override auto-detection. |
 | `MI_POOL_SIZE` | `10` | MongoDB connection pool size |
-| `MI_TIMEOUT_MS` | `5000` | MongoDB connection timeout in milliseconds |
+| `MI_TIMEOUT_MS` | `30000` | MongoDB connection timeout in milliseconds |
 
-### Live Monitoring Settings
+### Migration Monitoring Settings
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MI_REFRESH_TIME` | `10` | Live monitoring refresh interval in seconds |
-| `MI_PROGRESS_ENDPOINT_URL` | _(empty)_ | Mongosync progress endpoint URL (optional, can be provided via UI) |
+| `MI_REFRESH_TIME` | `10` | Migration monitoring dashboard refresh interval in seconds |
+| `MI_INDEX_BUILD_REFRESH_TIME` | `60` | Minimum interval in seconds between destination `list_indexes` scans used for approximate metadata index-building progress (counter reads still run every poll). See [MIGRATION_MONITORING.md](MIGRATION_MONITORING.md). |
+| `MI_PROGRESS_ENDPOINT_URL` | _(empty)_ | Mongosync progress endpoint as `host:port` or `host:port/api/v1/progress` (default port **27182**; path `/api/v1/progress` is appended if omitted). Optional — can also be set via UI **host** and **port** fields on the Migration monitoring home page. Leave host empty in the UI to skip the endpoint. |
 
 ### File Upload Settings
 
@@ -69,9 +74,9 @@ All configuration can be set using `export` commands before running the applicat
 |----------|---------|-------------|
 | `MI_LOG_VIEWER_MAX_LINES` | `2000` | Maximum number of recent log lines shown in the Log Viewer tail view |
 | `MI_LOG_STORE_DIR` | System temp directory | Directory for SQLite log stores and analysis snapshot files |
-| `MI_LOG_STORE_MAX_AGE_HOURS` | `24` | TTL in hours for log store and snapshot files (based on last-access mtime) |
+| `MI_LOG_STORE_MAX_AGE_HOURS` | `24` | TTL in hours for in-memory log store registry entries (`created_at`) and on-disk SQLite stores / snapshot files (file `mtime`) |
 
-> **Note**: By default, log store databases and snapshot files are saved to the OS temp directory (e.g., `/tmp` on Linux/macOS), which may be cleared on system reboot. Set `MI_LOG_STORE_DIR` to a persistent path (e.g., `/data/mongosync-insights/store`) to retain snapshots across restarts. Files are cleaned up automatically on app startup, on logout, and lazily on access when they exceed the configured TTL. Loading a saved snapshot resets its TTL by touching the file's modification time.
+> **Note**: By default, log store databases and snapshot files are saved to the OS temp directory (e.g., `/tmp` on Linux/macOS), which may be cleared on system reboot. Set `MI_LOG_STORE_DIR` to a persistent path (e.g., `/data/mongosync-insights/store`) to retain snapshots across restarts. Maintenance runs when the app is initialized (`create_app`, including packaged and `flask run` imports) and on logout: expired registry entries are removed, then old `mi_logstore_*.db` and snapshot files are deleted by age. Listing or loading a saved snapshot also hides or refreshes TTL for files still within the limit (snapshot/DB `mtime` is touched on load). Lower this value if multi-GB log stores accumulate during a session.
 
 ### Security Settings
 
@@ -139,14 +144,17 @@ python3 mongosync_insights.py
 
 ### Example 3b: Combined Monitoring (Metadata + Progress Endpoint)
 
-Pre-configure both the connection string and progress endpoint for comprehensive monitoring:
+Pre-configure both the connection string and progress endpoint for comprehensive monitoring. In the UI, the equivalent is entering a **host** and **port** (default `27182`) on the Migration monitoring home page; leave host empty for metadata-only mode.
 
 ```bash
-# Set MongoDB connection string for metadata access
+# Set MongoDB connection string for metadata access (destination cluster)
 export MI_CONNECTION_STRING="mongodb+srv://user:pass@cluster.mongodb.net/"
 
-# Set mongosync progress endpoint URL
-export MI_PROGRESS_ENDPOINT_URL="localhost:27182/api/v1/progress"
+# Set mongosync progress endpoint (host:port or full path; /api/v1/progress is appended if omitted)
+export MI_PROGRESS_ENDPOINT_URL="localhost:27182"
+
+# Optional: throttle destination index-name verification scans (metadata fallback)
+export MI_INDEX_BUILD_REFRESH_TIME=60
 
 # Faster refresh for active migrations
 export MI_REFRESH_TIME=5
@@ -218,10 +226,10 @@ python3 mongosync_insights.py
 Pre-configure the connection string for the [migration-verifier](https://github.com/mongodb-labs/migration-verifier) database:
 
 ```bash
-# Set verifier connection string (separate cluster from live monitoring)
+# Set verifier connection string (separate cluster from migration monitoring)
 export MI_VERIFIER_CONNECTION_STRING="mongodb+srv://user:pass@verifier-cluster.mongodb.net/"
 
-# Or reuse the same connection string as live monitoring
+# Or reuse the same connection string as migration monitoring
 export MI_CONNECTION_STRING="mongodb+srv://user:pass@cluster.mongodb.net/"
 
 # Run the application
@@ -273,6 +281,16 @@ sudo -E python3 mongosync_insights.py
 - Verify the connection string format: `mongodb+srv://user:pass@cluster.mongodb.net/`
 - Check for extra quotes or spaces
 - Test connection string with `mongosh` first
+- Pre-set env vars apply to Migration monitoring when not overridden by a session; clear cookies or restart the app if a prior session is cached
+
+### Progress Endpoint Not Responding
+
+**Problem**: Migration Monitoring shows a progress-endpoint warning
+
+**Solution**:
+- Confirm mongosync is running and its API is reachable on the host/port you entered (default port **27182**)
+- Verify `MI_PROGRESS_ENDPOINT_URL` uses `host:port` or `host:port/api/v1/progress` (no `http://` required in env)
+- Metadata-only monitoring still works if `MI_CONNECTION_STRING` is set; leave the progress **host** empty in the UI to skip the endpoint intentionally
 
 ### Log File Permission Denied
 
@@ -294,6 +312,8 @@ export MI_LOG_FILE=/var/log/mongosync-insights/insights.log
 ## Related Documentation
 
 - **[README.md](README.md)** - Getting started and installation guide
+- **[LOG_ANALYZER.md](LOG_ANALYZER.md)** - Log Analyzer feature guide
+- **[MIGRATION_MONITORING.md](MIGRATION_MONITORING.md)** - Migration Monitoring feature guide
 - **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
 - **[CONNECTION_STRING.md](CONNECTION_STRING.md)** - Connection string formats, security, and troubleshooting
 

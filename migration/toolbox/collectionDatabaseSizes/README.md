@@ -1,6 +1,6 @@
 # Database and Collection Size
 
-This script lists all databases and collections (excluding system databases: `admin`, `config`, `local`) with their sizes in MB, sorted from largest to smallest.
+This script lists all databases and collections (excluding system databases: `admin`, `config`, `local`) with their uncompressed and on-disk storage sizes in MB, sorted by uncompressed size from largest to smallest.
 
 ## Usage
 
@@ -17,11 +17,11 @@ mongosh "mongodb://user:password@localhost:27017" --quiet collectionDatabaseSize
 ## Example Output
 
 ```
-Database | Collection | Size (MB)
----------------------------------
-mydb | largeCollection | 1024.50 MB
-mydb | mediumCollection | 256.25 MB
-otherdb | smallCollection | 12.00 MB
+Database | Collection | Size (MB) | Storage Size (MB)
+-------------------------------------------------------
+mydb | largeCollection | 1024.50 MB | 412.30 MB
+mydb | mediumCollection | 256.25 MB | 98.10 MB
+otherdb | smallCollection | 12.00 MB | 4.50 MB
 ```
 
 ## Understanding Results
@@ -30,7 +30,8 @@ otherdb | smallCollection | 12.00 MB
 |-------|-------------|
 | **Database** | Database name |
 | **Collection** | Collection name |
-| **Size (MB)** | Collection size in megabytes (sorted descending) |
+| **Size (MB)** | Uncompressed BSON data size (`stats.size`), sorted descending |
+| **Storage Size (MB)** | Allocated on-disk document storage (`stats.storageSize`); reflects WiredTiger compression when enabled. Excludes index storage (`indexSize` / `totalIndexSize`). |
 
 ### License
 

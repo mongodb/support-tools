@@ -39,11 +39,15 @@ for (var i = 0; i < databases.length; i++) {
         const currentCollection = currentDb.getCollection(collectionName);
         const stats = currentCollection.stats(); // Get collection stats
 
+        const storageSize = stats.storageSize || 0;
+
         databaseInfo.push({
             db: database.name,
             collection: collectionName,
-            size_MB: parseFloat(byteToMB(stats.size)), // Collection size in MB
-            size: stats.size // Size in bytes
+            size_MB: parseFloat(byteToMB(stats.size)), // Uncompressed collection size in MB
+            size: stats.size, // Uncompressed size in bytes
+            storageSize_MB: parseFloat(byteToMB(storageSize)), // On-disk storage size in MB
+            storageSize: storageSize // On-disk storage size in bytes
         });
     });
 }
@@ -54,9 +58,9 @@ databaseInfo.sort(function(a, b) {
 });
 
 // Print the sorted list of collections
-print("Database | Collection | Size (MB)");
-print("---------------------------------");
+print("Database | Collection | Size (MB) | Storage Size (MB)");
+print("-------------------------------------------------------");
 for (var j = 0; j < databaseInfo.length; j++) {
     const info = databaseInfo[j];
-    print(info.db + " | " + info.collection + " | " + info.size_MB + " MB");
+    print(info.db + " | " + info.collection + " | " + info.size_MB + " MB | " + info.storageSize_MB + " MB");
 }

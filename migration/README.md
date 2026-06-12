@@ -2,7 +2,7 @@
 This section contains scripts to help before, during, and after migrations.
 
 ## [Mongosync Insights](mongosync_insights)
-This project parses **mongosync** logs and reads the internal database (metadata), generating a variety of plots to assist with monitoring and troubleshooting ongoing mongosync migrations.
+Parses **mongosync** logs and provides a web dashboard with **Log Analyzer** (offline log/metrics analysis) and **Migration Monitoring** (real-time progress via the mongosync API and destination metadata). See [mongosync_insights/README.md](mongosync_insights/README.md), [LOG_ANALYZER.md](mongosync_insights/LOG_ANALYZER.md), and [MIGRATION_MONITORING.md](mongosync_insights/MIGRATION_MONITORING.md).
 
 ## [Toolbox](toolbox)
 Toolbox is a collection of helper scripts created by the Migration Factory team for data capture and analysis

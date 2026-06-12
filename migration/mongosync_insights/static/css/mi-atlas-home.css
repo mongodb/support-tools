@@ -1,0 +1,380 @@
+/* Hub, live, and logs entry pages — Atlas cosmetic theme (layout unchanged) */
+
+@font-face {
+    font-family: 'Euclid Circular A';
+    font-weight: 400;
+    font-style: normal;
+    src: url('https://assets.mongodb-cdn.com/mms/static/font/EuclidCircularA-Regular-WebXL.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Euclid Circular A';
+    font-weight: 600;
+    font-style: normal;
+    src: url('https://assets.mongodb-cdn.com/mms/static/font/EuclidCircularA-Semibold-WebXL.woff2') format('woff2');
+}
+
+body {
+    background-color: var(--lm-page-bg);
+    color: var(--lm-text-primary);
+    font-family: var(--mi-font-ui);
+}
+
+main {
+    font-family: var(--mi-font-ui);
+}
+
+.form-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+
+form {
+    width: 350px;
+    border: 1px solid var(--lm-card-border);
+    padding: 20px;
+    border-radius: var(--lm-card-radius);
+    background-color: var(--lm-card-bg);
+    box-shadow: var(--lm-card-shadow);
+    overflow: hidden;
+}
+
+h1,
+h2 {
+    color: var(--lm-text-primary);
+}
+
+p,
+label,
+small {
+    color: var(--lm-text-secondary);
+}
+
+strong {
+    color: var(--lm-text-primary);
+}
+
+a {
+    color: var(--lm-link);
+}
+
+.mi-back {
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.mi-back a {
+    font-size: 0.9em;
+}
+
+.version-info {
+    text-align: center;
+    padding-top: 20px;
+}
+
+.version-info .version-tag {
+    font-size: 0.6em;
+    color: var(--lm-text-secondary);
+}
+
+.progress-endpoint-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.progress-endpoint-row .progress-host-input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+}
+
+.progress-endpoint-row .progress-port-input {
+    flex: 0 0 auto;
+    width: 4.5em;
+}
+
+.hub-page {
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.hub-page h1 {
+    color: var(--lm-text-primary);
+    margin-bottom: 0.5em;
+}
+
+.hub-sub {
+    color: var(--lm-text-secondary);
+    margin-bottom: 2em;
+}
+
+.hub-card {
+    width: 350px;
+    border: 1px solid var(--lm-card-border);
+    padding: 24px 20px;
+    border-radius: var(--lm-card-radius);
+    background-color: var(--lm-card-bg);
+    box-shadow: var(--lm-card-shadow);
+    text-align: left;
+}
+
+.hub-card h2 {
+    margin-top: 0;
+    color: var(--lm-text-primary);
+    font-size: 1.15em;
+}
+
+.hub-card p {
+    color: var(--lm-text-secondary);
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+.hub-card a.mi-cta {
+    display: inline-block;
+    background: var(--mongodb-green-dark1);
+    color: var(--mongodb-white);
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    border: 1px solid var(--mongodb-green-dark1);
+    font-family: var(--mi-font-ui);
+}
+
+.hub-card a.mi-cta:hover {
+    opacity: 0.85;
+}
+
+.version-info:has(.hub-page) {
+    padding-top: 28px;
+}
+
+.hub-page .version-tag {
+    font-size: 0.5em;
+}
+
+input[type="text"],
+input[type="file"],
+select {
+    background: var(--lm-node-bg);
+    color: var(--lm-text-primary);
+    border: 1px solid var(--lm-card-border);
+    border-radius: 4px;
+    padding: 4px 6px;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+input[type="submit"] {
+    background: var(--mongodb-green-dark1);
+    color: var(--mongodb-white);
+    border: 1px solid var(--mongodb-green-dark1);
+    border-radius: 4px;
+    padding: 6px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: var(--mi-font-ui);
+}
+
+input[type="submit"]:hover {
+    opacity: 0.85;
+}
+
+.verifier-note {
+    background: var(--mi-warning-bg);
+    border: 1px solid var(--mi-warning-border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 0.85em;
+    margin-top: 12px;
+    margin-bottom: 0;
+    color: var(--mi-warning-text);
+}
+
+.verifier-note strong {
+    color: var(--lm-text-primary);
+}
+
+[data-theme="dark"] .verifier-note {
+    background: var(--mi-warning-bg);
+    border-color: var(--mi-warning-border);
+    color: var(--mi-warning-text);
+}
+
+.prev-analyses-divider {
+    border: none;
+    border-top: 1px solid var(--lm-card-border);
+    margin: 16px 0 12px;
+}
+
+.prev-analyses-title {
+    font-size: 0.95em;
+    font-weight: 600;
+    color: var(--lm-text-secondary);
+    margin: 0 0 10px;
+}
+
+.prev-analyses-empty {
+    font-size: 0.85em;
+    color: var(--lm-text-secondary);
+    font-style: italic;
+}
+
+.prev-analyses-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.prev-analysis-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--lm-card-border);
+}
+
+.prev-analysis-item:last-child {
+    border-bottom: none;
+}
+
+.prev-analysis-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.prev-analysis-name {
+    font-size: 0.88em;
+    font-weight: 600;
+    color: var(--lm-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.prev-analysis-meta {
+    font-size: 0.78em;
+    color: var(--lm-text-secondary);
+    margin-top: 2px;
+}
+
+.prev-analysis-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.prev-analysis-load {
+    font-size: 0.8em;
+    padding: 3px 10px;
+    border: 1px solid var(--mongodb-green-dark1);
+    border-radius: 4px;
+    background: var(--mongodb-green-dark1);
+    color: var(--mongodb-white);
+    cursor: pointer;
+    text-decoration: none;
+    font-family: var(--mi-font-ui);
+}
+
+.prev-analysis-load:hover {
+    opacity: 0.85;
+}
+
+.prev-analysis-delete {
+    font-size: 0.85em;
+    padding: 2px 6px;
+    border: none;
+    background: transparent;
+    color: var(--mongodb-red-base);
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.prev-analysis-delete:hover {
+    background: var(--mi-error-banner-bg);
+    color: var(--mongodb-red-base);
+}
+
+.dup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+}
+
+.dup-overlay.active {
+    display: flex;
+}
+
+.dup-dialog {
+    background: var(--lm-card-bg);
+    border: 1px solid var(--lm-card-border);
+    border-radius: var(--lm-card-radius);
+    box-shadow: var(--lm-card-shadow);
+    width: 420px;
+    max-width: 90vw;
+    padding: 24px;
+    text-align: center;
+}
+
+.dup-dialog h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: var(--lm-text-primary);
+}
+
+.dup-dialog p {
+    margin: 0 0 20px 0;
+    font-size: 13px;
+    color: var(--lm-text-secondary);
+    text-align: left;
+    line-height: 1.5;
+}
+
+.dup-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.dup-btn {
+    padding: 7px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    border: 1px solid var(--lm-card-border);
+    font-family: var(--mi-font-ui);
+}
+
+.dup-btn-primary {
+    background: var(--mongodb-green-dark1);
+    color: var(--mongodb-white);
+    border-color: var(--mongodb-green-dark1);
+}
+
+.dup-btn-danger {
+    background: transparent;
+    color: var(--mongodb-red-base);
+    border-color: var(--mongodb-red-base);
+}
+
+.dup-btn-cancel {
+    background: transparent;
+    color: var(--lm-text-secondary);
+}

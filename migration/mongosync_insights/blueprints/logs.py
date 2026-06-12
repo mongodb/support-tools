@@ -9,11 +9,21 @@ from lib.snapshot_store import (
     load_snapshot,
     list_snapshots as get_snapshot_list,
     delete_snapshot as remove_snapshot,
+    logstore_path,
 )
+from lib.store_paths import is_valid_store_id
 
 bp = Blueprint("logs", __name__, url_prefix="/logs")
 
 logger = logging.getLogger(__name__)
+
+_SNAPSHOT_NOT_FOUND_KWARGS = {
+    "error_title": "Snapshot Not Found",
+    "error_message": (
+        "The requested analysis snapshot was not found or has expired. "
+        "Please upload and parse the log file again."
+    ),
+}
 
 
 @bp.route("/")
@@ -36,6 +46,8 @@ def search_logs():
     store_id = request.args.get("store_id", "").strip()
     if not store_id:
         return jsonify({"error": "Missing store_id parameter"}), 400
+    if not is_valid_store_id(store_id):
+        return jsonify({"error": "Invalid store_id parameter"}), 400
 
     q = request.args.get("q", "").strip()
     level = request.args.get("level", "").strip()
@@ -80,23 +92,20 @@ def list_snapshots():
 
 @bp.route("/load_snapshot/<snapshot_id>")
 def load_snapshot_view(snapshot_id):
+    if not is_valid_store_id(snapshot_id):
+        return render_template("error.html", **_SNAPSHOT_NOT_FOUND_KWARGS)
+
     data = load_snapshot(snapshot_id)
     if data is None:
-        return render_template(
-            "error.html",
-            error_title="Snapshot Not Found",
-            error_message=(
-                "The requested analysis snapshot was not found or has expired. "
-                "Please upload and parse the log file again."
-            ),
-        )
+        return render_template("error.html", **_SNAPSHOT_NOT_FOUND_KWARGS)
 
     store_id = data.get("log_store_id", "")
-    if store_id:
-        from lib.snapshot_store import logstore_path
-
-        db_path = logstore_path(store_id)
-        if os.path.exists(db_path):
+    if store_id and is_valid_store_id(store_id):
+        try:
+            db_path = logstore_path(store_id)
+        except ValueError:
+            db_path = None
+        if db_path and os.path.exists(db_path):
             log_store_registry.register(store_id, db_path)
 
     template_data = data.get("template_data", {})
@@ -105,6 +114,9 @@ def load_snapshot_view(snapshot_id):
 
 @bp.route("/delete_snapshot/<snapshot_id>", methods=["DELETE"])
 def delete_snapshot_view(snapshot_id):
+    if not is_valid_store_id(snapshot_id):
+        return jsonify({"error": "Snapshot not found"}), 404
+
     deleted, store_id = remove_snapshot(snapshot_id)
     if store_id:
         log_store_registry.remove(store_id)
