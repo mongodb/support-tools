@@ -25,18 +25,49 @@
 
 // Resolve the mode BEFORE entering the strict-mode IIFE. Assigning to an
 // undeclared identifier inside "use strict" throws a ReferenceError, so the
-// default must be established here on the global object.
+// default must be established here.
 if (typeof _mode === "undefined") {
-    globalThis._mode = "indexFilters";
+    var _mode = "indexFilters";
 }
 
 (function () {
     "use strict";
 
+    function getHostInfo() {
+        // db.getMongo().host is not populated in mongosh, so fall back to the
+        // host reported by hello() (set on replica sets/sharded clusters) and
+        // then to the host portion of the connection URI for standalones.
+        try {
+            var me = db.hello().me;
+            if (me) {
+                return me;
+            }
+        } catch (e) {
+            // ignore and fall through to the URI-based resolution
+        }
+
+        try {
+            var uri = db.getMongo()._uri;
+            if (uri) {
+                var withoutScheme = uri.replace(/^mongodb(\+srv)?:\/\//, "");
+                var hostPart = withoutScheme.split("/")[0].split("?")[0];
+                if (hostPart) {
+                    return hostPart;
+                }
+            }
+        } catch (e) {
+            // ignore and fall through to the default
+        }
+
+        return "unknown";
+    }
+
     function getCollectionNames(database) {
         var collectionNames = [];
 
-        database.getCollectionInfos({ "type": "collection" }).forEach(function (collectionInfo) {
+        // Use nameOnly to avoid scanning collection metadata; only the name and
+        // type are needed here, both of which are still returned in this mode.
+        database.getCollectionInfos({ "type": "collection" }, {nameOnly:true}).forEach(function (collectionInfo) {
             var name = collectionInfo.name;
 
             if (name.indexOf("system.") === 0) {
@@ -97,22 +128,14 @@ if (typeof _mode === "undefined") {
         };
 
         try {
-            var cmd = db.adminCommand({
-                aggregate: 1,
-                pipeline: [
-                    { $querySettings: {} }
-                ],
-                cursor: {}
-            });
+            var admin = db.getSiblingDB("admin");
 
-            if (!cmd.ok) {
-                res.error = cmd;
-                return res;
-            }
-
-            if (cmd.cursor && cmd.cursor.firstBatch) {
-                res.querySettings = cmd.cursor.firstBatch;
-            }
+            // Use the aggregate() helper with toArray() so the driver iterates
+            // the full cursor; results that span multiple batches are not
+            // silently truncated to just the first batch.
+            res.querySettings = admin.aggregate([
+                { $querySettings: {} }
+            ]).toArray();
 
             res.ok = true;
         } catch (e) {
@@ -130,8 +153,22 @@ if (typeof _mode === "undefined") {
 
             if (entry.namespace) {
                 ns = entry.namespace;
-            } else if (entry.representativeQuery && entry.representativeQuery.namespace) {
-                ns = entry.representativeQuery.namespace;
+            } else if (entry.representativeQuery) {
+                var rq = entry.representativeQuery;
+
+                if (rq.namespace) {
+                    ns = rq.namespace;
+                } else if (rq["$db"]) {
+                    // The $querySettings output describes the namespace via the
+                    // command shape: the database is in "$db" and the collection
+                    // is the value of the command name (find/aggregate/etc.).
+                    var collection = rq.find || rq.aggregate || rq.count ||
+                        rq.distinct || rq.update || rq["delete"] || rq.findAndModify;
+
+                    if (typeof collection === "string") {
+                        ns = rq["$db"] + "." + collection;
+                    }
+                }
             }
 
             if (!ns) {
@@ -150,10 +187,11 @@ if (typeof _mode === "undefined") {
 
     function collectIndexFilters() {
         var allResults = [];
+        var errors = [];
         var dbs = db.getMongo().getDBs();
 
         if (!dbs.databases) {
-            return allResults;
+            return { results: allResults, errors: errors };
         }
 
         dbs.databases.forEach(function (dbInfo) {
@@ -163,11 +201,31 @@ if (typeof _mode === "undefined") {
             try {
                 collections = getCollectionNames(database);
             } catch (e) {
+                // Surface database-level failures (for example, due to
+                // restricted privileges) rather than silently skipping them.
+                errors.push({
+                    db: dbInfo.name,
+                    scope: "database",
+                    error: e.message
+                });
                 return;
             }
 
             collections.forEach(function (collectionName) {
                 var result = getCollectionIndexFilters(database, collectionName);
+
+                if (result.error) {
+                    // Surface collection-level failures so they are visible in
+                    // the report instead of being filtered out.
+                    errors.push({
+                        db: result.db,
+                        collection: result.collection,
+                        namespace: result.namespace,
+                        scope: "collection",
+                        error: result.error
+                    });
+                    return;
+                }
 
                 if (result.hasIndexFilters) {
                     allResults.push(result);
@@ -175,7 +233,7 @@ if (typeof _mode === "undefined") {
             });
         });
 
-        return allResults;
+        return { results: allResults, errors: errors };
     }
 
     function collectQuerySettings() {
@@ -252,12 +310,14 @@ if (typeof _mode === "undefined") {
 
         printjson({
             generatedAt: new Date(),
-            host: db.getMongo().host,
+            host: getHostInfo(),
             mode: _mode,
             summary: {
-                collectionsWithIndexFilters: indexFilterResults.length
+                collectionsWithIndexFilters: indexFilterResults.results.length,
+                errorCount: indexFilterResults.errors.length
             },
-            results: indexFilterResults
+            results: indexFilterResults.results,
+            errors: indexFilterResults.errors
         });
         return;
     }
@@ -267,7 +327,7 @@ if (typeof _mode === "undefined") {
     if (querySettingsResults.error) {
         printjson({
             generatedAt: new Date(),
-            host: db.getMongo().host,
+            host: getHostInfo(),
             mode: _mode,
             error: querySettingsResults.error,
             results: []
@@ -277,7 +337,7 @@ if (typeof _mode === "undefined") {
 
     printjson({
         generatedAt: new Date(),
-        host: db.getMongo().host,
+        host: getHostInfo(),
         mode: _mode,
         summary: {
             namespacesWithQuerySettings: querySettingsResults.results.length,
