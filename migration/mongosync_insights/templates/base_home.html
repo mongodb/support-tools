@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light" data-scheme="green">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Mongosync Insights{% endblock %}</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
     {% include '_theme_vars.html' %}
+    {% include '_plotly_theme.html' %}
     <script>
     window.MI_LOGS = {
         list: {{ url_for('logs.list_snapshots')|tojson }},
@@ -69,6 +70,7 @@
 
         {% block styles %}{% endblock %}
     </style>
+    {% block head_links %}{% endblock %}
 </head>
 <body>
     <main>

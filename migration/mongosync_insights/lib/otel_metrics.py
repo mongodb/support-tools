@@ -14,6 +14,8 @@ from datetime import datetime
 from collections import defaultdict, OrderedDict
 from typing import Dict, List, Any, Tuple, Optional
 
+from .plot_theme import apply_mi_theme, section_label_style, no_data_text_style
+
 logger = logging.getLogger(__name__)
 
 # Prometheus metric line regex pattern
@@ -364,7 +366,7 @@ def add_no_data(fig, row: int, col: int, name: str):
     """Add a NO DATA placeholder to a subplot."""
     fig.add_trace(
         go.Scatter(x=[0], y=[0], text="NO DATA", mode='text', name=name,
-                  textfont=dict(size=30, color="black")),
+                  textfont=no_data_text_style()),
         row=row, col=col
     )
     fig.update_yaxes(range=[-1, 1], row=row, col=col)
@@ -520,15 +522,6 @@ def create_metrics_plots(collector: MetricsCollector, config_path: Path = None) 
         fig.update_xaxes(visible=False, row=r, col=c)
         fig.update_yaxes(visible=False, row=r, col=c)
     
-    # Update layout
-    fig.update_layout(
-        height=rows * 225,
-        width=1450,
-        title_text="Mongosync Metrics",
-        legend_tracegroupgap=170,
-        showlegend=False
-    )
-    
     # Force all y-axes to start at 0
     fig.update_yaxes(rangemode='tozero')
     
@@ -542,12 +535,7 @@ def create_metrics_plots(collector: MetricsCollector, config_path: Path = None) 
             fig.add_annotation(
                 x=0.5, y=y_pos, xref='paper', yref='paper',
                 text=f'<b>{section_name}</b>',
-                showarrow=False,
-                font=dict(size=11, color='#1A3C4A'),
-                bgcolor='rgba(1, 107, 248, 0.12)',
-                bordercolor='#016BF8',
-                borderwidth=1,
-                borderpad=4
+                **section_label_style(),
             )
         # Hide x-axis tick labels on the last row before each section boundary
         if i > 0:
@@ -570,6 +558,14 @@ def create_metrics_plots(collector: MetricsCollector, config_path: Path = None) 
         for r in range(1, rows + 1):
             for c in range(1, 3):
                 fig.update_xaxes(range=[global_min_date, global_max_date], row=r, col=c)
+
+    apply_mi_theme(
+        fig,
+        title="Mongosync Metrics",
+        height=rows * 225,
+        width=1450,
+        legend_tracegroupgap=170,
+    )
     
     # Convert to JSON
     return json.dumps(fig, cls=PlotlyJSONEncoder)

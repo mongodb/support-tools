@@ -10,31 +10,27 @@ from flask import (
     send_from_directory,
 )
 
-from blueprints.live import bp as live_bp
-from blueprints.logs import bp as logs_bp
-from lib.app_config import (
-    DEVELOPER_CREDITS,
-    APP_VERSION,
-    HOST,
-    LOG_STORE_DIR,
-    LOG_STORE_MAX_AGE_HOURS,
-    MAX_FILE_SIZE,
-    PORT,
-    get_app_info,
-    session_store,
-    setup_logging,
-    validate_config,
-)
-from lib.log_store import LogStore
-from lib.log_store_registry import log_store_registry
-from lib.session_support import SESSION_COOKIE_NAME
-from lib.snapshot_store import cleanup_old_snapshots
-
 try:
+    from lib.app_config import (
+        DEVELOPER_CREDITS,
+        APP_VERSION,
+        HOST,
+        MAX_FILE_SIZE,
+        PORT,
+        get_app_info,
+        session_store,
+        setup_logging,
+        validate_config,
+    )
     validate_config()
 except (PermissionError, ValueError) as e:
     print(f"Configuration error: {e}")
     exit(1)
+
+from blueprints.live import bp as live_bp
+from blueprints.logs import bp as logs_bp
+from lib.log_store_maintenance import run_log_store_maintenance
+from lib.session_support import SESSION_COOKIE_NAME
 
 logger = setup_logging()
 
@@ -57,6 +53,12 @@ def create_app():
     def mi_static_js(filename):
         return send_from_directory(
             os.path.join(_base_path, "static", "js"), filename
+        )
+
+    @app.route("/static/css/<path:filename>")
+    def mi_static_css(filename):
+        return send_from_directory(
+            os.path.join(_base_path, "static", "css"), filename
         )
 
     @app.after_request
@@ -104,14 +106,15 @@ def create_app():
         session_id = request.cookies.get(SESSION_COOKIE_NAME)
         if session_id:
             session_store.delete_session(session_id)
-        log_store_registry.cleanup_expired()
-        cleanup_old_snapshots(LOG_STORE_DIR, LOG_STORE_MAX_AGE_HOURS)
+        run_log_store_maintenance()
         response = make_response("", 200)
         response.delete_cookie(SESSION_COOKIE_NAME)
         return response
 
     app.register_blueprint(logs_bp)
     app.register_blueprint(live_bp)
+
+    run_log_store_maintenance()
 
     return app
 
@@ -158,9 +161,6 @@ if __name__ == "__main__":
     if HOST in ("0.0.0.0", "::"):
         print(f"  (listening on {HOST}:{PORT} — use your machine IP for remote access)", flush=True)
     print(flush=True)
-
-    LogStore.cleanup_old_stores(LOG_STORE_DIR, LOG_STORE_MAX_AGE_HOURS)
-    cleanup_old_snapshots(LOG_STORE_DIR, LOG_STORE_MAX_AGE_HOURS)
 
     if SSL_ENABLED:
         import ssl

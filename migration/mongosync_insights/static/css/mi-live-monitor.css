@@ -1,0 +1,673 @@
+/* Live Monitoring tab — Atlas cosmetic theme (layout unchanged) */
+
+@font-face {
+    font-family: 'Euclid Circular A';
+    font-weight: 400;
+    font-style: normal;
+    src: url('https://assets.mongodb-cdn.com/mms/static/font/EuclidCircularA-Regular-WebXL.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Euclid Circular A';
+    font-weight: 600;
+    font-style: normal;
+    src: url('https://assets.mongodb-cdn.com/mms/static/font/EuclidCircularA-Semibold-WebXL.woff2') format('woff2');
+}
+
+#live-monitor-tab {
+    margin: 0 -20px;
+    min-height: 400px;
+    background: var(--lm-page-bg);
+}
+
+.lm-main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 32px 24px 48px;
+    background: var(--lm-page-bg);
+    color: var(--lm-text-primary);
+    font-family: var(--mi-font-ui);
+    min-height: 400px;
+}
+
+.lm-loading {
+    text-align: center;
+    font-size: 18px;
+    color: var(--lm-text-secondary);
+    margin: 50px auto;
+    padding: 50px;
+    max-width: 1080px;
+    background: var(--lm-page-bg);
+    font-family: var(--mi-font-ui);
+}
+
+.lm-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.lm-toolbar-text {
+    min-width: 0;
+}
+
+.lm-page-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    color: var(--lm-text-primary);
+}
+
+.lm-page-subtitle {
+    color: var(--lm-text-secondary);
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.45;
+}
+
+.lm-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.lm-stack-after-toolbar {
+    margin-top: 24px;
+}
+
+.lm-stack-tight {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lm-card {
+    background: var(--lm-card-bg);
+    border: 1px solid var(--lm-card-border);
+    border-radius: var(--lm-card-radius);
+    box-shadow: var(--lm-card-shadow);
+    padding: 24px;
+}
+
+.lm-card h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    color: var(--lm-text-primary);
+}
+
+.lm-card-desc {
+    color: var(--lm-text-secondary);
+    margin: 0 0 0;
+    font-size: 13px;
+}
+
+.lm-card-body {
+    margin-top: 16px;
+}
+
+.lm-card:not(:has(h2)):not(:has(.lm-card-desc)) .lm-card-body {
+    margin-top: 0;
+}
+
+.lm-muted {
+    color: var(--lm-text-secondary);
+    font-size: 13px;
+}
+
+.lm-copied-line {
+    margin-top: 6px;
+}
+
+.lm-copied-block {
+    margin-top: 6px;
+}
+
+.lm-copied-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.lm-copied-toggle:hover {
+    color: var(--lm-text-primary);
+}
+
+.lm-copied-chevron {
+    display: inline-block;
+    width: 1em;
+    flex-shrink: 0;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.lm-copied-details {
+    display: none;
+    padding-left: 1em;
+}
+
+.lm-copied-details.is-open {
+    display: block;
+}
+
+.lm-copied-detail-line {
+    margin-top: 4px;
+}
+
+.lm-phase-times-block {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--lm-card-border);
+}
+
+.lm-phase-times-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.lm-phase-times-toggle:hover {
+    color: var(--lm-text-primary);
+}
+
+.lm-phase-times-chevron {
+    display: inline-block;
+    width: 1em;
+    flex-shrink: 0;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.lm-phase-times-details {
+    display: none;
+    margin-top: 10px;
+}
+
+.lm-phase-times-details.is-open {
+    display: block;
+}
+
+.lm-phase-times-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.lm-phase-times-table th,
+.lm-phase-times-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--lm-card-border);
+}
+
+.lm-phase-times-table th {
+    color: var(--lm-text-secondary);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.lm-phase-times-table tbody tr:hover {
+    background: var(--lm-table-row-hover);
+}
+
+.lm-phase-times-table td:last-child {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.lm-phase-times-note {
+    margin-top: 8px;
+    font-size: 12px;
+}
+
+.lm-natural-order-block {
+    margin-top: 0;
+}
+
+.lm-natural-order-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.lm-natural-order-toggle:hover {
+    color: var(--lm-text-primary);
+}
+
+.lm-natural-order-chevron {
+    display: inline-block;
+    width: 1em;
+    flex-shrink: 0;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.lm-natural-order-details {
+    display: none;
+    margin-top: 10px;
+}
+
+.lm-natural-order-details.is-open {
+    display: block;
+}
+
+/* Two-column detail tables (Natural order, Filtered migration): ~25% / 75% like Status tab */
+.lm-natural-order-table,
+.lm-filter-migration-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.lm-natural-order-table th,
+.lm-natural-order-table td,
+.lm-filter-migration-table th,
+.lm-filter-migration-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--lm-card-border);
+    vertical-align: top;
+}
+
+.lm-natural-order-table th:first-child,
+.lm-natural-order-table td:first-child,
+.lm-filter-migration-table th:first-child,
+.lm-filter-migration-table td:first-child {
+    width: 25%;
+}
+
+.lm-natural-order-table th:last-child,
+.lm-natural-order-table td:last-child,
+.lm-filter-migration-table th:last-child,
+.lm-filter-migration-table td:last-child {
+    width: 75%;
+    word-break: break-word;
+}
+
+.lm-natural-order-table th,
+.lm-filter-migration-table th {
+    color: var(--lm-text-secondary);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.lm-natural-order-table tbody tr:hover,
+.lm-filter-migration-table tbody tr:hover {
+    background: var(--lm-table-row-hover);
+}
+
+.lm-filter-migration-block {
+    margin-top: 0;
+}
+
+.lm-filter-migration-section + .lm-filter-migration-section {
+    margin-top: 12px;
+}
+
+.lm-filter-migration-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.lm-filter-migration-toggle:hover {
+    color: var(--lm-text-primary);
+}
+
+.lm-filter-migration-chevron {
+    display: inline-block;
+    width: 1em;
+    flex-shrink: 0;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.lm-filter-migration-details {
+    display: none;
+    margin-top: 10px;
+}
+
+.lm-filter-migration-details.is-open {
+    display: block;
+}
+
+.lm-ping-line {
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.lm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.lm-badge .lm-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.lm-badge.green {
+    background: var(--mongodb-green-light3);
+    border-color: var(--mongodb-green-light2);
+    color: var(--mongodb-green-dark2);
+}
+
+.lm-badge.blue {
+    background: var(--mongodb-blue-light2);
+    border-color: var(--mongodb-blue-light2);
+    color: var(--mongodb-blue-base);
+}
+
+.lm-badge.yellow {
+    background: var(--mi-warning-bg);
+    border-color: var(--mi-warning-border);
+    color: var(--mi-warning-text);
+}
+
+.lm-badge.gray {
+    background: var(--lm-node-bg);
+    border-color: var(--lm-card-border);
+    color: var(--lm-text-secondary);
+}
+
+.lm-badge.red {
+    background: var(--mongodb-red-light3);
+    border-color: var(--mongodb-red-light2);
+    color: var(--mongodb-red-base);
+}
+
+.lm-banner {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--mi-radius-sm);
+    font-size: 13px;
+    border: 1px solid;
+    align-items: flex-start;
+    line-height: 1.45;
+}
+
+.lm-banner .lm-ico {
+    font-weight: 700;
+    flex-shrink: 0;
+    line-height: 1.3;
+}
+
+.lm-banner .lm-banner-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.lm-banner.info {
+    background: var(--mongodb-blue-light2);
+    border-color: var(--mongodb-blue-light2);
+    color: var(--lm-banner-info-text);
+}
+
+.lm-banner.warning {
+    background: var(--mi-warning-bg);
+    border-color: var(--mi-warning-border);
+    color: var(--mi-warning-text);
+}
+
+.lm-banner.danger {
+    background: var(--mongodb-red-light3);
+    border-color: var(--mongodb-red-light2);
+    color: var(--mongodb-red-base);
+}
+
+.lm-progress {
+    height: 16px;
+    background: var(--lm-progress-track);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.lm-progress .lm-fill {
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        var(--lm-progress-fill-start),
+        var(--lm-progress-fill-end)
+    );
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+.lm-progress.indeterminate .lm-fill {
+    width: 35% !important;
+    animation: lm-slide 1.3s ease-in-out infinite;
+}
+
+@keyframes lm-slide {
+    0% { margin-left: -35%; }
+    100% { margin-left: 100%; }
+}
+
+.lm-phase-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+    gap: 12px;
+}
+
+.lm-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-top: 22px;
+}
+
+.lm-metrics-secondary {
+    margin-top: 12px;
+}
+
+.lm-metric .lm-mlabel {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--lm-text-secondary);
+    font-weight: 600;
+}
+
+.lm-metric .lm-mvalue {
+    font-size: 22px;
+    font-weight: 600;
+    margin-top: 2px;
+    color: var(--lm-text-primary);
+}
+
+.lm-metric .lm-mvalue.small {
+    font-size: 15px;
+}
+
+.lm-direction {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.lm-direction .lm-node {
+    background: var(--lm-node-bg);
+    border: 1px solid var(--lm-card-border);
+    border-radius: var(--mi-radius-sm);
+    padding: 10px 14px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.lm-direction .lm-role {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--lm-text-secondary);
+    font-weight: 600;
+}
+
+.lm-direction .lm-addr {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    word-break: break-all;
+    margin-top: 4px;
+    color: var(--lm-text-primary);
+}
+
+.lm-direction .lm-arrow {
+    color: var(--mongodb-green-dark1);
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.lm-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.lm-row > * {
+    flex: 1;
+    min-width: 220px;
+}
+
+.lm-ver-col {
+    flex: 1;
+    min-width: 220px;
+}
+
+.lm-section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--lm-text-secondary);
+    font-weight: 700;
+    margin: 4px 0 10px;
+}
+
+.lm-kv {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--lm-card-border);
+    font-size: 13px;
+}
+
+.lm-kv:last-child {
+    border-bottom: none;
+}
+
+.lm-kv .lm-k {
+    color: var(--lm-text-secondary);
+}
+
+.lm-kv .lm-v {
+    font-weight: 600;
+    text-align: right;
+    word-break: break-word;
+    color: var(--lm-text-primary);
+}
+
+/* Dark theme — live monitor scoped tokens handle most surfaces; badge/banner tweaks below */
+[data-theme="dark"] .lm-badge.green {
+    background: rgba(0, 237, 100, 0.12);
+    border-color: var(--mongodb-green-dark1);
+    color: var(--mongodb-green-base);
+}
+
+[data-theme="dark"] .lm-badge.blue {
+    background: rgba(1, 107, 248, 0.15);
+    border-color: var(--mongodb-blue-base);
+    color: var(--mongodb-blue-light1);
+}
+
+[data-theme="dark"] .lm-badge.gray {
+    background: var(--lm-node-bg);
+    border-color: var(--lm-card-border);
+    color: var(--lm-text-secondary);
+}
+
+[data-theme="dark"] .lm-badge.red {
+    background: var(--mi-error-banner-bg);
+    border-color: var(--mongodb-red-base);
+    color: var(--mongodb-red-light1);
+}
+
+[data-theme="dark"] .lm-banner.info {
+    background: rgba(1, 107, 248, 0.15);
+    border-color: var(--mongodb-blue-base);
+    color: var(--lm-banner-info-text);
+}
+
+[data-theme="dark"] .lm-banner.warning {
+    background: var(--mi-warning-bg);
+    border-color: var(--mi-warning-border);
+    color: var(--mi-warning-text);
+}
+
+[data-theme="dark"] .lm-banner.danger {
+    background: var(--mi-error-banner-bg);
+    border-color: var(--mongodb-red-base);
+    color: var(--mongodb-red-light1);
+}
+
+[data-theme="dark"] .lm-direction .lm-arrow {
+    color: var(--mongodb-green-base);
+}
+
+[data-theme="dark"] .lm-copied-toggle:hover,
+[data-theme="dark"] .lm-phase-times-toggle:hover,
+[data-theme="dark"] .lm-natural-order-toggle:hover,
+[data-theme="dark"] .lm-filter-migration-toggle:hover {
+    color: var(--lm-text-primary);
+}

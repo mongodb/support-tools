@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from .app_config import LOG_STORE_DIR, LOG_STORE_MAX_AGE_HOURS
+from .store_paths import is_valid_store_id, safe_path_under, validate_store_id
 
 logger = logging.getLogger(__name__)
 
@@ -24,11 +25,13 @@ _LOGSTORE_PREFIX = 'mi_logstore_'
 
 
 def _snapshot_path(snapshot_id: str) -> str:
-    return os.path.join(LOG_STORE_DIR, f'{_SNAPSHOT_PREFIX}{snapshot_id}.json')
+    validate_store_id(snapshot_id)
+    return safe_path_under(LOG_STORE_DIR, f'{_SNAPSHOT_PREFIX}{snapshot_id}.json')
 
 
 def _snapshot_meta_path(snapshot_id: str) -> str:
-    return os.path.join(LOG_STORE_DIR, f'{_SNAPSHOT_PREFIX}{snapshot_id}.meta.json')
+    validate_store_id(snapshot_id)
+    return safe_path_under(LOG_STORE_DIR, f'{_SNAPSHOT_PREFIX}{snapshot_id}.meta.json')
 
 
 def _is_main_snapshot_basename(basename: str) -> bool:
@@ -41,7 +44,19 @@ def _is_main_snapshot_basename(basename: str) -> bool:
 
 
 def logstore_path(store_id: str) -> str:
-    return os.path.join(LOG_STORE_DIR, f'{_LOGSTORE_PREFIX}{store_id}.db')
+    validate_store_id(store_id)
+    return safe_path_under(LOG_STORE_DIR, f'{_LOGSTORE_PREFIX}{store_id}.db')
+
+
+def _resolve_logstore_path(store_id: str) -> Optional[str]:
+    """Return log store path for store_id, or None if the id is invalid."""
+    if not store_id:
+        return None
+    try:
+        return logstore_path(store_id)
+    except ValueError as e:
+        logger.warning('Ignoring invalid log_store_id %r: %s', store_id, e)
+        return None
 
 
 def save_snapshot(
@@ -87,7 +102,12 @@ def load_snapshot(snapshot_id: str) -> Optional[dict]:
 
     Returns the full snapshot dict (including template_data) or None.
     """
-    path = _snapshot_path(snapshot_id)
+    try:
+        path = _snapshot_path(snapshot_id)
+    except ValueError as e:
+        logger.warning('Invalid snapshot id %r: %s', snapshot_id, e)
+        return None
+
     if not os.path.exists(path):
         logger.warning(f"Snapshot not found: {path}")
         return None
@@ -105,17 +125,20 @@ def load_snapshot(snapshot_id: str) -> Optional[dict]:
     except OSError:
         pass
 
-    meta_path = _snapshot_meta_path(snapshot_id)
-    if os.path.exists(meta_path):
-        try:
-            os.utime(meta_path, None)
-        except OSError:
-            pass
+    try:
+        meta_path = _snapshot_meta_path(snapshot_id)
+        if os.path.exists(meta_path):
+            try:
+                os.utime(meta_path, None)
+            except OSError:
+                pass
+    except ValueError:
+        pass
 
     # Refresh mtime on companion SQLite DB if it exists
     store_id = data.get('log_store_id', '')
-    if store_id:
-        db_path = logstore_path(store_id)
+    db_path = _resolve_logstore_path(store_id)
+    if db_path:
         try:
             if os.path.exists(db_path):
                 os.utime(db_path, None)
@@ -138,6 +161,9 @@ def _append_snapshot_row(
         return
     snapshot_id = data.get('snapshot_id', sid_from_file)
     if not snapshot_id or snapshot_id in seen_ids:
+        return
+    if not is_valid_store_id(snapshot_id):
+        logger.warning('Skipping snapshot with invalid id %r', snapshot_id)
         return
     seen_ids.add(snapshot_id)
     results.append({
@@ -173,6 +199,9 @@ def list_snapshots() -> list[dict]:
                 data = json.load(f)
             basename = os.path.basename(filepath)
             suffix = basename[len(_SNAPSHOT_PREFIX):-len('.meta.json')]
+            if not is_valid_store_id(suffix):
+                logger.warning('Skipping snapshot meta with invalid id suffix %r', suffix)
+                continue
             _append_snapshot_row(results, seen_ids, mtime, data, suffix)
         except (json.JSONDecodeError, OSError) as e:
             logger.warning(f"Skipping unreadable snapshot meta {filepath}: {e}")
@@ -184,6 +213,9 @@ def list_snapshots() -> list[dict]:
         if not _is_main_snapshot_basename(basename):
             continue
         sid = basename[len(_SNAPSHOT_PREFIX):-len('.json')]
+        if not is_valid_store_id(sid):
+            logger.warning('Skipping legacy snapshot with invalid id suffix %r', sid)
+            continue
         if os.path.exists(_snapshot_meta_path(sid)):
             continue
         try:
@@ -208,8 +240,13 @@ def delete_snapshot(snapshot_id: str) -> tuple[bool, str]:
     Returns (deleted, log_store_id) where deleted is True if the
     snapshot file was found and removed.
     """
-    path = _snapshot_path(snapshot_id)
-    meta_path = _snapshot_meta_path(snapshot_id)
+    try:
+        path = _snapshot_path(snapshot_id)
+        meta_path = _snapshot_meta_path(snapshot_id)
+    except ValueError as e:
+        logger.warning('Invalid snapshot id %r: %s', snapshot_id, e)
+        return False, ''
+
     deleted = False
     store_id = ''
 
@@ -243,8 +280,8 @@ def delete_snapshot(snapshot_id: str) -> tuple[bool, str]:
             except OSError as e:
                 logger.warning(f"Failed to delete snapshot meta {meta_path}: {e}")
 
-        if store_id:
-            db_path = logstore_path(store_id)
+        db_path = _resolve_logstore_path(store_id)
+        if db_path:
             for fpath in (db_path, db_path + '-wal', db_path + '-shm'):
                 try:
                     if os.path.exists(fpath):
@@ -252,7 +289,7 @@ def delete_snapshot(snapshot_id: str) -> tuple[bool, str]:
                 except OSError:
                     pass
 
-    return deleted, store_id
+    return deleted, store_id if is_valid_store_id(store_id) else ''
 
 
 def cleanup_old_snapshots(store_dir: str, max_age_hours: int = 24):
@@ -274,6 +311,8 @@ def cleanup_old_snapshots(store_dir: str, max_age_hours: int = 24):
         try:
             if os.path.getmtime(filepath) < cutoff:
                 sid = basename[len(_SNAPSHOT_PREFIX):-len('.json')]
+                if not is_valid_store_id(sid):
+                    continue
                 meta_file = os.path.join(store_dir, f'{_SNAPSHOT_PREFIX}{sid}.meta.json')
                 os.remove(filepath)
                 removed += 1

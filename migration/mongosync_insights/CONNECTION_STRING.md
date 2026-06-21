@@ -71,7 +71,7 @@ See [CONFIGURATION.md](CONFIGURATION.md) for all available connection-related en
 
 ### Connection Hangs
 
-1. Check for network timeouts (default: 5 seconds, configurable via `MI_TIMEOUT_MS`)
+1. Check for network timeouts (default: 30 seconds, configurable via `MI_TIMEOUT_MS`)
 2. Verify DNS resolution for hostname
 3. Ensure no proxy blocking MongoDB traffic
 
@@ -85,6 +85,8 @@ See [CONFIGURATION.md](CONFIGURATION.md) for all available connection-related en
 ## Related Documentation
 
 - **[README.md](README.md)** - Getting started and installation guide
+- **[LOG_ANALYZER.md](LOG_ANALYZER.md)** - Log Analyzer feature guide
+- **[MIGRATION_MONITORING.md](MIGRATION_MONITORING.md)** - Migration Monitoring feature guide
 - **[CONFIGURATION.md](CONFIGURATION.md)** - Complete environment variables reference
 - **[HTTPS_SETUP.md](HTTPS_SETUP.md)** - Enable HTTPS/SSL for secure deployments
 

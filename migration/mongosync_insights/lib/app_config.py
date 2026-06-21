@@ -11,19 +11,52 @@ import tempfile
 import threading
 from pathlib import Path
 from functools import lru_cache
+from typing import Optional
 import certifi
-from pymongo import MongoClient
+from pymongo import MongoClient, ReadPreference
 from pymongo.errors import PyMongoError, InvalidURI
+
+VALID_LOG_LEVELS = frozenset({"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"})
+
+
+def parse_env_int(
+    env_name: str,
+    default: int,
+    *,
+    min_value: Optional[int] = None,
+    max_value: Optional[int] = None,
+) -> int:
+    """Parse an integer environment variable with optional bounds."""
+    raw = os.getenv(env_name)
+    if raw is None or raw.strip() == "":
+        value = default
+    else:
+        try:
+            value = int(raw.strip())
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid {env_name}: {raw!r}. Must be an integer."
+            ) from e
+    if min_value is not None and value < min_value:
+        raise ValueError(
+            f"Invalid {env_name}: {value}. Must be >= {min_value}."
+        )
+    if max_value is not None and value > max_value:
+        raise ValueError(
+            f"Invalid {env_name}: {value}. Must be <= {max_value}."
+        )
+    return value
+
 
 # Environment variable configuration
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 LOG_FILE = os.getenv('MI_LOG_FILE', 'insights.log')
 HOST = os.getenv('MI_HOST', '127.0.0.1')
-PORT = int(os.getenv('MI_PORT', '3030'))
+PORT = parse_env_int('MI_PORT', 3030, min_value=1, max_value=65535)
 
 # Application constants
 APP_NAME = "Mongosync Insights"
-APP_VERSION = "0.8.2.7"
+APP_VERSION = "0.9.0.16"
 
 DEVELOPER_CREDITS = {
     "copyright": "\u00a9 MongoDB Inc.",
@@ -36,7 +69,7 @@ DEVELOPER_CREDITS = {
 }
 
 # File upload settings
-MAX_FILE_SIZE = int(os.getenv('MI_MAX_FILE_SIZE', str(10 * 1024 * 1024 * 1024)))  # 10GB default
+MAX_FILE_SIZE = parse_env_int('MI_MAX_FILE_SIZE', 10 * 1024 * 1024 * 1024, min_value=1)
 ALLOWED_EXTENSIONS = {'.log', '.json', '.out', '.gz', '.zip', '.bz2', '.tar.gz', '.tgz', '.tar.bz2'}
 ALLOWED_MIME_TYPES = [
     'text/plain',
@@ -50,9 +83,9 @@ ALLOWED_MIME_TYPES = [
 ]
 
 # Log Viewer settings
-LOG_VIEWER_MAX_LINES = int(os.getenv('MI_LOG_VIEWER_MAX_LINES', '2000'))
+LOG_VIEWER_MAX_LINES = parse_env_int('MI_LOG_VIEWER_MAX_LINES', 2000, min_value=1)
 LOG_STORE_DIR = os.getenv('MI_LOG_STORE_DIR', tempfile.gettempdir())
-LOG_STORE_MAX_AGE_HOURS = int(os.getenv('MI_LOG_STORE_MAX_AGE_HOURS', '24'))
+LOG_STORE_MAX_AGE_HOURS = parse_env_int('MI_LOG_STORE_MAX_AGE_HOURS', 24, min_value=1)
 
 # Compressed file MIME types (subset of ALLOWED_MIME_TYPES)
 COMPRESSED_MIME_TYPES = {
@@ -127,19 +160,52 @@ SSL_CERT_PATH = os.getenv('MI_SSL_CERT', '/etc/letsencrypt/live/your-domain/full
 SSL_KEY_PATH = os.getenv('MI_SSL_KEY', '/etc/letsencrypt/live/your-domain/privkey.pem')
 
 # Live monitoring settings
-REFRESH_TIME = int(os.getenv('MI_REFRESH_TIME', '10'))
+REFRESH_TIME = parse_env_int('MI_REFRESH_TIME', 10, min_value=1)
+INDEX_BUILD_REFRESH_TIME = parse_env_int('MI_INDEX_BUILD_REFRESH_TIME', 60, min_value=1)
 CONNECTION_STRING = os.getenv('MI_CONNECTION_STRING', '')
 VERIFIER_CONNECTION_STRING = os.getenv('MI_VERIFIER_CONNECTION_STRING', '') or CONNECTION_STRING
-PROGRESS_ENDPOINT_URL = os.getenv('MI_PROGRESS_ENDPOINT_URL', '')
+
+PROGRESS_API_PATH = "/api/v1/progress"
+DEFAULT_PROGRESS_PORT = 27182
+
+
+def build_progress_endpoint_url(host, port=None):
+    """
+    Build canonical progress endpoint URL from host and port.
+
+    Returns None when host is empty (progress endpoint not configured).
+    """
+    host = (host or "").strip()
+    if not host:
+        return None
+    port_str = str(port).strip() if port is not None else ""
+    port_num = DEFAULT_PROGRESS_PORT if not port_str else int(port_str)
+    return f"{host}:{port_num}{PROGRESS_API_PATH}"
+
+
+def normalize_progress_endpoint_url(raw):
+    """Normalize user/env input to host:port/api/v1/progress (no scheme)."""
+    s = (raw or "").strip().rstrip("/")
+    s = re.sub(r"^https?://", "", s, flags=re.IGNORECASE)
+    if s.endswith(PROGRESS_API_PATH):
+        return s
+    if re.match(r"^[\w\.\-]+:\d+$", s):
+        return f"{s}{PROGRESS_API_PATH}"
+    return s
+
+
+_raw_progress_endpoint = os.getenv("MI_PROGRESS_ENDPOINT_URL", "")
+PROGRESS_ENDPOINT_URL = (
+    normalize_progress_endpoint_url(_raw_progress_endpoint)
+    if _raw_progress_endpoint.strip()
+    else ""
+)
 
 # MongoDB settings
 INTERNAL_DB_NAME = os.getenv('MI_INTERNAL_DB_NAME', "mongosync_reserved_for_internal_use")
 INTERNAL_DB_NAME_NEW = "__mdb_internal_mongosync"
 VERIFIER_SRC_NAMESPACE = "__mdb_internal_mongosync_verifier_src"
 VERIFIER_DST_NAMESPACE = "__mdb_internal_mongosync_verifier_dst"
-
-# UI settings
-MAX_PARTITIONS_DISPLAY = int(os.getenv('MI_MAX_PARTITIONS_DISPLAY', '10'))
 
 # Error patterns file
 ERROR_PATTERNS_FILE = os.getenv('MI_ERROR_PATTERNS_FILE', 
@@ -173,7 +239,7 @@ def load_error_patterns():
 
 def setup_logging():
     """Configure logging based on environment variables."""
-    log_level = getattr(logging, LOG_LEVEL.upper(), logging.INFO)
+    log_level = getattr(logging, LOG_LEVEL.upper())
     logging.basicConfig(
         filename=LOG_FILE,
         level=log_level,
@@ -201,11 +267,14 @@ def validate_config():
     
     if not os.access(log_dir, os.W_OK):
         raise PermissionError(f"Cannot write to log directory: {log_dir}")
-    
-    # Validate port number
-    if not (1 <= PORT <= 65535):
-        raise ValueError(f"Invalid port number: {PORT}. Must be between 1 and 65535.")
-    
+
+    level_name = LOG_LEVEL.upper()
+    if level_name not in VALID_LOG_LEVELS:
+        raise ValueError(
+            f"Invalid LOG_LEVEL: {LOG_LEVEL!r}. "
+            f"Must be one of: {', '.join(sorted(VALID_LOG_LEVELS))}."
+        )
+
     return True
 
 def validate_progress_endpoint_url(url):
@@ -225,8 +294,8 @@ def validate_progress_endpoint_url(url):
 
 # Database Connection Management
 # Connection pool settings
-CONNECTION_POOL_SIZE = int(os.getenv('MI_POOL_SIZE', '10'))
-CONNECTION_TIMEOUT_MS = int(os.getenv('MI_TIMEOUT_MS', '5000'))
+CONNECTION_POOL_SIZE = parse_env_int('MI_POOL_SIZE', 10, min_value=1)
+CONNECTION_TIMEOUT_MS = parse_env_int('MI_TIMEOUT_MS', 30000, min_value=1)
 
 @lru_cache(maxsize=4)
 def get_mongo_client(connection_string):
@@ -274,8 +343,8 @@ def get_mongo_client(connection_string):
         # Create client with connection pooling
         client = MongoClient(connection_string, **client_kwargs)
         
-        # Test the connection
-        client.admin.command('ping')
+        # Test the connection (secondaryPreferred: reachable when primary node is slow/unavailable)
+        client.admin.command('ping', read_preference=ReadPreference.SECONDARY_PREFERRED)
         logger.info(f"Successfully connected to MongoDB with pool size {CONNECTION_POOL_SIZE}")
         
         return client
@@ -364,9 +433,8 @@ def validate_connection(connection_string):
         # Test with a simple command
         result = client.admin.command('ping')
         return result.get('ok', 0) == 1
-    except Exception as e:
-        # Clear the cache if connection fails
-        get_mongo_client.cache_clear()
+    except Exception:
+        clear_connection_cache()
         raise
 
 def clear_connection_cache():
@@ -375,6 +443,8 @@ def clear_connection_cache():
     """
     logger = logging.getLogger(__name__)
     get_mongo_client.cache_clear()
+    with _resolved_internal_db_lock:
+        _resolved_internal_db_cache.clear()
     logger.info("MongoDB connection cache cleared")
 
 
@@ -383,7 +453,7 @@ def clear_connection_cache():
 # =============================================================================
 
 # Session settings
-SESSION_TIMEOUT = int(os.getenv('MI_SESSION_TIMEOUT', '3600'))  # 1 hour default
+SESSION_TIMEOUT = parse_env_int('MI_SESSION_TIMEOUT', 3600, min_value=1)  # 1 hour default
 
 class InMemorySessionStore:
     """
@@ -504,12 +574,6 @@ class InMemorySessionStore:
                 del self._store[sid]
             if expired:
                 self._logger.debug(f"Cleaned up {len(expired)} expired sessions")
-    
-    def get_active_count(self) -> int:
-        """Get the number of active sessions."""
-        self.cleanup_expired()
-        with self._lock:
-            return len(self._store)
 
 
 # Global session store instance

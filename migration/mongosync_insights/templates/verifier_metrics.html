@@ -5,97 +5,20 @@
 {% block header_title %}Migration Verifier Monitoring{% endblock %}
 
 {% block styles %}
-    .tabs-container {
-        max-width: 1550px;
-        margin: 0 auto;
-    }
-
-    .tab-buttons {
-        display: flex;
-        gap: 4px;
-        margin-bottom: 0;
-        border-bottom: 2px solid #00684A;
-    }
-
-    .tab-btn {
-        padding: 12px 24px;
-        background: #e8f5f1;
-        border: none;
-        border-radius: 8px 8px 0 0;
-        cursor: pointer;
-        font-size: 15px;
-        font-weight: 600;
-        color: #00684A;
-        transition: all 0.2s ease;
-        position: relative;
-        bottom: -2px;
-    }
-
-    .tab-btn:hover {
-        background: #c8e6dc;
-    }
-
-    .tab-btn.active {
-        background: #00684A;
-        color: #fff;
-        border-bottom: 2px solid #00684A;
-    }
-
-    .tab-content {
-        display: none;
-        animation: fadeIn 0.3s ease;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .plot-container {
-        margin: 0 auto;
-        border: 1px solid #ccc;
-        border-radius: 0 8px 8px 8px;
-        background-color: #fff;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        min-height: 400px;
-    }
-
-    #loading {
-        text-align: center;
-        font-size: 18px;
-        color: #666;
-        margin: 50px 0;
-        padding: 50px;
-    }
-
     .error-container {
-        background-color: #fee;
-        border: 1px solid #c00;
+        background-color: var(--mi-error-banner-bg);
+        border: 1px solid var(--mongodb-red-base);
         border-radius: 8px;
         padding: 20px;
         margin: 20px auto;
         max-width: 600px;
         text-align: center;
+        color: var(--mi-text-primary);
     }
 
     .error-container h3 {
-        color: #c00;
+        color: var(--mongodb-red-base);
         margin-top: 0;
-    }
-
-    @media (max-width: 768px) {
-        .plot-container {
-            width: 95%;
-        }
-
-        .tab-btn {
-            padding: 10px 16px;
-            font-size: 13px;
-        }
     }
 {% endblock %}
 
@@ -157,7 +80,7 @@ async function fetchVerifierData() {
         document.getElementById("loading").style.display = "none";
         document.getElementById("error").style.display = "none";
         document.getElementById("plot").style.display = "block";
-        Plotly.react('plot', plotData.data, plotData.layout);
+        miRenderPlot('plot', plotData, { react: true });
     } catch (err) {
         console.error("Error fetching verifier data:", err);
         document.getElementById("loading").style.display = "none";

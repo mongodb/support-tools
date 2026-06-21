@@ -1,0 +1,180 @@
+<script>
+(function() {
+    var MI_PLOT_THEMES = {
+        light: {
+            paper_bgcolor: '#FFFFFF',
+            plot_bgcolor: '#F9FBFA',
+            text: '#1F2937',
+            text_secondary: '#415058',
+            grid: 'rgba(0, 30, 43, 0.08)',
+            line: 'rgba(0, 30, 43, 0.15)',
+            section_text: '#1A3C4A',
+            section_bg: 'rgba(1, 107, 248, 0.12)',
+            section_border: '#016BF8',
+            legend_bg: 'rgba(255, 255, 255, 0.92)',
+            legend_border: '#D9E0E3'
+        },
+        dark: {
+            paper_bgcolor: '#132C37',
+            plot_bgcolor: '#1A3642',
+            text: '#F9FBFA',
+            text_secondary: '#C1C7C6',
+            grid: 'rgba(255, 255, 255, 0.08)',
+            line: 'rgba(255, 255, 255, 0.12)',
+            section_text: '#F9FBFA',
+            section_bg: 'rgba(4, 152, 236, 0.18)',
+            section_border: '#0498EC',
+            legend_bg: 'rgba(19, 44, 55, 0.92)',
+            legend_border: '#36505B'
+        }
+    };
+
+    window._miPlotRegistry = window._miPlotRegistry || {};
+
+    function miResolveTheme() {
+        var theme = document.documentElement.getAttribute('data-theme') || 'light';
+        if (theme === 'system') {
+            return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        return theme === 'dark' ? 'dark' : 'light';
+    }
+
+    function miPlotThemeTokens(dark) {
+        return MI_PLOT_THEMES[dark ? 'dark' : 'light'];
+    }
+
+    function miPlotConfig() {
+        return {
+            responsive: true,
+            displayModeBar: 'hover',
+            displaylogo: false
+        };
+    }
+
+    function miClone(value) {
+        return JSON.parse(JSON.stringify(value || {}));
+    }
+
+    function miApplyThemeToLayout(baseLayout) {
+        var layout = miClone(baseLayout);
+        var tokens = miPlotThemeTokens(miResolveTheme() === 'dark');
+
+        layout.paper_bgcolor = tokens.paper_bgcolor;
+        layout.plot_bgcolor = tokens.plot_bgcolor;
+        layout.font = Object.assign({}, layout.font || {}, { color: tokens.text });
+
+        layout.hoverlabel = Object.assign({}, layout.hoverlabel || {}, {
+            bgcolor: tokens.paper_bgcolor,
+            bordercolor: tokens.line
+        });
+        layout.hoverlabel.font = Object.assign(
+            {},
+            layout.hoverlabel.font || {},
+            {
+                color: tokens.text,
+                size: (layout.hoverlabel.font && layout.hoverlabel.font.size) || 12
+            }
+        );
+        layout.hoverlabel.grouptitlefont = Object.assign(
+            {},
+            layout.hoverlabel.grouptitlefont || {},
+            {
+                color: tokens.text,
+                size: (layout.hoverlabel.grouptitlefont && layout.hoverlabel.grouptitlefont.size) || 12
+            }
+        );
+
+        if (layout.legend) {
+            layout.legend = Object.assign({}, layout.legend, {
+                bgcolor: tokens.legend_bg,
+                bordercolor: tokens.legend_border
+            });
+        }
+
+        Object.keys(layout).forEach(function(key) {
+            if (/^xaxis/.test(key) || /^yaxis/.test(key)) {
+                var axis = layout[key] || {};
+                if (axis.visible === false) {
+                    return;
+                }
+                var axisPatch = {};
+                if (axis.showgrid !== false) {
+                    axisPatch.gridcolor = tokens.grid;
+                    axisPatch.linecolor = tokens.line;
+                }
+                if (axis.showticklabels !== false || axis.showgrid !== false) {
+                    axisPatch.linecolor = tokens.line;
+                    axisPatch.tickfont = Object.assign({}, axis.tickfont || {}, { color: tokens.text_secondary });
+                    if (axis.title) {
+                        axisPatch.title = Object.assign({}, axis.title, {
+                            font: Object.assign({}, (axis.title || {}).font || {}, { color: tokens.text })
+                        });
+                    }
+                }
+                if (Object.keys(axisPatch).length) {
+                    layout[key] = Object.assign({}, axis, axisPatch);
+                }
+            }
+        });
+
+        if (Array.isArray(layout.annotations)) {
+            layout.annotations = layout.annotations.map(function(annotation) {
+                var next = Object.assign({}, annotation);
+                if (annotation.bordercolor) {
+                    next.font = Object.assign({}, annotation.font || {}, { color: tokens.section_text });
+                    next.bgcolor = tokens.section_bg;
+                    next.bordercolor = tokens.section_border;
+                } else if (annotation.text) {
+                    next.font = Object.assign({}, annotation.font || {}, { color: tokens.text });
+                }
+                return next;
+            });
+        }
+
+        return layout;
+    }
+
+    window.miRenderPlot = function(elId, plotData, options) {
+        options = options || {};
+        var el = document.getElementById(elId);
+        if (!el || !plotData || !plotData.data || typeof Plotly === 'undefined') {
+            return;
+        }
+
+        var baseLayout = plotData.layout || {};
+        var layout = miApplyThemeToLayout(baseLayout);
+        var config = miPlotConfig();
+        var useReact = options.react || Boolean(el.data && el.data.length);
+
+        window._miPlotRegistry[elId] = {
+            data: plotData.data,
+            baseLayout: baseLayout
+        };
+
+        var plotPromise = useReact
+            ? Plotly.react(elId, plotData.data, layout, config)
+            : Plotly.newPlot(elId, plotData.data, layout, config);
+
+        Promise.resolve(plotPromise).then(function() {
+            if (typeof options.onRendered === 'function') {
+                options.onRendered(elId);
+            }
+        });
+    };
+
+    window.miRelayoutAllPlots = function() {
+        Object.keys(window._miPlotRegistry).forEach(function(elId) {
+            var entry = window._miPlotRegistry[elId];
+            if (!entry) {
+                return;
+            }
+            var layout = miApplyThemeToLayout(entry.baseLayout);
+            Plotly.react(elId, entry.data, layout, miPlotConfig());
+        });
+    };
+
+    document.addEventListener('mi-theme-changed', function() {
+        window.miRelayoutAllPlots();
+    });
+})();
+</script>

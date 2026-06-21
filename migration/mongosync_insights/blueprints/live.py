@@ -3,20 +3,20 @@ import logging
 from flask import Blueprint, jsonify, make_response, render_template, request
 
 from lib.connection_validator import sanitize_for_display
-from lib.live_migration_metrics import (
-    gatherEndpointMetrics,
-    gatherMetrics,
-    gatherPartitionsMetrics,
-    plotMetrics,
+from lib.live_monitoring import (
+    build_live_monitor_payload,
+    progress_monitor_no_config_response,
 )
-from lib.migration_verifier import gatherVerifierMetrics, plotVerifierMetrics
+from lib.migration_verifier import gather_verifier_metrics, plot_verifier_metrics
 from lib.session_support import SESSION_COOKIE_NAME, store_session_data
 from lib.app_config import (
     CONNECTION_STRING,
     PROGRESS_ENDPOINT_URL,
+    REFRESH_TIME,
     SECURE_COOKIES,
     SESSION_TIMEOUT,
     VERIFIER_CONNECTION_STRING,
+    build_progress_endpoint_url,
     clear_connection_cache,
     session_store,
     validate_connection,
@@ -39,12 +39,7 @@ def live_home():
         sanitized_connection = sanitize_for_display(CONNECTION_STRING)
         connection_string_form = f"<p><b>Connecting to Destination Cluster at: </b>{sanitized_connection}</p>"
 
-    if not PROGRESS_ENDPOINT_URL:
-        progress_endpoint_form = """<label for="progressEndpointUrl">Mongosync Progress Endpoint URL:</label>  
-                                    <input type="text" id="progressEndpointUrl" name="progressEndpointUrl" size="47" autocomplete="off"
-                                        placeholder="host:port/api/v1/progress"><br><br>"""
-    else:
-        progress_endpoint_form = f"<p><b>Mongosync Progress Endpoint: </b>{PROGRESS_ENDPOINT_URL}</p>"
+    progress_endpoint_configured = bool(PROGRESS_ENDPOINT_URL)
 
     if not VERIFIER_CONNECTION_STRING:
         verifier_connection_string_form = """<label for="verifierConnectionString">Verifier MongoDB Connection String:</label>  
@@ -57,12 +52,13 @@ def live_home():
     return render_template(
         "live/home.html",
         connection_string_form=connection_string_form,
-        progress_endpoint_form=progress_endpoint_form,
+        progress_endpoint_configured=progress_endpoint_configured,
+        progress_endpoint_url=PROGRESS_ENDPOINT_URL,
         verifier_connection_string_form=verifier_connection_string_form,
     )
 
 
-@bp.route("/liveMonitoring", methods=["POST"])
+@bp.route("/live_monitoring", methods=["POST"])
 def live_monitoring():
     if CONNECTION_STRING:
         target_mongo_uri = CONNECTION_STRING
@@ -74,24 +70,29 @@ def live_monitoring():
     if PROGRESS_ENDPOINT_URL:
         progress_url = PROGRESS_ENDPOINT_URL
     else:
-        progress_url = request.form.get("progressEndpointUrl")
-        if progress_url:
-            progress_url = progress_url.strip() if progress_url.strip() else None
+        progress_host = (request.form.get("progressHost") or "").strip()
+        progress_port = (request.form.get("progressPort") or "").strip()
+        try:
+            progress_url = build_progress_endpoint_url(
+                progress_host, progress_port or None
+            )
+        except ValueError:
+            progress_url = None
 
     if not target_mongo_uri and not progress_url:
         logger.error("No connection string or progress endpoint URL provided")
         return render_template(
             "error.html",
             error_title="No Input Provided",
-            error_message="Please provide at least one of the following: MongoDB Connection String or Mongosync Progress Endpoint URL (or both).",
+            error_message="Please provide at least one of the following: MongoDB Connection String or Mongosync Progress Endpoint (host and port, or both).",
         )
 
     if progress_url and not validate_progress_endpoint_url(progress_url):
         logger.error("Invalid progress endpoint URL format: %s", progress_url)
         return render_template(
             "error.html",
-            error_title="Invalid Progress Endpoint URL",
-            error_message="The Progress Endpoint URL format is invalid. Expected format: host:port/api/v1/progress (e.g., localhost:27182/api/v1/progress)",
+            error_title="Invalid Progress Endpoint",
+            error_message="The progress endpoint format is invalid. Enter a host and port (default 27182); the path /api/v1/progress is fixed.",
         )
 
     if target_mongo_uri:
@@ -128,13 +129,11 @@ def live_monitoring():
     }
     session_id = store_session_data(session_data)
 
-    has_connection_string = bool(target_mongo_uri)
-    has_endpoint_url = bool(progress_url)
-
     response = make_response(
-        plotMetrics(
-            has_connection_string=has_connection_string,
-            has_endpoint_url=has_endpoint_url,
+        render_template(
+            "metrics.html",
+            refresh_time=REFRESH_TIME,
+            refresh_time_ms=str(int(REFRESH_TIME) * 1000),
         )
     )
 
@@ -149,85 +148,32 @@ def live_monitoring():
     return response
 
 
-@bp.route("/getLiveMonitoring", methods=["POST"])
-def get_live_monitoring():
-    if CONNECTION_STRING:
-        connection_string = CONNECTION_STRING
-    else:
+def _progress_monitor_session_context():
+    """Resolve progress endpoint URL and metadata connection string for the monitor tab."""
+    endpoint_url = PROGRESS_ENDPOINT_URL
+    connection_string = CONNECTION_STRING
+    session_data = None
+    if not endpoint_url or not connection_string:
         session_id = request.cookies.get(SESSION_COOKIE_NAME)
         session_data = session_store.get_session(session_id)
-        connection_string = session_data.get("connection_string") if session_data else None
-
-    if not connection_string:
-        logger.error("No connection string available for metrics refresh")
-        return jsonify(
-            {
-                "error": "No connection string available. Please refresh the page and re-enter your credentials."
-            }
-        ), 400
-
-    try:
-        return jsonify(gatherMetrics(connection_string))
-    except PyMongoError as e:
-        clear_connection_cache()
-        logger.error("Live monitoring metrics failed: %s", e)
-        return jsonify(
-            {
-                "error": "Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible."
-            }
-        ), 503
+    if not endpoint_url and session_data:
+        endpoint_url = session_data.get("endpoint_url")
+    if not connection_string and session_data:
+        connection_string = session_data.get("connection_string")
+    return endpoint_url, connection_string
 
 
-@bp.route("/getPartitionsData", methods=["POST"])
-def get_partitions_data():
-    if CONNECTION_STRING:
-        connection_string = CONNECTION_STRING
-    else:
-        session_id = request.cookies.get(SESSION_COOKIE_NAME)
-        session_data = session_store.get_session(session_id)
-        connection_string = session_data.get("connection_string") if session_data else None
+@bp.route("/get_progress_monitor", methods=["POST"])
+def get_progress_monitor():
+    endpoint_url, connection_string = _progress_monitor_session_context()
 
-    if not connection_string:
-        logger.error("No connection string available for partitions data refresh")
-        return jsonify(
-            {
-                "error": "No connection string available. Please refresh the page and re-enter your credentials."
-            }
-        ), 400
+    if not endpoint_url and not connection_string:
+        return jsonify(progress_monitor_no_config_response(connection_string=connection_string))
 
-    try:
-        return jsonify(gatherPartitionsMetrics(connection_string))
-    except PyMongoError as e:
-        clear_connection_cache()
-        logger.error("Partitions metrics failed: %s", e)
-        return jsonify(
-            {
-                "error": "Could not connect to MongoDB. Please verify your credentials, network connectivity, and that the cluster is accessible."
-            }
-        ), 503
+    return jsonify(build_live_monitor_payload(endpoint_url, connection_string))
 
 
-@bp.route("/getEndpointData", methods=["POST"])
-def get_endpoint_data():
-    if PROGRESS_ENDPOINT_URL:
-        endpoint_url = PROGRESS_ENDPOINT_URL
-    else:
-        session_id = request.cookies.get(SESSION_COOKIE_NAME)
-        session_data = session_store.get_session(session_id)
-        endpoint_url = session_data.get("endpoint_url") if session_data else None
-
-    if not endpoint_url:
-        logger.error("No progress endpoint URL available for endpoint data refresh")
-        return jsonify(
-            {
-                "error": "No progress endpoint URL available. Please refresh the page and re-enter your credentials."
-            }
-        ), 400
-
-    return jsonify(gatherEndpointMetrics(endpoint_url))
-
-
-@bp.route("/Verifier", methods=["POST"])
+@bp.route("/verifier", methods=["POST"])
 def verifier():
     if VERIFIER_CONNECTION_STRING:
         target_mongo_uri = VERIFIER_CONNECTION_STRING
@@ -281,7 +227,7 @@ def verifier():
     }
     session_id = store_session_data(session_data)
 
-    response = make_response(plotVerifierMetrics(db_name=db_name))
+    response = make_response(plot_verifier_metrics(db_name=db_name))
 
     response.set_cookie(
         SESSION_COOKIE_NAME,
@@ -294,7 +240,7 @@ def verifier():
     return response
 
 
-@bp.route("/getVerifierData", methods=["POST"])
+@bp.route("/get_verifier_data", methods=["POST"])
 def get_verifier_data():
     session_id = request.cookies.get(SESSION_COOKIE_NAME)
     session_data = session_store.get_session(session_id)
@@ -313,4 +259,4 @@ def get_verifier_data():
         ), 400
 
     db_name = (session_data or {}).get("verifier_db_name", "migration_verification_metadata")
-    return jsonify(gatherVerifierMetrics(connection_string, db_name))
+    return jsonify(gather_verifier_metrics(connection_string, db_name))
