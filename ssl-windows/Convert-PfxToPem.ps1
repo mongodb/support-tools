@@ -17,6 +17,10 @@
      Private key passphrase, if applicable.
    .PARAMETER Overwrite
      Clobber any existing file when writing the PEM key file.
+   .PARAMETER CertOnly
+     Export only the certificate part of PFX file.
+   .PARAMETER KeyOnly
+     Export only the key part of PFX file.
 #>
 
 #
@@ -55,7 +59,11 @@ Param(
      [Parameter(Mandatory=$false, Position=2)]     
      [string] $PEMFile,
      
-     [switch] $Overwrite = $false
+     [switch] $Overwrite = $false,
+
+     [switch] $CertOnly = $false,
+
+     [switch] $KeyOnly = $false
 )
 
 Add-Type @'
@@ -193,10 +201,25 @@ if (-not $cert.PrivateKey.CspKeyContainerInfo.Exportable)
    Exit
 }
 
-$result = [MongoDB_Utils]::PfxCertificateToPem($cert)
+if ($CertOnly -and $KeyOnly)
+{
+    Write-Warning "CertOnly and KeyOnly parameters are mutually exclusive"
+}
 
-$parameters = ([Security.Cryptography.RSACryptoServiceProvider] $cert.PrivateKey).ExportParameters($true)
-$result += "`r`n" + [MongoDB_Utils]::RsaPrivateKeyToPem($parameters);
+if (-not $KeyOnly)
+{
+    $result = [MongoDB_Utils]::PfxCertificateToPem($cert)
+}
+
+if (-not $CertOnly)
+{
+    $parameters = ([Security.Cryptography.RSACryptoServiceProvider] $cert.PrivateKey).ExportParameters($true)
+    if ($result)
+    {
+        $result += "`r`n"
+    }
+    $result += [MongoDB_Utils]::RsaPrivateKeyToPem($parameters);
+}
 
 if (-not $PEMFile)
 {
