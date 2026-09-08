@@ -24,14 +24,31 @@ const bucketsColl = db.getCollection('system.buckets.' + collName);
 // be used for storing the measurements of the buckets with mismatched embedded
 // bucket id timestamp and control.min timestamp.
 // ------------------------------------------------------------------------------------
-listCollectionsRes = db.runCommand({
+
+//
+// Helper function to validate namespaces, create temporary collection and
+// return our timeseries options.
+//
+function verifyAndSetupCollsAndGetTSOptions(collName, tempColl) {
+  tsOptions = db.runCommand({listCollections : 1.0, filter : {name : collName}})
+                  .cursor.firstBatch[0]
+                  .options.timeseries;
+
+  if (tsOptions === undefined) {
+    print('Collection "' + collName + '" is not a timeseries collection.');
+    exit(1);
+  }
+  listCollectionsRes = db.runCommand({
                          listCollections: 1.0,
-                         filter: {name: 'temp'}
+                         filter: {name: tempColl}
                        }).cursor.firstBatch;
-if (listCollectionsRes.length != 0) {
-  print(
-      'Collection `temp` should not exist prior to running the script. Rename or drop the collection before running this script');
-  exit(1);
+  if (listCollectionsRes.length != 0) {
+    print(
+        'Collection ' + tempColl + ' should not exist prior to running the script. Rename or drop the collection before running this script');
+    exit(1);
+  }
+  db.createCollection(tempColl, {timeseries : tsOptions});
+  return tsOptions;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -59,20 +76,14 @@ let bucketColl;
 let tsOptions;
 let tempTimeseriesColl;
 let tempTimeseriesBucketsColl;
+let tempTimeseriesCollName = 'temp';
 
 function setUp() {
   bucketColl = db.getCollection('system.buckets.' + collName);
+  tsOptions = verifyAndSetupCollsAndGetTSOptions(collName, tempColl);
 
-  // Create a temp collection to store measurements from the buckets with
-  // mismatched embedded bucket id timestamp and control.min timestamp.
-  tsOptions =
-      db.runCommand({listCollections: 1.0, filter: {name: coll.getName()}})
-          .cursor.firstBatch[0]
-          .options.timeseries;
-
-  db.createCollection('temp', {timeseries: tsOptions});
-  tempTimeseriesColl = db.getCollection('temp');
-  tempTimeseriesBucketsColl = db.getCollection('system.buckets.temp');
+  tempTimeseriesColl = db.getCollection(tempTimeseriesCollName);
+  tempTimeseriesBucketsColl = db.getCollection('system.buckets.' + tempTimeseriesCollName);
 }
 
 // Helper function to determine if timestamp is in extended range.
