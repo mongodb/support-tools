@@ -140,6 +140,70 @@ function getReusableStorageBytes(stats, metricName) {
     return wiredTigerBlockManager["file bytes available for reuse"] ?? null;
 }
 
+// collStats gained the freeStorage option in 5.0.6 (SERVER-62277).
+function supportsFreeStorage() {
+    try {
+        const versionArray = db.serverBuildInfo().versionArray;
+
+        if (!Array.isArray(versionArray) || versionArray.length < 3) {
+            return false;
+        }
+
+        const [major, minor, patch] = versionArray;
+
+        if (major !== 5) {
+            return major > 5;
+        }
+
+        return minor > 0 || patch >= 6;
+    } catch (e) {
+        return false;
+    }
+}
+
+const freeStorageSupported = supportsFreeStorage();
+
+function isUnknownOptionError(e) {
+    // 40415 is the server's "unknown field" error for unrecognized command options.
+    return e.code === 40415 ||
+        /unrecognized|unknown field|not supported/i.test(e.message || "");
+}
+
+function getCollectionStats(collection) {
+    if (!freeStorageSupported) {
+        return collection.stats();
+    }
+
+    try {
+        return collection.stats({ freeStorage: 1 });
+    } catch (e) {
+        if (!isUnknownOptionError(e)) {
+            throw e;
+        }
+
+        return collection.stats();
+    }
+}
+
+function getCollectionInfoList(database) {
+    try {
+        return database.getCollectionInfos();
+    } catch (e) {
+        // Users without listCollections can still enumerate authorized names and types,
+        // but collection options are unavailable to them.
+        return database.getCollectionInfos({}, {
+            authorizedCollections: true,
+            nameOnly: true
+        }).map(function(collectionInfo) {
+            return {
+                name: collectionInfo.name,
+                type: collectionInfo.type,
+                optionsUnavailable: true
+            };
+        });
+    }
+}
+
 const databaseInfo = [];
 
 const databases = db.adminCommand({ listDatabases: 1 }).databases.filter(function(database) {
@@ -149,27 +213,28 @@ const databases = db.adminCommand({ listDatabases: 1 }).databases.filter(functio
 for (let i = 0; i < databases.length; i++) {
     const database = databases[i];
     const currentDb = db.getSiblingDB(database.name);
-    const collections = currentDb.getCollectionNames();
 
-    collections.forEach(function(collectionName) {
+    const collections = getCollectionInfoList(currentDb).filter(function(collectionInfo) {
+        // Views do not support collStats or listIndexes.
+        if (collectionInfo.type === "view") {
+            return false;
+        }
+
+        // Internal namespaces, including the system.buckets.* collections that would
+        // double count time-series storage against the user-visible collection.
+        return collectionInfo.name.indexOf("system.") !== 0;
+    });
+
+    collections.forEach(function(collectionInfo) {
+        const collectionName = collectionInfo.name;
+
         try {
             const currentCollection = currentDb.getCollection(collectionName);
 
-            const stats = currentCollection.stats({
-                freeStorage: 1
-            });
-
-            // Get collection metadata
-            const collectionInfoList = currentDb.getCollectionInfos({
-                name: collectionName
-            });
-
-            const collectionInfo =
-                collectionInfoList.length > 0
-                    ? collectionInfoList[0]
-                    : {};
+            const stats = getCollectionStats(currentCollection);
 
             const collectionOptions = collectionInfo.options || {};
+            const optionsUnavailable = collectionInfo.optionsUnavailable === true;
             const compressor = extractCompressor(collectionOptions);
 
             // Get index definitions
@@ -179,10 +244,17 @@ for (let i = 0; i < databases.length; i++) {
                 return index.unique === true;
             }).length;
 
-            // Check whether at least one TTL index exists
-            const hasTTLIndex = indexes.some(function(index) {
-                return index.expireAfterSeconds !== undefined;
-            });
+            // Time-series and clustered collections express expiry as a collection
+            // option instead of a TTL index.
+            const clusteredIndex = collectionOptions.clusteredIndex;
+            const hasTTLIndex = optionsUnavailable
+                ? null
+                : collectionOptions.expireAfterSeconds !== undefined ||
+                  (clusteredIndex &&
+                      clusteredIndex.expireAfterSeconds !== undefined) ||
+                  indexes.some(function(index) {
+                      return index.expireAfterSeconds !== undefined;
+                  });
 
             const isSharded =
                 typeof stats.sharded === "boolean"
@@ -200,23 +272,24 @@ for (let i = 0; i < databases.length; i++) {
                 db: database.name,
                 collection: collectionName,
 
-                // Document statistics
-                documentCount: stats.count ?? 0,
-                averageDocumentSizeBytes: stats.avgObjSize ?? 0,
+                // Metrics report null when collStats omits them, so they render as N/A
+                // rather than as a value the server never supplied.
+                documentCount: stats.count ?? null,
+                averageDocumentSizeBytes: stats.avgObjSize ?? null,
                 averageDocumentSize_KB: byteToKB(stats.avgObjSize),
 
                 // Logical data size
-                size: stats.size ?? 0,
+                size: stats.size ?? null,
                 size_MB: byteToMB(stats.size),
 
                 // Allocated document storage
-                storageSize: stats.storageSize ?? 0,
+                storageSize: stats.storageSize ?? null,
                 storageSize_MB: byteToMB(stats.storageSize),
 
                 // Index statistics
-                numberOfIndexes: stats.nindexes ?? 0,
+                numberOfIndexes: stats.nindexes ?? indexes.length,
                 uniqueIndexCount: uniqueIndexCount,
-                totalIndexSize: stats.totalIndexSize ?? 0,
+                totalIndexSize: stats.totalIndexSize ?? null,
                 totalIndexSize_MB: byteToMB(stats.totalIndexSize),
 
                 // Free storage
@@ -225,8 +298,12 @@ for (let i = 0; i < databases.length; i++) {
 
                 // Collection properties
                 isCapped: stats.capped === true,
-                isClustered: collectionOptions.clusteredIndex !== undefined,
-                isTimeSeries: collectionOptions.timeseries !== undefined,
+                isClustered: optionsUnavailable
+                    ? null
+                    : collectionOptions.clusteredIndex !== undefined,
+                isTimeSeries: optionsUnavailable
+                    ? null
+                    : collectionOptions.timeseries !== undefined,
                 hasTTLIndex: hasTTLIndex,
                 compressor: compressor || null,
 
@@ -340,18 +417,18 @@ else {
         print(
             info.db + " | " +
             info.collection + " | " +
-            info.documentCount + " | " +
+            displayValue(info.documentCount) + " | " +
             displayValue(info.averageDocumentSize_KB) + " | " +
             displayValue(info.size_MB) + " | " +
             displayValue(info.storageSize_MB) + " | " +
-            info.numberOfIndexes + " | " +
+            displayValue(info.numberOfIndexes) + " | " +
             info.uniqueIndexCount + " | " +
             displayValue(info.totalIndexSize_MB) + " | " +
             displayValue(info.freeDocumentStorage_MB) + " | " +
             info.isCapped + " | " +
-            info.isClustered + " | " +
-            info.isTimeSeries + " | " +
-            info.hasTTLIndex + " | " +
+            displayValue(info.isClustered) + " | " +
+            displayValue(info.isTimeSeries) + " | " +
+            displayValue(info.hasTTLIndex) + " | " +
             displayValue(info.compressor) + " | " +
             shardedValue + " | " +
             displayValue(info.shardKey)
