@@ -38,12 +38,6 @@ OUTPUT_FORMAT=json mongosh "mongodb://localhost:27017" --quiet collectionDatabas
 
 There are currently no CLI flags for selecting read preference or output format; the supported switch is the environment variable above.
 
-The clustered TTL regression test can be run without a MongoDB server:
-
-```bash
-node collectionDatabaseSizes.test.js
-```
-
 ## Example Output
 
 ```text
