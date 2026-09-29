@@ -246,10 +246,13 @@ for (let i = 0; i < databases.length; i++) {
 
             // Time-series and clustered collections express expiry as a collection
             // option instead of a TTL index.
+            const timeSeries = collectionOptions.timeseries;
             const clusteredIndex = collectionOptions.clusteredIndex;
             const hasTTLIndex = optionsUnavailable
                 ? null
                 : collectionOptions.expireAfterSeconds !== undefined ||
+                  (timeSeries &&
+                      timeSeries.expireAfterSeconds !== undefined) ||
                   (clusteredIndex &&
                       clusteredIndex.expireAfterSeconds !== undefined) ||
                   indexes.some(function(index) {
