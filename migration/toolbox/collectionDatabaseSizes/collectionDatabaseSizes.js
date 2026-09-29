@@ -99,6 +99,23 @@ function extractCompressor(collectionOptions) {
     return null;
 }
 
+function extractCompressorFromStats(stats) {
+    const creationString =
+        stats && stats.wiredTiger && stats.wiredTiger.creationString;
+
+    if (typeof creationString !== "string") {
+        return null;
+    }
+
+    const match = creationString.match(
+        /(?:^|,)block_compressor=([^,()]+)/i
+    );
+
+    return match
+        ? extractCompressor({ storageEngine: match[1] })
+        : null;
+}
+
 function getShardKey(databaseName, collectionName, isSharded) {
     if (isSharded !== true) {
         return null;
@@ -235,7 +252,9 @@ for (let i = 0; i < databases.length; i++) {
 
             const collectionOptions = collectionInfo.options || {};
             const optionsUnavailable = collectionInfo.optionsUnavailable === true;
-            const compressor = extractCompressor(collectionOptions);
+            const compressor =
+                extractCompressor(collectionOptions) ||
+                extractCompressorFromStats(stats);
 
             // Get index definitions
             const indexes = currentCollection.getIndexes();
