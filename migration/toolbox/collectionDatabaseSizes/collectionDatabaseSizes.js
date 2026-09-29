@@ -148,7 +148,7 @@ function getReusableStorageBytes(stats, metricName) {
     }
 
     let shardTotal = 0;
-    let hasShardValue = false;
+    let shardCount = 0;
     const shardStats = stats.shards;
 
     if (shardStats && typeof shardStats === "object") {
@@ -156,6 +156,8 @@ function getReusableStorageBytes(stats, metricName) {
             if (!Object.prototype.hasOwnProperty.call(shardStats, shardName)) {
                 continue;
             }
+
+            shardCount++;
 
             const shardBlockManager =
                 shardStats[shardName] &&
@@ -169,14 +171,15 @@ function getReusableStorageBytes(stats, metricName) {
                     : shardBlockManager &&
                       shardBlockManager["file bytes available for reuse"];
 
-            if (shardValue !== null && shardValue !== undefined && !isNaN(shardValue)) {
-                shardTotal += Number(shardValue);
-                hasShardValue = true;
+            if (shardValue === null || shardValue === undefined || isNaN(shardValue)) {
+                return null;
             }
+
+            shardTotal += Number(shardValue);
         }
     }
 
-    if (hasShardValue) {
+    if (shardCount > 0) {
         return shardTotal;
     }
 
