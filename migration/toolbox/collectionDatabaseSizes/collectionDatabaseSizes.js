@@ -147,6 +147,34 @@ function getReusableStorageBytes(stats, metricName) {
         return stats[metricName];
     }
 
+    let shardTotal = 0;
+    let hasShardValue = false;
+    const shardStats = stats.shards;
+
+    if (shardStats && typeof shardStats === "object") {
+        for (const shardName in shardStats) {
+            if (!Object.prototype.hasOwnProperty.call(shardStats, shardName)) {
+                continue;
+            }
+
+            const shardBlockManager =
+                shardStats[shardName] &&
+                shardStats[shardName].wiredTiger &&
+                shardStats[shardName].wiredTiger["block-manager"];
+            const shardValue = shardBlockManager &&
+                shardBlockManager["file bytes available for reuse"];
+
+            if (shardValue !== null && shardValue !== undefined && !isNaN(shardValue)) {
+                shardTotal += Number(shardValue);
+                hasShardValue = true;
+            }
+        }
+    }
+
+    if (hasShardValue) {
+        return shardTotal;
+    }
+
     const wiredTigerBlockManager =
         stats.wiredTiger && stats.wiredTiger["block-manager"];
 

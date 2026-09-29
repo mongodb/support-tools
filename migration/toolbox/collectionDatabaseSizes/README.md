@@ -85,7 +85,7 @@ The terminal table uses compact labels to keep columns readable without making t
 | **Capped** | Whether the collection is capped |
 | **Clustered** | Whether the collection uses a clustered index |
 | **Time** | Whether the collection is a time-series collection |
-| **TTL** | Whether the collection has at least one TTL index |
+| **TTL** | Whether the collection has at least one TTL index or collection-level expiration configured for a time-series or clustered collection |
 | **Compressor** | Best-effort WiredTiger collection compressor (`snappy`, `zlib`, `zstd`, or `none`) from collection metadata |
 | **Sharded** | Whether the collection is sharded, when that information is available from MongoDB |
 | **Shard Key** | Shard key pattern for sharded collections, when available from `config.collections` |
