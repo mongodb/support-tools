@@ -252,9 +252,7 @@ for (let i = 0; i < databases.length; i++) {
 
             const collectionOptions = collectionInfo.options || {};
             const optionsUnavailable = collectionInfo.optionsUnavailable === true;
-            const compressor =
-                extractCompressor(collectionOptions) ||
-                extractCompressorFromStats(stats);
+            const compressor = optionsUnavailable ? null : extractCompressor(collectionOptions) || extractCompressorFromStats(stats);
 
             // Get index definitions
             const indexes = currentCollection.getIndexes();
