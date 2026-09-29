@@ -161,8 +161,13 @@ function getReusableStorageBytes(stats, metricName) {
                 shardStats[shardName] &&
                 shardStats[shardName].wiredTiger &&
                 shardStats[shardName].wiredTiger["block-manager"];
-            const shardValue = shardBlockManager &&
-                shardBlockManager["file bytes available for reuse"];
+            const shardValue =
+                shardStats[shardName] &&
+                shardStats[shardName][metricName] !== null &&
+                shardStats[shardName][metricName] !== undefined
+                    ? shardStats[shardName][metricName]
+                    : shardBlockManager &&
+                      shardBlockManager["file bytes available for reuse"];
 
             if (shardValue !== null && shardValue !== undefined && !isNaN(shardValue)) {
                 shardTotal += Number(shardValue);
