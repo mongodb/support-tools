@@ -175,7 +175,7 @@ function getCollectionStats(collection) {
     }
 
     try {
-        return collection.stats({ freeStorage: 1 });
+        return collection.stats({ freeStorage: true });
     } catch (e) {
         if (!isUnknownOptionError(e)) {
             throw e;
