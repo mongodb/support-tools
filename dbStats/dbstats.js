@@ -292,7 +292,9 @@
        */
       let { 'db': dbFilter, 'collection': collFilter } = filterOptions;
       collFilter = new RegExp(collFilter);
-      const systemFilter = /.+/;
+      // Skip system.* and replset.* collections. Stats on those need extra
+      // privileges and are not useful for capacity planning (#163).
+      const systemFilter = /(?:^(?!(system\..+|replset\..+)$).+)/;
       let dbPath = new MetaStats();
       dbPath.init();
       if (dbPath.shards.length > 0) {
@@ -410,16 +412,14 @@
                },
                { "nameOnly": true },
                true
-              ).toSorted(sortBy('view'))
-              // ).filter(({ 'name': viewName }) => viewName.match(systemFilter)).toSorted(sortBy('view'))
+              ).filter(({ 'name': viewName }) => viewName.match(systemFilter)).toSorted(sortBy('view'))
             : db.getSiblingDB(database.name).getCollectionInfos({ // legacy shell(s) method
                   "type": "view",
                   "name": collFilter
                },
                (typeof process !== 'undefined') ? { "nameOnly": true } : true,
                true
-              ).sort(sortBy('view'));
-              // ).filter(({ 'name': viewName }) => viewName.match(systemFilter)).sort(sortBy('view'));
+              ).filter(({ 'name': viewName }) => viewName.match(systemFilter)).sort(sortBy('view'));
 
          return database;
       });
