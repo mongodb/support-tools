@@ -136,6 +136,30 @@ array of objects, each containing information about a queryable encrypted collec
 * This script should take on the order of seconds to run.
 * If your deployment has more than 2500 collections, this script will by default fail.
 
+### Chunk regression tests
+
+From this directory, run against a disposable standalone MongoDB server:
+
+```sh
+mongosh mongodb://localhost:27017 --quiet --file getMongoData-chunks-test.js
+```
+
+The test loads the report script, then calls `printShardInfo()` with config lookups
+redirected to a uniquely named fixture database. It uses real BSON UUIDs, queries,
+aggregation, and sorting; it never writes to `config` and drops the fixture database
+in a `finally` block. The test user needs permissions to run the report and create,
+write, read, and drop the fixture database.
+
+Coverage includes namespace-only metadata with and without collection UUIDs,
+UUID-only chunks, mixed metadata without double counting, unrelated collections,
+empty results, and chunk details both enabled and disabled. It checks per-shard
+counts, sorted chunk boundaries, jumbo flags, and the optional output field.
+The 12 cases have been validated with `mongosh` 2.12.0 against standalone MongoDB
+6.0.26 and 8.0.17. These fixtures test metadata shapes, not a live sharded-cluster
+upgrade or a server-version compatibility matrix; older servers and the legacy
+`mongo` shell have not been validated. Validation on affected sharded deployments
+is still required before finalizing the UUID-matching change.
+
 ### License
 
 [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
