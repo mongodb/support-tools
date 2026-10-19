@@ -551,6 +551,15 @@ That makes it simple, explainable, and practical for identifying strong single-d
 
 ---
 
+## Related: estimate source time from mongosync warnings
+
+When mongosync has already logged CEA low-parallelization warnings, use
+[`ceaLowParallelizationSourceTimes`](./ceaLowParallelizationSourceTimes/README.md)
+to map those warnings back to approximate source write times and to generate
+one-namespace `hot-doc-spread-check.js` scripts for those windows.
+
+---
+
 ## Sources
 
 - [EP: Automatically detect and mitigate hot docs](https://docs.google.com/document/d/1mHBMjpeYnQKJyxAWjhUL7OBhGJ2733uakUWZZCsp5p4)

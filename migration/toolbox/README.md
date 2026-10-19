@@ -1,22 +1,9 @@
 # Toolbox
 Toolbox is a collection of helper scripts created by the Migration Factory team for data capture and analysis.
 
-## [idChecker script](idChecker)
-
-This script analyzes MongoDB collections for non-ObjectId _id types and insertion-order correlation patterns, predicting potential mongosync migration performance issues and providing optimization recommendations. For full documentation and examples, see [idChecker README](idChecker/README.md).
-
 ## [Database and Collection size](collectionDatabaseSizes)
 
 Lists all databases and collections (excluding system databases: `admin`, `config`, `local`) with their sizes in MB, sorted from largest to smallest. For full documentation and examples, see [collectionDatabaseSizes README](collectionDatabaseSizes/README.md).
-
-## [Index size, parameters and utilization](probIndexesComplete)
-
-Collects index statistics across all user databases (excluding `admin`, `config`, `local`), reporting index name, type, uniqueness, access count, and size for each index. For full documentation and examples, see [probIndexesComplete README](probIndexesComplete/README.md).
-
-## [Mongosync Unique Index Limitations Checker](mongosyncUniqueIndexChecker)
-
-Detects a known mongosync limitation where a collection has two indexes with the exact same key pattern—one unique and one non-unique. This condition can cause mongosync to fail during migrations. For full documentation, filtering options, and examples, see [mongosyncUniqueIndexChecker README](mongosyncUniqueIndexChecker/README.md).
-
 
 ## [Get busiest collections](getBusiestCollection)
 
@@ -26,17 +13,29 @@ Get busiest collections seen during Collection Copy and Change Event Application
 
 Gets the busiest collections in terms of writes (delete/insert/replace/update) as recorded in the mongosync logs in the CEA phase
 
-## [Planner Settings Checker](plannerSettingsChecker)
-
-Audits query planner customizations across all databases and collections, reporting only the namespaces where a setting is present. Supports two modes: `indexFilters` (legacy `planCacheListFilters`, all versions) and `querySettings` (the `$querySettings` aggregation, MongoDB 8.0+). Useful as a pre-migration check so planner customizations can be reviewed and re-created on the destination. For full documentation and examples, see [plannerSettingsChecker README](plannerSettingsChecker/README.md).
-
 ## [Hot Doc Spread Check](hotDocSpreadCheck)
 
 Scans recent change-stream write activity and identifies documents that are hot enough to plausibly explain high applier spread disparity. The script applies a spread-disparity threshold plus per-document and total-window changes-per-second gates to reduce low-traffic false positives. For full documentation and examples, see [hotDocSpreadCheck README](hotDocSpreadCheck/README.md).
 
+## [idChecker script](idChecker)
+
+This script analyzes MongoDB collections for non-ObjectId _id types and insertion-order correlation patterns, predicting potential mongosync migration performance issues and providing optimization recommendations. For full documentation and examples, see [idChecker README](idChecker/README.md).
+
 ## [Index Format Validation](indexFormatValidation)
 
 Checks unique non-`_id_` indexes across all non-system databases for WiredTiger index format versions below 13, which may indicate indexes created on MongoDB versions earlier than 4.2 and needing review before migration. For full documentation and examples, see [indexFormatValidation README](indexFormatValidation/README.md).
+
+## [Index size, parameters and utilization](probIndexesComplete)
+
+Collects index statistics across all user databases (excluding `admin`, `config`, `local`), reporting index name, type, uniqueness, access count, and size for each index. For full documentation and examples, see [probIndexesComplete README](probIndexesComplete/README.md).
+
+## [Mongosync Unique Index Limitations Checker](mongosyncUniqueIndexChecker)
+
+Detects a known mongosync limitation where a collection has two indexes with the exact same key pattern—one unique and one non-unique. This condition can cause mongosync to fail during migrations. For full documentation, filtering options, and examples, see [mongosyncUniqueIndexChecker README](mongosyncUniqueIndexChecker/README.md).
+
+## [Planner Settings Checker](plannerSettingsChecker)
+
+Audits query planner customizations across all databases and collections, reporting only the namespaces where a setting is present. Supports two modes: `indexFilters` (legacy `planCacheListFilters`, all versions) and `querySettings` (the `$querySettings` aggregation, MongoDB 8.0+). Useful as a pre-migration check so planner customizations can be reviewed and re-created on the destination. For full documentation and examples, see [plannerSettingsChecker README](plannerSettingsChecker/README.md).
 
 ### License
 
