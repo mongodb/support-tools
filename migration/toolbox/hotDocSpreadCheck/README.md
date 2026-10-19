@@ -10,6 +10,26 @@ In this script, a document is considered a hot-doc candidate only if it passes a
 * per-document changes-per-second gate
 * total-window changes-per-second gate
 
+The report also analyzes short event-time windows (10 seconds by default) to find bursts that whole-lookback averages can dilute. Burst candidates use the same three gates within a complete short window. This estimates per-document concentration; it does not reproduce mongosync's actual per-applier routing or spread metric.
+
+## Setup
+
+No npm installation or third-party modules are required. Run the script directly with mongosh. It uses mongosh's built-in BSON helpers and the built-in `fs` module to write reports.
+
+Optional regression tests use only Node.js built-ins (Node.js 18 or newer):
+
+```bash
+node --test hot-doc-spread-check.test.js
+```
+
+To run the optional live test against a deployment you choose:
+
+```bash
+HOT_DOC_SPREAD_CHECK_URI="mongodb://localhost:27017" node --test hot-doc-spread-check.test.js
+```
+
+The live test watches a test namespace without creating it or writing database data. It checks that a quiet stream remains partial with unavailable CPS. It writes its report to a temporary directory and removes that directory afterward. The test file is not needed to run the script.
+
 ## Quick start
 
 ### 1. Run with defaults against all user namespaces
@@ -59,7 +79,22 @@ mongosh "mongodb://user:password@host/admin" \
   --file hot-doc-spread-check.js
 ```
 
-### 4. Generate Markdown output
+### 4. Analyze an explicit timeframe
+
+Provide both `startTime` and `endTime` as ISO-8601 timestamps with an explicit timezone. The start is inclusive and the end is exclusive. This example analyzes 15:52:00-15:58:30 at UTC+03:00:
+
+```bash
+mongosh \
+  --eval 'globalThis.MONITOR_ARGS = {
+    startTime: "2026-10-19T15:52:00+03:00",
+    endTime: "2026-10-19T15:58:30+03:00"
+  }' \
+  --file hot-doc-spread-check.js
+```
+
+The interval must still be available in the deployment's oplog, and the end must not be later than the server watermark. Do not set `lookbackMs` together with explicit times.
+
+### 5. Generate Markdown output
 
 Use this when you want a shareable Markdown report:
 
@@ -72,7 +107,7 @@ mongosh "mongodb://user:password@host/admin" \
   --file hot-doc-spread-check.js
 ```
 
-### 5. Generate both JSON and Markdown output
+### 6. Generate both JSON and Markdown output
 
 Use this when you want machine-readable and human-readable output in one run:
 
@@ -85,51 +120,147 @@ mongosh "mongodb://user:password@host/admin" \
   --file hot-doc-spread-check.js
 ```
 
-### 6. Read the output quickly
+### 7. Read the output quickly
 
 Start with these sections in the console output:
 
-* `TOP-N COMBINED SHARE` to understand how much of the window is concentrated in the busiest documents
-* `TOP-N DOCUMENTS` to see which documents dominate the sample even if they do not pass the hot-doc gates
-* `HOT DOCUMENTS` to see which documents passed all thresholds
+* `TOP-N COMBINED SHARE` to understand concentration among the busiest documents
+* `TOP-N DOCUMENTS` to see the documents with the most observed operations
+* `HOT DOCUMENTS` for whole-window candidates when the sample is complete
+* `PEAK DOCUMENT BURSTS` for the top documents' busiest complete short windows
+* `BURST CANDIDATES` for documents that passed all gates in at least one complete window
 
 ## Example output
 
-The following example shows what a successful run can look like:
+### Default parameters
 
-```bash
-mongosh "mongodb+srv://user:password@cluster0.name.mongodb.net/" --file hot-doc-spread-check.js
-Reading change stream for ALL namespaces from 2026-07-22T13:17:50.000Z ...
-Stream closed. Reason: idle-timeout. Matched events: 20595. Qualified doc events: 20595.
+This default-lookback run is partial because the stream did not reach its caught-up watermark. Whole-window CPS and hot-document qualification are unavailable, but completed 10-second burst windows can still produce candidates:
+
+```text
+mongosh --file hot-doc-spread-check.js
+
+Reading change stream for ALL namespaces from 2026-10-19T12:53:33.000Z (lookback interval: current=5m, default=5m) ...
+Sample endpoint (exclusive): 2026-10-19T12:58:33.000Z
+
+Stream closed. Reason: idle-timeout. Matched events: 71577. Qualified doc events: 71577.
 Wrote JSON results to hot-doc-spread-check.json
 
 ================================================================================================================
 TOP-5 COMBINED SHARE
 ================================================================================================================
 Appliers: 128  SpreadDisparityThreshold: 5  RequiredShare(single-doc): 44.37%
-MinDocCps: 2  MinTotalCps: 10
-CPS means changes per second.
-Qualified changes in window: 20595  Total changes/sec: 68.650
-Top-5 combined ops   : 20595
+MinDocCps: 2  MinTotalCps: 10 (Cps means changes per second)
+Burst window: 10s  Complete event windows analyzed: 29
+Unique docs tracked: 5 / 200000
+Qualified changes in window: 71577  Total changes/sec: N/A
+Top-5 combined ops   : 71577
 Top-5 combined share : 100.00%
 Top-5 single-doc spread equivalent : 11.269
+Sample completeness: partial  Rate window seconds: N/A  Reading duration seconds: 5.533
+Analysis status: inconclusive
+WARNING: Incomplete analysis: the stream did not reach the caught-up watermark. Hot documents may have been missed.
+WARNING: Workload CPS and CPS gates were not evaluated for this partial sample. Counts and shares describe only the observed activity.
+WARNING: Burst results include only event-time windows known to be complete; the trailing incomplete window is excluded.
+WARNING: A quiet or filtered stream may already have been fully read, but completion cannot be confirmed without a matching event at the sample endpoint.
+
+================================================================================================================
+TOP-5 DOCUMENTS (BY OP COUNT) (Partial Sample)
+================================================================================================================
+rank  opCount  insert  delete  update   share%  spreadDisp   docCps  totalCps  namespace               _id
+  1    32085       1       0   32084    44.83       5.052      N/A       N/A  sdtest5.events          "hot-doc-1"
+  2    32085       1       0   32084    44.83       5.052      N/A       N/A  sdtest5.events          "hot-doc-2"
+  3     2469       1       0    2468     3.45       0.389      N/A       N/A  sdtest5.events          "hot-doc-3"
+  4     2469       1       0    2468     3.45       0.389      N/A       N/A  sdtest5.events          "hot-doc-4"
+  5     2469       1       0    2468     3.45       0.389      N/A       N/A  sdtest5.events          "hot-doc-5"
+
+================================================================================================================
+HOT DOCUMENTS (Partial Sample)
+================================================================================================================
+Hot-document qualification was not evaluated: workload CPS is unavailable for this partial sample. Inspect the top documents for observed counts and shares.
+rank  opCount  insert  delete  update   share%  spreadDisp   docCps  totalCps  namespace               _id
+
+================================================================================================================
+PEAK DOCUMENT BURSTS (10s WINDOWS)
+================================================================================================================
+rank  window start              opCount  share%  spreadDisp   docCps  totalCps  namespace               _id
+  1  2026-10-19T12:58:13.000Z     1106   44.85       5.054  110.600   246.600  sdtest5.events          "hot-doc-1"
+  2  2026-10-19T12:54:33.000Z     1105   44.83       5.052  110.500   246.500  sdtest5.events          "hot-doc-2"
+  3  2026-10-19T12:54:33.000Z       85    3.45       0.389    8.500   246.500  sdtest5.events          "hot-doc-3"
+  4  2026-10-19T12:54:33.000Z       85    3.45       0.389    8.500   246.500  sdtest5.events          "hot-doc-4"
+  5  2026-10-19T12:54:33.000Z       85    3.45       0.389    8.500   246.500  sdtest5.events          "hot-doc-5"
+
+BURST CANDIDATES (PASSED ALL GATES)
+rank  window start              opCount  share%  spreadDisp   docCps  totalCps  namespace               _id
+  1  2026-10-19T12:58:13.000Z     1106   44.85       5.054  110.600   246.600  sdtest5.events          "hot-doc-1"
+  2  2026-10-19T12:54:33.000Z     1105   44.83       5.052  110.500   246.500  sdtest5.events          "hot-doc-2"
+```
+
+### Explicit timeframe
+
+This example analyzes the interval from 15:52:00 to 15:58:30 at UTC+03:00. The transcript displays the converted UTC interval and a complete result:
+
+```text
+mongosh --eval 'globalThis.MONITOR_ARGS = {
+  startTime: "2026-10-19T15:52:00+03:00",
+  endTime: "2026-10-19T15:58:30+03:00"
+}' --file hot-doc-spread-check.js
+{
+  startTime: '2026-10-19T15:52:00+03:00',
+  endTime: '2026-10-19T15:58:30+03:00'
+}
+
+Reading change stream for ALL namespaces from 2026-10-19T12:52:00.000Z (requested interval) ...
+Sample endpoint (exclusive): 2026-10-19T12:58:30.000Z
+
+Stream closed. Reason: caught-up. Matched events: 71838. Qualified doc events: 71838.
+Wrote JSON results to hot-doc-spread-check.json
+
+================================================================================================================
+TOP-5 COMBINED SHARE
+================================================================================================================
+Appliers: 128  SpreadDisparityThreshold: 5  RequiredShare(single-doc): 44.37%
+MinDocCps: 2  MinTotalCps: 10 (Cps means changes per second)
+Burst window: 10s  Complete event windows analyzed: 30
+Unique docs tracked: 5 / 200000
+Qualified changes in window: 71838  Total changes/sec: 184.200
+Top-5 combined ops   : 71838
+Top-5 combined share : 100.00%
+Top-5 single-doc spread equivalent : 11.269
+Sample completeness: complete  Rate window seconds: 390.000  Reading duration seconds: 3.382
+Analysis status: complete
 
 ================================================================================================================
 TOP-5 DOCUMENTS (BY OP COUNT)
 ================================================================================================================
-rank  opCount   insert  delete  update   share%   spreadDisp   docCps   totalCps   namespace               _id
-  1     9231       1       0    9230    44.82       5.051   30.770    68.650   sdtest5.events          "hot-doc-1"
-  2     9231       1       0    9230    44.82       5.051   30.770    68.650   sdtest5.events          "hot-doc-2"
-  3      711       1       0     710     3.45       0.389    2.370    68.650   sdtest5.events          "hot-doc-3"
-  4      711       1       0     710     3.45       0.389    2.370    68.650   sdtest5.events          "hot-doc-4"
-  5      711       1       0     710     3.45       0.389    2.370    68.650   sdtest5.events          "hot-doc-5"
+rank  opCount  insert  delete  update   share%  spreadDisp   docCps  totalCps  namespace               _id
+  1    32202       1       0   32201    44.83       5.052   82.569   184.200  sdtest5.events          "hot-doc-1"
+  2    32202       1       0   32201    44.83       5.052   82.569   184.200  sdtest5.events          "hot-doc-2"
+  3     2478       1       0    2477     3.45       0.389    6.354   184.200  sdtest5.events          "hot-doc-3"
+  4     2478       1       0    2477     3.45       0.389    6.354   184.200  sdtest5.events          "hot-doc-4"
+  5     2478       1       0    2477     3.45       0.389    6.354   184.200  sdtest5.events          "hot-doc-5"
 
 ================================================================================================================
 HOT DOCUMENTS
 ================================================================================================================
-rank  opCount   insert  delete  update   share%   spreadDisp   docCps   totalCps   namespace               _id
-  1     9231       1       0    9230    44.82       5.051   30.770    68.650   sdtest5.events          "hot-doc-1"
-  2     9231       1       0    9230    44.82       5.051   30.770    68.650   sdtest5.events          "hot-doc-2"
+2 hot document(s) detected in the sample.
+rank  opCount  insert  delete  update   share%  spreadDisp   docCps  totalCps  namespace               _id
+  1    32202       1       0   32201    44.83       5.052   82.569   184.200  sdtest5.events          "hot-doc-1"
+  2    32202       1       0   32201    44.83       5.052   82.569   184.200  sdtest5.events          "hot-doc-2"
+
+================================================================================================================
+PEAK DOCUMENT BURSTS (10s WINDOWS)
+================================================================================================================
+rank  window start              opCount  share%  spreadDisp   docCps  totalCps  namespace               _id
+  1  2026-10-19T12:56:10.000Z     1118   44.83       5.052  111.800   249.400  sdtest5.events          "hot-doc-1"
+  2  2026-10-19T12:56:10.000Z     1118   44.83       5.052  111.800   249.400  sdtest5.events          "hot-doc-2"
+  3  2026-10-19T12:56:10.000Z       86    3.45       0.389    8.600   249.400  sdtest5.events          "hot-doc-3"
+  4  2026-10-19T12:56:10.000Z       86    3.45       0.389    8.600   249.400  sdtest5.events          "hot-doc-4"
+  5  2026-10-19T12:56:10.000Z       86    3.45       0.389    8.600   249.400  sdtest5.events          "hot-doc-5"
+
+BURST CANDIDATES (PASSED ALL GATES)
+rank  window start              opCount  share%  spreadDisp   docCps  totalCps  namespace               _id
+  1  2026-10-19T12:56:10.000Z     1118   44.83       5.052  111.800   249.400  sdtest5.events          "hot-doc-1"
+  2  2026-10-19T12:56:10.000Z     1118   44.83       5.052  111.800   249.400  sdtest5.events          "hot-doc-2"
 ```
 
 The spread-disparity part is based on the internal hot-doc detection proposal, which models the single-hot-document case as:
@@ -169,12 +300,13 @@ For each document, it tracks:
 
 ## Current default settings
 
-These are the current defaults used by the script in this README:
+These are the current defaults used by the script in this README. `startTime` and `endTime` are optional; when both are provided they select an explicit historical interval instead of `lookbackMs`:
 
 ```js
 {
   namespaces: [],
   lookbackMs: 5 * 60 * 1000,
+  burstWindowMs: 10 * 1000,
   runMs: 5 * 60 * 1000,
   idleMs: 2000,
   maxUniqueDocs: 200000,
@@ -183,6 +315,7 @@ These are the current defaults used by the script in this README:
   minDocCps: 2,
   minTotalCps: 10,
   topDocCountForProxy: 5,
+  maxBurstCandidates: 100,
   outputFormat: "json",
   outputFile: "hot-doc-spread-check.json"
 }
@@ -193,13 +326,24 @@ Meaning:
 * `namespaces: []`
   * watch all namespaces
 * `lookbackMs: 5 minutes`
-  * start reading from 5 minutes in the past
+  * sample a fixed interval ending at the whole-second boundary of the server-derived startup watermark
+  * interval length is rounded up to whole seconds; `rateWindowSeconds` reports the actual duration when complete
   * must be greater than 0
+* `startTime` and `endTime` (optional)
+  * ISO-8601 timestamps with explicit timezone offsets, for example `2026-10-19T08:00:00-04:00`
+  * provide both to analyze the interval `[startTime, endTime)`; do not also set `lookbackMs`
+  * timestamps must have whole-second precision, and the interval must be in the past and available in the oplog
+* `burstWindowMs: 10 seconds`
+  * duration of each event-time bucket used by burst analysis
+  * must be a whole number of seconds and at least 1 second
+  * buckets are anchored to the sample start; a shorter final bucket is evaluated using its actual duration
+  * if the lookback is shorter than this setting, the effective burst window is shortened to the sample length
 * `runMs: 5 minutes`
   * hard maximum runtime
 * `idleMs: 2000`
-  * stop after 2 seconds of inactivity once events have started
-  * set to `0` to disable idle-timeout stopping
+  * stop after 2 seconds without a matching event
+  * set to `0` to disable idle-timeout stopping; `runMs` still limits runtime
+  * an idle stop is partial, not evidence of completion
 * `maxUniqueDocs: 200000`
   * maximum number of unique namespace+_id rows tracked in memory
   * safety cap to prevent unbounded memory growth on high-cardinality workloads
@@ -216,6 +360,9 @@ Meaning:
   * the whole window must average at least 10 changes/sec
 * `topDocCountForProxy: 5`
   * number of top documents used for combined proxy analysis (integer range 1..100)
+* `maxBurstCandidates: 100`
+  * maximum number of burst candidate rows shown in console and Markdown output
+  * omitted-row count is reported; the JSON report retains the full candidate list
 * `outputFormat: "json"`
   * controls report file format
   * valid values: `json`, `markdown`, `both`
@@ -243,17 +390,19 @@ format.
 
 If `namespaces` includes an internal namespace (`admin`, `config`, `local`, or `system.*`), the script fails fast with a validation error.
 
-### 2. It replays a recent time window
+### 2. It replays a time window
 
-The script starts from:
+The script supports two ways to select the interval. By default, it captures a server-derived timestamp at startup, takes its whole-second boundary as the exclusive endpoint, and starts from:
 
 ```text
-now - lookbackMs
+sampleEndAt - ceil(lookbackMs / 1000) seconds
 ```
 
-and replays matching change events from that point forward.
+When both `startTime` and `endTime` are provided, those timestamps instead define the interval after conversion to UTC whole seconds. The requested start is inclusive and the end is exclusive. The script counts matching change events in `[sampleStartAt, sampleEndAt)`. Events at or beyond the endpoint confirm progress but are not counted. This excludes the endpoint's second, avoiding an incomplete set of operations sharing the same timestamp. Local client clock skew and replay speed do not change the sampling interval.
 
-This means the script is primarily a **recent-window sampler**, not a forever-running live monitor.
+The script confirms completion only when a matching event reaches the fixed endpoint. It does not decode opaque resume tokens or assume an empty read means it is caught up. On a quiet or namespace-filtered stream, all available historical writes may have been read without such an event. The run then remains partial when `idleMs` (2 seconds by default) or `runMs` is reached. This conservative limitation keeps the script standalone without presenting unverified rates as complete-window measurements.
+
+This means the script is a **fixed-window sampler**, not a forever-running live monitor. Explicit historical intervals must still be present in the deployment's oplog.
 
 ### 3. It filters to document-level write activity
 
@@ -285,7 +434,25 @@ After the stream closes, the script computes:
 * `qualifiedEventsSeen`
   * all counted document-level write events in the window
 * `totalChangesPerSec`
-  * `qualifiedEventsSeen / windowSeconds`
+  * `qualifiedEventsSeen / rateWindowSeconds` for a confirmed complete interval
+  * `null` for a partial run; replay duration is never used as a workload-rate denominator
+
+### Short-window burst analysis
+
+The separate `burstAnalysis` result evaluates each fully observed event-time bucket. For a document in a bucket it computes:
+
+```text
+eventShare = document operations in bucket / all operations in bucket
+spreadDisparityEstimate = eventShare * sqrt(appliers - 1)
+docChangesPerSec = document operations in bucket / bucket duration
+totalChangesPerSec = all operations in bucket / bucket duration
+```
+
+It applies the same spread, minimum document CPS, and minimum total CPS gates independently within each bucket. A document appears in `burstAnalysis.hotDocuments` if it passes all three gates in at least one complete bucket. `topDocuments` reports each document's busiest complete bucket, including its start time, counts, share, estimated disparity, and rates. A short burst can therefore qualify here even if the document fails the whole-lookback CPS gate.
+
+Buckets are aligned to `sampleStartAt`. Change-stream timestamps have one-second resolution, so this analysis does not resolve sub-second bursts. The spread value remains a per-document estimate; it does not inspect actual mongosync applier assignments and is not equivalent to mongosync's `mongosync_cea_spread_disparity` metric.
+
+For a partial overall sample, only buckets known to have ended are evaluated. The active trailing bucket is excluded rather than treated as a completed interval. If no bucket ended before the run stopped, `completeWindowsAnalyzed` is zero and no burst candidates are reported. This avoids inflating CPS by dividing partial-bucket counts by replay time.
 
 ### 6. It computes the per-document hotness metrics
 
@@ -308,6 +475,8 @@ spreadDisparityEstimate >= spreadDisparityThreshold
 docChangesPerSec >= minDocCps
 totalChangesPerSec >= minTotalCps
 ```
+
+For partial runs, whole-lookback CPS fields, both whole-lookback CPS gate results, and `qualifies` are `null` (not evaluated). `hotDocuments` is empty because full-window qualification is unavailable, not because all documents passed or failed. Counts, shares, and spread estimates remain available for the top documents, explicitly labeled partial. `burstAnalysis` may still report candidates from earlier event-time windows that were fully observed before the run stopped.
 
 ## Why the script uses the two extra CPS gates
 
@@ -360,11 +529,11 @@ That is a limitation of the underlying approximation, not a bug in the script.
 The script stops when any of these happens:
 
 * `caught-up`
-  * it observed a matching event with `clusterTime` at or beyond the server-derived logical-time watermark captured when the stream was opened
+  * a matching event reached the fixed exclusive endpoint
 * `idle-timeout`
-  * no matching events arrive for `idleMs` after activity has started
+  * `idleMs` elapsed without a matching event; 2 seconds by default, disabled when set to `0`
 * `run-ms-exceeded`
-  * hard max runtime reached (this can occur on quiet workloads where no matching event is observed at or beyond the open-time watermark)
+  * hard max runtime reached before completion could be confirmed
 * `max-unique-docs-reached`
   * reached `maxUniqueDocs` safety cap for unique namespace+_id rows
 
@@ -374,7 +543,17 @@ The script writes report files according to `outputFormat` (`json`, `markdown`, 
 
 Note: the `json` output file is emitted as strict MongoDB Extended JSON (EJSON). If you are consuming the file programmatically, prefer `EJSON.parse()`.
 
-If the run stops before `caught-up`, the sample is marked partial and rate-based fields use the elapsed wall-clock time from stream open to stop time rather than the full `lookbackMs` window.
+If the run stops before `caught-up`, the sample is marked partial. `rateWindowSeconds`, `docChangesPerSec`, and `totalChangesPerSec` are `null` in JSON and shown as `N/A` in console and Markdown. `observedWindowSeconds` reports reading duration only; it is never used to calculate workload CPS.
+
+Partial runs have `analysisStatus: "inconclusive"` and `ratesAvailable: false` for whole-lookback rates. Console, JSON, and Markdown reports include warnings and state that whole-lookback hot-document qualification was not evaluated. Top-document counts and shares describe only the observed activity and cannot rule out hotspots elsewhere in the interval. Separately, `burstAnalysis` can include results for fully observed event-time buckets, but excludes the unfinished trailing bucket. A `complete` status means the fixed interval was consumed, not that all possible hotspots have been ruled out.
+
+Compatibility note: consumers that previously assumed numeric CPS fields or boolean gate results must now handle `null` for partial samples. Check `ratesAvailable` before using CPS values or interpreting `hotDocuments`.
+
+When `maxUniqueDocs` documents have been tracked, events for already-tracked documents can still be counted. The next unseen document stops the run. A capped run therefore covers only a chronological prefix of the activity, not a representative sample of the whole window. Its reports warn:
+
+> Incomplete analysis: maxUniqueDocs reached. Later activity was not analyzed, so hot documents may have been missed. Rerun with fewer namespaces or increase maxUniqueDocs if memory permits.
+
+The cap remains a memory-safety limit. Narrow the requested namespaces or raise `maxUniqueDocs` only if memory permits, then rerun to obtain a complete sample.
 
 ### JSON output
 
@@ -382,7 +561,9 @@ Top-level fields include:
 
 * `generatedAt`
 * `namespacesRequested`
-* `lookbackMs`
+* `timeRangeMode` (`lookback` or `explicit`)
+* `lookbackMs` (duration of the analyzed interval, including when explicit timestamps were used)
+* `burstWindowMs` (effective burst-window duration)
 * `appliers`
 * `spreadDisparityThreshold`
 * `spreadThreshold` (legacy alias)
@@ -394,9 +575,22 @@ Top-level fields include:
 * `qualifiedEventsSeen`
 * `uniqueDocsTracked`
 * `sampleIsPartial`
-* `rateWindowSeconds`
-* `observedWindowSeconds`
-* `totalChangesPerSec`
+* `ratesAvailable` (false for partial samples)
+* `sampleStartAt` (inclusive server-time BSON timestamp)
+* `sampleEndAt` (exclusive server-time BSON timestamp)
+* `analysisStatus` (`complete` when caught up; otherwise `inconclusive`)
+* `warnings` (an array of warning strings; empty for complete samples)
+* `hotDocumentsSummary` (a result message explicitly identifying partial samples)
+* `burstAnalysis`
+  * `windowMs`
+  * `completeWindowsAnalyzed` (non-empty event-time buckets known to have ended)
+  * `summary` (count of distinct documents that passed all burst gates in at least one complete bucket)
+  * `candidateDisplayLimit`, `candidateRowsDisplayed`, and `candidateRowsOmitted` (human-readable output cap and counts)
+  * `topDocuments` (documents ranked by peak complete-bucket CPS)
+  * `hotDocuments` (full JSON list of documents that passed all three gates in at least one complete bucket)
+* `rateWindowSeconds` (actual complete interval duration; otherwise `null`)
+* `observedWindowSeconds` (reading duration, not a workload-rate window)
+* `totalChangesPerSec` (`null` when partial)
 * `stopReason`
 * `cappedByMaxUniqueDocs`
 * `lastClusterTime`
@@ -413,7 +607,7 @@ When `outputFormat` is:
 
 * `json`
   * writes strict EJSON output to `outputFile` (default: `hot-doc-spread-check.json`)
-  * CPS fields use `lookbackMs` only when the run reaches `caught-up`; otherwise they use the elapsed wall-clock time from stream open to stop time and `sampleIsPartial` is `true`
+  * CPS fields use the fixed interval duration only when the run reaches `caught-up`; otherwise they are `null` and `sampleIsPartial` is `true`
 * `markdown`
   * writes Markdown output to `outputFile` or `hot-doc-spread-check.md` when default outputFile is unchanged
 * `both`
@@ -430,6 +624,8 @@ Each `hotDocuments` entry includes:
   insert,
   update,
   delete,
+  peakBurstWindow,
+  qualifyingBurstWindow,
   eventShare,
   spreadDisparityEstimate,
   docChangesPerSec,
@@ -448,9 +644,12 @@ The console output prints:
 * overall window stats
 * threshold values
 * sample completeness and the rate-window duration used for CPS calculations
+* analysis status and warnings for incomplete samples
 * top-N combined share and single-doc spread equivalent
 * top-N documents (same columns as hot-doc output)
 * hot documents that passed all gates
+* peak document bursts in complete short windows, limited to `topDocCountForProxy` documents and ranked by peak-window CPS
+* up to `maxBurstCandidates` burst candidates that passed all gates, with one qualifying window per document; an omitted-row count is printed when needed. JSON retains the full list.
 
 ## How to run it
 
