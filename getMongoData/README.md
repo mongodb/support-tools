@@ -46,6 +46,7 @@ against either a `mongod` or a `mongos`.
 Minimum required permissions (see [MongoDB Built-In Roles](https://docs.mongodb.com/manual/reference/built-in-roles)):
 * A database user with the `backup`, `readAnyDatabase`, and `clusterMonitor` roles. These are essentially read-only roles except the [backup](https://docs.mongodb.com/manual/reference/built-in-roles/#backup-and-restoration-roles) role allows writes to two MongoDB system collections - `admin.mms.backup` and `config.settings`. The `backup` role is necessary in order for the script to output the number of database users and user-defined roles configured.
 * A root/admin database user may be used as well.
+* On a MongoDB 8.0+ sharded cluster, the user also needs the [directShardOperations](https://www.mongodb.com/docs/manual/reference/built-in-roles/#mongodb-authrole-directShardOperations) role to run the script directly against a shard or config server, since [most commands cannot be run directly on a shard](https://www.mongodb.com/docs/manual/reference/supported-shard-direct-commands/). Without it the script stops at the first `listDatabases`/`collStats` call, exits 0, and the output ends with a `generic_error` entry. Roles granted through `mongos` apply to the config servers only; the shard-local user on each shard must be granted separately. Revoke the role after collection.
 
 Example command for creating a database user with the minimum required permissions:
 
@@ -93,6 +94,14 @@ db.getSiblingDB("admin").createUser({
   pwd: "ADMIN_PASSWORD",
   roles: [ "gmd" ]
 })
+```
+
+Example commands for granting and revoking `directShardOperations` on a MongoDB 8.0+ sharded cluster. Run through `mongos` for the config servers, and directly on each shard primary for the shards:
+```javascript
+db.getSiblingDB("admin").grantRolesToUser("ADMIN_USER", [ "directShardOperations" ])
+
+// after collection
+db.getSiblingDB("admin").revokeRolesFromUser("ADMIN_USER", [ "directShardOperations" ])
 ```
 
 The most notable methods, commands, and aggregations that this script runs are listed below.
