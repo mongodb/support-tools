@@ -578,7 +578,7 @@
     return docs
       .map((d, i) => {
         const burst = d[burstField];
-        return `| ${i + 1} | ${new Date(burst.windowStartAt.t * 1000).toISOString()} | ${burst.opCount} | ${toPct(burst.eventShare, 2)} | ${toFixedNumber(burst.spreadDisparityEstimate, 3)} | ${toFixedNumber(burst.docChangesPerSec, 3)} | ${toFixedNumber(burst.totalChangesPerSec, 3)} | ${mdEscape(d.ns)} | ${mdEscape(bsonString(d.docId))} |`;
+        return `| ${i + 1} | ${new Date(timestampParts(burst.windowStartAt).seconds * 1000).toISOString()} | ${burst.opCount} | ${toPct(burst.eventShare, 2)} | ${toFixedNumber(burst.spreadDisparityEstimate, 3)} | ${toFixedNumber(burst.docChangesPerSec, 3)} | ${toFixedNumber(burst.totalChangesPerSec, 3)} | ${mdEscape(d.ns)} | ${mdEscape(bsonString(d.docId))} |`;
       })
       .join("\n");
   }
@@ -776,7 +776,7 @@
   function printBurstTable(docs, burstField) {
     const columns = [
       { header: "rank", align: "right", value: (_doc, _burst, rank) => String(rank) },
-      { header: "window start", align: "left", value: (_doc, burst) => new Date(burst.windowStartAt.t * 1000).toISOString() },
+      { header: "window start", align: "left", value: (_doc, burst) => new Date(timestampParts(burst.windowStartAt).seconds * 1000).toISOString() },
       { header: "opCount", align: "right", value: (_doc, burst) => String(burst.opCount) },
       { header: "share%", align: "right", value: (_doc, burst) => (burst.eventShare * 100).toFixed(2) },
       { header: "spreadDisp", align: "right", value: (_doc, burst) => burst.spreadDisparityEstimate.toFixed(3) },
