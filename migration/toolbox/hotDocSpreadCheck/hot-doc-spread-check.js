@@ -51,7 +51,7 @@
   validateNumber("maxBurstCandidates", CFG.maxBurstCandidates, false);
 
   if (!Number.isInteger(CFG.burstWindowMs) || CFG.burstWindowMs < 1000 || CFG.burstWindowMs % 1000 !== 0) {
-    throw new Error(`Invalid burstWindowMs: ${CFG.burstWindowMs}. Expected a whole number of seconds greater than or equal to 1000.`);
+    throw new Error(`Invalid burstWindowMs: ${CFG.burstWindowMs}. Expected a positive multiple of 1000 ms (minimum 1000 ms).`);
   }
 
   if (!Number.isInteger(CFG.maxUniqueDocs) || CFG.maxUniqueDocs < 1) {
