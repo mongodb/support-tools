@@ -12,23 +12,11 @@ In this script, a document is considered a hot-doc candidate only if it passes a
 
 The report also analyzes short event-time windows (10 seconds by default) to find bursts that whole-lookback averages can dilute. Burst candidates use the same three gates within a complete short window. This estimates per-document concentration; it does not reproduce mongosync's actual per-applier routing or spread metric.
 
+Documents with unusually high write rates can concentrate mongosync apply work and contribute to migration lag, so identifying them helps determine whether they need separate handling. In most cases, hot documents—or collections containing them—should be excluded from the main mongosync migration and migrated separately during the cutover period, with coordinated write handling and consistency validation.
+
 ## Setup
 
 No npm installation or third-party modules are required. Run the script directly with mongosh. It uses mongosh's built-in BSON helpers and the built-in `fs` module to write reports.
-
-Optional regression tests use only Node.js built-ins (Node.js 18 or newer):
-
-```bash
-node --test hot-doc-spread-check.test.js
-```
-
-To run the optional live test against a deployment you choose:
-
-```bash
-HOT_DOC_SPREAD_CHECK_URI="mongodb://localhost:27017" node --test hot-doc-spread-check.test.js
-```
-
-The live test watches a test namespace without creating it or writing database data. It checks that a quiet stream remains partial with unavailable CPS. It writes its report to a temporary directory and removes that directory afterward. The test file is not needed to run the script.
 
 ## Quick start
 

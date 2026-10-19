@@ -344,18 +344,11 @@
       continue;
     }
 
-    const docId = evt.documentKey && evt.documentKey._id;
-    if (docId === undefined || docId === null) {
-      continue;
-    }
-
     const opName = opMap[evt.operationType];
     if (!opName) {
       continue;
     }
 
-    const ns = `${evt.ns.db}.${evt.ns.coll}`;
-    const key = bsonString(docId);
     const eventSecond = timestampParts(evt.clusterTime).seconds;
     const burstWindowIndex = Math.floor((eventSecond - startSec) / burstWindowSeconds);
 
@@ -367,6 +360,14 @@
       currentBurstWindowTotal = 0;
       currentBurstWindowCounts = new Map();
     }
+
+    const docId = evt.documentKey && evt.documentKey._id;
+    if (docId === undefined || docId === null) {
+      continue;
+    }
+
+    const ns = `${evt.ns.db}.${evt.ns.coll}`;
+    const key = bsonString(docId);
 
     let nsBucket = perNs[ns];
     if (!nsBucket) {
