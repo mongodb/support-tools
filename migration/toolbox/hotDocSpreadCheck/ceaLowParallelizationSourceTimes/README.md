@@ -99,13 +99,14 @@ Use JSON when you want to inspect every warning, lag age, or `sourceHours` histo
 
 Creates a directory with:
 
-* `NN-<namespace>-<tag>.sh` — one namespace per file, oldest source window first
+* `NN-<namespace>-<digest8>-<tag>.sh` — one namespace per file, oldest source window first
+  (`<digest8>` disambiguates namespaces that sanitize to the same slug)
 * `hot-doc-spread-check.js` — copy of the parent script
 * `INSTRUCTIONS.txt` — how to fill in the URI and what to send back
 
 If one namespace has **separate bursts** (source times more than 30 minutes apart),
 those become multiple `mongosh` calls in the same file, and the filename drops the
-time tag: `NN-<namespace>.sh`.
+time tag: `NN-<namespace>-<digest8>.sh`.
 
 Each command sets `lookbackMs` at **runtime**:
 
@@ -143,21 +144,21 @@ These values are written into every script. Only `namespaces`, `lookbackMs`,
 | `lookbackMs` | `Date.now() - Date.parse(burstStart)` | Replay from the estimated source window, not “the last N minutes of live traffic.” |
 | `runMs` | `1800000` (30 minutes) | Drain cap if the stream never goes idle. Long enough for a typical batch job; short enough to fail closed. |
 | `idleMs` | `2000` | Stop about two seconds after events stop. The interesting work is the historical burst, not waiting for new writes. |
-| `appliers` | Live CEA processor count, or `--appliers` | Matches mongosync’s hash spread (`spread ≈ f * sqrt(N-1)`). Taken from `ceaMemoryUsage.dispatcherToProcessorChannels.numProcessors`, **not** from `recentCRUDStatistics.totalAppliers` on the warning (that field is aggregated and can over-count). If the logs have no `numProcessors`, default **256**. |
+| `appliers` | Per-script CEA processor count, or `--appliers` | Matches mongosync’s hash spread (`spread ≈ f * sqrt(N-1)`). Auto-detect uses the latest `ceaMemoryUsage.dispatcherToProcessorChannels.numProcessors` for that warning’s `mongosyncID` at or before the warning time (**not** a global mode across instances, and **not** `recentCRUDStatistics.totalAppliers`). If no sample exists for that instance, a pack-wide uniform count is used when all samples agree; otherwise default **256**. |
 | `spreadDisparityThreshold` | `5` | Looser than mongosync’s warning threshold (`> 10`) so the historical window is still flagged if it was skewed but not identical to the 10s warning sample. |
 | `minDocCps` | `1` | Per-document rate gate. The JS script requires a value greater than 0. `1` keeps low-rate but highly skewed docs visible. |
 | `minTotalCps` | `0` | Do not drop the collection because the **whole** window is quiet. A short historical burst can have a low average rate after lookback. |
 | `topDocCountForProxy` | `5` | Print a few busiest `_id`s even when they fail the hot-doc gates (useful when unique/event is ~1.0). |
 | `maxUniqueDocs` | `2000000` | Tracking cap for distinct `_id`s. Bulk insert/delete windows can exceed the JS default (200000) and truncate before the burst is understood. |
 | `outputFormat` | `"json"` | Machine-readable result for the customer to return. |
-| `outputFile` | `hot-doc-spread-check-<ns>-<tag>.json` | One file per mongosh call; tag is the lookback start (`YYYYMMDDTHHMMZ`). |
+| `outputFile` | `hot-doc-spread-check-<ns>-<digest8>-<tag>.json` | One file per mongosh call; `<ns>` is a sanitized slug, `<digest8>` is a stable sha256 prefix of the raw namespace (avoids collisions like `db.a/b` vs `db.a_b`), and tag is the lookback start (`YYYYMMDDTHHMMZ`). |
 
 ### Flags that change generated scripts
 
 | Flag | Default | Effect |
 | --- | --- | --- |
 | `--write-scripts DIR` | off | Write the pack into `DIR` |
-| `--appliers N` | `numProcessors`, else `256` | Override `appliers` in every script |
+| `--appliers N` | per `mongosyncID`/time, else `256` | `N >= 2` overrides every script; `0` (default) auto-detects per instance/time |
 | `--lookback-margin-minutes` | `5` | Minutes before the first source write |
 | `--window-gap-minutes` | `30` | Source-time gap that starts a new `mongosh` call |
 | `--script-js PATH` | parent `hot-doc-spread-check.js` | JS file copied into the pack |

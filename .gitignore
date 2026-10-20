@@ -7,9 +7,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 
-# Mongosync Insights — local build/runtime
-migration/mongosync_insights/dist/
-migration/mongosync_insights/.build_venv_*/
+# Local leftovers / runtime logs from former Mongosync Insights checkouts
 **/insights.log
 migration/mongosync_insights_v1/
 migration/mongosync_insights_v2/
@@ -22,5 +20,3 @@ CONNECTION_STRING
 
 # Generated output from hot-doc-spread-check.js
 migration/toolbox/hotDocSpreadCheck/hot-doc-spread-check.json
-migration/mongosync_insights/blueprints/__init__.py
-.cursor/rules/mongosync-insights-pre-pr.mdc

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import hashlib
 import json
 import re
 import shlex
@@ -414,9 +415,17 @@ def parse_appliers(value: str) -> int:
     return n
 
 
-def infer_num_processors(paths: list[Path]) -> int | None:
-    """Read ceaMemoryUsage.numProcessors without changing the JSON report."""
-    counts: dict[int, int] = defaultdict(int)
+DEFAULT_APPLIERS = 256
+
+
+def collect_num_processor_samples(
+    paths: list[Path],
+) -> dict[str, list[tuple[datetime, int]]]:
+    """Collect ceaMemoryUsage.numProcessors samples keyed by mongosyncID.
+
+    Each value is a list of (log_time, numProcessors) sorted by time ascending.
+    """
+    by_id: dict[str, list[tuple[datetime, int]]] = defaultdict(list)
     for path in paths:
         try:
             fh = open_log(path)
@@ -430,31 +439,89 @@ def infer_num_processors(paths: list[Path]) -> int | None:
                     obj = json.loads(line)
                 except json.JSONDecodeError:
                     continue
+                try:
+                    wall = parse_log_time(obj["time"])
+                except (KeyError, ValueError):
+                    continue
                 disp = (obj.get("ceaMemoryUsage") or {}).get("dispatcherToProcessorChannels") or {}
                 n = disp.get("numProcessors")
                 # Match hot-doc-spread-check.js: appliers must be >= 2.
-                if isinstance(n, int) and n >= 2:
-                    counts[n] += 1
-    if not counts:
-        return None
-    return max(counts.items(), key=lambda item: item[1])[0]
+                if not isinstance(n, int) or n < 2:
+                    continue
+                instance_id = str(obj.get("mongosyncID") or path.name)
+                by_id[instance_id].append((wall, n))
+    for samples in by_id.values():
+        samples.sort(key=lambda item: item[0])
+    return by_id
+
+
+def uniform_num_processors(
+    samples_by_id: dict[str, list[tuple[datetime, int]]],
+) -> int | None:
+    """Return N if every sample in the pack agrees on one count; else None."""
+    values = {n for samples in samples_by_id.values() for _, n in samples}
+    if len(values) == 1:
+        return next(iter(values))
+    return None
+
+
+def resolve_num_processors(
+    samples_by_id: dict[str, list[tuple[datetime, int]]],
+    instance_id: str,
+    at: datetime,
+    *,
+    default: int = DEFAULT_APPLIERS,
+) -> int:
+    """Latest numProcessors for instance_id at or before at; else uniform; else default."""
+    best: int | None = None
+    for wall, n in samples_by_id.get(instance_id) or []:
+        if wall <= at:
+            best = n
+        else:
+            break
+    if best is not None:
+        return best
+    uniform = uniform_num_processors(samples_by_id)
+    return uniform if uniform is not None else default
+
+
+def annotate_warning_appliers(
+    result: dict,
+    samples_by_id: dict[str, list[tuple[datetime, int]]],
+) -> None:
+    """Set inferredAppliers on each warning from instance/time-local samples."""
+    for ns in result.get("namespaces") or []:
+        for warning in ns.get("warnings") or []:
+            try:
+                at = parse_log_time(warning["warningTime"])
+            except (KeyError, ValueError):
+                warning["inferredAppliers"] = DEFAULT_APPLIERS
+                continue
+            instance_id = str(warning.get("mongosyncID") or "?")
+            warning["inferredAppliers"] = resolve_num_processors(
+                samples_by_id, instance_id, at
+            )
 
 
 def cluster_source_windows(
     warnings: list[dict],
     gap: timedelta,
-) -> list[list[datetime]]:
-    times = sorted(
-        parse_log_time(w["sourceTime"]) for w in warnings if w.get("sourceTime")
+) -> list[list[dict]]:
+    """Cluster warnings with sourceTime into bursts separated by more than gap."""
+    with_src = sorted(
+        (w for w in warnings if w.get("sourceTime")),
+        key=lambda w: parse_log_time(w["sourceTime"]),
     )
-    if not times:
+    if not with_src:
         return []
-    windows: list[list[datetime]] = [[times[0]]]
-    for ts in times[1:]:
-        if ts - windows[-1][-1] > gap:
-            windows.append([ts])
+    windows: list[list[dict]] = [[with_src[0]]]
+    for warning in with_src[1:]:
+        ts = parse_log_time(warning["sourceTime"])
+        prev = parse_log_time(windows[-1][-1]["sourceTime"])
+        if ts - prev > gap:
+            windows.append([warning])
         else:
-            windows[-1].append(ts)
+            windows[-1].append(warning)
     return windows
 
 
@@ -464,8 +531,17 @@ def safe_filename_part(value: str) -> str:
     return cleaned.strip("._-") or "namespace"
 
 
+def namespace_filename_stem(ns: str) -> str:
+    """Readable sanitized slug plus a short digest so distinct namespaces never collide.
+
+    Example: db.a/b and db.a_b both sanitize to db.a_b, but their digests differ.
+    """
+    digest = hashlib.sha256(ns.encode("utf-8")).hexdigest()[:8]
+    return f"{safe_filename_part(ns)}-{digest}"
+
+
 def mongosh_command(ns: str, start_iso: str, tag: str, appliers: int) -> str:
-    outfile = f"hot-doc-spread-check-{safe_filename_part(ns)}-{tag}.json"
+    outfile = f"hot-doc-spread-check-{namespace_filename_stem(ns)}-{tag}.json"
     # Serialize JS string values; shell-quote the whole --eval so log data cannot
     # break out of quotes or inject shell metacharacters.
     eval_js = f"""globalThis.MONITOR_ARGS = {{
@@ -493,7 +569,7 @@ def write_scripts(
     result: dict,
     out_dir: Path,
     *,
-    appliers: int,
+    appliers_override: int | None,
     margin: timedelta,
     gap: timedelta,
     js_path: Path | None,
@@ -501,6 +577,7 @@ def write_scripts(
     out_dir.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
     file_num = 0
+    used_appliers: set[int] = set()
 
     for ns in result["namespaces"]:
         windows = cluster_source_windows(ns["warnings"], gap)
@@ -510,17 +587,30 @@ def write_scripts(
         commands = []
         stem_tags = []
         for window in windows:
-            start = (min(window) - margin).replace(second=0, microsecond=0)
+            source_times = [parse_log_time(w["sourceTime"]) for w in window]
+            start = (min(source_times) - margin).replace(second=0, microsecond=0)
             start_iso = start.strftime("%Y-%m-%dT%H:%M:%SZ")
-            tag = start.strftime("%Y%m%dT%H%MZ")
-            commands.append(mongosh_command(ns["namespace"], start_iso, tag, appliers))
-            stem_tags.append(tag)
+            tag_base = start.strftime("%Y%m%dT%H%MZ")
+            if appliers_override is not None:
+                groups: dict[int, list[dict]] = {appliers_override: window}
+            else:
+                groups = defaultdict(list)
+                for warning in window:
+                    apps = int(warning.get("inferredAppliers") or DEFAULT_APPLIERS)
+                    groups[apps].append(warning)
+            for apps in sorted(groups):
+                tag = tag_base if len(groups) == 1 else f"{tag_base}-a{apps}"
+                commands.append(
+                    mongosh_command(ns["namespace"], start_iso, tag, apps)
+                )
+                stem_tags.append(tag)
+                used_appliers.add(apps)
         file_num += 1
-        safe_ns = safe_filename_part(ns["namespace"])
+        ns_stem = namespace_filename_stem(ns["namespace"])
         if len(stem_tags) == 1:
-            stem = f"{safe_ns}-{stem_tags[0]}"
+            stem = f"{ns_stem}-{stem_tags[0]}"
         else:
-            stem = safe_ns
+            stem = ns_stem
         path = out_dir / f"{file_num:02d}-{stem}.sh"
         path.write_text("\n".join(commands).rstrip() + "\n")
         path.chmod(0o755)
@@ -536,6 +626,21 @@ def write_scripts(
             file=sys.stderr,
         )
 
+    if appliers_override is not None:
+        appliers_line = f"appliers: {appliers_override} (explicit --appliers override)"
+    elif len(used_appliers) == 1:
+        appliers_line = (
+            f"appliers: {next(iter(used_appliers))} "
+            "(from ceaMemoryUsage.numProcessors per mongosyncID/time)"
+        )
+    elif used_appliers:
+        appliers_line = (
+            f"appliers: per-script from ceaMemoryUsage.numProcessors "
+            f"by mongosyncID/time ({', '.join(str(n) for n in sorted(used_appliers))})"
+        )
+    else:
+        appliers_line = f"appliers: {DEFAULT_APPLIERS} (default; no numProcessors in logs)"
+
     instructions = f"""Hot Doc Spread Check - historical burst pack
 ============================================
 
@@ -550,7 +655,7 @@ lookbackMs is computed at runtime:
   Date.now() - Date.parse("<burst start UTC>")
 
 Settings:
-  appliers: {appliers}
+  {appliers_line}
   idleMs: 2000
   runMs: 1800000 (30 minutes drain cap)
   maxUniqueDocs: 2000000
@@ -606,8 +711,9 @@ def main() -> int:
         type=parse_appliers,
         default=0,
         help=(
-            "appliers value for generated scripts: integer >= 2, or 0 to auto-detect "
-            "from ceaMemoryUsage numProcessors (else 256)"
+            "appliers value for generated scripts: integer >= 2 overrides every script; "
+            "0 (default) auto-detects per mongosyncID/time from ceaMemoryUsage "
+            f"numProcessors (else {DEFAULT_APPLIERS})"
         ),
     )
     parser.add_argument(
@@ -641,20 +747,38 @@ def main() -> int:
         print_text(result)
 
     if args.write_scripts:
-        appliers = args.appliers
-        if appliers == 0:
-            inferred = infer_num_processors(paths)
-            appliers = inferred if inferred else 256
+        appliers_override = args.appliers if args.appliers != 0 else None
+        if appliers_override is None:
+            samples = collect_num_processor_samples(paths)
+            annotate_warning_appliers(result, samples)
             if not args.json:
+                used = sorted(
+                    {
+                        int(w.get("inferredAppliers") or DEFAULT_APPLIERS)
+                        for ns in result["namespaces"]
+                        for w in ns.get("warnings") or []
+                    }
+                )
                 print()
-                if inferred:
-                    print(f"Using appliers={appliers} from ceaMemoryUsage.numProcessors.")
+                if not samples:
+                    print(
+                        f"Using appliers={DEFAULT_APPLIERS} "
+                        "(numProcessors not found in logs)."
+                    )
+                elif len(used) == 1:
+                    print(
+                        f"Using appliers={used[0]} from ceaMemoryUsage.numProcessors "
+                        "(per mongosyncID/time)."
+                    )
                 else:
-                    print(f"Using appliers={appliers} (numProcessors not found in logs).")
+                    print(
+                        "Using per-script appliers from ceaMemoryUsage.numProcessors "
+                        f"by mongosyncID/time: {', '.join(str(n) for n in used)}."
+                    )
         written = write_scripts(
             result,
             Path(args.write_scripts),
-            appliers=appliers,
+            appliers_override=appliers_override,
             margin=timedelta(minutes=args.lookback_margin_minutes),
             gap=timedelta(minutes=args.window_gap_minutes),
             js_path=args.script_js or default_js_path(),
