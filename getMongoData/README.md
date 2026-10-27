@@ -46,6 +46,7 @@ against either a `mongod` or a `mongos`.
 Minimum required permissions (see [MongoDB Built-In Roles](https://docs.mongodb.com/manual/reference/built-in-roles)):
 * A database user with the `backup`, `readAnyDatabase`, and `clusterMonitor` roles. These are essentially read-only roles except the [backup](https://docs.mongodb.com/manual/reference/built-in-roles/#backup-and-restoration-roles) role allows writes to two MongoDB system collections - `admin.mms.backup` and `config.settings`. The `backup` role is necessary in order for the script to output the number of database users and user-defined roles configured.
 * A root/admin database user may be used as well.
+* On a MongoDB 8.0+ sharded cluster, the user also needs the [directShardOperations](https://www.mongodb.com/docs/manual/reference/built-in-roles/#mongodb-authrole-directShardOperations) role to run the script directly against a shard or config server, since [most commands cannot be run directly on a shard](https://www.mongodb.com/docs/manual/reference/supported-shard-direct-commands/). Without it the script stops at the first `listDatabases`/`collStats` call, exits 0, and the output ends with a `generic_error` entry. A user created through `mongos` lives on the config servers and does not exist on the shards, so roles granted through `mongos` cover the config servers only. For the shards, first create the same user as a shard-local user on each shard primary, then grant the role there. **Revoke the role after collection.**
 
 Example command for creating a database user with the minimum required permissions:
 
@@ -93,6 +94,25 @@ db.getSiblingDB("admin").createUser({
   pwd: "ADMIN_PASSWORD",
   roles: [ "gmd" ]
 })
+```
+
+Example commands for granting and revoking `directShardOperations` on a MongoDB 8.0+ sharded cluster:
+```javascript
+// Config servers: connect to mongos. The user created through mongos is stored on
+// the config servers, so this grant covers direct connections to them.
+db.getSiblingDB("admin").grantRolesToUser("ADMIN_USER", [ "directShardOperations" ])
+
+// Shards: connect directly to EACH shard primary. The mongos user does not exist
+// here, so create the shard-local user first (skip if it already exists).
+db.getSiblingDB("admin").createUser({
+    user: "ADMIN_USER",
+    pwd: "ADMIN_PASSWORD",
+    roles: [ "backup", "readAnyDatabase", "clusterMonitor" ]
+  })
+db.getSiblingDB("admin").grantRolesToUser("ADMIN_USER", [ "directShardOperations" ])
+
+// After collection: revoke through mongos and on each shard primary.
+db.getSiblingDB("admin").revokeRolesFromUser("ADMIN_USER", [ "directShardOperations" ])
 ```
 
 The most notable methods, commands, and aggregations that this script runs are listed below.
