@@ -563,7 +563,9 @@
   }
 
   function mdEscape(v) {
-    return String(v).replace(/\|/g, "\\|");
+    return String(v)
+      .replace(/\\/g, "\\\\")
+      .replace(/\|/g, "\\|");
   }
 
   function buildMarkdownTableRows(docs) {
