@@ -160,14 +160,19 @@ function printShardInfo() {
                                 collDoc['key'] = coll.key;
                                 collDoc['unique'] = coll.unique;
 
+                                var chunkMatch = { ns: coll._id };
+                                if (coll.uuid !== undefined) {
+                                    chunkMatch = {
+                                        $or: [
+                                            { ns: coll._id },
+                                            { uuid: coll.uuid }
+                                        ]
+                                    };
+                                }
+
                                 var res = configDB.chunks.aggregate(
                                     {
-                                        "$match": {
-                                            $or: [
-                                                { ns: coll._id },
-                                                { uuid: coll.uuid }
-                                            ]
-                                        }
+                                        "$match": chunkMatch
                                     },
                                     { "$group": { _id: "$shard", nChunks: { "$sum": 1 } } }
                                 );
@@ -182,7 +187,7 @@ function printShardInfo() {
 
                                 if (_printChunkDetails) {
                                     collDoc['chunks'] = [];
-                                    configDB.chunks.find({ "ns": coll._id }).sort({ min: 1 }).forEach(
+                                    configDB.chunks.find(chunkMatch).sort({ min: 1 }).forEach(
                                         function (chunk) {
                                             chunkDoc = {};
                                             chunkDoc['min'] = chunk.min;
