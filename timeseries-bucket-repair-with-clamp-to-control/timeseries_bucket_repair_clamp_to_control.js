@@ -14,26 +14,18 @@ function verifyAndSetupCollsAndGetTSOptions(collName, tempColl) {
                   .options.timeseries;
 
   if (tsOptions === undefined) {
-    throw ('Collection "' + collName + '" is not a timeseries collection.');
+    print('Collection "' + collName + '" is not a timeseries collection.');
+    exit(1);
   }
-
-  // Verify that if the temp collection has the same options if it exists
-  tempRes = db.runCommand({listCollections : 1.0, filter : {name : tempColl}})
-                .cursor.firstBatch;
-  if (tempRes && tempRes.length > 0) {
-    tempOptions = tempRes[0].options.timeseries;
-    if (tempOptions === undefined ||
-        tsOptions.timeField != tempOptions.timeField ||
-        tsOptions.metaField != tempOptions.metaField ||
-        tsOptions.granularity != tempOptions.granularity ||
-        tsOptions.bucketMaxSpanSeconds != tempOptions.bucketMaxSpanSeconds) {
-      throw (
-          'Temp collection "' + tempColl +
-          '" exists but contain unexpected options. Please specify a different temporary namespace.');
-    }
-    db.getCollection(tempColl).drop();
+  listCollectionsRes = db.runCommand({
+                         listCollections: 1.0,
+                         filter: {name: tempColl}
+                       }).cursor.firstBatch;
+  if (listCollectionsRes.length != 0) {
+    print(
+        'Collection ' + tempColl + ' should not exist prior to running the script. Rename or drop the collection before running this script');
+    exit(1);
   }
-
   db.createCollection(tempColl, {timeseries : tsOptions});
   return tsOptions;
 }
